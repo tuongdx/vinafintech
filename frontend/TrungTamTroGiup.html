@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TuniX - Trung tâm trợ giúp</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="/static/typography.css" />
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="logo"><span style="color:#008080;font-weight:800;">Tuni</span><span style="color:#8A95A5;font-weight:800;">X</span></a>
+                <div class="header-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Tìm kiếm cổ phiếu..." />
+                </div>
+            </div>
+            <div class="header-right">
+                <i class="fas fa-bell"></i>
+                <i class="fas theme-toggle" id="themeToggle"></i>
+                <i class="fas fa-cog"></i>
+                <div class="user-avatar">N</div>
+            </div>
+        </header>
+
+        <!-- HELP CENTER -->
+        <div class="terms-page guide-page">
+            <div class="terms-container guide-container">
+
+                <a href="/" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Quay lại trang chủ
+                </a>
+
+                <!-- Header -->
+                <div class="help-header guide-header">
+                    <h1>Trung tâm trợ giúp</h1>
+                    <p class="help-subtitle guide-subtitle">Tìm câu trả lời cho mọi thắc mắc về TuniX</p>
+                </div>
+
+                <!-- Categories -->
+                <div class="categories-grid">
+                    <a href="#" class="category-card" data-category="getting-started">
+                        <div class="icon-circle"><i class="fas fa-rocket"></i></div>
+                        <h3>Bắt đầu</h3>
+                        <p>Hướng dẫn đăng ký và sử dụng cơ bản</p>
+                    </a>
+                    <a href="#" class="category-card" data-category="account">
+                        <div class="icon-circle"><i class="fas fa-user-cog"></i></div>
+                        <h3>Tài khoản</h3>
+                        <p>Quản lý thông tin và bảo mật</p>
+                    </a>
+                    <a href="#" class="category-card" data-category="features">
+                        <div class="icon-circle"><i class="fas fa-chart-pie"></i></div>
+                        <h3>Tính năng</h3>
+                        <p>Hướng dẫn sử dụng các công cụ</p>
+                    </a>
+                    <a href="#" class="category-card" data-category="billing">
+                        <div class="icon-circle"><i class="fas fa-credit-card"></i></div>
+                        <h3>Thanh toán</h3>
+                        <p>Gói dịch vụ và phương thức thanh toán</p>
+                    </a>
+                </div>
+
+                <!-- FAQ Section -->
+                <div class="faq-section" id="faqSection">
+                    <div class="section-title">
+                        <i class="fas fa-question-circle"></i> Câu hỏi thường gặp
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="question" onclick="toggleFaq(this)">
+                            Làm thế nào để đăng ký tài khoản TuniX?
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="answer">
+                            Bạn có thể đăng ký tài khoản TuniX bằng cách nhấp vào icon account ở góc phải trang chủ. Điền đầy đủ thông tin bao gồm tên, email, số điện thoại(không bắt buộc) và mật khẩu. Sau khi xác nhận email, tài khoản của bạn sẽ được kích hoạt ngay lập tức.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="question" onclick="toggleFaq(this)">
+                            TuniX có cung cấp dữ liệu thời gian thực không?
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="answer">
+                            Có. TuniX cung cấp dữ liệu giá và khối lượng giao dịch theo thời gian thực từ các sàn HOSE, HNX và UPCoM. Dữ liệu được cập nhật liên tục với độ trễ tối thiểu 15-30 giây.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="question" onclick="toggleFaq(this)">
+                            Tôi có thể sử dụng TuniX trên điện thoại không?
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="answer">
+                            Có. TuniX có ứng dụng di động cho cả iOS và Android. Bạn có thể tải xuống từ App Store hoặc Google Play. Ngoài ra, trang web cũng được tối ưu hóa để sử dụng trên trình duyệt di động.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="question" onclick="toggleFaq(this)">
+                            Các gói dịch vụ của TuniX bao gồm những gì?
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="answer">
+                            <p>TuniX cung cấp 2 gói dịch vụ:</p>
+                            <ul>
+                                <li><strong>Miễn phí:</strong> Dữ liệu cơ bản, biểu đồ, tin tức, phân tích nâng cao, báo cáo chuyên sâu, công cụ so sánh</li>
+                                <li><strong>Pro:</strong> Phân tích AI(đang phát triển), ưu tiên hỗ trợ</li>
+                            </ul>
+							<p style="margin-top:6px;font-size:12px;color:#8a99b1;">💡 TuniX chưa cung cấp gói Pro vì vậy tất cả các tính năng hiện tại đang ở trạng thái miễn phí.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="question" onclick="toggleFaq(this)">
+                            Tôi có thể hủy đăng ký gói dịch vụ bất cứ lúc nào không?
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="answer">
+                            Có. Bạn có thể hủy đăng ký bất cứ lúc nào trong phần Quản lý tài khoản. Việc hủy sẽ có hiệu lực vào cuối chu kỳ thanh toán hiện tại. Bạn sẽ không bị tính phí cho các chu kỳ tiếp theo.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="section-title">
+                    <i class="fas fa-headset"></i> Cần hỗ trợ thêm?
+                </div>
+
+                <div class="contact-section">
+                    <a href="/LienHe" class="contact-card" title="Đi đến trang Liên hệ">
+                        <div class="icon-circle"><i class="fas fa-headset"></i></div>
+                        <h4>Liên hệ trực tiếp với TuniX</h4>
+                        <p>Gửi tin nhắn để được hỗ trợ nhanh nhất</p>
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <div class="footer-grid">
+                <div>
+                    <a href="/" class="logo"><span style="color:#008080;font-weight:800;">Tuni</span><span style="color:#8A95A5;font-weight:800;">X</span></a>
+                    <p class="footer-description">
+                        TuniX là nền tảng phân tích cổ phiếu toàn diện, dữ liệu thực tế giúp các nhà đầu tư và tư vấn đầu tư có nhận định chuyên sâu về thị trường chứng khoán Việt Nam. TuniX không khuyến nghị mua, bán, nắm giữ bất kỳ mã chứng khoán nào. Người dùng tự đánh giá và tự chịu trách nhiệm với quyết định đầu tư của mình.
+                    </p>
+                    <div class="footer-social">
+                        <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-facebook"></i></a>
+                        <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-youtube"></i></a>
+                        <a href="https://www.tiktok.com/@tunix.vn" target="_blank" rel="noopener"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4>Sản phẩm</h4>
+                    <ul>
+                        <li><span class="footer-label">Phân tích cổ phiếu</span></li>
+                        <li><span class="footer-label">Bảng điều khiển</span></li>
+                        <li><span class="footer-label">Báo cáo tài chính</span></li>
+                        <li><span class="footer-label">Công cụ so sánh</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Hỗ trợ</h4>
+                    <ul>
+                        <li><a href="/TrungTamTroGiup" style="font-weight:600;color:#008080;">Trung tâm trợ giúp</a></li>
+                        <li><a href="/HuongDanSuDung">Hướng dẫn sử dụng</a></li>
+                        <li><a href="/CauHoiThuongGap">Câu hỏi thường gặp</a></li>
+                        <li><a href="/LienHe">Liên hệ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Pháp lý</h4>
+                    <ul>
+                        <li><a href="/DieuKhoanSuDung">Điều khoản sử dụng</a></li>
+                        <li><a href="/ChinhSachBaoMat">Chính sách bảo mật</a></li>
+                        <li><a href="/MienTruTrachNhiem">Miễn trừ trách nhiệm</a></li>
+                    </ul>
+                    <div style="margin-top: 16px; opacity: 0.45; filter: grayscale(1); pointer-events: none;" aria-disabled="true"><!-- APP CHƯA RA MẮT - BỎ opacity/filter/pointer-events ĐỂ KÍCH HOẠT -->
+                        <span style="font-size: 12px; color: #6b7a8f; display: block; margin-bottom: 8px;">Tải ứng dụng</span>
+                        <div class="footer-app-links">
+                            <a href="#"><i class="fab fa-apple"></i> App Store</a>
+                            <a href="#"><i class="fab fa-google-play"></i> Google Play</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>&copy; 2026 TuniX. Tất cả các quyền được bảo lưu.</span>
+                <div class="badges">
+                    <span><i class="fas fa-shield-alt"></i> Bảo mật SSL</span>
+                    <span><i class="fas fa-clock"></i> Dữ liệu thời gian thực</span>
+                    <span><i class="fas fa-server"></i> Độ trễ thấp</span>
+                </div>
+                <div class="footer-exchanges">
+                    <span>🇻🇳 HOSE</span>
+                    <span>🇻🇳 HNX</span>
+                    <span>🇻🇳 UPCoM</span>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        let isDarkMode = false;
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            isDarkMode = true;
+            themeToggle.className = 'fas fa-sun theme-toggle';
+        } else {
+            themeToggle.className = 'fas fa-moon theme-toggle';
+        }
+
+        themeToggle.addEventListener('click', function() {
+            isDarkMode = !isDarkMode;
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                this.className = 'fas fa-sun theme-toggle';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                this.className = 'fas fa-moon theme-toggle';
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        // Toggle FAQ
+        function toggleFaq(element) {
+            const answer = element.nextElementSibling;
+            const icon = element.querySelector('i');
+
+            // Close other open FAQs
+            const allQuestions = document.querySelectorAll('.faq-item .question');
+            allQuestions.forEach(q => {
+                if (q !== element) {
+                    const otherAnswer = q.nextElementSibling;
+                    const otherIcon = q.querySelector('i');
+                    if (otherAnswer.classList.contains('open')) {
+                        otherAnswer.classList.remove('open');
+                        otherIcon.classList.remove('active');
+                    }
+                }
+            });
+
+            answer.classList.toggle('open');
+            icon.classList.toggle('active');
+        }
+
+        // Category click - simulate filtering
+        document.querySelectorAll('.category-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                const category = this.dataset.category;
+                const categoryMap = {
+                    'getting-started': ['Làm thế nào để đăng ký tài khoản TuniX?', 'Tôi có thể sử dụng TuniX trên điện thoại không?'],
+                    'account': ['Làm thế nào để đăng ký tài khoản TuniX?', 'Tôi có thể hủy đăng ký gói dịch vụ bất cứ lúc nào không?'],
+                    'features': ['TuniX có cung cấp dữ liệu thời gian thực không?', 'Các gói dịch vụ của TuniX bao gồm những gì?'],
+                    'billing': ['Các gói dịch vụ của TuniX bao gồm những gì?', 'Tôi có thể hủy đăng ký gói dịch vụ bất cứ lúc nào không?']
+                };
+
+                const keywords = categoryMap[category] || [];
+                if (keywords.length > 0) {
+                    // Close all
+                    document.querySelectorAll('.faq-item .answer').forEach(a => a.classList.remove('open'));
+                    document.querySelectorAll('.faq-item .question i').forEach(i => i.classList.remove('active'));
+
+                    // Open matching FAQs
+                    const faqItems = document.querySelectorAll('.faq-item');
+                    let found = false;
+                    faqItems.forEach(item => {
+                        const questionText = item.querySelector('.question').textContent.trim();
+                        if (keywords.some(k => questionText.includes(k.replace('?', '')) || questionText.includes(k))) {
+                            const answer = item.querySelector('.answer');
+                            const icon = item.querySelector('.question i');
+                            answer.classList.add('open');
+                            icon.classList.add('active');
+                            found = true;
+                        }
+                    });
+
+                    if (!found) {
+                        alert('Chưa có câu hỏi thường gặp cho danh mục này. Vui lòng liên hệ hỗ trợ.');
+                    }
+                }
+            });
+        });
+
+        // Auto open first FAQ
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstAnswer = document.querySelector('.faq-item .answer');
+            const firstIcon = document.querySelector('.faq-item .question i');
+            if (firstAnswer) {
+                firstAnswer.classList.add('open');
+                firstIcon.classList.add('active');
+            }
+        });
+    </script>
+    <script src="/static/header-search.js"></script>
+</body>
+</html>

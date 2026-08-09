@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cài đặt tài khoản - TuniX</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f4f6f9;
+            color: #1a1f36;
+            padding: 0;
+            margin: 0;
+        }
+
+        .app-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 20px 40px;
+        }
+
+        /* Khi nhúng trong left-col (index.html) */
+        .embedded .app-wrapper {
+            padding: 0 0 40px;
+        }
+
+        .settings-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+        }
+
+        .settings-title {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .settings-sub {
+            font-size: 14px;
+            color: #6b7a8f;
+            margin-bottom: 24px;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 4px;
+            border-bottom: 1px solid #eef2f6;
+        }
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info .si-name {
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .setting-info .si-desc {
+            font-size: 13px;
+            color: #6b7a8f;
+            margin-top: 3px;
+        }
+
+        .login-msg {
+            text-align: center;
+            color: #6b7a8f;
+            padding: 40px 20px;
+            font-size: 15px;
+        }
+        .login-msg a {
+            color: #008080;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* ===== TOGGLE SWITCH ===== */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: #dce1e9;
+            border-radius: 26px;
+            transition: background 0.3s;
+        }
+        .slider::before {
+            content: '';
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            top: 3px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+        }
+        .switch input:checked + .slider {
+            background: #008080;
+        }
+        .switch input:checked + .slider::before {
+            transform: translateX(22px);
+        }
+
+        /* ===== DARK MODE ===== */
+        body.dark-mode {
+            background: #0d1117;
+            color: #e6edf3;
+        }
+        body.dark-mode .settings-card {
+            background: #161b22;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        body.dark-mode .settings-sub,
+        body.dark-mode .setting-info .si-desc {
+            color: #adbac7;
+        }
+        body.dark-mode .setting-row {
+            border-bottom-color: #30363d;
+        }
+        body.dark-mode .slider {
+            background: #30363d;
+        }
+        body.dark-mode .login-msg {
+            color: #adbac7;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <main class="settings-card">
+            <div class="settings-title">⚙️ Cài đặt tài khoản</div>
+            <div class="settings-sub">Tùy chỉnh thông báo và giao diện của bạn</div>
+
+            <div id="settingsBody">
+                <div class="login-msg">Đang tải...</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ============================================================
+        // CÀI ĐẶT TÀI KHOẢN
+        // ============================================================
+        (function() {
+            const body = document.getElementById('settingsBody');
+            const TOKEN_KEY = 'tunix_access_token';
+
+            function loggedIn() {
+                return !!localStorage.getItem(TOKEN_KEY);
+            }
+
+            function authHeaders() {
+                return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem(TOKEN_KEY) };
+            }
+
+            function renderLogin() {
+                body.innerHTML = '<div class="login-msg">🔒 Vui lòng <a href="/Login">đăng nhập</a> để xem và chỉnh sửa cài đặt tài khoản.</div>';
+                notifyParentHeight();
+            }
+
+            function renderSettings(s) {
+                const notifyReports = s.notify_reports !== false;
+                const notifyNews = s.notify_news !== false;
+                // Giao diện: theo đúng mode hiện tại của website (on = sáng, off = tối)
+                const themeLight = localStorage.getItem('theme') !== 'dark';
+
+                body.innerHTML =
+                    '<div class="setting-row">' +
+                        '<div class="setting-info"><div class="si-name"><i class="fas fa-file-alt" style="color:#008080;"></i> Báo cáo</div>' +
+                        '<div class="si-desc">Nhận thông báo về báo cáo của cổ phiếu yêu thích</div></div>' +
+                        '<label class="switch"><input type="checkbox" id="setReports" ' + (notifyReports ? 'checked' : '') + ' /><span class="slider"></span></label>' +
+                    '</div>' +
+                    '<div class="setting-row">' +
+                        '<div class="setting-info"><div class="si-name"><i class="fas fa-newspaper" style="color:#008080;"></i> Tin tức</div>' +
+                        '<div class="si-desc">Nhận thông báo về tin tức liên quan của cổ phiếu yêu thích</div></div>' +
+                        '<label class="switch"><input type="checkbox" id="setNews" ' + (notifyNews ? 'checked' : '') + ' /><span class="slider"></span></label>' +
+                    '</div>' +
+                    '<div class="setting-row">' +
+                        '<div class="setting-info"><div class="si-name"><i class="fas fa-palette" style="color:#008080;"></i> Giao diện</div>' +
+                        '<div class="si-desc">Bật: giao diện sáng — Tắt: giao diện tối</div></div>' +
+                        '<label class="switch"><input type="checkbox" id="setTheme" ' + (themeLight ? 'checked' : '') + ' /><span class="slider"></span></label>' +
+                    '</div>';
+
+                // Sự kiện lưu khi đổi toggle
+                document.getElementById('setReports').addEventListener('change', function() {
+                    save({ notify_reports: this.checked });
+                });
+                document.getElementById('setNews').addEventListener('change', function() {
+                    save({ notify_news: this.checked });
+                });
+                document.getElementById('setTheme').addEventListener('change', function() {
+                    const mode = this.checked ? 'light' : 'dark';
+                    save({ theme: mode });
+                    applyThemeMode(mode);
+                });
+
+                notifyParentHeight();
+            }
+
+            async function save(payload) {
+                try {
+                    const res = await fetch('/api/users/me/settings', {
+                        method: 'PUT',
+                        headers: authHeaders(),
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) return;
+                    // Phản hồi nhẹ
+                    showSavedToast();
+                } catch (e) {}
+            }
+
+            function applyThemeMode(mode) {
+                // Áp dụng ngay trên trang này
+                localStorage.setItem('theme', mode);
+                document.body.classList.toggle('dark-mode', mode === 'dark');
+                // Báo trang cha (index.html) cập nhật toàn site
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'tunix-set-theme', mode }, '*');
+                }
+            }
+
+            function showSavedToast() {
+                let t = document.getElementById('settingsToast');
+                if (!t) {
+                    t = document.createElement('div');
+                    t.id = 'settingsToast';
+                    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e2b41;color:#fff;padding:9px 16px;border-radius:30px;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.2);opacity:0;transition:opacity 0.25s;pointer-events:none;';
+                    document.body.appendChild(t);
+                }
+                t.textContent = '✅ Đã lưu cài đặt';
+                t.style.opacity = '1';
+                clearTimeout(t._t);
+                t._t = setTimeout(function() { t.style.opacity = '0'; }, 1500);
+            }
+
+            async function init() {
+                if (!loggedIn()) {
+                    renderLogin();
+                    return;
+                }
+                try {
+                    const res = await fetch('/api/users/me/settings', { headers: authHeaders() });
+                    if (!res.ok) { renderLogin(); return; }
+                    const s = await res.json();
+                    renderSettings(s);
+                } catch (e) {
+                    renderLogin();
+                }
+            }
+
+            init();
+
+            // ===== Embed trong left-col: đồng bộ theme + chiều cao =====
+            if (window.self !== window.top) {
+                document.body.classList.add('embedded');
+            }
+
+            function applyEmbedTheme(mode) {
+                document.body.classList.toggle('dark-mode', mode === 'dark');
+            }
+            function notifyParentHeight() {
+                try {
+                    const el = document.querySelector('.app-wrapper') || document.body;
+                    const height = Math.ceil(el.getBoundingClientRect().height);
+                    if (!height || height <= 0) return;
+                    if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
+                    window.__lastSentH = height;
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'tunix-embed-height', height }, '*');
+                    }
+                } catch (e) {}
+            }
+            window.addEventListener('message', function(event) {
+                const data = event.data;
+                if (!data || data.type !== 'tunix-theme') return;
+                const mode = data.mode === 'dark' ? 'dark' : 'light';
+                localStorage.setItem('theme', mode);
+                applyEmbedTheme(mode);
+                setTimeout(notifyParentHeight, 50);
+            });
+            window.addEventListener('load', function() {
+                applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+                setTimeout(notifyParentHeight, 60);
+                setTimeout(notifyParentHeight, 300);
+            });
+            window.addEventListener('resize', notifyParentHeight);
+            if (window.ResizeObserver) {
+                const obs = new ResizeObserver(notifyParentHeight);
+                obs.observe(document.querySelector('.app-wrapper') || document.body);
+            }
+            applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+        })();
+    </script>
+</body>
+</html>

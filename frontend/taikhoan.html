@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thông tin tài khoản - TuniX</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f4f6f9;
+            color: #1a1f36;
+            padding: 0;
+            margin: 0;
+        }
+
+        .app-wrapper { max-width: 1200px; margin: 0 auto; padding: 20px 20px 40px; }
+        .embedded .app-wrapper { padding: 0 0 40px; }
+
+        .profile-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+            max-width: 560px;
+        }
+
+        .profile-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+        .profile-sub { font-size: 14px; color: #6b7a8f; margin-bottom: 24px; }
+
+        /* Avatar */
+        .avatar-section { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+        .avatar-circle {
+            width: 84px; height: 84px; border-radius: 50%;
+            background: #008080; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 34px; font-weight: 700; overflow: hidden; flex-shrink: 0;
+        }
+        .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-actions { display: flex; flex-direction: column; gap: 8px; }
+
+        .field { margin-bottom: 18px; }
+        .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #4a5a72; }
+        .field input {
+            width: 100%; padding: 10px 12px; border: 1px solid #e5eaf0; border-radius: 10px;
+            font-size: 14px; font-family: inherit; color: #1a1f36; background: #fff;
+        }
+        .field input:disabled { background: #f2f4f7; color: #8a99b1; cursor: not-allowed; }
+        .field input:focus { outline: none; border-color: #008080; }
+
+        .btn {
+            border: none; border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: background 0.2s;
+        }
+        .btn-primary { background: #008080; color: #fff; }
+        .btn-primary:hover { background: #006e6e; }
+        .btn-ghost { background: #f0f2f6; color: #1a1f36; }
+        .btn-ghost:hover { background: #e4e7ec; }
+
+        .login-msg { text-align: center; color: #6b7a8f; padding: 40px 20px; font-size: 15px; }
+        .login-msg a { color: #008080; font-weight: 600; text-decoration: none; }
+
+        /* Dark */
+        body.dark-mode { background: #0d1117; color: #e6edf3; }
+        body.dark-mode .profile-card { background: #161b22; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+        body.dark-mode .profile-sub { color: #adbac7; }
+        body.dark-mode .field label { color: #adbac7; }
+        body.dark-mode .field input { background: #0d1117; border-color: #30363d; color: #e6edf3; }
+        body.dark-mode .field input:disabled { background: #161b22; color: #6b7a8f; }
+        body.dark-mode .btn-ghost { background: #21262d; color: #e6edf3; }
+        body.dark-mode .btn-ghost:hover { background: #30363d; }
+        body.dark-mode .login-msg { color: #adbac7; }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <main class="profile-card">
+            <div class="profile-title">👤 Thông tin tài khoản</div>
+            <div class="profile-sub">Thông tin cơ bản của bạn</div>
+            <div id="profileBody">
+                <div class="login-msg">Đang tải...</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            const body = document.getElementById('profileBody');
+            const TOKEN_KEY = 'tunix_access_token';
+            let pendingAvatar = null;
+
+            function loggedIn() { return !!localStorage.getItem(TOKEN_KEY); }
+            function authHeaders() {
+                return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem(TOKEN_KEY) };
+            }
+            function esc(s) {
+                return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+
+            function renderLogin() {
+                body.innerHTML = '<div class="login-msg">🔒 Vui lòng <a href="/Login">đăng nhập</a> để xem thông tin tài khoản.</div>';
+                notifyParentHeight();
+            }
+
+            function toast(msg) {
+                let t = document.getElementById('profileToast');
+                if (!t) {
+                    t = document.createElement('div');
+                    t.id = 'profileToast';
+                    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e2b41;color:#fff;padding:9px 16px;border-radius:30px;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.2);opacity:0;transition:opacity 0.25s;pointer-events:none;';
+                    document.body.appendChild(t);
+                }
+                t.textContent = msg;
+                t.style.opacity = '1';
+                clearTimeout(t._t);
+                t._t = setTimeout(function() { t.style.opacity = '0'; }, 1800);
+            }
+
+            function renderUser(u) {
+                const avatarHtml = u.avatar
+                    ? '<img src="' + esc(u.avatar) + '" alt="avatar" />'
+                    : esc((u.full_name || u.email || 'U').charAt(0).toUpperCase());
+                body.innerHTML =
+                    '<div class="avatar-section">' +
+                        '<div class="avatar-circle" id="avatarPreview">' + avatarHtml + '</div>' +
+                        '<div class="avatar-actions">' +
+                            '<button type="button" class="btn btn-ghost" id="changeAvatarBtn"><i class="fas fa-camera"></i> Đổi ảnh đại diện</button>' +
+                            '<input type="file" id="avatarInput" accept="image/*" style="display:none;" />' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="field"><label>Email</label><input type="text" id="pfEmail" disabled value="' + esc(u.email) + '" /></div>' +
+                    '<div class="field"><label>Tên hiển thị</label><input type="text" id="pfName" value="' + esc(u.full_name || '') + '" /></div>' +
+                    '<div class="field"><label>Số điện thoại</label><input type="text" id="pfPhone" value="' + esc(u.phone || '') + '" placeholder="0912 345 678" /></div>' +
+                    '<div class="field"><label>Mật khẩu</label>' +
+                        '<div style="display:flex;gap:8px;">' +
+                            '<input type="password" id="pfPassword" value="xxxxxxxx" disabled />' +
+                            '<button type="button" class="btn btn-ghost" id="changePassBtn" style="white-space:nowrap;"><i class="fas fa-key"></i> Đổi mật khẩu</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="margin-top:24px;">' +
+                        '<button type="button" class="btn btn-primary" id="saveProfileBtn" style="width:100%;"><i class="fas fa-save"></i> Lưu thay đổi</button>' +
+                    '</div>';
+
+                document.getElementById('changeAvatarBtn').addEventListener('click', function() {
+                    document.getElementById('avatarInput').click();
+                });
+                document.getElementById('avatarInput').addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        pendingAvatar = ev.target.result;
+                        document.getElementById('avatarPreview').innerHTML = '<img src="' + pendingAvatar + '" alt="avatar" />';
+                    };
+                    reader.readAsDataURL(file);
+                });
+                document.getElementById('changePassBtn').addEventListener('click', function() {
+                    if (window.parent && window.parent !== window && window.parent.openTintuc) {
+                        // Không dùng openTintuc; dùng loadContent của parent
+                    }
+                    // Điều hướng tới trang đổi mật khẩu
+                    if (window.parent && window.parent !== window && window.parent.loadContent) {
+                        window.parent.loadContent('/doimatkhau');
+                        window.parent.history.replaceState({}, '', '/?page=doimatkhau');
+                    } else {
+                        window.location.href = '/?page=doimatkhau';
+                    }
+                });
+                document.getElementById('saveProfileBtn').addEventListener('click', async function() {
+                    const payload = { full_name: document.getElementById('pfName').value.trim() };
+                    const phone = document.getElementById('pfPhone').value.trim();
+                    if (phone) payload.phone = phone;
+                    if (pendingAvatar) payload.avatar = pendingAvatar;
+                    try {
+                        const res = await fetch('/api/users/me', { method: 'PUT', headers: authHeaders(), body: JSON.stringify(payload) });
+                        if (!res.ok) {
+                            let d = 'Lưu thất bại.'; try { const j = await res.json(); d = j.detail || d; } catch (e) {}
+                            toast('❌ ' + d); return;
+                        }
+                        const updated = await res.json();
+                        localStorage.setItem('tunix_user', JSON.stringify(updated));
+                        pendingAvatar = null;
+                        toast('✅ Đã lưu thông tin');
+                        // Báo trang cha cập nhật avatar ở menu/header
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({ type: 'tunix-user-updated' }, '*');
+                        }
+                    } catch (e) {
+                        toast('❌ Lưu thất bại.');
+                    }
+                });
+
+                notifyParentHeight();
+            }
+
+            async function init() {
+                if (!loggedIn()) { renderLogin(); return; }
+                try {
+                    const res = await fetch('/api/auth/me', { headers: authHeaders() });
+                    if (!res.ok) { renderLogin(); return; }
+                    renderUser(await res.json());
+                } catch (e) { renderLogin(); }
+            }
+            init();
+
+            // ===== Embed trong left-col =====
+            if (window.self !== window.top) document.body.classList.add('embedded');
+            function applyEmbedTheme(mode) { document.body.classList.toggle('dark-mode', mode === 'dark'); }
+            function notifyParentHeight() {
+                try {
+                    const el = document.querySelector('.app-wrapper') || document.body;
+                    const height = Math.ceil(el.getBoundingClientRect().height);
+                    if (!height || height <= 0) return;
+                    if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
+                    window.__lastSentH = height;
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'tunix-embed-height', height }, '*');
+                    }
+                } catch (e) {}
+            }
+            window.addEventListener('message', function(event) {
+                const data = event.data;
+                if (!data || data.type !== 'tunix-theme') return;
+                const mode = data.mode === 'dark' ? 'dark' : 'light';
+                localStorage.setItem('theme', mode);
+                applyEmbedTheme(mode);
+                setTimeout(notifyParentHeight, 50);
+            });
+            window.addEventListener('load', function() {
+                applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+                setTimeout(notifyParentHeight, 60);
+                setTimeout(notifyParentHeight, 300);
+            });
+            window.addEventListener('resize', notifyParentHeight);
+            if (window.ResizeObserver) {
+                const obs = new ResizeObserver(notifyParentHeight);
+                obs.observe(document.querySelector('.app-wrapper') || document.body);
+            }
+            applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+        })();
+    </script>
+</body>
+</html>

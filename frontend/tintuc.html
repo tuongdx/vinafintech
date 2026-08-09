@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>5 mỏ vàng lớn nhất thế giới - Báo Cafef Style</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+    <style>
+        /* ============================================================
+                   RESET & BASE
+                ============================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            background: #f4f6f9;
+            color: #1a1f36;
+            padding: 0;
+            margin: 0;
+        }
+
+        .app-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 20px 40px;
+        }
+
+        /* Khi nhúng trong left-col của index.html: card sát biên trái (khớp header/footer)
+           và gap phải = gap của StockDetail (20px). */
+        .embedded .app-wrapper {
+            padding: 0 0 40px;
+        }
+
+        /* ============================================================
+                   ARTICLE CONTAINER
+                ============================================================ */
+        .article-container {
+            max-width: 880px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            padding: 2rem 1.75rem 2.4rem;
+        }
+
+        /* Ẩn thanh cuộn trong trang bài viết (vẫn cuộn được) */
+        html, body {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* ============================================================
+                   ARTICLE HEADER
+                ============================================================ */
+        .article-header {
+            margin-bottom: 1.8rem;
+        }
+
+        .article-title {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1.25;
+            letter-spacing: -0.02em;
+            color: #1a1f36;
+            margin-bottom: 12px;
+        }
+
+        .article-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 20px;
+            font-size: 14px;
+            color: #6b7a8f;
+            border-bottom: 1px solid #e9edf2;
+            padding-bottom: 14px;
+        }
+
+        .article-meta .author {
+            font-weight: 600;
+            color: #1a1f36;
+        }
+
+        .article-meta .dot {
+            color: #ccd4dd;
+        }
+
+        .article-meta .time i {
+            margin-right: 4px;
+        }
+
+        .share-top {
+            margin-left: auto;
+            display: flex;
+            gap: 12px;
+            color: #6b7a8f;
+            font-size: 16px;
+        }
+        .share-top a {
+            color: #6b7a8f;
+            transition: color 0.2s ease;
+        }
+        .share-top a:hover {
+            color: #0066cc;
+        }
+
+        /* ============================================================
+                   FEATURED IMAGE
+                ============================================================ */
+        .featured-image {
+            margin: 0 0 1.8rem 0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #e9edf2;
+        }
+
+        .featured-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+        }
+
+        .featured-image .caption {
+            padding: 10px 16px;
+            font-size: 14px;
+            color: #6b7a8f;
+            background: #f8f9fb;
+            font-style: italic;
+        }
+
+        /* ============================================================
+                   ARTICLE BODY
+                ============================================================ */
+        .article-body {
+            font-size: 17px;
+            line-height: 1.8;
+            color: #1a1f36;
+        }
+
+        .article-body p {
+            margin-bottom: 1.4rem;
+        }
+
+        /* SAPO */
+        .sapo {
+            font-weight: 500;
+            color: #1a1f36;
+            border-left: 4px solid #0066cc;
+            padding-left: 18px;
+            margin-bottom: 1.8rem;
+            background: #f8f9fb;
+            padding: 1rem 1.4rem;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .sapo p:last-child {
+            margin-bottom: 0;
+        }
+
+        .article-body h2 {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.3;
+            color: #1a1f36;
+            margin: 2rem 0 0.8rem 0;
+            padding-top: 0.5rem;
+            border-top: 1px solid #e9edf2;
+        }
+
+        .article-body strong,
+        .article-body b {
+            font-weight: 600;
+            color: #0066cc;
+        }
+
+        /* ===== INLINE IMAGE ===== */
+        .inline-image {
+            margin: 1.8rem 0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #e9edf2;
+        }
+
+        .inline-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .inline-image .caption {
+            padding: 8px 16px;
+            font-size: 14px;
+            color: #6b7a8f;
+            background: #f8f9fb;
+            font-style: italic;
+        }
+
+        /* ===== BẢNG THỐNG KÊ ===== */
+        .table-wrap {
+            margin: 1.8rem 0;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #e9edf2;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .table-wrap::-webkit-scrollbar {
+            display: none;
+        }
+
+        .table-wrap table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .table-wrap th {
+            background: #f0f2f5;
+            font-weight: 700;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 2px solid #e9edf2;
+        }
+
+        .table-wrap td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #e9edf2;
+        }
+
+        .table-wrap tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-wrap .highlight {
+            font-weight: 700;
+            color: #0066cc;
+        }
+
+        /* ============================================================
+                   ARTICLE FOOTER (Tags + Nguồn + Copy link)
+                ============================================================ */
+        .article-footer {
+            margin-top: 2.4rem;
+            padding-top: 1.4rem;
+            border-top: 1px solid #e9edf2;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tags a {
+            background: #f0f2f5;
+            color: #1a1f36;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .tags a:hover {
+            background: #e4e7ec;
+            color: #0066cc;
+        }
+
+        .source-copy {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .source-copy .source {
+            font-size: 14px;
+            color: #6b7a8f;
+        }
+
+        .source-copy .source a {
+            color: #0066cc;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .source-copy .source a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-copy-link {
+            background: #f0f2f5;
+            border: none;
+            border-radius: 30px;
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1f36;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-copy-link:hover {
+            background: #e4e7ec;
+            color: #0066cc;
+        }
+
+        .btn-copy-link i {
+            font-size: 14px;
+        }
+
+        .btn-copy-link.copied {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        /* ============================================================
+                   RELATED NEWS (Grid 2 cột)
+                ============================================================ */
+        .related-news {
+            margin-top: 2.8rem;
+            padding-top: 1.6rem;
+            border-top: 1px solid #e9edf2;
+        }
+
+        .related-news .related-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1f36;
+            margin-bottom: 1.2rem;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .related-item {
+            display: flex;
+            gap: 12px;
+            background: #f8f9fb;
+            border-radius: 12px;
+            padding: 12px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .related-item:hover {
+            border-color: #e9edf2;
+            background: #ffffff;
+        }
+
+        .related-item .thumb {
+            width: 90px;
+            min-height: 70px;
+            background: #e9edf2;
+            border-radius: 8px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .related-item .thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .related-item .info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .related-item .info a {
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #1a1f36;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .related-item .info a:hover {
+            color: #0066cc;
+            text-decoration: underline;
+        }
+
+        .related-item .info .time {
+            font-size: 12px;
+            color: #6b7a8f;
+            margin-top: 4px;
+        }
+
+        /* ============================================================
+                   DARK MODE (khi nhúng trong index.html)
+                ============================================================ */
+        body.dark-mode {
+            background: #0d1117;
+            color: #e6edf3;
+        }
+
+        body.dark-mode .article-container,
+        body.dark-mode .related-news {
+            background: #161b22;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Tiêu đề + meta */
+        body.dark-mode .article-title,
+        body.dark-mode .article-meta .author,
+        body.dark-mode .related-news .related-title {
+            color: #f0f6fc;
+        }
+
+        body.dark-mode .article-body h2 {
+            border-top-color: #30363d;
+        }
+
+        body.dark-mode .article-meta,
+        body.dark-mode .article-meta .time,
+        body.dark-mode .share-top a,
+        body.dark-mode .source-copy .source {
+            color: #adbac7;
+        }
+
+        body.dark-mode .article-meta {
+            border-bottom-color: #30363d;
+        }
+
+        /* Nội dung chính — chữ sáng tối đa để dễ đọc.
+           Dùng !important để ghi đè CẢ style inline (màu tối) dán từ nguồn ngoài. */
+        body.dark-mode .article-body,
+        body.dark-mode .article-body p,
+        body.dark-mode .article-body div,
+        body.dark-mode .article-body span,
+        body.dark-mode .article-body li,
+        body.dark-mode .article-body blockquote,
+        body.dark-mode .article-body h2,
+        body.dark-mode .article-body h3,
+        body.dark-mode .sapo,
+        body.dark-mode .sapo p {
+            color: #f0f6fc !important;
+        }
+
+        body.dark-mode .article-body a,
+        body.dark-mode .sapo a,
+        body.dark-mode .source-copy .source a {
+            color: #79c0ff !important;
+        }
+
+        body.dark-mode .article-body strong,
+        body.dark-mode .article-body b,
+        body.dark-mode .table-wrap .highlight {
+            color: #79c0ff !important;
+        }
+
+        /* Sapo */
+        body.dark-mode .sapo {
+            background: #21262d;
+            border-left-color: #79c0ff;
+        }
+
+        /* Ảnh */
+        body.dark-mode .featured-image,
+        body.dark-mode .inline-image {
+            background: #161b22;
+        }
+
+        body.dark-mode .featured-image .caption,
+        body.dark-mode .inline-image .caption {
+            background: #21262d;
+            color: #adbac7;
+        }
+
+        /* Bảng */
+        body.dark-mode .table-wrap {
+            border-color: #30363d;
+        }
+
+        body.dark-mode .table-wrap th {
+            background: #21262d;
+        }
+
+        body.dark-mode .table-wrap th,
+        body.dark-mode .table-wrap td {
+            border-color: #30363d;
+            color: #e6edf3;
+        }
+
+        /* Tags + footer */
+        body.dark-mode .tags a {
+            background: #21262d;
+            color: #adbac7;
+        }
+
+        body.dark-mode .tags a:hover {
+            background: #30363d;
+            color: #79c0ff;
+        }
+
+        body.dark-mode .article-footer {
+            border-top-color: #30363d;
+        }
+
+        body.dark-mode .related-news {
+            border-top-color: #30363d;
+        }
+
+        /* Nút sao chép link */
+        body.dark-mode .btn-copy-link {
+            background: #21262d;
+            color: #f0f6fc;
+        }
+
+        body.dark-mode .btn-copy-link:hover {
+            background: #30363d;
+            color: #79c0ff;
+        }
+
+        /* Tin liên quan */
+        body.dark-mode .related-item {
+            background: #1c2128;
+            border-color: #30363d;
+        }
+
+        body.dark-mode .related-item:hover {
+            background: #21262d;
+            border-color: #30363d;
+        }
+
+        body.dark-mode .related-item .thumb {
+            background: #21262d;
+        }
+
+        body.dark-mode .related-item .info a {
+            color: #f0f6fc;
+        }
+
+        body.dark-mode .related-item .info .time {
+            color: #adbac7;
+        }
+
+        /* ============================================================
+                   RESPONSIVE
+                ============================================================ */
+        @media (max-width: 768px) {
+            .article-container {
+                padding: 1.5rem 1.2rem 2rem;
+                border-radius: 16px;
+            }
+
+            .article-title {
+                font-size: 26px;
+            }
+
+            .article-body {
+                font-size: 16px;
+                line-height: 1.7;
+            }
+
+            .article-body h2 {
+                font-size: 21px;
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .related-item .thumb {
+                width: 80px;
+                min-height: 60px;
+            }
+
+            .share-top {
+                margin-left: 0;
+                width: 100%;
+                justify-content: flex-start;
+                margin-top: 6px;
+            }
+
+            .article-meta {
+                gap: 4px 12px;
+            }
+
+            .table-wrap table {
+                font-size: 14px;
+            }
+            .table-wrap th,
+            .table-wrap td {
+                padding: 8px 12px;
+            }
+
+            .source-copy {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .article-title {
+                font-size: 22px;
+            }
+
+            .article-container {
+                padding: 1rem 0.8rem 1.5rem;
+                border-radius: 12px;
+                background: transparent;
+                box-shadow: none;
+            }
+
+            .featured-image {
+                border-radius: 8px;
+            }
+
+            .sapo {
+                padding: 0.8rem 1rem;
+                font-size: 15px;
+            }
+
+            .article-body {
+                font-size: 15px;
+            }
+            .article-body h2 {
+                font-size: 19px;
+            }
+
+            .related-item {
+                padding: 10px;
+            }
+            .related-item .thumb {
+                width: 70px;
+                min-height: 55px;
+            }
+            .related-item .info a {
+                font-size: 13px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/typography.css" />
+</head>
+<body>
+
+    <div class="app-wrapper">
+
+        <!-- ==========================================================
+        KHÔNG CÓ HEADER (đã bỏ "BÁO TAI")
+        ========================================================== -->
+
+        <!-- ==========================================================
+        ARTICLE CONTAINER
+        ========================================================== -->
+        <main class="article-container">
+
+            <!-- ===== HEADER BÀI VIẾT ===== -->
+            <header class="article-header">
+                <h1 class="article-title" id="ndTitle">5 mỏ lớn nhất thế giới sản xuất được bao nhiêu tấn vàng?</h1>
+                <div class="article-meta">
+                    <span class="author" id="ndAuthor">Dương Xuân Tưởng - SEO</span>
+                    <span class="dot">•</span>
+                    <span class="time" id="ndTime"><i class="far fa-clock"></i> Thứ Bảy, 26/07/2026 08:00</span>
+                    <!-- Chỉ giữ lại Facebook -->
+                    <span class="share-top">
+                        <a href="#" id="shareFb" target="_blank" rel="noopener" aria-label="Chia sẻ Facebook"><i class="fab fa-facebook-f"></i></a>
+                    </span>
+                </div>
+            </header>
+
+            <!-- ===== ẢNH ĐẠI DIỆN ===== -->
+            <figure class="featured-image">
+                <img id="ndImage" src="https://placehold.co/880x450/1a1f36/e6edf3?text=Khai+th%C3%A1c+v%C3%A0ng+t%E1%BA%A1i+Nevada" alt="Khai thác vàng tại Nevada" />
+                <figcaption class="caption" id="ndCaption"></figcaption>
+            </figure>
+
+            <!-- ===== NỘI DUNG CHÍNH ===== -->
+            <div class="article-body" id="ndBody">
+
+                <!-- SAPO -->
+                <div class="sapo">
+                    <p><strong>Phức hợp Nevada Gold Mines tại Mỹ</strong> là tổ hợp khai thác vàng lớn nhất thế giới tính theo sản lượng, với khoảng <strong>83,9 tấn</strong> vào năm 2024. Đầu năm 2026, giá vàng thế giới ghi nhận mức kỷ lục khi chính thức vượt qua mốc lịch sử <strong>5.000 USD/ounce</strong>.</p>
+                </div>
+
+                <p>Vàng chỉ chiếm khoảng 4/tỷ phần trong lớp vỏ Trái Đất. Đó là một trong những lý do chính khiến giá vàng đắt đỏ. Vàng được hình thành sâu dưới lòng đất thông qua các quá trình thủy nhiệt. Vì vậy, phần lớn vàng phải khai thác từ các mỏ lớn bị chôn vùi.</p>
+
+                <p>Theo trang World Atlas, sản lượng khai thác vàng toàn cầu đạt mức kỷ lục vào năm 2024, khoảng <strong>3.661 tấn</strong>, tương đương gần 120 triệu ounce, được khai thác từ hàng nghìn mỏ trên toàn thế giới. Vậy mỏ nào khai thác được nhiều vàng nhất?</p>
+
+                <p><strong>Dưới đây là 5 mỏ vàng lớn nhất theo sản lượng, dựa trên số liệu sản xuất năm 2024.</strong></p>
+
+                <!-- BẢNG THỐNG KÊ -->
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Hạng</th>
+                                <th>Tên mỏ</th>
+                                <th>Quốc gia</th>
+                                <th>Sản lượng 2024</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td><strong>Nevada</strong></td>
+                                <td>🇺🇸 Mỹ</td>
+                                <td><span class="highlight">2.698.701 oz</span> (83,9 tấn)</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td><strong>Muruntau</strong></td>
+                                <td>🇺🇿 Uzbekistan</td>
+                                <td><span class="highlight">2.676.656 oz</span> (83,3 tấn)</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td><strong>Grasberg</strong></td>
+                                <td>🇮🇩 Indonesia</td>
+                                <td><span class="highlight">1.861.000 oz</span> (57,9 tấn)</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td><strong>Olimpiada</strong></td>
+                                <td>🇷🇺 Nga</td>
+                                <td><span class="highlight">1.441.300 oz</span> (44,8 tấn)</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td><strong>Almalyk</strong></td>
+                                <td>🇺🇿 Uzbekistan</td>
+                                <td><span class="highlight">1.114.000 oz</span> (34,6 tấn)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- MỎ 1 -->
+                <h2>1. Mỏ vàng Nevada (Mỹ) – 83,9 tấn</h2>
+                <p>Khu phức hợp Nevada Gold Mines (Mỹ), liên doanh giữa nhà điều hành Barrick (61,5%) và Newmont (38,5%), đứng đầu danh sách mỏ vàng lớn nhất thế giới. Khu phức hợp gồm 10 mỏ ngầm và 12 mỏ lộ thiên.</p>
+
+                <figure class="inline-image">
+                    <img src="https://placehold.co/820x360/1a1f36/e6edf3?text=Nevada+Gold+Mines" alt="Nevada Gold Mines" />
+                    <figcaption class="caption">Khu phức hợp Nevada Gold Mines nhìn từ trên cao. Ảnh: Barrick</figcaption>
+                </figure>
+
+                <p>Năm 2024, khu phức hợp này sản xuất gần 2,7 triệu ounce vàng (83,9 tấn), chiếm hơn 2% tổng lượng vàng khai thác trên toàn thế giới năm đó. Năm 2025, sản lượng của mỏ Nevada đạt gần 2,6 triệu ounce vàng (tương đương 80,7 tấn), giảm 3% so với năm 2024.</p>
+
+                <!-- MỎ 2 -->
+                <h2>2. Muruntau (Uzbekistan) – 83,3 tấn</h2>
+                <p>Nằm sâu trong sa mạc Kyzylkum của Uzbekistan, Muruntau là mỏ vàng lộ thiên lớn nhất thế giới. Mỏ vàng sâu hơn 600 m và rộng hơn 3 km. Tập đoàn khai thác và luyện kim Navoi vận hành mỏ này từ cuối những năm 1960 và đã cung cấp phần lớn lượng vàng cho Uzbekistan trong nửa thế kỷ qua.</p>
+
+                <figure class="inline-image">
+                    <img src="https://placehold.co/820x360/1a1f36/e6edf3?text=Muruntau+Open+Pit" alt="Mỏ Muruntau" />
+                    <figcaption class="caption">Mỏ lộ thiên Muruntau tại Uzbekistan. Ảnh: Navoi Mining</figcaption>
+                </figure>
+
+                <p>Năm 2024, mỏ Muruntau khai thác 2.676.656 ounce vàng (khoảng 83,3 tấn). Là mỏ khai thác liên tục, không phải cụm mỏ riêng lẻ, nhiều người coi Muruntau là mỏ vàng lớn nhất hành tinh. Đến nay, Muruntau vẫn chưa cạn kiệt. Công ty ước tính trữ lượng còn lại khoảng <strong>4.500 tấn</strong> vàng, đủ để duy trì hoạt động khai thác trong nhiều thập kỷ tới.</p>
+
+                <!-- MỎ 3 -->
+                <h2>3. Grasberg (Indonesia) – 57,9 tấn</h2>
+                <p>Nằm trên vùng núi cao thuộc khu vực Papua của Indonesia, mỏ Grasberg là một "tổ hợp kép": một trong những mỏ vàng lớn nhất thế giới nằm ngay trên một trong những mỏ đồng lớn nhất nước này.</p>
+
+                <figure class="inline-image">
+                    <img src="https://placehold.co/820x360/1a1f36/e6edf3?text=Grasberg+Mine" alt="Mỏ Grasberg" />
+                    <figcaption class="caption">Tổ hợp mỏ Grasberg tại Papua, Indonesia. Ảnh: Freeport-McMoRan</figcaption>
+                </figure>
+
+                <p>Được phát hiện vào những năm 1980, do tập đoàn Freeport-McMoRan của Mỹ và chính phủ Indonesia điều hành, mỏ Grasberg đã sản xuất khoảng 1,86 triệu ounce vàng vào năm 2024.</p>
+
+                <p>Khi mỏ lộ thiên ban đầu sắp hết, Grasberg chuyển xuống lòng đất, xây dựng một trong những hệ thống khai thác hầm lò lớn nhất từng được thiết kế. Khu vực này đã trở thành hình mẫu về tự động hóa, bao gồm cả một đội máy phá đá tự hành, và trữ lượng vàng đã được ước tính khoảng <strong>24 triệu ounce</strong>.</p>
+
+                <!-- MỎ 4 -->
+                <h2>4. Olimpiada (Nga) – 44,8 tấn</h2>
+                <p>Mỏ Olimpiada là viên ngọc quý của Polyus, công ty khai thác vàng lớn nhất nước Nga, nằm ở vùng Siberia xa xôi. Năm 2024, mỏ Olimpiada sản xuất khoảng 1,44 triệu ounce vàng, nhiều hơn bất kỳ mỏ nào khác tại Nga.</p>
+
+                <figure class="inline-image">
+                    <img src="https://placehold.co/820x360/1a1f36/e6edf3?text=Olimpiada+Siberia" alt="Mỏ Olimpiada" />
+                    <figcaption class="caption">Mỏ Olimpiada tại Siberia, Nga. Ảnh: Polyus</figcaption>
+                </figure>
+
+                <p>Quặng ở đây rất khó khai thác, vàng bị khóa chặt bên trong các khoáng chất sunfua, khó xử lý bằng các phương pháp thông thường. Vì vậy, Polyus sử dụng <strong>vi sinh vật</strong> để phân hủy đá và giải phóng kim loại bằng phương pháp oxy hóa sinh học. Trữ lượng lớn dự kiến sẽ giúp hoạt động khai thác diễn ra thuận lợi trong tương lai.</p>
+
+                <!-- MỎ 5 -->
+                <h2>5. Tổ hợp Almalyk (Uzbekistan) – 34,6 tấn</h2>
+                <p>Đại diện thứ hai của Uzbekistan trong danh sách này là Tổ hợp Khai thác và Luyện kim Almalyk, một khu phức hợp thuộc sở hữu nhà nước, nổi tiếng hơn với vai trò là nhà sản xuất đồng chính của nước này. Vàng cũng được sản xuất cùng với đồng.</p>
+
+                <figure class="inline-image">
+                    <img src="https://placehold.co/820x360/1a1f36/e6edf3?text=Almalyk+Complex" alt="Tổ hợp Almalyk" />
+                    <figcaption class="caption">Tổ hợp khai thác Almalyk tại Uzbekistan. Ảnh: Almalyk MMC</figcaption>
+                </figure>
+
+                <p>Năm 2024, sản lượng vàng tại Almalyk ước tính đạt 1,1 triệu ounce, đủ để lọt vào top 5 toàn cầu. Mỏ Almalyk đang trong quá trình mở rộng quy mô lớn nhằm mục tiêu <strong>tăng gấp đôi sản lượng đồng</strong> vào năm 2030, một dự án dự kiến sẽ giúp tăng sản lượng vàng.</p>
+
+            </div>
+            <!-- end .article-body -->
+
+            <!-- ===== FOOTER ===== -->
+            <div class="article-footer">
+                <div class="tags" id="ndTags">
+                    <a href="#">#Vàng</a>
+                    <a href="#">#Khai khoáng</a>
+                    <a href="#">#Kinh tế thế giới</a>
+                    <a href="#">#Nevada</a>
+                </div>
+                <div class="source-copy">
+                    <span class="source">Nguồn: <a href="#" id="ndSource">VTC News</a></span>
+                    <button class="btn-copy-link" id="copyLinkBtn" title="Sao chép link nguồn bài viết" onclick="copyArticleLink()">
+                        <i class="fas fa-link"></i> Sao chép link nguồn
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== BÀI VIẾT LIÊN QUAN ===== -->
+            <div class="related-news">
+                <div class="related-title">📰 Tin liên quan</div>
+                <div class="related-grid" id="relatedGrid">
+                    <article class="related-item">
+                        <div class="thumb">
+                            <img src="https://placehold.co/90x70/1a1f36/e6edf3?text=Qu%E1%BB%B9" alt="Quỹ vàng" />
+                        </div>
+                        <div class="info">
+                            <a href="#">Quỹ vàng lớn nhất thế giới gom hơn 10 tấn bất chấp giá biến động</a>
+                            <span class="time">25/07/2026 14:30</span>
+                        </div>
+                    </article>
+                    <article class="related-item">
+                        <div class="thumb">
+                            <img src="https://placehold.co/90x70/1a1f36/e6edf3?text=X%C4%83ng" alt="Giá xăng" />
+                        </div>
+                        <div class="info">
+                            <a href="#">Giá xăng dầu hôm nay 26/7: Tiếp tục đi xuống</a>
+                            <span class="time">26/07/2026 07:15</span>
+                        </div>
+                    </article>
+                    <article class="related-item">
+                        <div class="thumb">
+                            <img src="https://placehold.co/90x70/1a1f36/e6edf3?text=B%C3%B3ng+%C4%91%C3%A1" alt="Bóng đá" />
+                        </div>
+                        <div class="info">
+                            <a href="#">Tài Lộc tái xuất, đội tuyển Việt Nam hướng đến chiến thắng trước Singapore</a>
+                            <span class="time">26/07/2026 06:45</span>
+                        </div>
+                    </article>
+                    <article class="related-item">
+                        <div class="thumb">
+                            <img src="https://placehold.co/90x70/1a1f36/e6edf3?text=Hi%E1%BA%BFn" alt="Hiến tạng" />
+                        </div>
+                        <div class="info">
+                            <a href="#">Chàng trai 19 tuổi khép lại thanh xuân, hiến tạng hồi sinh 5 cuộc đời</a>
+                            <span class="time">25/07/2026 22:10</span>
+                        </div>
+                    </article>
+                    <article class="related-item">
+                        <div class="thumb">
+                            <img src="https://placehold.co/90x70/1a1f36/e6edf3?text=Tr%E1%BB%A9ng" alt="Thí nghiệm" />
+                        </div>
+                        <div class="info">
+                            <a href="#">Làm sao thả quả trứng từ cao xuống mà không vỡ?</a>
+                            <span class="time">25/07/2026 20:00</span>
+                        </div>
+                    </article>
+                    <article class="related-item">
+                        <div class="thumb">
+                            <img src="https://placehold.co/90x70/1a1f36/e6edf3?text=Ch%E1%BB%A9ng" alt="Chứng khoán" />
+                        </div>
+                        <div class="info">
+                            <a href="#">Chứng khoán Mỹ biến động mạnh, nhà đầu tư lo ngại lạm phát</a>
+                            <span class="time">26/07/2026 05:30</span>
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+        </main>
+        <!-- end .article-container -->
+
+    </div>
+    <!-- end .app-wrapper -->
+
+    <!-- ==========================================================
+    JAVASCRIPT (Copy link)
+    ========================================================== -->
+    <script>
+        function copyArticleLink() {
+            // Ưu tiên copy LINK NGUỒN (bài tham khảo); nếu không có thì copy link bài viết
+            const url = window.__currentSourceUrl || window.__currentArticleUrl || window.location.href;
+            const input = document.createElement('input');
+            input.value = url;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+
+            const btn = document.getElementById('copyLinkBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Đã sao chép';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('copied');
+            }, 3000);
+        }
+    </script>
+
+    <script>
+        // ============================================================
+        // Tải bài viết đã xuất bản theo ?id= từ backend
+        // ============================================================
+        (function() {
+            const id = new URLSearchParams(window.location.search).get('id');
+            if (!id) return;
+            fetch('/api/news/' + encodeURIComponent(id))
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(n) {
+                    if (!n) return;
+                    function esc(s) {
+                        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                    }
+                    const title = document.getElementById('ndTitle');
+                    const author = document.getElementById('ndAuthor');
+                    const time = document.getElementById('ndTime');
+                    const image = document.getElementById('ndImage');
+                    const caption = document.getElementById('ndCaption');
+                    const body = document.getElementById('ndBody');
+                    const tagsEl = document.getElementById('ndTags');
+                    const sourceEl = document.getElementById('ndSource');
+                    if (title) title.textContent = n.title;
+                    if (author) author.textContent = n.author_name || 'TuniX';
+                    if (time) {
+                        time.innerHTML = '<i class="far fa-clock"></i> ' +
+                            (n.created_at ? new Date(n.created_at).toLocaleString('vi-VN') : '');
+                    }
+                    const figure = image ? image.closest('.featured-image') : null;
+                    if (image && n.image_url) {
+                        image.src = n.image_url;
+                        if (figure) figure.style.display = '';
+                    } else if (figure) {
+                        figure.style.display = 'none';
+                    }
+                    if (caption) {
+                        if (n.image_caption) {
+                            caption.textContent = n.image_caption;
+                            caption.style.display = '';
+                        } else {
+                            caption.style.display = 'none';
+                        }
+                    }
+                    if (body) {
+                        let html = '';
+                        if (n.summary) {
+                            html += '<div class="sapo"><p>' + esc(n.summary) + '</p></div>';
+                        }
+                        body.innerHTML = html + (n.content || '<p>Chưa có nội dung.</p>');
+                    }
+                    if (tagsEl && n.tags) {
+                        const tags = String(n.tags).split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+                        if (tags.length) {
+                            tagsEl.innerHTML = tags.map(function(t) {
+                                return '<a href="#">#' + esc(t).replace(/^#/, '') + '</a>';
+                            }).join('');
+                        }
+                    }
+                    if (sourceEl) {
+                        if (n.source) sourceEl.textContent = n.source;
+                        if (n.source_url) {
+                            sourceEl.href = n.source_url;
+                            sourceEl.target = '_blank';
+                            sourceEl.rel = 'noopener';
+                        } else {
+                            sourceEl.href = '#';
+                            sourceEl.removeAttribute('target');
+                        }
+                    }
+                    window.__currentSourceUrl = n.source_url || '';
+                    document.title = n.title + ' - TuniX';
+                    window.__currentArticleUrl = '/' + (n.slug || 'tin') + '-' + n.id + '.html';
+                    // Chia sẻ Facebook: link bài viết (URL đầy đủ)
+                    const fbLink = document.getElementById('shareFb');
+                    if (fbLink && window.__currentArticleUrl) {
+                        fbLink.href = 'https://www.facebook.com/sharer/sharer.php?u=' +
+                            encodeURIComponent(window.location.origin + window.__currentArticleUrl);
+                    }
+
+                    // Tin liên quan: 6 bài MỚI NHẤT cùng danh mục (loại bỏ bài hiện tại)
+                    return fetch('/api/news?category=' + encodeURIComponent(n.category || 'tin-tuc') +
+                            '&limit=6&exclude_id=' + n.id)
+                        .then(function(r) { return r.ok ? r.json() : []; })
+                        .then(function(related) {
+                            const grid = document.getElementById('relatedGrid');
+                            if (!grid || !Array.isArray(related) || related.length === 0) return;
+                            grid.innerHTML = related.map(function(rn) {
+                                const thumb = rn.image_url
+                                    ? '<img src="' + esc(rn.image_url) + '" alt="" />'
+                                    : '<i class="fas fa-newspaper" style="font-size:20px;color:#6b7a8f;display:flex;align-items:center;justify-content:center;height:100%;"></i>';
+                                const time = rn.created_at ? new Date(rn.created_at).toLocaleString('vi-VN') : '';
+                                return '<article class="related-item" data-id="' + rn.id + '" data-slug="' + esc(rn.slug || '') + '" style="cursor:pointer;">' +
+                                    '<div class="thumb">' + thumb + '</div>' +
+                                    '<div class="info">' +
+                                        '<a href="#">' + esc(rn.title) + '</a>' +
+                                        '<span class="time">' + esc(time) + '</span>' +
+                                    '</div></article>';
+                            }).join('');
+                            // Click tin liên quan → báo parent mở bài trong left-col
+                            grid.querySelectorAll('.related-item').forEach(function(item) {
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    const rid = item.getAttribute('data-id');
+                                    if (!rid) return;
+                                    if (window.parent && window.parent !== window) {
+                                        window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(rid), slug: item.getAttribute('data-slug') || '' }, '*');
+                                    }
+                                });
+                            });
+                        });
+                })
+                .catch(function() {});
+        })();
+    </script>
+
+    <script>
+        // ============================================================
+        // Đồng bộ theme + chiều cao iframe khi nhúng vào left-col (index.html)
+        // ============================================================
+        (function() {
+            // Đánh dấu đang nhúng trong iframe (left-col của index.html)
+            if (window.self !== window.top) {
+                document.body.classList.add('embedded');
+            }
+            function applyTheme(mode) {
+                document.body.classList.toggle('dark-mode', mode === 'dark');
+            }
+            function notifyParentHeight() {
+                try {
+                    const el = document.querySelector('.app-wrapper') || document.body;
+                    const height = Math.ceil(el.getBoundingClientRect().height);
+                    if (!height || height <= 0) return;
+                    if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
+                    window.__lastSentH = height;
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'tunix-embed-height', height }, '*');
+                    }
+                } catch (e) {}
+            }
+            window.addEventListener('message', function(event) {
+                const data = event.data;
+                if (!data || data.type !== 'tunix-theme') return;
+                const mode = data.mode === 'dark' ? 'dark' : 'light';
+                localStorage.setItem('theme', mode);
+                applyTheme(mode);
+                setTimeout(notifyParentHeight, 50);
+            });
+            window.addEventListener('load', function() {
+                applyTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+                setTimeout(notifyParentHeight, 60);
+                setTimeout(notifyParentHeight, 300);
+            });
+            window.addEventListener('resize', notifyParentHeight);
+            if (window.ResizeObserver) {
+                const obs = new ResizeObserver(notifyParentHeight);
+                obs.observe(document.querySelector('.app-wrapper') || document.body);
+            }
+            applyTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+        })();
+    </script>
+
+</body>
+</html>

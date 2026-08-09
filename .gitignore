@@ -1,0 +1,33 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# === Bí mật & môi trường (KHÔNG đẩy .env lên git!) ===
+.env
+
+# === Database ===
+*.db
+*.sqlite
+*.sqlite3
+
+# === Cache dữ liệu tải về (tự tạo lại khi chạy) ===
+.cache/
+
+# === File tạm / thăm dò ===
+tmp_*
+temp_*
+*_probe*.py
+
+# === IDE ===
+.vscode/
+.idea/
+
+# === Hệ điều hành ===
+Thumbs.db
+.DS_Store

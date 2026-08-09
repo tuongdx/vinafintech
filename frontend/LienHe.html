@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TuniX - Liên hệ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="/static/typography.css" />
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="logo"><span style="color:#008080;font-weight:800;">Tuni</span><span style="color:#8A95A5;font-weight:800;">X</span></a>
+                <div class="header-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Tìm kiếm cổ phiếu..." />
+                </div>
+            </div>
+            <div class="header-right">
+                <i class="fas fa-bell"></i>
+                <i class="fas theme-toggle" id="themeToggle"></i>
+                <i class="fas fa-cog"></i>
+                <div class="user-avatar">N</div>
+            </div>
+        </header>
+
+        <!-- CONTACT PAGE -->
+        <div class="contact-page">
+            <div class="contact-container">
+
+                <a href="/" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Quay lại trang chủ
+                </a>
+
+                <!-- Header -->
+                <div class="contact-header">
+                    <h1>📬 Liên hệ</h1>
+                    <p class="contact-subtitle">Chúng tôi luôn sẵn sàng hỗ trợ bạn</p>
+                </div>
+
+                <!-- Contact Grid -->
+                <div class="contact-grid">
+
+                    <!-- Form -->
+                    <div class="contact-form">
+                        <h3>Gửi tin nhắn cho chúng tôi</h3>
+
+                        <div class="success-message" id="successMessage">
+                            <i class="fas fa-check-circle"></i>
+                            <h4>Gửi tin nhắn thành công!</h4>
+                            <p>Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi trong thời gian sớm nhất.</p>
+                        </div>
+
+                        <form id="contactForm" onsubmit="return handleSubmit(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fullName">Họ và tên <span class="required">*</span></label>
+                                    <input type="text" id="fullName" placeholder="Nhập họ và tên" maxlength="100" required />
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email <span class="required">*</span></label>
+                                    <input type="email" id="email" placeholder="example@email.com" maxlength="254" required />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone">Số điện thoại</label>
+                                <input type="tel" id="phone" placeholder="Nhập số điện thoại" maxlength="15" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="subject">Chủ đề <span class="required">*</span></label>
+                                <select id="subject" required>
+                                    <option value="">-- Chọn chủ đề --</option>
+                                    <option value="support">Hỗ trợ kỹ thuật</option>
+                                    <option value="account">Vấn đề tài khoản</option>
+                                    <option value="billing">Thanh toán &amp; Gói dịch vụ</option>
+                                    <option value="feedback">Góp ý &amp; Phản hồi</option>
+                                    <option value="partnership">Hợp tác &amp; Đối tác</option>
+                                    <option value="other">Khác</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="message">Nội dung <span class="required">*</span></label>
+                                <textarea id="message" placeholder="Nhập nội dung chi tiết..." maxlength="2000" required></textarea>
+                            </div>
+
+                            <button type="submit" class="btn-submit">
+                                <i class="fas fa-paper-plane"></i> Gửi tin nhắn
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Info -->
+                    <div class="contact-info">
+                        <div class="info-grid">
+                            <div class="info-card" style="opacity:0.45;filter:grayscale(1);" title="Sắp ra mắt" aria-disabled="true">
+                                <div class="icon-circle"><i class="fas fa-comment-dots"></i></div>
+                                <h4>Chat trực tuyến</h4>
+                                <p>Hỗ trợ tức thời<br />Sắp ra mắt</p>
+                            </div>
+                            <div class="info-card">
+                                <div class="icon-circle"><i class="fas fa-clock"></i></div>
+                                <h4>Giờ làm việc</h4>
+                                <p>Thứ 2 - Thứ 6<br />8:00 - 18:00</p>
+                            </div>
+                        </div>
+
+                        <div class="office-info">
+                            <p><i class="fas fa-map-marker-alt"></i> <strong>Địa chỉ văn phòng:</strong> Tầng 1, Tòa nhà TuongDX, 1 Đường Tiêu Xá, phường Hà Nam, Thành phố Hải Phòng</p>
+                            <p style="margin-top:4px;"><i class="fas fa-globe"></i> <strong>Website:</strong> <a href="#" style="color:#008080;text-decoration:none;">www.tunix.vn</a></p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <div class="footer-grid">
+                <div>
+                    <a href="/" class="logo"><span style="color:#008080;font-weight:800;">Tuni</span><span style="color:#8A95A5;font-weight:800;">X</span></a>
+                    <p class="footer-description">
+                        TuniX là nền tảng phân tích cổ phiếu toàn diện, dữ liệu thực tế giúp các nhà đầu tư và tư vấn đầu tư có nhận định chuyên sâu về thị trường chứng khoán Việt Nam. TuniX không khuyến nghị mua, bán, nắm giữ bất kỳ mã chứng khoán nào. Người dùng tự đánh giá và tự chịu trách nhiệm với quyết định đầu tư của mình.
+                    </p>
+                    <div class="footer-social">
+                        <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-facebook"></i></a>
+                        <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-youtube"></i></a>
+                        <a href="https://www.tiktok.com/@tunix.vn" target="_blank" rel="noopener"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4>Sản phẩm</h4>
+                    <ul>
+                        <li><span class="footer-label">Phân tích cổ phiếu</span></li>
+                        <li><span class="footer-label">Bảng điều khiển</span></li>
+                        <li><span class="footer-label">Báo cáo tài chính</span></li>
+                        <li><span class="footer-label">Công cụ so sánh</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Hỗ trợ</h4>
+                    <ul>
+                        <li><a href="/TrungTamTroGiup">Trung tâm trợ giúp</a></li>
+                        <li><a href="/HuongDanSuDung">Hướng dẫn sử dụng</a></li>
+                        <li><a href="/CauHoiThuongGap">Câu hỏi thường gặp</a></li>
+                        <li><a href="/LienHe" style="font-weight:600;color:#008080;">Liên hệ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Pháp lý</h4>
+                    <ul>
+                        <li><a href="/DieuKhoanSuDung">Điều khoản sử dụng</a></li>
+                        <li><a href="/ChinhSachBaoMat">Chính sách bảo mật</a></li>
+                        <li><a href="/MienTruTrachNhiem">Miễn trừ trách nhiệm</a></li>
+                    </ul>
+                    <div style="margin-top: 16px; opacity: 0.45; filter: grayscale(1); pointer-events: none;" aria-disabled="true"><!-- APP CHƯA RA MẮT - BỎ opacity/filter/pointer-events ĐỂ KÍCH HOẠT -->
+                        <span style="font-size: 12px; color: #6b7a8f; display: block; margin-bottom: 8px;">Tải ứng dụng</span>
+                        <div class="footer-app-links">
+                            <a href="#"><i class="fab fa-apple"></i> App Store</a>
+                            <a href="#"><i class="fab fa-google-play"></i> Google Play</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>&copy; 2026 TuniX. Tất cả các quyền được bảo lưu.</span>
+                <div class="badges">
+                    <span><i class="fas fa-shield-alt"></i> Bảo mật SSL</span>
+                    <span><i class="fas fa-clock"></i> Dữ liệu thời gian thực</span>
+                    <span><i class="fas fa-server"></i> Độ trễ thấp</span>
+                </div>
+                <div class="footer-exchanges">
+                    <span>🇻🇳 HOSE</span>
+                    <span>🇻🇳 HNX</span>
+                    <span>🇻🇳 UPCoM</span>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <script src="/static/header-search.js"></script>
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        let isDarkMode = false;
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            isDarkMode = true;
+            themeToggle.className = 'fas fa-sun theme-toggle';
+        } else {
+            themeToggle.className = 'fas fa-moon theme-toggle';
+        }
+
+        themeToggle.addEventListener('click', function() {
+            isDarkMode = !isDarkMode;
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                this.className = 'fas fa-sun theme-toggle';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                this.className = 'fas fa-moon theme-toggle';
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        // Form submission handler
+        function handleSubmit(event) {
+            event.preventDefault();
+
+            // Get form data
+            const form = document.getElementById('contactForm');
+            const formData = new FormData(form);
+
+            // Simple validation check
+            const name = formData.get('fullName') || document.getElementById('fullName').value;
+            const email = formData.get('email') || document.getElementById('email').value;
+            const subject = formData.get('subject') || document.getElementById('subject').value;
+            const message = formData.get('message') || document.getElementById('message').value;
+
+            if (!name || !email || !subject || !message) {
+                alert('Vui lòng điền đầy đủ thông tin bắt buộc.');
+                return false;
+            }
+
+            // Show success message
+            const successMsg = document.getElementById('successMessage');
+            successMsg.style.display = 'block';
+
+            // Reset form
+            form.reset();
+
+            // Scroll to success message
+            successMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Hide after 5 seconds
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 5000);
+
+            return false;
+        }
+    </script>
+</body>
+</html>

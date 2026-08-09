@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đổi mật khẩu - TuniX</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f4f6f9;
+            color: #1a1f36;
+            padding: 0;
+            margin: 0;
+        }
+
+        .app-wrapper { max-width: 1200px; margin: 0 auto; padding: 20px 20px 40px; }
+        .embedded .app-wrapper { padding: 0 0 40px; }
+
+        .pass-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+            max-width: 480px;
+        }
+        .pass-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+        .pass-sub { font-size: 14px; color: #6b7a8f; margin-bottom: 24px; }
+
+        .field { margin-bottom: 18px; }
+        .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #4a5a72; }
+        .field input {
+            width: 100%; padding: 10px 12px; border: 1px solid #e5eaf0; border-radius: 10px;
+            font-size: 14px; font-family: inherit; color: #1a1f36; background: #fff;
+        }
+        .field input:focus { outline: none; border-color: #008080; }
+
+        .btn {
+            border: none; border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: background 0.2s;
+        }
+        .btn-primary { background: #008080; color: #fff; width: 100%; }
+        .btn-primary:hover { background: #006e6e; }
+
+        .login-msg { text-align: center; color: #6b7a8f; padding: 40px 20px; font-size: 15px; }
+        .login-msg a { color: #008080; font-weight: 600; text-decoration: none; }
+        .back-link { display: inline-block; margin-bottom: 16px; color: #008080; font-size: 14px; font-weight: 600; text-decoration: none; }
+
+        body.dark-mode { background: #0d1117; color: #e6edf3; }
+        body.dark-mode .pass-card { background: #161b22; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+        body.dark-mode .pass-sub { color: #adbac7; }
+        body.dark-mode .field label { color: #adbac7; }
+        body.dark-mode .field input { background: #0d1117; border-color: #30363d; color: #e6edf3; }
+        body.dark-mode .login-msg { color: #adbac7; }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <main class="pass-card">
+            <a class="back-link" href="javascript:void(0)" id="backBtn"><i class="fas fa-arrow-left"></i> Về thông tin tài khoản</a>
+            <div class="pass-title">🔑 Đổi mật khẩu</div>
+            <div class="pass-sub">Nhập mật khẩu hiện tại và mật khẩu mới</div>
+            <div id="passBody">
+                <div class="login-msg">Đang tải...</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            const body = document.getElementById('passBody');
+            const TOKEN_KEY = 'tunix_access_token';
+
+            function loggedIn() { return !!localStorage.getItem(TOKEN_KEY); }
+            function authHeaders() {
+                return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem(TOKEN_KEY) };
+            }
+            function toast(msg) {
+                let t = document.getElementById('passToast');
+                if (!t) {
+                    t = document.createElement('div');
+                    t.id = 'passToast';
+                    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e2b41;color:#fff;padding:9px 16px;border-radius:30px;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.2);opacity:0;transition:opacity 0.25s;pointer-events:none;';
+                    document.body.appendChild(t);
+                }
+                t.textContent = msg;
+                t.style.opacity = '1';
+                clearTimeout(t._t);
+                t._t = setTimeout(function() { t.style.opacity = '0'; }, 2200);
+            }
+
+            function renderLogin() {
+                body.innerHTML = '<div class="login-msg">🔒 Vui lòng <a href="/Login">đăng nhập</a> để đổi mật khẩu.</div>';
+                notifyParentHeight();
+            }
+
+            function render() {
+                body.innerHTML =
+                    '<div class="field"><label>Mật khẩu hiện tại</label><input type="password" id="pwCurrent" placeholder="Nhập mật khẩu hiện tại" /></div>' +
+                    '<div class="field"><label>Mật khẩu mới</label><input type="password" id="pwNew" placeholder="Tối thiểu 6 ký tự" /></div>' +
+                    '<div class="field"><label>Xác nhận mật khẩu mới</label><input type="password" id="pwConfirm" placeholder="Nhập lại mật khẩu mới" /></div>' +
+                    '<button type="button" class="btn btn-primary" id="submitBtn"><i class="fas fa-check"></i> Đổi mật khẩu</button>';
+
+                document.getElementById('submitBtn').addEventListener('click', async function() {
+                    const cur = document.getElementById('pwCurrent').value;
+                    const nw = document.getElementById('pwNew').value;
+                    const cf = document.getElementById('pwConfirm').value;
+                    if (!cur || !nw || !cf) { toast('⚠️ Vui lòng điền đầy đủ thông tin'); return; }
+                    if (nw.length < 6) { toast('⚠️ Mật khẩu mới phải có ít nhất 6 ký tự'); return; }
+                    if (nw !== cf) { toast('⚠️ Xác nhận mật khẩu không khớp'); return; }
+                    try {
+                        const res = await fetch('/api/auth/change-password', {
+                            method: 'POST', headers: authHeaders(),
+                            body: JSON.stringify({ current_password: cur, new_password: nw })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) { toast('❌ ' + (data.detail || 'Đổi mật khẩu thất bại.')); return; }
+                        toast('✅ ' + (data.message || 'Đã đổi mật khẩu thành công.'));
+                        document.getElementById('pwCurrent').value = '';
+                        document.getElementById('pwNew').value = '';
+                        document.getElementById('pwConfirm').value = '';
+                    } catch (e) {
+                        toast('❌ Không thể đổi mật khẩu.');
+                    }
+                });
+
+                notifyParentHeight();
+            }
+
+            document.getElementById('backBtn').addEventListener('click', function() {
+                if (window.parent && window.parent !== window && window.parent.loadContent) {
+                    window.parent.loadContent('/taikhoan');
+                    window.parent.history.replaceState({}, '', '/?page=taikhoan');
+                } else {
+                    window.location.href = '/?page=taikhoan';
+                }
+            });
+
+            // Cập nhật URL khi trang được nhúng
+            if (window.parent && window.parent !== window && window.parent.history) {
+                try { window.parent.history.replaceState({}, '', '/?page=doimatkhau'); } catch (e) {}
+            }
+
+            if (!loggedIn()) { renderLogin(); } else { render(); }
+
+            // ===== Embed trong left-col =====
+            if (window.self !== window.top) document.body.classList.add('embedded');
+            function applyEmbedTheme(mode) { document.body.classList.toggle('dark-mode', mode === 'dark'); }
+            function notifyParentHeight() {
+                try {
+                    const el = document.querySelector('.app-wrapper') || document.body;
+                    const height = Math.ceil(el.getBoundingClientRect().height);
+                    if (!height || height <= 0) return;
+                    if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
+                    window.__lastSentH = height;
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'tunix-embed-height', height }, '*');
+                    }
+                } catch (e) {}
+            }
+            window.addEventListener('message', function(event) {
+                const data = event.data;
+                if (!data || data.type !== 'tunix-theme') return;
+                const mode = data.mode === 'dark' ? 'dark' : 'light';
+                localStorage.setItem('theme', mode);
+                applyEmbedTheme(mode);
+                setTimeout(notifyParentHeight, 50);
+            });
+            window.addEventListener('load', function() {
+                applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+                setTimeout(notifyParentHeight, 60);
+                setTimeout(notifyParentHeight, 300);
+            });
+            window.addEventListener('resize', notifyParentHeight);
+            if (window.ResizeObserver) {
+                const obs = new ResizeObserver(notifyParentHeight);
+                obs.observe(document.querySelector('.app-wrapper') || document.body);
+            }
+            applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+        })();
+    </script>
+</body>
+</html>

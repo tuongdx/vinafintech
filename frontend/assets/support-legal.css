@@ -1,0 +1,770 @@
+#dynamicContent .help-page,
+#dynamicContent .guide-page,
+#dynamicContent .faq-page,
+#dynamicContent .contact-page,
+#dynamicContent .terms-page,
+#dynamicContent .privacy-page,
+#dynamicContent .disclaimer-page {
+  margin: 0;
+}
+
+#dynamicContent .help-container,
+#dynamicContent .guide-container,
+#dynamicContent .faq-container,
+#dynamicContent .contact-container,
+#dynamicContent .terms-container,
+#dynamicContent .privacy-container,
+#dynamicContent .disclaimer-container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 32px clamp(20px, 4vw, 48px);
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 24, 41, 0.08);
+  color: #1a1f36;
+}
+
+#dynamicContent .back-link {
+  display: none;
+}
+
+#dynamicContent .help-header,
+#dynamicContent .guide-header,
+#dynamicContent .faq-header,
+#dynamicContent .contact-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+#dynamicContent .help-header h1,
+#dynamicContent .guide-header h1,
+#dynamicContent .faq-header h1,
+#dynamicContent .contact-header h1,
+#dynamicContent .terms-container h1,
+#dynamicContent .privacy-container h1,
+#dynamicContent .disclaimer-container h1 {
+  font-size: clamp(28px, 4vw, 34px);
+  line-height: 1.15;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #0f1829;
+}
+
+#dynamicContent .help-subtitle,
+#dynamicContent .guide-subtitle,
+#dynamicContent .faq-subtitle,
+#dynamicContent .contact-subtitle,
+#dynamicContent .last-updated {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6b7a8f;
+}
+
+#dynamicContent .help-search,
+#dynamicContent .guide-search,
+#dynamicContent .faq-search {
+  max-width: 560px;
+  margin: 20px auto 0;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e9f0;
+  background: #f8faff;
+  transition: all 0.25s ease;
+}
+
+#dynamicContent .help-search:focus-within,
+#dynamicContent .guide-search:focus-within,
+#dynamicContent .faq-search:focus-within {
+  border-color: #008080;
+  box-shadow: 0 0 0 4px rgba(0, 128, 128, 0.08);
+}
+
+#dynamicContent .help-search i,
+#dynamicContent .guide-search i,
+#dynamicContent .faq-search i {
+  color: #8a99b1;
+  font-size: 16px;
+}
+
+#dynamicContent .help-search input,
+#dynamicContent .guide-search input,
+#dynamicContent .faq-search input {
+  border: none;
+  outline: none;
+  flex: 1;
+  background: transparent;
+  font: inherit;
+  color: #1a1f36;
+}
+
+#dynamicContent .search-hint {
+  font-size: 11px;
+  color: #8a99b1;
+  padding: 4px 10px;
+  background: #f0f2f6;
+  border-radius: 4px;
+}
+
+#dynamicContent .categories-grid,
+#dynamicContent .contact-grid,
+#dynamicContent .contact-section,
+#dynamicContent .info-grid {
+  display: grid;
+  gap: 16px;
+}
+
+#dynamicContent .categories-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 32px;
+}
+
+#dynamicContent .contact-grid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 32px;
+}
+
+#dynamicContent .contact-section {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+
+#dynamicContent .info-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#dynamicContent .category-card,
+#dynamicContent .contact-card,
+#dynamicContent .info-card,
+#dynamicContent .step-card,
+#dynamicContent .disclaimer-container .info-grid .grid-item {
+  background: #f8faff;
+  border-radius: 12px;
+  transition: all 0.25s ease;
+}
+
+#dynamicContent .category-card,
+#dynamicContent .contact-card,
+#dynamicContent .info-card {
+  padding: 18px 16px;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+}
+
+/* Thẻ liên hệ đơn: rộng vừa phải, căn giữa cho cân đối */
+#dynamicContent .contact-section .contact-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 22px 20px;
+}
+
+/* Cân đối 2 thẻ thông tin liên hệ: cùng chiều cao, nội dung căn giữa */
+#dynamicContent .info-grid {
+  align-items: stretch;
+}
+
+#dynamicContent .info-card {
+  padding: 22px 16px;
+  min-height: 122px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+#dynamicContent .category-card:hover,
+#dynamicContent .contact-card:hover,
+#dynamicContent .info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 24, 41, 0.08);
+}
+
+#dynamicContent .icon-circle,
+#dynamicContent .step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8ecf5;
+  color: #008080;
+}
+
+#dynamicContent .icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 18px;
+  margin: 0 auto 10px;
+}
+
+#dynamicContent .category-card:hover .icon-circle,
+#dynamicContent .contact-card:hover .icon-circle,
+#dynamicContent .info-card:hover .icon-circle {
+  background: #008080;
+  color: #ffffff;
+}
+
+#dynamicContent .category-card h3,
+#dynamicContent .contact-card h4,
+#dynamicContent .info-card h4,
+#dynamicContent .contact-form h3,
+#dynamicContent .contact-info h3,
+#dynamicContent .section-title,
+#dynamicContent .toc h3,
+#dynamicContent .section h2,
+#dynamicContent .step-card h3,
+#dynamicContent .report-item .title {
+  color: #1a1f36;
+}
+
+#dynamicContent .category-card h3,
+#dynamicContent .contact-card h4,
+#dynamicContent .info-card h4,
+#dynamicContent .step-card h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+#dynamicContent .category-card p,
+#dynamicContent .contact-card p,
+#dynamicContent .info-card p,
+#dynamicContent .office-info p,
+#dynamicContent .section p,
+#dynamicContent .section ul li,
+#dynamicContent .faq-item .answer,
+#dynamicContent .step-card p,
+#dynamicContent .step-content,
+#dynamicContent .success-message p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #6b7a8f;
+}
+
+#dynamicContent .faq-section,
+#dynamicContent .toc,
+#dynamicContent .office-info,
+#dynamicContent .success-message,
+#dynamicContent .highlight-box {
+  margin-bottom: 28px;
+}
+
+#dynamicContent .section-title {
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+#dynamicContent .section-title i,
+#dynamicContent .office-info p i {
+  color: #008080;
+}
+
+#dynamicContent .faq-item {
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f2f6;
+}
+
+#dynamicContent .faq-item:last-child,
+#dynamicContent .report-item:last-child {
+  border-bottom: none;
+}
+
+#dynamicContent .faq-item .question {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1f36;
+}
+
+#dynamicContent .faq-item .question:hover {
+  color: #008080;
+}
+
+#dynamicContent .faq-item .question i {
+  font-size: 13px;
+  color: #8a99b1;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+#dynamicContent .faq-item .question i.active,
+#dynamicContent .faq-item .question.active i {
+  transform: rotate(180deg);
+  color: #008080;
+}
+
+#dynamicContent .faq-item .answer {
+  display: none;
+  padding-top: 8px;
+  white-space: pre-line;
+}
+
+#dynamicContent .faq-item .answer.open {
+  display: block;
+}
+
+#dynamicContent .faq-item .answer ul,
+#dynamicContent .section ul {
+  padding-left: 20px;
+  margin-bottom: 10px;
+}
+
+#dynamicContent .faq-item .answer .highlight-box,
+#dynamicContent .highlight-box,
+#dynamicContent .step-tip,
+#dynamicContent .step-warning,
+#dynamicContent .step-note {
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+#dynamicContent .highlight-box,
+#dynamicContent .faq-item .answer .highlight-box {
+  background: #f8faff;
+  border-left: 4px solid #008080;
+}
+
+#dynamicContent .step-card {
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+#dynamicContent .step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+#dynamicContent .step-tip {
+  background: #e8f8ef;
+  color: #0f7b3a;
+}
+
+#dynamicContent .step-warning {
+  background: #fde8e5;
+  color: #c0392b;
+}
+
+#dynamicContent .step-note {
+  background: #eef4ff;
+  color: #008080;
+}
+
+#dynamicContent .toc {
+  background: #f8faff;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+#dynamicContent .toc ul {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 24px;
+}
+
+#dynamicContent .toc ul li,
+#dynamicContent .toc ul li a {
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+#dynamicContent .toc a {
+  color: #008080;
+  text-decoration: none;
+}
+
+#dynamicContent .toc a:hover {
+  color: #006666;
+  text-decoration: underline;
+}
+
+#dynamicContent .section {
+  margin-bottom: 28px;
+}
+
+#dynamicContent .section h2 {
+  font-size: 20px;
+  font-weight: 600;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f0f2f6;
+}
+
+#dynamicContent .section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 12px 0 6px;
+  color: #1a1f36;
+}
+
+#dynamicContent .category-tabs,
+#dynamicContent .report-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+#dynamicContent .category-tab,
+#dynamicContent .report-tabs span {
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #6b7a8f;
+  background: #f8faff;
+  border: 1px solid transparent;
+}
+
+#dynamicContent .category-tab:hover,
+#dynamicContent .report-tabs span:hover {
+  color: #008080;
+  border-color: #d8e5ff;
+}
+
+#dynamicContent .category-tab.active,
+#dynamicContent .report-tabs span.active {
+  color: #ffffff;
+  background: #008080;
+}
+
+#dynamicContent .no-results {
+  display: none;
+  text-align: center;
+  padding: 24px 16px;
+  background: #f8faff;
+  border-radius: 12px;
+  color: #6b7a8f;
+}
+
+#dynamicContent .contact-form {
+  background: #f8faff;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+#dynamicContent .contact-form .form-group {
+  margin-bottom: 16px;
+}
+
+#dynamicContent .contact-form .form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#dynamicContent .contact-form label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5a72;
+  margin-bottom: 4px;
+}
+
+#dynamicContent .contact-form input,
+#dynamicContent .contact-form select,
+#dynamicContent .contact-form textarea {
+  width: 100%;
+  border: 1px solid #e5e9f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font: inherit;
+  color: #1a1f36;
+  background: #ffffff;
+}
+
+#dynamicContent .contact-form input:focus,
+#dynamicContent .contact-form select:focus,
+#dynamicContent .contact-form textarea:focus {
+  outline: none;
+  border-color: #008080;
+  box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.08);
+}
+
+#dynamicContent .contact-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+#dynamicContent .btn-submit {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  background: #008080;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#dynamicContent .btn-submit:hover {
+  background: #006666;
+}
+
+#dynamicContent .office-info,
+#dynamicContent .success-message {
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+#dynamicContent .office-info {
+  background: #f8faff;
+}
+
+#dynamicContent .success-message {
+  display: none;
+  text-align: center;
+  background: #e8f8ef;
+  border: 1px solid #2ecc71;
+}
+
+#dynamicContent .success-message i {
+  display: block;
+  font-size: 40px;
+  color: #2ecc71;
+  margin-bottom: 8px;
+}
+
+#dynamicContent .info-grid .grid-item {
+  padding: 16px;
+}
+
+#dynamicContent .info-grid .grid-item .label {
+  display: block;
+  font-size: 12px;
+  color: #8a99b1;
+  margin-bottom: 4px;
+}
+
+#dynamicContent .info-grid .grid-item .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1f36;
+}
+
+body.dark-mode #dynamicContent .help-container,
+body.dark-mode #dynamicContent .guide-container,
+body.dark-mode #dynamicContent .faq-container,
+body.dark-mode #dynamicContent .contact-container,
+body.dark-mode #dynamicContent .terms-container,
+body.dark-mode #dynamicContent .privacy-container,
+body.dark-mode #dynamicContent .disclaimer-container {
+  background: #161b22;
+  box-shadow: none;
+  color: #e6edf3;
+}
+
+body.dark-mode #dynamicContent .help-header h1,
+body.dark-mode #dynamicContent .guide-header h1,
+body.dark-mode #dynamicContent .faq-header h1,
+body.dark-mode #dynamicContent .contact-header h1,
+body.dark-mode #dynamicContent .terms-container h1,
+body.dark-mode #dynamicContent .privacy-container h1,
+body.dark-mode #dynamicContent .disclaimer-container h1,
+body.dark-mode #dynamicContent .category-card h3,
+body.dark-mode #dynamicContent .contact-card h4,
+body.dark-mode #dynamicContent .info-card h4,
+body.dark-mode #dynamicContent .contact-form h3,
+body.dark-mode #dynamicContent .contact-info h3,
+body.dark-mode #dynamicContent .section-title,
+body.dark-mode #dynamicContent .toc h3,
+body.dark-mode #dynamicContent .section h2,
+body.dark-mode #dynamicContent .section h3,
+body.dark-mode #dynamicContent .faq-item .question,
+body.dark-mode #dynamicContent .step-card h3,
+body.dark-mode #dynamicContent .success-message h4,
+body.dark-mode #dynamicContent .info-grid .grid-item .value {
+  color: #e6edf3;
+}
+
+body.dark-mode #dynamicContent .help-subtitle,
+body.dark-mode #dynamicContent .guide-subtitle,
+body.dark-mode #dynamicContent .faq-subtitle,
+body.dark-mode #dynamicContent .contact-subtitle,
+body.dark-mode #dynamicContent .last-updated,
+body.dark-mode #dynamicContent .category-card p,
+body.dark-mode #dynamicContent .contact-card p,
+body.dark-mode #dynamicContent .info-card p,
+body.dark-mode #dynamicContent .office-info p,
+body.dark-mode #dynamicContent .section p,
+body.dark-mode #dynamicContent .section ul li,
+body.dark-mode #dynamicContent .faq-item .answer,
+body.dark-mode #dynamicContent .step-card p,
+body.dark-mode #dynamicContent .step-content,
+body.dark-mode #dynamicContent .contact-form label,
+body.dark-mode #dynamicContent .success-message p,
+body.dark-mode #dynamicContent .info-grid .grid-item .label,
+body.dark-mode #dynamicContent .category-tab,
+body.dark-mode #dynamicContent .report-tabs span,
+body.dark-mode #dynamicContent .faq-item .question i {
+  color: #8b949e;
+}
+
+body.dark-mode #dynamicContent .help-search,
+body.dark-mode #dynamicContent .guide-search,
+body.dark-mode #dynamicContent .faq-search,
+body.dark-mode #dynamicContent .toc,
+body.dark-mode #dynamicContent .category-card,
+body.dark-mode #dynamicContent .contact-card,
+body.dark-mode #dynamicContent .info-card,
+body.dark-mode #dynamicContent .step-card,
+body.dark-mode #dynamicContent .contact-form,
+body.dark-mode #dynamicContent .office-info,
+body.dark-mode #dynamicContent .faq-item .answer .highlight-box,
+body.dark-mode #dynamicContent .highlight-box,
+body.dark-mode #dynamicContent .disclaimer-container .info-grid .grid-item,
+body.dark-mode #dynamicContent .no-results {
+  background: #0d1117;
+  border-color: #30363d;
+}
+
+body.dark-mode #dynamicContent .search-hint {
+  background: #21262d;
+  color: #8b949e;
+}
+
+body.dark-mode #dynamicContent .icon-circle,
+body.dark-mode #dynamicContent .step-number {
+  background: #21262d;
+  color: #008080;
+}
+
+body.dark-mode #dynamicContent .category-card:hover .icon-circle,
+body.dark-mode #dynamicContent .contact-card:hover .icon-circle,
+body.dark-mode #dynamicContent .info-card:hover .icon-circle {
+  background: #008080;
+  color: #ffffff;
+}
+
+body.dark-mode #dynamicContent .contact-form input,
+body.dark-mode #dynamicContent .contact-form select,
+body.dark-mode #dynamicContent .contact-form textarea {
+  background: #0d1117;
+  border-color: #30363d;
+  color: #e6edf3;
+}
+
+body.dark-mode #dynamicContent .contact-form input::placeholder,
+body.dark-mode #dynamicContent .contact-form textarea::placeholder,
+body.dark-mode #dynamicContent .help-search input::placeholder,
+body.dark-mode #dynamicContent .guide-search input::placeholder,
+body.dark-mode #dynamicContent .faq-search input::placeholder {
+  color: #8b949e;
+}
+
+body.dark-mode #dynamicContent .category-tab:hover,
+body.dark-mode #dynamicContent .report-tabs span:hover {
+  background: #21262d;
+  color: #008080;
+}
+
+body.dark-mode #dynamicContent .category-tab.active,
+body.dark-mode #dynamicContent .report-tabs span.active {
+  background: #008080;
+  color: #ffffff;
+}
+
+body.dark-mode #dynamicContent .faq-item,
+body.dark-mode #dynamicContent .section h2,
+body.dark-mode #dynamicContent .report-item {
+  border-color: #30363d;
+}
+
+body.dark-mode #dynamicContent .step-tip {
+  background: #1b2d1f;
+  color: #3fb950;
+}
+
+body.dark-mode #dynamicContent .step-warning {
+  background: #2d1b1e;
+  color: #f85149;
+}
+
+body.dark-mode #dynamicContent .step-note {
+  background: #1c2333;
+  color: #4fa8a2;
+}
+
+body.dark-mode #dynamicContent .success-message {
+  background: #1b2d1f;
+  border-color: #3fb950;
+}
+
+@media (max-width: 1024px) {
+  #dynamicContent .categories-grid,
+  #dynamicContent .contact-grid,
+  #dynamicContent .info-grid,
+  #dynamicContent .toc ul {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  #dynamicContent .help-container,
+  #dynamicContent .guide-container,
+  #dynamicContent .faq-container,
+  #dynamicContent .contact-container,
+  #dynamicContent .terms-container,
+  #dynamicContent .privacy-container,
+  #dynamicContent .disclaimer-container {
+    padding: 24px 18px;
+    border-radius: 14px;
+  }
+
+  #dynamicContent .categories-grid,
+  #dynamicContent .contact-grid,
+  #dynamicContent .contact-section,
+  #dynamicContent .info-grid,
+  #dynamicContent .contact-form .form-row,
+  #dynamicContent .toc ul {
+    grid-template-columns: 1fr;
+  }
+
+  #dynamicContent .help-header h1,
+  #dynamicContent .guide-header h1,
+  #dynamicContent .faq-header h1,
+  #dynamicContent .contact-header h1,
+  #dynamicContent .terms-container h1,
+  #dynamicContent .privacy-container h1,
+  #dynamicContent .disclaimer-container h1 {
+    font-size: 26px;
+  }
+
+  #dynamicContent .help-search,
+  #dynamicContent .guide-search,
+  #dynamicContent .faq-search {
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  #dynamicContent .section-title {
+    font-size: 16px;
+  }
+
+  #dynamicContent .faq-item .question,
+  #dynamicContent .section p,
+  #dynamicContent .section ul li,
+  #dynamicContent .step-card p,
+  #dynamicContent .contact-card p,
+  #dynamicContent .info-card p,
+  #dynamicContent .office-info p {
+    font-size: 12px;
+  }
+}

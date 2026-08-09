@@ -1,0 +1,2979 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chứng khoán · Dashboard</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: transparent;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Ẩn thanh scroll của iframe Home (vẫn cuộn được) — khớp pattern tintuc/StockDetail,
+           tránh hiện scrollbar khi iframe chưa kịp co giãn tới chiều cao nội dung. */
+        html, body {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        body.dark-mode {
+            color: #e6edf3;
+        }
+
+        .dashboard {
+            max-width: none;
+            width: 100%;
+            border-radius: 16px;
+            padding: 0 0 24px;
+            transition: all 0.2s;
+        }
+
+
+
+        body.dark-mode .index-label,
+        body.dark-mode .index-sub,
+        body.dark-mode .bar-label,
+        body.dark-mode .foreign-bar-label,
+        body.dark-mode .news-content .meta,
+        body.dark-mode .volume,
+        body.dark-mode .avg-volume,
+        body.dark-mode th {
+            color: #9fb0c7;
+        }
+
+        body.dark-mode .index-value,
+        body.dark-mode .index-title,
+        body.dark-mode .liquidity-title,
+        body.dark-mode .watchlist-title,
+        body.dark-mode .top-stocks-title,
+        body.dark-mode .foreign-title,
+        body.dark-mode .news-title,
+        body.dark-mode .stock-name,
+        body.dark-mode .news-content .title,
+        body.dark-mode td {
+            color: #e6edf3;
+        }
+
+        body.dark-mode th,
+        body.dark-mode td,
+        body.dark-mode .stock-row,
+        body.dark-mode .news-item {
+            border-color: #2a3648;
+        }
+
+        body.dark-mode .top-tabs span,
+        body.dark-mode .news-tabs span,
+        body.dark-mode .foreign-main-tabs span,
+        body.dark-mode .foreign-sub-tabs span,
+        body.dark-mode .market-btn,
+        body.dark-mode .top-dropdown,
+        body.dark-mode .liquidity-tabs span {
+            background: #0f1726;
+            border-color: #334158;
+            color: #cdd9e8;
+        }
+
+        body.dark-mode .top-tabs span.active,
+        body.dark-mode .news-tabs span.active,
+        body.dark-mode .foreign-main-tabs span.active,
+        body.dark-mode .foreign-sub-tabs span.active,
+        body.dark-mode .market-btn.active,
+        body.dark-mode .liquidity-tabs span.active {
+            background: #2c6ae3;
+            border-color: #2c6ae3;
+            color: #fff;
+        }
+
+
+
+        body.dark-mode .foreign-stats .stat-item {
+            color: #e6edf3;
+        }
+
+        body.dark-mode .foreign-stats .stat-item .highlight-buy {
+            color: #4ade80;
+        }
+
+        body.dark-mode .foreign-stats .stat-item .highlight-sell {
+            color: #f87171;
+        }
+
+        body.dark-mode .foreign-stock-list .stock-row .change.positive {
+            color: #4ade80;
+        }
+
+        body.dark-mode .foreign-stock-list .stock-row .change.negative {
+            color: #f87171;
+        }
+
+        body.dark-mode .foreign-stock-list .stock-row .change.zero {
+            color: #9fb0c7;
+        }
+
+        body.dark-mode #foreignStockLists [style*="color: #0f7b3a"] {
+            color: #4ade80 !important;
+        }
+
+        body.dark-mode #foreignStockLists [style*="color: #d0314e"] {
+            color: #f87171 !important;
+        }
+
+
+
+        body.dark-mode .liquidity-title,
+        body.dark-mode .bar-label,
+        body.dark-mode .market-btn,
+        body.dark-mode #marketUpdatedAt,
+        body.dark-mode .legend,
+        body.dark-mode .vol-stats {
+            color: #cbd6e8;
+        }
+
+        body.dark-mode .liquidity-tabs span {
+            background: #111827;
+            border-color: #2c3748;
+            color: #cbd6e8;
+        }
+
+        body.dark-mode .liquidity-tabs span:hover {
+            background: #172039;
+        }
+
+
+
+        body.dark-mode .bar {
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+        }
+
+        body.dark-mode .bar.today {
+            background: #4a7bb5;
+        }
+
+        body.dark-mode .bar.yesterday {
+            background: #f5c842;
+        }
+
+        body.dark-mode .bar-label {
+            color: #8ea2bf;
+        }
+
+        body.dark-mode .market-btn {
+            background: #111827;
+            border-color: #2c3748;
+            color: #cbd6e8;
+        }
+
+        body.dark-mode .market-btn:hover {
+            background: #172039;
+        }
+
+        body.dark-mode .market-btn.active {
+            background: #2c6ae3;
+            border-color: #2c6ae3;
+            color: #fff;
+        }
+
+
+
+        /* ===== TOP INDEX ROW ===== */
+        body.dark-mode .index-row,
+        body.dark-mode .liquidity-section,
+        body.dark-mode .watchlist-section,
+        body.dark-mode .top-stocks-section,
+        body.dark-mode .foreign-section,
+        body.dark-mode .market-map-section,
+        body.dark-mode .news-section {
+            background: #161b22;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .index-row {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 22px 22px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .index-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .index-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1c2a44;
+        }
+
+        .index-title i {
+            color: #4270b3;
+            margin-right: 8px;
+        }
+
+        .index-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 560px;
+        }
+
+        .index-table th,
+        .index-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid #eef2f6;
+            vertical-align: middle;
+        }
+
+        .index-table th {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: #5b6778;
+        }
+
+        .index-item {
+            display: table-row;
+        }
+
+        .index-label {
+            font-weight: 500;
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
+            color: #0f1829;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .index-label i {
+            font-size: 0.95rem;
+        }
+
+        .index-value {
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: -0.3px;
+            color: #0f1829;
+        }
+
+        .index-change {
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #f1f4f9;
+            color: #1e293b;
+            width: fit-content;
+        }
+
+        .index-change.negative {
+            color: #d0314e;
+            background: #ffe9ed;
+        }
+
+        .index-change.positive {
+            color: #0f7b3a;
+            background: #e3f5ec;
+        }
+
+        .index-sub {
+            font-size: 0.85rem;
+            color: #6f7d93;
+            white-space: nowrap;
+        }
+
+        .index-icon {
+            color: #5b6778;
+        }
+
+        .index-icon.gold {
+            color: #f5b342;
+        }
+
+
+
+        body.dark-mode .index-table th {
+            color: #9fb0c7;
+            border-bottom-color: #2a3648;
+        }
+
+        body.dark-mode .index-table td {
+            color: #e6edf3;
+            border-bottom-color: #2a3648;
+        }
+
+        body.dark-mode .index-table tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        body.dark-mode .index-change {
+            background: rgba(255, 255, 255, 0.05);
+            color: #e6edf3;
+        }
+
+        body.dark-mode .index-change.positive {
+            background: #183326;
+        }
+
+        body.dark-mode .index-change.negative {
+            background: #3b1520;
+        }
+
+        /* Dark mode: bảng Danh sách cổ phiếu trong VN30 & Top cổ phiếu */
+        body.dark-mode .watchlist-section .table-wrapper th,
+        body.dark-mode .top-table-wrapper th {
+            color: #9fb0c7;
+            border-bottom-color: #2a3648;
+        }
+
+        body.dark-mode .watchlist-section .table-wrapper td,
+        body.dark-mode .top-table-wrapper td {
+            color: #e6edf3;
+            border-bottom-color: #2a3648;
+        }
+
+        body.dark-mode .top-table-wrapper .code,
+        body.dark-mode .watchlist-section .table-wrapper .stock-name {
+            color: #e6edf3;
+        }
+
+        body.dark-mode .top-table-wrapper .volume,
+        body.dark-mode .top-table-wrapper .avg-volume {
+            color: #9fb0c7;
+        }
+
+        body.dark-mode .watchlist-section .table-wrapper .change.positive,
+        body.dark-mode .top-table-wrapper .change-val.positive {
+            color: #4ade80;
+        }
+
+        body.dark-mode .watchlist-section .table-wrapper .change.negative,
+        body.dark-mode .top-table-wrapper .change-val.negative {
+            color: #f87171;
+        }
+
+        body.dark-mode .watchlist-section .table-wrapper tbody tr:hover td,
+        body.dark-mode .top-table-wrapper tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .index-icon.crypto {
+            color: #f7931a;
+        }
+
+        .index-icon.stock {
+            color: #3861a5;
+        }
+
+        /* ===== MARKET MAP SECTION (Bản đồ thị trường) ===== */
+        .market-map-section {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 22px 22px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .market-map-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .market-map-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1c2a44;
+        }
+        .market-map-title i {
+            color: #008080;
+            margin-right: 8px;
+        }
+        .market-map-legend {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #5b6778;
+        }
+        .market-map-legend .lg {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: #f2f5f9;
+            color: #3a4558;
+        }
+        .market-map-legend .lg i {
+            font-size: 10px;
+            margin-right: 1px;
+        }
+        .market-map-legend .lg::before {
+            content: '';
+            width: 9px;
+            height: 9px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .lg-ceiling::before { background: #7c3aed; }
+        .lg-up::before { background: #16a34a; }
+        .lg-flat::before { background: #94a3b8; }
+        .lg-down::before { background: #dc2626; }
+        .lg-floor::before { background: #0891b2; }
+        .market-map {
+            position: relative;
+            width: 100%;
+            height: 720px;
+            background: #f8fafc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .market-map-cell {
+            position: absolute;
+            box-sizing: border-box;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 2px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            transition: filter 0.15s ease;
+        }
+        .market-map-cell:hover {
+            filter: brightness(1.18);
+            z-index: 5;
+            outline: 2px solid rgba(255, 255, 255, 0.85);
+        }
+        .market-map-cell .mm-symbol {
+            font-size: 9px;
+            font-weight: 700;
+            line-height: 1.1;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .market-map-cell .mm-pct {
+            font-size: 8px;
+            font-weight: 600;
+            line-height: 1.1;
+            text-align: center;
+            white-space: nowrap;
+            opacity: 0.95;
+        }
+        .market-map-cell.st-ceiling { background: #7c3aed; }
+        .market-map-cell.st-up { background: #16a34a; }
+        .market-map-cell.st-flat { background: #94a3b8; }
+        .market-map-cell.st-down { background: #dc2626; }
+        .market-map-cell.st-floor { background: #0891b2; }
+        .market-map-status {
+            text-align: center;
+            color: #8a99b1;
+            font-size: 12px;
+            padding: 18px 0 6px;
+        }
+
+        body.dark-mode .market-map-title { color: #e6edf3; }
+        body.dark-mode .market-map-legend { color: #9fb0c7; }
+        body.dark-mode .market-map-legend .lg {
+            background: #21262d;
+            color: #c9d1d9;
+        }
+        body.dark-mode .market-map { background: #0d1117; }
+
+        /* ===== LIQUIDITY SECTION ===== */
+        .liquidity-section {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 22px 22px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .liquidity-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .liquidity-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1c2a44;
+        }
+
+        .liquidity-title i {
+            color: #4270b3;
+            margin-right: 8px;
+        }
+
+        .chart-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 8px;
+            align-items: flex-start;
+        }
+
+        .liquidity-chart-card {
+            flex: 1 1 760px;
+            min-width: 760px;
+            max-width: 100%;
+            border-radius: 16px;
+            padding: 14px 14px 8px;
+        }
+
+        .liquidity-exchange-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .liquidity-exchange-btn {
+            border: none;
+            background: #e8edf5;
+            color: #1f2937;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 7px 14px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .liquidity-exchange-btn:hover {
+            background: #dbe4f0;
+        }
+
+        .liquidity-exchange-btn.active {
+            background: #1e2b41;
+            color: #ffffff;
+        }
+
+        .liquidity-chart-card svg {
+            width: 100%;
+            min-width: 760px;
+            height: 360px;
+            display: block;
+        }
+
+        .liquidity-chart-card .crosshair-line {
+            stroke: rgba(15, 23, 42, 0.45);
+            stroke-width: 1;
+            stroke-dasharray: 4 4;
+            pointer-events: none;
+        }
+
+        .liquidity-chart-card .crosshair-dot {
+            fill: #3b82f6;
+            stroke: #ffffff;
+            stroke-width: 2;
+            pointer-events: none;
+        }
+
+        .liquidity-chart-card .crosshair-label {
+            font-size: 11px;
+            fill: #0f172a;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        .liquidity-metrics {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .liquidity-metric {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: #f2f6fb;
+        }
+
+        .liquidity-metric .metric-icon {
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .liquidity-metric .metric-line {
+            display: inline-block;
+            width: 18px;
+            height: 3px;
+            border-radius: 999px;
+            background: #3b82f6;
+        }
+
+        .liquidity-metric .metric-line.metric-line-yellow {
+            background: #f59e0b;
+        }
+
+        .liquidity-metric.up {
+            color: #1d4ed8;
+            background: rgba(59, 130, 246, 0.12);
+        }
+
+        .liquidity-metric.down {
+            color: #b45309;
+            background: rgba(245, 158, 11, 0.12);
+        }
+
+        .market-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .market-btn {
+            cursor: pointer;
+            padding: 3px 12px;
+            border-radius: 20px;
+            border: 1px solid #dce1e9;
+            background: white;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #334155;
+            transition: all 0.2s;
+        }
+
+        .market-btn:hover {
+            background: #e8edf5;
+        }
+
+        .market-btn.active {
+            background: #1e2b41;
+            color: white;
+            border-color: #1e2b41;
+        }
+
+        .legend-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+            margin-right: 6px;
+        }
+
+        .legend-dot.blue {
+            background: #4a7bb5;
+        }
+        .legend-dot.yellow {
+            background: #f5c842;
+        }
+
+        .vol-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px 30px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            padding: 10px 18px;
+            border-radius: 40px;
+            min-height: 44px;
+            align-items: center;
+        }
+
+        .vol-stats span i {
+            margin-right: 6px;
+            color: #3861a5;
+        }
+
+
+
+        body.dark-mode .liquidity-exchange-btn {
+            background: #111827;
+            color: #cbd6e8;
+        }
+
+        body.dark-mode .liquidity-exchange-btn:hover {
+            background: #172039;
+        }
+
+        body.dark-mode .liquidity-exchange-btn.active {
+            background: #2c6ae3;
+            color: #ffffff;
+        }
+
+        /* ===== WATCHLIST SECTION ===== */
+        .watchlist-section {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 22px 22px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .watchlist-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .watchlist-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1c2a44;
+        }
+
+        .watchlist-title i {
+            color: #4270b3;
+            margin-right: 8px;
+        }
+
+        /* Danh sách cổ phiếu trong VN30: hiển thị ~5 dòng, phần còn lại cuộn dọc */
+        .watchlist-section .table-wrapper {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        /* Ẩn thanh scroll của các block nhưng vẫn cuộn được */
+        .watchlist-section .table-wrapper,
+        .table-wrapper,
+        .top-table-wrapper,
+        .foreign-stock-list {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .watchlist-section .table-wrapper::-webkit-scrollbar,
+        .table-wrapper::-webkit-scrollbar,
+        .top-table-wrapper::-webkit-scrollbar,
+        .foreign-stock-list::-webkit-scrollbar {
+            display: none;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 600px;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px 12px;
+            font-weight: 500;
+            color: #3c4a62;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 12px;
+            border-bottom: 1px solid #eef2f6;
+            color: #1a263b;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .stock-name {
+            font-weight: 600;
+            color: #0f1a2e;
+        }
+
+        .price {
+            font-weight: 600;
+        }
+
+        .change.negative {
+            color: #d0314e;
+        }
+
+        .change.positive {
+            color: #0f7b3a;
+        }
+
+        /* Mini sparkline chart */
+        .sparkline {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 32px;
+            padding: 2px 0;
+        }
+
+        .sparkline-bar {
+            width: 4px;
+            border-radius: 1px;
+            min-height: 3px;
+            background: #d7dfe9;
+            transition: 0.2s;
+        }
+
+        .sparkline-bar.up {
+            background: #0f7b3a;
+        }
+
+        .sparkline-bar.down {
+            background: #d0314e;
+        }
+
+        .sparkline-svg {
+            display: block;
+            width: 84px;
+            height: 32px;
+        }
+
+        .sparkline-svg .sparkline-area.up {
+            fill: rgba(15, 123, 58, 0.16);
+        }
+
+        .sparkline-svg .sparkline-area.down {
+            fill: rgba(208, 49, 78, 0.16);
+        }
+
+        .sparkline-svg .sparkline-line {
+            fill: none;
+            stroke-width: 1.6;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+
+        .sparkline-svg .sparkline-line.up {
+            stroke: #0f7b3a;
+        }
+
+        .sparkline-svg .sparkline-line.down {
+            stroke: #d0314e;
+        }
+
+        body.dark-mode .sparkline-svg .sparkline-area.up {
+            fill: rgba(74, 222, 128, 0.18);
+        }
+
+        body.dark-mode .sparkline-svg .sparkline-area.down {
+            fill: rgba(248, 113, 113, 0.18);
+        }
+
+        body.dark-mode .sparkline-svg .sparkline-line.up {
+            stroke: #4ade80;
+        }
+
+        body.dark-mode .sparkline-svg .sparkline-line.down {
+            stroke: #f87171;
+        }
+
+        .pe-ratio, .pb-ratio {
+            font-weight: 500;
+        }
+
+        /* ===== TOP STOCKS SECTION ===== */
+        .top-stocks-section {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 22px 22px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .top-stocks-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 10px;
+        }
+
+        .top-stocks-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1c2a44;
+        }
+
+        .top-stocks-title i {
+            color: #4270b3;
+            margin-right: 8px;
+        }
+
+        .top-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .top-tabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .top-tabs span {
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: white;
+            padding: 4px 14px;
+            border-radius: 30px;
+            color: #2d3a4f;
+            border: 1px solid #dce1e9;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .top-tabs span:hover {
+            background: #e8edf5;
+        }
+
+        .top-tabs span.active {
+            background: #1e2b41;
+            color: white;
+            border-color: #1e2b41;
+        }
+
+        .top-dropdowns {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .top-dropdown {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #2d3a4f;
+            background: white;
+            padding: 4px 10px;
+            border-radius: 30px;
+            border: 1px solid #dce1e9;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .top-dropdown:hover {
+            background: #e8edf5;
+        }
+
+        .top-dropdown i {
+            font-size: 0.6rem;
+            color: #6f7d93;
+        }
+
+        .top-dropdowns select.top-dropdown {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='%236f7d93' d='M1 2l3 3 3-3z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 24px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .top-table-wrapper {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 320px;
+        }
+
+        .top-table-wrapper table {
+            min-width: 500px;
+        }
+
+        .top-table-wrapper th {
+            font-weight: 500;
+            color: #3c4a62;
+            padding: 12px 14px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .top-table-wrapper td {
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #eef2f6;
+            color: #1a263b;
+        }
+
+        .top-table-wrapper tr:last-child td {
+            border-bottom: none;
+        }
+
+        .top-table-wrapper .code {
+            font-weight: 600;
+            color: #0f1a2e;
+        }
+
+        .top-table-wrapper .price-val {
+            font-weight: 500;
+        }
+
+        .top-table-wrapper .change-val {
+            font-weight: 500;
+        }
+
+        .top-table-wrapper .change-val.negative {
+            color: #d0314e;
+        }
+
+        .top-table-wrapper .change-val.positive {
+            color: #0f7b3a;
+        }
+
+        .top-table-wrapper .volume {
+            font-weight: 400;
+            color: #4b5b74;
+        }
+
+        .top-table-wrapper .avg-volume {
+            font-weight: 400;
+            color: #6f7d93;
+        }
+
+        .badge-warning {
+            color: #f5a623;
+            font-size: 0.85rem;
+            margin-left: 4px;
+        }
+
+        .badge-warning.peak {
+            color: #f5a623;
+        }
+
+        .badge-warning.bottom {
+            color: #d0314e;
+        }
+
+        /* ===== FOREIGN TRADING SECTION ===== */
+        .foreign-section {
+            margin: 8px 0 24px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 22px 22px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .foreign-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .foreign-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1c2a44;
+        }
+
+        .foreign-title i {
+            color: #4270b3;
+            margin-right: 8px;
+        }
+
+        .foreign-main-tabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .foreign-main-tabs span {
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: white;
+            padding: 5px 16px;
+            border-radius: 30px;
+            color: #2d3a4f;
+            border: 1px solid #dce1e9;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .foreign-main-tabs span:hover {
+            background: #e8edf5;
+        }
+
+        .foreign-main-tabs span.active {
+            background: #1e2b41;
+            color: white;
+            border-color: #1e2b41;
+        }
+
+        .foreign-sub-tabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin: 8px 0 4px;
+        }
+
+        .foreign-sub-tabs span {
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: white;
+            padding: 3px 12px;
+            border-radius: 30px;
+            color: #6f7d93;
+            border: 1px solid #dce1e9;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .foreign-sub-tabs span:hover {
+            background: #e8edf5;
+        }
+
+        .foreign-sub-tabs span.active {
+            background: #e8edf5;
+            color: #1e2b41;
+            border-color: #b0b8c5;
+        }
+
+        /* Tab bị disable (Tự doanh / kỳ hạn 1Y, YTD) */
+        .foreign-main-tabs span.disabled,
+        .foreign-sub-tabs span.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .foreign-main-tabs span.disabled:hover,
+        .foreign-sub-tabs span.disabled:hover {
+            background: white;
+        }
+
+        .foreign-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 14px;
+            margin: 16px 0 12px;
+            flex-wrap: wrap;
+        }
+
+        .foreign-bar-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1 0 32px;
+        }
+
+        .foreign-bar {
+            width: 100%;
+            border-radius: 6px 6px 0 0;
+            min-height: 6px;
+        }
+
+        .foreign-bar.buy {
+            background: #0f7b3a;
+        }
+
+        .foreign-bar.sell {
+            background: #d0314e;
+        }
+
+        .foreign-bar.net {
+            background: #3861a5;
+        }
+
+        .foreign-bar-label {
+            font-size: 0.6rem;
+            color: #4b5b74;
+            margin-top: 4px;
+        }
+
+        .foreign-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px 40px;
+            padding: 12px 20px;
+            border-radius: 40px;
+            margin: 8px 0 14px;
+            align-items: center;
+        }
+
+        .foreign-stats .stat-item {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .foreign-stats .stat-item .highlight-buy {
+            color: #0f7b3a;
+        }
+        .foreign-stats .stat-item .highlight-sell {
+            color: #d0314e;
+        }
+
+        .foreign-stock-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 24px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            max-height: 340px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .foreign-stock-list .stock-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px dashed #e9edf3;
+        }
+
+        .foreign-stock-list .stock-row .code {
+            font-weight: 500;
+        }
+
+        .foreign-stock-list .stock-row .change {
+            font-weight: 500;
+        }
+
+        .foreign-stock-list .stock-row .change.negative {
+            color: #d0314e;
+        }
+        .foreign-stock-list .stock-row .change.positive {
+            color: #0f7b3a;
+        }
+        .foreign-stock-list .stock-row .change.zero {
+            color: #6f7d93;
+        }
+
+        .foreign-legend {
+            display: flex;
+            gap: 20px;
+            font-size: 0.75rem;
+            color: #334155;
+            margin-top: 8px;
+        }
+
+        .foreign-legend .dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+            margin-right: 6px;
+        }
+        .foreign-legend .dot.buy { background: #0f7b3a; }
+        .foreign-legend .dot.sell { background: #d0314e; }
+        .foreign-legend .dot.net { background: #3861a5; }
+
+        /* ===== NEWS SECTION ===== */
+        .news-section {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 22px 22px;
+            margin-top: 28px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .news-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .news-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1c2a44;
+        }
+
+        .news-title i {
+            color: #4270b3;
+            margin-right: 8px;
+        }
+
+        .news-tabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .news-tabs span {
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: white;
+            padding: 4px 14px;
+            border-radius: 30px;
+            color: #2d3a4f;
+            border: 1px solid #dce1e9;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .news-tabs span:hover {
+            background: #e8edf5;
+        }
+
+        .news-tabs span.active {
+            background: #1e2b41;
+            color: white;
+            border-color: #1e2b41;
+        }
+
+        .news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .news-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            border-radius: 16px;
+            transition: 0.1s;
+            cursor: pointer;
+        }
+
+        .news-item:hover {
+            border-color: #3861a5;
+            box-shadow: 0 2px 8px rgba(56, 97, 165, 0.08);
+        }
+
+        .news-image {
+            flex-shrink: 0;
+            width: 72px;
+            height: 72px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: #6f7d93;
+        }
+
+        .news-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .news-image .placeholder-icon {
+            font-size: 2rem;
+            color: #b0b8c5;
+        }
+
+        .news-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .news-content .title {
+            font-weight: 500;
+            color: #0f1a2e;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-content .meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 20px;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            color: #6f7d93;
+        }
+
+        .news-content .meta .time {
+            white-space: nowrap;
+        }
+
+        .news-content .meta .ticker {
+            font-weight: 600;
+            color: #1f2a41;
+            background: #f1f4f9;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+        }
+
+        .news-content .meta .ticker.negative {
+            color: #d0314e;
+            background: #ffe9ed;
+        }
+
+        .news-content .meta .ticker.positive {
+            color: #0f7b3a;
+            background: #e3f5ec;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            .dashboard {
+                padding: 12px;
+            }
+            .index-row {
+                gap: 10px;
+            }
+            .index-value {
+                font-size: 1.3rem;
+            }
+            .index-row, .liquidity-section, .watchlist-section, .top-stocks-section, .foreign-section, .market-map-section, .news-section {
+                padding: 16px;
+            }
+            .vol-stats {
+                padding: 8px 14px;
+                font-size: 0.8rem;
+            }
+            .foreign-stock-list {
+                grid-template-columns: 1fr;
+            }
+            .foreign-stats {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            table {
+                font-size: 0.75rem;
+                min-width: 500px;
+            }
+            th, td {
+                padding: 8px 6px;
+            }
+            .sparkline {
+                height: 24px;
+            }
+            .sparkline-bar {
+                width: 3px;
+            }
+            .top-controls {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+            .top-tabs {
+                width: 100%;
+            }
+            .top-tabs span {
+                flex: 1;
+                text-align: center;
+            }
+            .top-dropdowns {
+                width: 100%;
+            }
+            .top-dropdown {
+                flex: 1;
+                justify-content: center;
+            }
+            .foreign-main-tabs {
+                width: 100%;
+            }
+            .foreign-main-tabs span {
+                flex: 1;
+                text-align: center;
+            }
+            .news-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .news-image {
+                width: 100%;
+                height: 140px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/typography.css" />
+</head>
+<body>
+<div class="dashboard">
+
+    <!-- INDEX ROW -->
+    <div class="index-row">
+        <div class="index-header">
+            <div class="index-title">
+                <i class="fas fa-chart-line"></i> Các chỉ số cơ bản
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="index-table">
+                <thead>
+                    <tr>
+                        <th>Chỉ số</th>
+                        <th>Giá</th>
+                        <th>Thay đổi</th>
+                        <th>Đơn vị</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="index-item" data-market-key="vnindex">
+                        <td><span class="index-label"><i class="fas fa-chart-line index-icon stock"></i> VNINDEX</span></td>
+                        <td><span class="index-value">1,686.1</span></td>
+                        <td><span class="index-change negative"><i class="fas fa-caret-down"></i> -13.27 (-0.78%)</span></td>
+                        <td><span class="index-sub">-</span></td>
+                    </tr>
+                    <tr class="index-item" data-market-key="vn30">
+                        <td><span class="index-label"><i class="fas fa-chart-bar index-icon stock"></i> VN30</span></td>
+                        <td><span class="index-value">1,829.3</span></td>
+                        <td><span class="index-change negative"><i class="fas fa-caret-down"></i> -15.96 (-0.86%)</span></td>
+                        <td><span class="index-sub">-</span></td>
+                    </tr>
+                    <tr class="index-item" data-market-key="dowjones">
+                        <td><span class="index-label"><i class="fas fa-building index-icon stock"></i> Dow Jones</span></td>
+                        <td><span class="index-value">51,947.2</span></td>
+                        <td><span class="index-change positive"><i class="fas fa-caret-up"></i> +235.59 (0.45%)</span></td>
+                        <td><span class="index-sub">-</span></td>
+                    </tr>
+                    <tr class="index-item" data-market-key="bitcoin">
+                        <td><span class="index-label"><i class="fab fa-bitcoin index-icon crypto"></i> Bitcoin</span></td>
+                        <td><span class="index-value">64,544</span></td>
+                        <td><span class="index-change positive"><i class="fas fa-caret-up"></i> +169.09 (0.26%)</span></td>
+                        <td><span class="index-sub">USD</span></td>
+                    </tr>
+                    <tr class="index-item" data-market-key="gold_world">
+                        <td><span class="index-label"><i class="fas fa-globe-asia index-icon gold"></i> Vàng TG</span></td>
+                        <td><span class="index-value">2,417.80</span></td>
+                        <td><span class="index-change positive"><i class="fas fa-caret-up"></i> +3.27 (+0.14%)</span></td>
+                        <td><span class="index-sub">USD/oz</span></td>
+                    </tr>
+                    <tr class="index-item" data-market-key="gold_vn">
+                        <td><span class="index-label"><i class="fas fa-map-pin index-icon gold"></i> Vàng TN</span></td>
+                        <td><span class="index-value">87.25</span></td>
+                        <td><span class="index-change positive"><i class="fas fa-caret-up"></i> +0.15 (+0.17%)</span></td>
+                        <td><span class="index-sub">triệu/lượng</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MARKET MAP SECTION -->
+    <div class="market-map-section">
+        <div class="market-map-header">
+            <div class="market-map-title">
+                <i class="fas fa-th-large"></i> Bản đồ thị trường
+            </div>
+            <div class="market-map-legend">
+                <span class="lg lg-ceiling"><i class="fas fa-arrow-up"></i> Trần</span>
+                <span class="lg lg-up">Tăng</span>
+                <span class="lg lg-flat">Đứng</span>
+                <span class="lg lg-down">Giảm</span>
+                <span class="lg lg-floor"><i class="fas fa-arrow-down"></i> Sàn</span>
+                <span class="lg" style="background: transparent; color: #8a99b1;"><i class="fas fa-info-circle"></i> Diện tích = khối lượng giao dịch</span>
+            </div>
+        </div>
+        <div id="marketMap" class="market-map"></div>
+        <div id="marketMapStatus" class="market-map-status">Đang tải dữ liệu...</div>
+    </div>
+
+    <!-- LIQUIDITY SECTION -->
+    <div class="liquidity-section">
+        <div class="liquidity-header">
+            <div class="liquidity-title">
+                <i class="fas fa-chart-bar"></i> Thanh khoản thị trường
+            </div>
+        </div>
+
+        <div class="chart-wrapper">
+            <div class="liquidity-chart-card">
+                <div class="liquidity-exchange-btns">
+                    <button class="liquidity-exchange-btn active" data-exchange="HOSE">HOSE</button>
+                    <button class="liquidity-exchange-btn" data-exchange="HNX">HNX</button>
+                    <button class="liquidity-exchange-btn" data-exchange="UpCOM">UpCOM</button>
+                </div>
+                <div class="liquidity-metrics">
+                    <div class="liquidity-metric">
+                        <span class="metric-line"></span> GTGD hôm nay
+                    </div>
+                    <div class="liquidity-metric">
+                        <span class="metric-line metric-line-yellow"></span> GTGD hôm qua
+                    </div>
+                </div>
+                <svg id="liquidityChart" viewBox="0 0 820 360" role="img" aria-label="Biểu đồ GTGD"></svg>
+            </div>
+        </div>
+
+        <div class="legend">
+        </div>
+    </div>
+
+    <!-- WATCHLIST SECTION -->
+    <div class="watchlist-section">
+        <div class="watchlist-header">
+            <div class="watchlist-title">
+                <i class="fas fa-list-ul"></i> Danh sách cổ phiếu trong VN30
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tài sản</th>
+                        <th>Giá hiện tại</th>
+                        <th>Biến động giá</th>
+                        <th>Thay đổi 7D</th>
+                        <th>KLGD</th>
+                        <th>Biểu đồ giá 30 ngày</th>
+                        <th>P/E</th>
+                        <th>P/B</th>
+                    </tr>
+                </thead>
+                <tbody id="watchlistBody">
+                    <tr>
+                        <td class="stock-name">MBB</td>
+                        <td class="price">21,900</td>
+                        <td class="change negative">-0.68%</td>
+                        <td class="change negative">-7.79%</td>
+                        <td>10,335,400</td>
+                        <td>
+                            <div class="sparkline">
+                                <span class="sparkline-bar up" style="height:18px;"></span>
+                                <span class="sparkline-bar down" style="height:12px;"></span>
+                                <span class="sparkline-bar down" style="height:8px;"></span>
+                                <span class="sparkline-bar up" style="height:20px;"></span>
+                                <span class="sparkline-bar up" style="height:24px;"></span>
+                                <span class="sparkline-bar down" style="height:10px;"></span>
+                                <span class="sparkline-bar up" style="height:16px;"></span>
+                                <span class="sparkline-bar down" style="height:6px;"></span>
+                                <span class="sparkline-bar up" style="height:22px;"></span>
+                                <span class="sparkline-bar down" style="height:14px;"></span>
+                                <span class="sparkline-bar up" style="height:28px;"></span>
+                                <span class="sparkline-bar down" style="height:18px;"></span>
+                                <span class="sparkline-bar up" style="height:26px;"></span>
+                                <span class="sparkline-bar down" style="height:20px;"></span>
+                                <span class="sparkline-bar up" style="height:30px;"></span>
+                            </div>
+                        </td>
+                        <td class="pe-ratio">6.4</td>
+                        <td class="pb-ratio">1.2</td>
+                    </tr>
+                    <tr>
+                        <td class="stock-name">MWG</td>
+                        <td class="price">68,000</td>
+                        <td class="change negative">-4.89%</td>
+                        <td class="change negative">-11.34%</td>
+                        <td>3,613,700</td>
+                        <td>
+                            <div class="sparkline">
+                                <span class="sparkline-bar up" style="height:14px;"></span>
+                                <span class="sparkline-bar down" style="height:8px;"></span>
+                                <span class="sparkline-bar down" style="height:6px;"></span>
+                                <span class="sparkline-bar up" style="height:16px;"></span>
+                                <span class="sparkline-bar down" style="height:4px;"></span>
+                                <span class="sparkline-bar up" style="height:20px;"></span>
+                                <span class="sparkline-bar down" style="height:10px;"></span>
+                                <span class="sparkline-bar up" style="height:18px;"></span>
+                                <span class="sparkline-bar down" style="height:12px;"></span>
+                                <span class="sparkline-bar up" style="height:22px;"></span>
+                                <span class="sparkline-bar down" style="height:8px;"></span>
+                                <span class="sparkline-bar up" style="height:24px;"></span>
+                                <span class="sparkline-bar down" style="height:14px;"></span>
+                                <span class="sparkline-bar up" style="height:20px;"></span>
+                                <span class="sparkline-bar down" style="height:10px;"></span>
+                            </div>
+                        </td>
+                        <td class="pe-ratio">12.2</td>
+                        <td class="pb-ratio">2.8</td>
+                    </tr>
+                    <tr>
+                        <td class="stock-name">SAB</td>
+                        <td class="price">46,500</td>
+                        <td class="change negative">-1.06%</td>
+                        <td class="change negative">-0.85%</td>
+                        <td>618,600</td>
+                        <td>
+                            <div class="sparkline">
+                                <span class="sparkline-bar up" style="height:10px;"></span>
+                                <span class="sparkline-bar down" style="height:6px;"></span>
+                                <span class="sparkline-bar up" style="height:14px;"></span>
+                                <span class="sparkline-bar down" style="height:8px;"></span>
+                                <span class="sparkline-bar up" style="height:18px;"></span>
+                                <span class="sparkline-bar down" style="height:10px;"></span>
+                                <span class="sparkline-bar up" style="height:16px;"></span>
+                                <span class="sparkline-bar down" style="height:12px;"></span>
+                                <span class="sparkline-bar up" style="height:20px;"></span>
+                                <span class="sparkline-bar down" style="height:14px;"></span>
+                                <span class="sparkline-bar up" style="height:22px;"></span>
+                                <span class="sparkline-bar down" style="height:16px;"></span>
+                                <span class="sparkline-bar up" style="height:24px;"></span>
+                                <span class="sparkline-bar down" style="height:18px;"></span>
+                                <span class="sparkline-bar up" style="height:26px;"></span>
+                            </div>
+                        </td>
+                        <td class="pe-ratio">12.5</td>
+                        <td class="pb-ratio">3.0</td>
+                    </tr>
+                    <tr>
+                        <td class="stock-name">VJC</td>
+                        <td class="price">127,400</td>
+                        <td class="change negative">-0.15%</td>
+                        <td class="change negative">-2.97%</td>
+                        <td>828,800</td>
+                        <td>
+                            <div class="sparkline">
+                                <span class="sparkline-bar up" style="height:16px;"></span>
+                                <span class="sparkline-bar down" style="height:20px;"></span>
+                                <span class="sparkline-bar up" style="height:12px;"></span>
+                                <span class="sparkline-bar down" style="height:24px;"></span>
+                                <span class="sparkline-bar up" style="height:18px;"></span>
+                                <span class="sparkline-bar down" style="height:22px;"></span>
+                                <span class="sparkline-bar up" style="height:14px;"></span>
+                                <span class="sparkline-bar down" style="height:28px;"></span>
+                                <span class="sparkline-bar up" style="height:20px;"></span>
+                                <span class="sparkline-bar down" style="height:26px;"></span>
+                                <span class="sparkline-bar up" style="height:16px;"></span>
+                                <span class="sparkline-bar down" style="height:30px;"></span>
+                                <span class="sparkline-bar up" style="height:22px;"></span>
+                                <span class="sparkline-bar down" style="height:28px;"></span>
+                                <span class="sparkline-bar up" style="height:18px;"></span>
+                            </div>
+                        </td>
+                        <td class="pe-ratio">39.3</td>
+                        <td class="pb-ratio">3.8</td>
+                    </tr>
+                    <tr>
+                        <td class="stock-name">PLX</td>
+                        <td class="price">33,800</td>
+                        <td class="change positive">+1.19%</td>
+                        <td class="change negative">-3.98%</td>
+                        <td>1,713,700</td>
+                        <td>
+                            <div class="sparkline">
+                                <span class="sparkline-bar up" style="height:12px;"></span>
+                                <span class="sparkline-bar up" style="height:16px;"></span>
+                                <span class="sparkline-bar down" style="height:8px;"></span>
+                                <span class="sparkline-bar up" style="height:20px;"></span>
+                                <span class="sparkline-bar down" style="height:10px;"></span>
+                                <span class="sparkline-bar up" style="height:18px;"></span>
+                                <span class="sparkline-bar down" style="height:6px;"></span>
+                                <span class="sparkline-bar up" style="height:22px;"></span>
+                                <span class="sparkline-bar down" style="height:14px;"></span>
+                                <span class="sparkline-bar up" style="height:24px;"></span>
+                                <span class="sparkline-bar down" style="height:12px;"></span>
+                                <span class="sparkline-bar up" style="height:28px;"></span>
+                                <span class="sparkline-bar down" style="height:16px;"></span>
+                                <span class="sparkline-bar up" style="height:26px;"></span>
+                                <span class="sparkline-bar down" style="height:18px;"></span>
+                            </div>
+                        </td>
+                        <td class="pe-ratio">24.1</td>
+                        <td class="pb-ratio">1.7</td>
+                    </tr>
+                    <tr>
+                        <td class="stock-name">TCB</td>
+                        <td class="price">28,600</td>
+                        <td class="change negative">-2.22%</td>
+                        <td class="change negative">-9.06%</td>
+                        <td>10,695,100</td>
+                        <td>
+                            <div class="sparkline">
+                                <span class="sparkline-bar up" style="height:20px;"></span>
+                                <span class="sparkline-bar down" style="height:14px;"></span>
+                                <span class="sparkline-bar up" style="height:24px;"></span>
+                                <span class="sparkline-bar down" style="height:18px;"></span>
+                                <span class="sparkline-bar up" style="height:28px;"></span>
+                                <span class="sparkline-bar down" style="height:22px;"></span>
+                                <span class="sparkline-bar up" style="height:30px;"></span>
+                                <span class="sparkline-bar down" style="height:16px;"></span>
+                                <span class="sparkline-bar up" style="height:26px;"></span>
+                                <span class="sparkline-bar down" style="height:20px;"></span>
+                                <span class="sparkline-bar up" style="height:32px;"></span>
+                                <span class="sparkline-bar down" style="height:24px;"></span>
+                                <span class="sparkline-bar up" style="height:28px;"></span>
+                                <span class="sparkline-bar down" style="height:18px;"></span>
+                                <span class="sparkline-bar up" style="height:34px;"></span>
+                            </div>
+                        </td>
+                        <td class="pe-ratio">7.5</td>
+                        <td class="pb-ratio">1.1</td>
+                    </tr>
+                    <tr>
+                        <td class="stock-name">VHM</td>
+                        <td class="price">130,000</td>
+                        <td class="change negative">-1.51%</td>
+                        <td class="change negative">-7.47%</td>
+                        <td>2,883,200</td>
+                        <td>
+                            <div class="sparkline">
+                                <span class="sparkline-bar up" style="height:18px;"></span>
+                                <span class="sparkline-bar down" style="height:10px;"></span>
+                                <span class="sparkline-bar up" style="height:22px;"></span>
+                                <span class="sparkline-bar down" style="height:14px;"></span>
+                                <span class="sparkline-bar up" style="height:26px;"></span>
+                                <span class="sparkline-bar down" style="height:18px;"></span>
+                                <span class="sparkline-bar up" style="height:30px;"></span>
+                                <span class="sparkline-bar down" style="height:22px;"></span>
+                                <span class="sparkline-bar up" style="height:28px;"></span>
+                                <span class="sparkline-bar down" style="height:16px;"></span>
+                                <span class="sparkline-bar up" style="height:32px;"></span>
+                                <span class="sparkline-bar down" style="height:20px;"></span>
+                                <span class="sparkline-bar up" style="height:24px;"></span>
+                                <span class="sparkline-bar down" style="height:12px;"></span>
+                                <span class="sparkline-bar up" style="height:30px;"></span>
+                            </div>
+                        </td>
+                        <td class="pe-ratio">8.3</td>
+                        <td class="pb-ratio">2.0</td>
+                    </tr>
+                    <tr>
+                        <td class="stock-name">VRE</td>
+                        <td class="price">21,900</td>
+                        <td class="change negative">-0.45%</td>
+                        <td class="change negative">-10.79%</td>
+                        <td>3,204,500</td>
+                        <td>
+                            <div class="sparkline">
+                                <span class="sparkline-bar up" style="height:14px;"></span>
+                                <span class="sparkline-bar down" style="height:8px;"></span>
+                                <span class="sparkline-bar up" style="height:18px;"></span>
+                                <span class="sparkline-bar down" style="height:10px;"></span>
+                                <span class="sparkline-bar up" style="height:22px;"></span>
+                                <span class="sparkline-bar down" style="height:14px;"></span>
+                                <span class="sparkline-bar up" style="height:20px;"></span>
+                                <span class="sparkline-bar down" style="height:12px;"></span>
+                                <span class="sparkline-bar up" style="height:24px;"></span>
+                                <span class="sparkline-bar down" style="height:16px;"></span>
+                                <span class="sparkline-bar up" style="height:28px;"></span>
+                                <span class="sparkline-bar down" style="height:18px;"></span>
+                                <span class="sparkline-bar up" style="height:26px;"></span>
+                                <span class="sparkline-bar down" style="height:20px;"></span>
+                                <span class="sparkline-bar up" style="height:30px;"></span>
+                            </div>
+                        </td>
+                        <td class="pe-ratio">7.2</td>
+                        <td class="pb-ratio">1.0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TOP STOCKS SECTION -->
+    <div class="top-stocks-section">
+        <div class="top-stocks-header">
+            <div class="top-stocks-title">
+                <i class="fas fa-fire"></i> Top cổ phiếu
+            </div>
+            <div class="top-controls">
+                <div class="top-tabs">
+                    <span class="active" data-tab="breakout">Cổ phiếu đột biến</span>
+                    <span data-tab="foreign-buy">Khối ngoại mua</span>
+                    <span data-tab="foreign-sell">Khối ngoại bán</span>
+                    <span data-tab="break-high">Vượt đỉnh</span>
+                    <span data-tab="break-low">Phá đáy</span>
+                </div>
+                <div class="top-dropdowns" id="topPeriodDropdown" style="display:none;">
+                    <select id="topPeriodSelect" class="top-dropdown">
+                        <option value="1w">1 tuần</option>
+                        <option value="1M">1 tháng</option>
+                        <option value="1y">1 năm</option>
+                        <option value="3y">3 năm</option>
+                        <option value="5y">5 năm</option>
+                        <option value="max">Thời đại</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cổ phiếu</th>
+                        <th style="text-align:right;">Giá</th>
+                        <th style="text-align:right;">Biến động</th>
+                        <th style="text-align:right;">Khối lượng</th>
+                        <th style="text-align:right;">KL TB 10 phiên</th>
+                        <th id="foreignNetTh" style="text-align:right;display:none;">Mua/Bán ròng (tỷ)</th>
+                    </tr>
+                </thead>
+                <tbody id="topStockBody">
+                    <tr>
+                        <td class="code">PNJ</td>
+                        <td class="price-val" style="text-align:right;">30,750</td>
+                        <td class="change-val negative" style="text-align:right;">-6.95%</td>
+                        <td class="volume" style="text-align:right;">41,349,200</td>
+                        <td class="avg-volume" style="text-align:right;">7,638,620</td>
+                    </tr>
+                    <tr>
+                        <td class="code">NVL</td>
+                        <td class="price-val" style="text-align:right;">12,950</td>
+                        <td class="change-val positive" style="text-align:right;">+1.96%</td>
+                        <td class="volume" style="text-align:right;">22,086,100</td>
+                        <td class="avg-volume" style="text-align:right;">13,634,390</td>
+                    </tr>
+                    <tr>
+                        <td class="code">TPB</td>
+                        <td class="price-val" style="text-align:right;">14,200</td>
+                        <td class="change-val positive" style="text-align:right;">+1.42%</td>
+                        <td class="volume" style="text-align:right;">12,197,200</td>
+                        <td class="avg-volume" style="text-align:right;">10,554,860</td>
+                    </tr>
+                    <tr>
+                        <td class="code">BSR</td>
+                        <td class="price-val" style="text-align:right;">24,000</td>
+                        <td class="change-val positive" style="text-align:right;">+2.78%</td>
+                        <td class="volume" style="text-align:right;">10,125,300</td>
+                        <td class="avg-volume" style="text-align:right;">9,713,880</td>
+                    </tr>
+                    <tr>
+                        <td class="code">EIB</td>
+                        <td class="price-val" style="text-align:right;">17,500</td>
+                        <td class="change-val negative" style="text-align:right;">-0.84%</td>
+                        <td class="volume" style="text-align:right;">9,792,900</td>
+                        <td class="avg-volume" style="text-align:right;">7,474,140</td>
+                    </tr>
+                    <tr>
+                        <td class="code">STB</td>
+                        <td class="price-val" style="text-align:right;">73,500</td>
+                        <td class="change-val positive" style="text-align:right;">+2.08%</td>
+                        <td class="volume" style="text-align:right;">6,106,500</td>
+                        <td class="avg-volume" style="text-align:right;">5,315,620</td>
+                    </tr>
+                    <tr>
+                        <td class="code">MST <span class="badge-warning peak"><i class="fas fa-exclamation-triangle"></i></span></td>
+                        <td class="price-val" style="text-align:right;">9,700</td>
+                        <td class="change-val positive" style="text-align:right;">+2.10%</td>
+                        <td class="volume" style="text-align:right;">3,657,600</td>
+                        <td class="avg-volume" style="text-align:right;">2,640,360</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- FOREIGN TRADING SECTION -->
+    <div class="foreign-section">
+        <div class="foreign-header">
+            <div class="foreign-title" id="foreignTitle">
+                <i class="fas fa-handshake"></i> Giao dịch khối ngoại/tự doanh
+            </div>
+            <div class="foreign-main-tabs">
+                <span class="active" data-foreign="foreign">Khối ngoại</span>
+                <span data-foreign="proprietary" class="disabled" title="Đang phát triển — sắp có dữ liệu">Tự doanh</span>
+            </div>
+        </div>
+
+        <div class="foreign-sub-tabs" id="foreignPeriodTabs">
+            <span class="active" data-period="1D">1D</span>
+            <span data-period="1W">1W</span>
+            <span data-period="1M">1M</span>
+            <span data-period="3M">3M</span>
+            <span data-period="1Y" class="disabled" title="Chưa có dữ liệu cho kỳ hạn này">1Y</span>
+            <span data-period="YTD" class="disabled" title="Chưa có dữ liệu cho kỳ hạn này">YTD</span>
+        </div>
+
+        <div class="foreign-stats" id="foreignStats">
+            <span class="stat-item" style="color:#8a99b1;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</span>
+        </div>
+
+        <div id="foreignStockLists">
+            <div style="padding:20px;text-align:center;color:#8a99b1;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+        </div>
+    </div>
+
+
+</div>
+
+<script>
+    let lastSentHeight = 0;
+    let marketRefreshTimer = null;
+
+    function formatMarketValue(key, value) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) {
+            return '--';
+        }
+
+        const map = {
+            vnindex: { decimals: 1 },
+            vn30: { decimals: 1 },
+            dowjones: { decimals: 1 },
+            bitcoin: { decimals: 0 },
+            gold_world: { decimals: 2 },
+            gold_vn: { decimals: 2 },
+        };
+        const decimals = (map[key] && map[key].decimals) || 2;
+        return n.toLocaleString('en-US', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        });
+    }
+
+    function formatSigned(value, decimals) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) {
+            return '0';
+        }
+        const abs = Math.abs(n).toLocaleString('en-US', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        });
+        if (n > 0) return `+${abs}`;
+        if (n < 0) return `-${abs}`;
+        return abs;
+    }
+
+    function renderMarketItem(item) {
+        if (!item || !item.key) {
+            return;
+        }
+
+        const card = document.querySelector(`.index-item[data-market-key="${item.key}"]`);
+        if (!card) {
+            return;
+        }
+
+        const valueEl = card.querySelector('.index-value');
+        const changeEl = card.querySelector('.index-change');
+
+        const value = Number(item.value || 0);
+        const change = Number(item.change || 0);
+        const percent = Number(item.percent_change || 0);
+        const positive = change >= 0;
+
+        if (valueEl) {
+            valueEl.textContent = formatMarketValue(item.key, value);
+        }
+
+        if (changeEl) {
+            changeEl.classList.remove('positive', 'negative');
+            changeEl.classList.add(positive ? 'positive' : 'negative');
+            changeEl.innerHTML = `<i class="fas fa-caret-${positive ? 'up' : 'down'}"></i> ${formatSigned(change, 2)} (${formatSigned(percent, 2)}%)`;
+        }
+    }
+
+    function getFreshestAsOf(payload) {
+        let best = '';
+        let bestScore = -1;
+
+        payload.forEach(item => {
+            if (!item || !item.as_of) {
+                return;
+            }
+
+            const parsed = new Date(item.as_of);
+            if (Number.isNaN(parsed.getTime())) {
+                return;
+            }
+
+            const hasClockTime = parsed.getHours() !== 0 || parsed.getMinutes() !== 0 || parsed.getSeconds() !== 0;
+            const score = parsed.getTime() + (hasClockTime ? 1 : 0);
+            if (score > bestScore) {
+                bestScore = score;
+                best = item.as_of;
+            }
+        });
+
+        return best;
+    }
+
+    function updateMarketTimestamp(asOf) {
+        const el = document.getElementById('marketUpdatedAt');
+        if (!el) {
+            return;
+        }
+
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        let text = `${hh}:${mm}`;
+        if (asOf) {
+            const t = new Date(asOf);
+            if (!Number.isNaN(t.getTime())) {
+                text = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+            }
+        }
+
+        el.innerHTML = `<i class="far fa-clock"></i> Cập nhật: ${text}`;
+    }
+
+    async function loadRealtimeMarketOverview() {
+        try {
+            const res = await fetch('/api/stocks/market-overview', { cache: 'no-store' });
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+
+            const payload = await res.json();
+            if (!Array.isArray(payload)) {
+                return;
+            }
+
+            payload.forEach(item => {
+                renderMarketItem(item);
+            });
+
+            updateMarketTimestamp(getFreshestAsOf(payload));
+            notifyParentHeight();
+        } catch (error) {
+            console.warn('Failed to load market overview:', error);
+            updateMarketTimestamp('');
+        }
+    }
+
+    function applyTheme(mode) {
+        const isDark = mode === 'dark';
+        document.body.classList.toggle('dark-mode', isDark);
+    }
+
+    function getDashboardHeight() {
+        const dashboard = document.querySelector('.dashboard');
+        if (!dashboard) {
+            return 0;
+        }
+
+        return Math.ceil(dashboard.getBoundingClientRect().height);
+    }
+
+    function notifyParentHeight() {
+        try {
+            const height = getDashboardHeight();
+            if (height <= 0) {
+                return;
+            }
+
+            if (Math.abs(height - lastSentHeight) < 2) {
+                return;
+            }
+
+            lastSentHeight = height;
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'tunix-home-height', height }, '*');
+            }
+        } catch (e) {
+            // Ignore cross-context messaging errors.
+        }
+    }
+
+    window.addEventListener('message', function(event) {
+        const data = event.data;
+        if (!data || data.type !== 'tunix-theme') return;
+        const mode = data.mode === 'dark' ? 'dark' : 'light';
+        localStorage.setItem('theme', mode);
+        applyTheme(mode);
+        notifyParentHeight();
+    });
+
+    // Click handlers for interactive elements
+    document.querySelectorAll('.liquidity-tabs span, .market-btn, .top-tabs span, .foreign-sub-tabs span, .news-tabs span').forEach(el => {
+        el.addEventListener('click', function() {
+            if (this.classList.contains('disabled')) return;
+            const parent = this.parentElement;
+            parent.querySelectorAll('span').forEach(s => s.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    let liquidityLabels = [];
+    let liquidityTicks = [];
+    let currentLiquidityData = { today: [], yesterday: [] };
+    let currentLiquidityPoints = { today: [], yesterday: [] };
+    let currentLiquidityMax = 240;
+    let currentLiquidityStep = 5000;
+    let chartTimeRange = { min: 0, max: 0 };
+
+    // Chọn thang đo trục Y (tỷ vnd) theo độ lớn thanh khoản của từng sàn:
+    // - HOSE (thanh khoản cao): bước 5000 -> 5000, 10000, 15000...
+    // - HNX/UPCOM (thanh khoản thấp): bước 100 -> 100, 200, 300, 500...
+    function niceScale(maxValue) {
+        if (maxValue <= 0) {
+            return { max: 25000, step: 5000 };
+        }
+        let step;
+        if (maxValue < 1000) {
+            step = 100;
+        } else if (maxValue < 10000) {
+            step = 500;
+        } else if (maxValue < 50000) {
+            step = 5000;
+        } else {
+            step = 10000;
+        }
+        return {
+            max: Math.max(step, Math.ceil(maxValue / step) * step),
+            step: step,
+        };
+    }
+
+    function formatTime(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return String(value || '');
+        }
+        return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function buildTimeTicks() {
+        const { min, max } = chartTimeRange;
+        if (min >= max) {
+            return [];
+        }
+        const tickTimes = [0, 1.5, 3, 4.5, 6].map(offsetHours => min + offsetHours * 60 * 60 * 1000);
+        return tickTimes.map((ts) => ({ x: getChartX(ts), label: formatTime(new Date(ts)), timestamp: ts }));
+    }
+
+    function getChartX(timestamp) {
+        const { width, padding } = chartState;
+        const chartWidth = width - padding.left - padding.right;
+        const range = chartTimeRange.max - chartTimeRange.min;
+        if (range <= 0) {
+            return padding.left;
+        }
+        return padding.left + ((timestamp - chartTimeRange.min) / range) * chartWidth;
+    }
+
+    const liquidityChartSvg = document.getElementById('liquidityChart');
+    let activeLiquidityExchange = 'HOSE';
+
+    async function fetchExchangeChart(exchange) {
+        try {
+            const res = await fetch(`/api/stocks/exchange-chart?exchange=${encodeURIComponent(exchange)}&period=5d`, { cache: 'no-store' });
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+            const payload = await res.json();
+            if (!payload || !Array.isArray(payload.today) || !Array.isArray(payload.yesterday)) {
+                throw new Error('Invalid chart payload');
+            }
+            const parseSeries = (series) =>
+                series
+                    .map(item => {
+                        const time = String(item.time || '');
+                        let timestamp = Number(item.timestamp || 0);
+                        if (!timestamp) {
+                            const date = new Date(time);
+                            timestamp = Number.isFinite(date.getTime()) ? date.getTime() : 0;
+                            const isMidnightUtc = date.getUTCHours() === 0 && date.getUTCMinutes() === 0 && date.getUTCSeconds() === 0;
+                            if (isMidnightUtc && timestamp > 0) {
+                                const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 15, 0, 0, 0);
+                                timestamp = localDate.getTime();
+                            }
+                        }
+                        return {
+                            time,
+                            timestamp,
+                            close: Number(item.close || 0),
+                        };
+                    })
+                    .filter(item => item.time && item.timestamp > 0);
+
+            const today = parseSeries(payload.today);
+            const yesterday = parseSeries(payload.yesterday);
+            const sourceSeries = today.length ? today : yesterday;
+
+            // Ưu tiên khoảng phiên (09:00–15:00 VN) do backend cung cấp để căn trục X chính xác.
+            if (payload.session_start && payload.session_end) {
+                chartTimeRange = {
+                    min: Number(payload.session_start),
+                    max: Number(payload.session_end),
+                };
+            } else {
+                const firstDate = new Date(sourceSeries[0]?.timestamp || Date.now());
+                const startOfSession = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate(), 9, 0, 0, 0).getTime();
+                const endOfSession = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate(), 15, 0, 0, 0).getTime();
+                chartTimeRange = {
+                    min: startOfSession,
+                    max: endOfSession,
+                };
+            }
+
+            liquidityTicks = buildTimeTicks();
+            liquidityLabels = liquidityTicks.map(tick => tick.label);
+            if (!liquidityLabels.length) {
+                liquidityLabels = sourceSeries.map((_, index) => `P${index + 1}`);
+            }
+
+            const values = [...today, ...yesterday].map(item => item.close).filter(v => !Number.isNaN(v));
+            const maxValue = values.length ? Math.max(...values) : 240;
+            const scale = niceScale(maxValue);
+            currentLiquidityData = { today, yesterday };
+            currentLiquidityPoints = { today: [], yesterday: [] };
+            currentLiquidityMax = scale.max;
+            currentLiquidityStep = scale.step;
+            return { today, yesterday, maxValue: scale.max, step: scale.step };
+        } catch (error) {
+            console.warn('Failed to load exchange chart:', error);
+            return null;
+        }
+    }
+
+    const chartState = {
+        width: 820,
+        height: 360,
+        padding: { top: 28, right: 24, bottom: 52, left: 48 },
+        hoverLine: null,
+        hoverDot: null,
+        hoverLabelX: null,
+        hoverLabelY: null,
+    };
+
+    function getChartCoordinates(item) {
+        const { height, padding } = chartState;
+        const chartHeight = height - padding.top - padding.bottom;
+        const x = getChartX(item.timestamp || 0);
+        const y = padding.top + chartHeight - ((Number(item.close) || 0) / currentLiquidityMax) * chartHeight;
+        return { x, y };
+    }
+
+    // Chuyển chuỗi điểm thành đường cong mượt (Catmull-Rom -> cubic Bezier) để nét liền mạch.
+    function smoothLinePath(points) {
+        if (!points || points.length < 2) {
+            return '';
+        }
+        let d = `M${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i - 1] || points[i];
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const p3 = points[i + 2] || p2;
+            const cp1x = p1.x + (p2.x - p0.x) / 6;
+            const cp1y = p1.y + (p2.y - p0.y) / 6;
+            const cp2x = p2.x - (p3.x - p1.x) / 6;
+            const cp2y = p2.y - (p3.y - p1.y) / 6;
+            d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+        }
+        return d;
+    }
+
+    function buildChartPaths(data) {
+        currentLiquidityPoints.today = data.today.map((item) => getChartCoordinates(item));
+        currentLiquidityPoints.yesterday = data.yesterday.map((item) => getChartCoordinates(item));
+
+        return {
+            today: smoothLinePath(currentLiquidityPoints.today),
+            yesterday: smoothLinePath(currentLiquidityPoints.yesterday),
+        };
+    }
+
+    function findClosestPointIndex(x) {
+        const points = currentLiquidityPoints.today.length ? currentLiquidityPoints.today : currentLiquidityPoints.yesterday;
+        if (!points.length) {
+            return 0;
+        }
+        let bestIndex = 0;
+        let bestDistance = Infinity;
+        points.forEach((point, index) => {
+            const distance = Math.abs(point.x - x);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = index;
+            }
+        });
+        return bestIndex;
+    }
+
+    function renderLiquidityChart(exchange) {
+        if (!liquidityChartSvg) {
+            return;
+        }
+        activeLiquidityExchange = exchange;
+        const data = currentLiquidityData;
+        const width = chartState.width;
+        const height = chartState.height;
+        const padding = chartState.padding;
+        const chartWidth = width - padding.left - padding.right;
+        const chartHeight = height - padding.top - padding.bottom;
+
+        const paths = buildChartPaths(data);
+        const axisStep = currentLiquidityStep;
+        const tickCount = Math.max(2, Math.floor(currentLiquidityMax / axisStep));
+        const gridLines = Array.from({ length: tickCount }, (_, i) => {
+            const value = currentLiquidityMax - axisStep * i;
+            if (value <= 0) {
+                return '';
+            }
+            const y = padding.top + chartHeight * (1 - value / currentLiquidityMax);
+            return `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="#e5e7eb" stroke-width="1" />
+                <text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="#64748b">${value}(tỷ vnd)</text>`;
+        }).join('');
+
+        const xLabels = liquidityTicks.map((tick) => `<text x="${tick.x}" y="${height - 18}" text-anchor="middle" font-size="11" fill="#64748b">${tick.label}</text>`).join('');
+
+        liquidityChartSvg.innerHTML = `
+            <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
+            ${gridLines}
+            <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1.2" />
+            <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1.2" />
+            <path d="${paths.today}" fill="none" stroke="#3b82f6" stroke-width="0.75" stroke-linejoin="round" stroke-linecap="round" />
+            <path d="${paths.yesterday}" fill="none" stroke="#f59e0b" stroke-width="0.75" stroke-linejoin="round" stroke-linecap="round" />
+            ${xLabels}
+            <line id="liquidityCrosshairV" class="crosshair-line" x1="0" y1="${padding.top}" x2="0" y2="${height - padding.bottom}" visibility="hidden" />
+            <line id="liquidityCrosshairH" class="crosshair-line" x1="${padding.left}" y1="0" x2="${width - padding.right}" y2="0" visibility="hidden" />
+            <circle id="liquidityCrosshairDot" class="crosshair-dot" cx="0" cy="0" r="5" visibility="hidden" />
+            <text id="liquidityCrosshairLabelX" class="crosshair-label" x="0" y="0" visibility="hidden"></text>
+            <text id="liquidityCrosshairLabelY" class="crosshair-label" x="0" y="0" visibility="hidden"></text>
+        `;
+
+        attachLiquidityHover();
+    }
+
+    function findClosestPoint(x) {
+        const { width, padding } = chartState;
+        const chartWidth = width - padding.left - padding.right;
+        const stepX = liquidityLabels.length > 1 ? chartWidth / (liquidityLabels.length - 1) : 0;
+        const offset = x - padding.left;
+        const index = liquidityLabels.length > 0 ? Math.min(Math.max(Math.round(offset / stepX), 0), liquidityLabels.length - 1) : 0;
+        return index;
+    }
+
+    function attachLiquidityHover() {
+        const rect = liquidityChartSvg.querySelector('rect');
+        const vLine = document.getElementById('liquidityCrosshairV');
+        const hLine = document.getElementById('liquidityCrosshairH');
+        const dot = document.getElementById('liquidityCrosshairDot');
+        const labelX = document.getElementById('liquidityCrosshairLabelX');
+        const labelY = document.getElementById('liquidityCrosshairLabelY');
+        if (!rect || !vLine || !hLine || !dot || !labelX || !labelY) {
+            return;
+        }
+
+        const onMove = (event) => {
+            const pt = liquidityChartSvg.createSVGPoint();
+            pt.x = event.clientX;
+            pt.y = event.clientY;
+            const transformed = pt.matrixTransform(liquidityChartSvg.getScreenCTM().inverse());
+            const { x, y } = transformed;
+            const { width, height, padding } = chartState;
+            if (x < padding.left || x > width - padding.right || y < padding.top || y > height - padding.bottom) {
+                hideCrosshair();
+                return;
+            }
+
+            const index = findClosestPointIndex(x);
+            const activePoint = currentLiquidityData.today[index] || { close: 0, time: '' };
+            const point = currentLiquidityPoints.today[index] || { x, y };
+            const labelValue = Number(activePoint.close || 0).toFixed(0);
+            const labelTime = formatTime(activePoint.time);
+
+            vLine.setAttribute('x1', point.x);
+            vLine.setAttribute('x2', point.x);
+            vLine.setAttribute('visibility', 'visible');
+            hLine.setAttribute('y1', point.y);
+            hLine.setAttribute('y2', point.y);
+            hLine.setAttribute('visibility', 'visible');
+            dot.setAttribute('cx', point.x);
+            dot.setAttribute('cy', point.y);
+            dot.setAttribute('visibility', 'visible');
+
+            labelX.setAttribute('x', Math.min(Math.max(point.x + 8, padding.left + 8), width - padding.right - 80));
+            labelX.setAttribute('y', height - 24);
+            labelX.textContent = labelTime;
+            labelX.setAttribute('visibility', 'visible');
+
+            labelY.setAttribute('x', padding.left + 8);
+            labelY.setAttribute('y', Math.max(point.y - 10, padding.top + 16));
+            labelY.textContent = labelValue;
+            labelY.setAttribute('visibility', 'visible');
+        };
+
+        const hideCrosshair = () => {
+            vLine.setAttribute('visibility', 'hidden');
+            hLine.setAttribute('visibility', 'hidden');
+            dot.setAttribute('visibility', 'hidden');
+            labelX.setAttribute('visibility', 'hidden');
+            labelY.setAttribute('visibility', 'hidden');
+        };
+
+        rect.addEventListener('mousemove', onMove);
+        rect.addEventListener('mouseleave', hideCrosshair);
+    }
+
+    async function loadLiquidityChart(exchange) {
+        const response = await fetchExchangeChart(exchange);
+        if (response) {
+            renderLiquidityChart(exchange);
+        }
+    }
+
+    document.querySelectorAll('.liquidity-exchange-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            document.querySelectorAll('.liquidity-exchange-btn').forEach(item => item.classList.remove('active'));
+            this.classList.add('active');
+            await loadLiquidityChart(this.dataset.exchange);
+        });
+    });
+
+    loadLiquidityChart('HOSE');
+
+    // ===== DANH SÁCH CỔ PHIẾU TRONG VN30 =====
+    function renderWatchlistSparkline(points) {
+        const values = (points || []).map(v => (v && typeof v === 'object') ? Number(v.close) : Number(v)).filter(v => Number.isFinite(v));
+        if (values.length < 2) {
+            return '<div class="sparkline"><span class="sparkline-bar" style="height:8px;"></span></div>';
+        }
+        const w = 84;
+        const h = 32;
+        const pad = 2;
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = max - min || 1;
+        const n = values.length;
+        const pts = values.map((c, i) => {
+            const x = pad + (i / (n - 1)) * (w - 2 * pad);
+            const y = h - pad - ((c - min) / range) * (h - 2 * pad);
+            return [x, y];
+        });
+        const up = values[n - 1] >= values[0];
+        const cls = up ? 'up' : 'down';
+        const linePts = pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+        const areaPts = [
+            ...pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`),
+            `${(w - pad).toFixed(1)},${(h - pad).toFixed(1)}`,
+            `${pad.toFixed(1)},${(h - pad).toFixed(1)}`,
+        ].join(' ');
+        return `<svg class="sparkline-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" width="${w}" height="${h}" aria-hidden="true"><polygon class="sparkline-area ${cls}" points="${areaPts}"></polygon><polyline class="sparkline-line ${cls}" points="${linePts}"></polyline></svg>`;
+    }
+
+    function renderWatchlistRows(rows) {
+        const tbody = document.getElementById('watchlistBody');
+        if (!tbody) return;
+        if (!Array.isArray(rows) || rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#8a99b1;padding:24px;">Không có dữ liệu</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(row => {
+            const price = Number(row.price || 0).toLocaleString('en-US');
+            const volume = Number(row.volume || 0).toLocaleString('en-US');
+            const chg = Number(row.percent_change || 0);
+            const chg7d = Number(row.change_7d || 0);
+            const chgClass = chg >= 0 ? 'positive' : 'negative';
+            const chg7dClass = chg7d >= 0 ? 'positive' : 'negative';
+            const chgText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+            const chg7dText = (chg7d >= 0 ? '+' : '') + chg7d.toFixed(2) + '%';
+            const pe = Number(row.pe || 0).toFixed(1);
+            const pb = Number(row.pb || 0).toFixed(1);
+            return `
+                <tr>
+                    <td class="stock-name">${row.symbol}</td>
+                    <td class="price">${price}</td>
+                    <td class="change ${chgClass}">${chgText}</td>
+                    <td class="change ${chg7dClass}">${chg7dText}</td>
+                    <td>${volume}</td>
+                    <td>${renderWatchlistSparkline(row.sparkline)}</td>
+                    <td class="pe-ratio">${pe}</td>
+                    <td class="pb-ratio">${pb}</td>
+                </tr>`;
+        }).join('');
+    }
+
+    async function loadWatchlist() {
+        try {
+            const res = await fetch('/api/stocks/watchlist', { cache: 'no-store' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            renderWatchlistRows(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.warn('Failed to load watchlist:', error);
+            renderWatchlistRows([]);
+        }
+    }
+
+    loadWatchlist();
+
+    // Foreign/Proprietary trading (dữ liệu thực tế từ API /api/stocks/foreign-trading)
+    let activeForeignTab = 'foreign';
+    let activeForeignPeriod = '1D';
+    let foreignRefreshTimer = null;
+
+    function fmtTy(value) {
+        const v = Number(value || 0) / 1e9; // VND -> tỷ
+        const sign = v > 0 ? '+' : '';
+        return sign + v.toLocaleString('en-US', { maximumFractionDigits: 1 });
+    }
+
+    function renderForeignStats(data) {
+        const stats = document.getElementById('foreignStats');
+        if (!stats) return;
+        if (!data || !data.available) {
+            stats.innerHTML = `<span class="stat-item" style="color:#8a99b1;"><i class="fas fa-info-circle"></i> ${(data && data.message) || 'Chưa có dữ liệu'}</span>`;
+            return;
+        }
+        const totals = (data && data.totals) || {};
+        stats.innerHTML = `
+            <span class="stat-item"><i class="fas fa-arrow-up" style="color:#0f7b3a;"></i> Mua ròng: <span class="highlight-buy">${fmtTy(totals.buy)}T</span></span>
+            <span class="stat-item"><i class="fas fa-arrow-down" style="color:#d0314e;"></i> Bán ròng: <span class="highlight-sell">${fmtTy(totals.sell)}T</span></span>
+            <span class="stat-item" style="color:#3861a5;"><i class="fas fa-balance-scale"></i> Ròng: ${fmtTy(totals.net)}T</span>
+        `;
+    }
+
+    function renderForeignLists(data) {
+        const lists = document.getElementById('foreignStockLists');
+        if (!lists) return;
+        if (!data || !data.available) {
+            lists.innerHTML = `<div style="padding:20px;text-align:center;color:#8a99b1;"><i class="fas fa-info-circle"></i> ${(data && data.message) || 'Chưa có dữ liệu'}</div>`;
+            return;
+        }
+        // Bỏ các mã hiển thị thành +0T / -0T / 0T (giá trị ròng nhỏ, đổi ra tỷ làm tròn = 0)
+        const buyList = (Array.isArray(data.buy_list) ? data.buy_list : []).filter(item => Number(fmtTy(item.net_value)) !== 0);
+        const sellList = (Array.isArray(data.sell_list) ? data.sell_list : []).filter(item => Number(fmtTy(item.net_value)) !== 0);
+        const rowHtml = (item, cls) => `<div class="stock-row"><span class="code">${item.symbol}</span><span class="change ${cls}">${fmtTy(item.net_value)}T</span></div>`;
+        lists.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 8px;">
+                <div>
+                    <div style="font-weight: 600; font-size: 0.9rem; color: #0f7b3a; margin-bottom: 6px;"><i class="fas fa-arrow-up"></i> Mua ròng (${buyList.length})</div>
+                    <div class="foreign-stock-list">${buyList.map(item => rowHtml(item, 'positive')).join('')}</div>
+                </div>
+                <div>
+                    <div style="font-weight: 600; font-size: 0.9rem; color: #d0314e; margin-bottom: 6px;"><i class="fas fa-arrow-down"></i> Bán ròng (${sellList.length})</div>
+                    <div class="foreign-stock-list">${sellList.map(item => rowHtml(item, 'negative')).join('')}</div>
+                </div>
+            </div>`;
+    }
+
+    async function loadForeignTrading(tab, period) {
+        const lists = document.getElementById('foreignStockLists');
+        if (lists) {
+            lists.innerHTML = '<div style="padding:20px;text-align:center;color:#8a99b1;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+        }
+        try {
+            const res = await fetch(`/api/stocks/foreign-trading?type=${encodeURIComponent(tab)}&period=${encodeURIComponent(period || '1D')}`, { cache: 'no-store' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            renderForeignStats(data);
+            renderForeignLists(data);
+        } catch (error) {
+            console.warn('Failed to load foreign trading:', error);
+            const stats = document.getElementById('foreignStats');
+            if (stats) stats.innerHTML = '<span class="stat-item" style="color:#8a99b1;">Không tải được dữ liệu</span>';
+            if (lists) lists.innerHTML = '<div style="padding:20px;text-align:center;color:#8a99b1;">Không tải được dữ liệu</div>';
+        }
+        notifyParentHeight();
+    }
+
+    function setForeignTab(tab) {
+        activeForeignTab = tab;
+        document.querySelectorAll('.foreign-main-tabs span').forEach(s => {
+            s.classList.toggle('active', s.dataset.foreign === tab);
+        });
+        loadForeignTrading(tab, activeForeignPeriod);
+    }
+
+    function setForeignPeriod(period) {
+        activeForeignPeriod = period;
+        document.querySelectorAll('.foreign-sub-tabs span').forEach(s => {
+            s.classList.toggle('active', s.dataset.period === period);
+        });
+        loadForeignTrading(activeForeignTab, period);
+    }
+
+    document.querySelectorAll('.foreign-main-tabs span').forEach(el => {
+        el.addEventListener('click', function() {
+            if (this.classList.contains('disabled')) return;
+            setForeignTab(this.dataset.foreign);
+        });
+    });
+
+    document.querySelectorAll('.foreign-sub-tabs span').forEach(el => {
+        el.addEventListener('click', function() {
+            if (this.classList.contains('disabled')) return;
+            setForeignPeriod(this.dataset.period);
+        });
+    });
+
+    // Khởi tạo tab mặc định (Khối ngoại, 1D)
+    setForeignTab('foreign');
+
+    // Cập nhật realtime mỗi 60s (trong phiên lẫn kết phiên)
+    if (foreignRefreshTimer) clearInterval(foreignRefreshTimer);
+    foreignRefreshTimer = setInterval(() => {
+        loadForeignTrading(activeForeignTab, activeForeignPeriod);
+    }, 60000);
+
+    // Top stocks tab switching (dữ liệu thực tế từ API /api/stocks/top-stocks)
+    let activeTopTab = 'breakout';
+    let activeTopPeriod = '1w';
+
+    function renderTopStockRows(rows, showNet) {
+        const tbody = document.getElementById('topStockBody');
+        if (!tbody) return;
+        const colspan = showNet ? 6 : 5;
+        if (!Array.isArray(rows) || rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center;color:#8a99b1;padding:24px;">Không có dữ liệu</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = rows.map(row => {
+            const price = Number(row.price || 0).toLocaleString('en-US');
+            const volume = Number(row.volume || 0).toLocaleString('en-US');
+            const avg = Number(row.avg_volume || 0).toLocaleString('en-US');
+            const chg = Number(row.percent_change || 0);
+            const chgClass = chg >= 0 ? 'positive' : 'negative';
+            const chgText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+            let netCell = '';
+            if (showNet) {
+                const fbv = Number(row.foreign_buy_value || 0);
+                const netTy = fbv / 1e9;
+                const netClass = fbv >= 0 ? 'positive' : 'negative';
+                const netText = (fbv >= 0 ? '+' : '') + netTy.toFixed(0);
+                netCell = `<td class="change-val ${netClass}" style="text-align:right;font-weight:600;">${netText}</td>`;
+            }
+            return `
+                <tr>
+                    <td class="code">${row.symbol}</td>
+                    <td class="price-val" style="text-align:right;">${price}</td>
+                    <td class="change-val ${chgClass}" style="text-align:right;">${chgText}</td>
+                    <td class="volume" style="text-align:right;">${volume}</td>
+                    <td class="avg-volume" style="text-align:right;">${avg}</td>
+                    ${netCell}
+                </tr>`;
+        }).join('');
+    }
+
+    async function loadTopStocks(tab, period) {
+        const isForeign = tab === 'foreign-buy' || tab === 'foreign-sell';
+        const netTh = document.getElementById('foreignNetTh');
+        if (netTh) {
+            if (isForeign) {
+                netTh.style.display = '';
+                netTh.textContent = tab === 'foreign-buy' ? 'Mua ròng (tỷ)' : 'Bán ròng (tỷ)';
+            } else {
+                netTh.style.display = 'none';
+            }
+        }
+        const tbody = document.getElementById('topStockBody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="${isForeign ? 6 : 5}" style="text-align:center;color:#8a99b1;padding:24px;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</td></tr>`;
+        }
+        try {
+            const res = await fetch(`/api/stocks/top-stocks?tab=${encodeURIComponent(tab)}&period=${encodeURIComponent(period || '1w')}`, { cache: 'no-store' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            renderTopStockRows(Array.isArray(data) ? data : [], isForeign);
+        } catch (error) {
+            console.warn('Failed to load top stocks:', error);
+            renderTopStockRows([], isForeign);
+        }
+        notifyParentHeight();
+    }
+
+    function setTopTab(tab) {
+        activeTopTab = tab;
+        document.querySelectorAll('.top-tabs span').forEach(s => {
+            s.classList.toggle('active', s.dataset.tab === tab);
+        });
+        const periodDropdown = document.getElementById('topPeriodDropdown');
+        if (periodDropdown) {
+            periodDropdown.style.display = (tab === 'break-high' || tab === 'break-low') ? 'flex' : 'none';
+        }
+        loadTopStocks(tab, activeTopPeriod);
+    }
+
+    document.querySelectorAll('.top-tabs span').forEach(el => {
+        el.addEventListener('click', function() {
+            setTopTab(this.dataset.tab);
+        });
+    });
+
+    const topPeriodSelect = document.getElementById('topPeriodSelect');
+    if (topPeriodSelect) {
+        topPeriodSelect.addEventListener('change', function() {
+            activeTopPeriod = this.value;
+            if (activeTopTab === 'break-high' || activeTopTab === 'break-low') {
+                loadTopStocks(activeTopTab, activeTopPeriod);
+            }
+        });
+    }
+
+    // Khởi tạo tab mặc định (đột biến)
+    setTopTab('breakout');
+
+    window.addEventListener('load', () => {
+        applyTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+        loadRealtimeMarketOverview();
+        loadMarketMap();
+        if (marketRefreshTimer) {
+            clearInterval(marketRefreshTimer);
+        }
+        marketRefreshTimer = setInterval(loadRealtimeMarketOverview, 15000);
+        notifyParentHeight();
+        setTimeout(notifyParentHeight, 120);
+    });
+    window.addEventListener('resize', notifyParentHeight);
+    if (window.ResizeObserver) {
+        const observer = new ResizeObserver(() => notifyParentHeight());
+        const dashboard = document.querySelector('.dashboard');
+        if (dashboard) {
+            observer.observe(dashboard);
+        }
+    }
+
+    // ===== BẢN ĐỒ THỊ TRƯỜNG (Treemap) =====
+    const marketMapEl = document.getElementById('marketMap');
+    const marketMapStatus = document.getElementById('marketMapStatus');
+
+    // Thuật toán squarified treemap: xếp các ô vào hình chữ nhật (x,y,w,h) theo diện tích.
+    // sizes là mảng số dương đã sắp giảm dần. Trả về mảng rect {x,y,w,h} cùng thứ tự.
+    function marketMapTreemap(sizes, x, y, w, h) {
+        const total = sizes.reduce((a, b) => a + b, 0);
+        if (!total || w <= 0 || h <= 0) return [];
+        // Chuẩn hoá diện tích để tổng = w*h (tỷ lệ với volume).
+        const normalized = sizes.map(s => (s / total) * (w * h));
+        const out = [];
+        let curX = x, curY = y, curW = w, curH = h;
+
+        // Tỷ lệ khung xấu nhất của một dải: dùng cạnh DÀI (L) làm chiều dài dải.
+        function worst(row) {
+            const s = row.reduce((a, b) => a + b, 0);
+            if (!s) return Infinity;
+            const L = Math.max(curW, curH);
+            const maxA = Math.max(...row);
+            const minA = Math.min(...row);
+            const L2 = L * L;
+            return Math.max((L2 * maxA) / (s * s), (s * s) / (L2 * minA));
+        }
+
+        function layoutRow(row) {
+            const s = row.reduce((a, b) => a + b, 0);
+            if (!s) return;
+            if (curW >= curH) {
+                // Dải ngang: độ dày = s / curW
+                const bandH = s / curW;
+                let xx = curX;
+                for (const area of row) {
+                    const cw = area / bandH;
+                    out.push({ x: xx, y: curY, w: cw, h: bandH });
+                    xx += cw;
+                }
+                curY += bandH;
+                curH -= bandH;
+            } else {
+                // Dải dọc: độ dày = s / curH
+                const bandW = s / curH;
+                let yy = curY;
+                for (const area of row) {
+                    const ch = area / bandW;
+                    out.push({ x: curX, y: yy, w: bandW, h: ch });
+                    yy += ch;
+                }
+                curX += bandW;
+                curW -= bandW;
+            }
+        }
+
+        let row = [];
+        for (const area of normalized) {
+            if (!row.length) {
+                row.push(area);
+                continue;
+            }
+            const w1 = worst(row);
+            const w2 = worst(row.concat([area]));
+            if (w2 <= w1) {
+                row.push(area); // thêm ô vẫn cải thiện (hoặc không tệ hơn)
+            } else {
+                layoutRow(row);
+                row = [area];
+            }
+        }
+        if (row.length) layoutRow(row);
+        return out;
+    }
+
+    function formatCompactVolume(value) {
+        const v = Number(value) || 0;
+        if (v >= 1e6) return (v / 1e6).toFixed(2) + 'tr';
+        if (v >= 1e3) return (v / 1e3).toFixed(1) + 'k';
+        return String(v);
+    }
+
+    function formatMapPrice(value) {
+        const v = Number(value) || 0;
+        return v >= 1000 ? (v / 1000).toFixed(2) + 'k' : String(v);
+    }
+
+    async function loadMarketMap() {
+        if (!marketMapEl) return;
+        marketMapStatus.textContent = 'Đang tải dữ liệu...';
+        try {
+            const res = await fetch('/api/stocks/market-map', { cache: 'no-store' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const payload = await res.json();
+            const cells = Array.isArray(payload.cells) ? payload.cells : [];
+            if (!cells.length) {
+                marketMapStatus.textContent = 'Không có dữ liệu phiên gần nhất.';
+                return;
+            }
+            const w = marketMapEl.clientWidth;
+            const h = marketMapEl.clientHeight;
+            const rects = marketMapTreemap(cells.map(c => Math.max(Number(c.volume) || 1, 1)), 0, 0, w, h);
+            marketMapEl.innerHTML = '';
+            const frag = document.createDocumentFragment();
+            cells.forEach((cell, i) => {
+                const r = rects[i];
+                if (!r) return;
+                const div = document.createElement('div');
+                div.className = 'market-map-cell st-' + cell.status;
+                div.style.left = r.x + 'px';
+                div.style.top = r.y + 'px';
+                div.style.width = r.w + 'px';
+                div.style.height = r.h + 'px';
+                div.title = cell.symbol + ' · ' + cell.name +
+                    '\nGiá: ' + formatMapPrice(cell.price) + ' đ · ' + (Number(cell.percent_change) >= 0 ? '+' : '') + cell.percent_change + '%' +
+                    '\nKL: ' + formatCompactVolume(cell.volume) + ' · ' + cell.exchange;
+                if (r.w >= 24 && r.h >= 15) {
+                    const s = document.createElement('div');
+                    s.className = 'mm-symbol';
+                    s.textContent = cell.symbol;
+                    const p = document.createElement('div');
+                    p.className = 'mm-pct';
+                    p.textContent = (Number(cell.percent_change) >= 0 ? '+' : '') + cell.percent_change + '%';
+                    div.appendChild(s);
+                    div.appendChild(p);
+                }
+                div.addEventListener('click', function() {
+                    try {
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({ type: 'tunix-open-stock', symbol: cell.symbol }, '*');
+                        }
+                    } catch (e) { /* ignore */ }
+                });
+                frag.appendChild(div);
+            });
+            marketMapEl.appendChild(frag);
+            marketMapStatus.textContent = cells.length.toLocaleString('vi-VN') + ' cổ phiếu có giao dịch phiên gần nhất (HOSE · HNX · UPCOM)';
+        } catch (error) {
+            console.warn('Failed to load market map:', error);
+            marketMapStatus.textContent = 'Không tải được dữ liệu bản đồ thị trường.';
+        }
+        notifyParentHeight();
+    }
+</script>
+
+</body>
+</html>
