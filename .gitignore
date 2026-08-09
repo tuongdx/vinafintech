@@ -24,6 +24,9 @@ tmp_*
 temp_*
 *_probe*.py
 
+# === Repo con clone nhầm (không phải source chính) ===
+tunix-test/
+
 # === IDE ===
 .vscode/
 .idea/

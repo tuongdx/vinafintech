@@ -1,0 +1,11 @@
+# Chuẩn hóa xuống dòng LF trong repo (Windows checkout sẽ dùng CRLF tự động)
+* text=auto
+
+# File nhị phân / đặc biệt không đổi
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.db binary
