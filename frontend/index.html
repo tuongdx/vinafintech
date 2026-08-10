@@ -2787,6 +2787,11 @@
             const container = document.getElementById('dynamicContent');
             if (!container) return;
 
+            // Mỗi lần chuyển trang, cuộn ngay lên đầu trang.
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+
             // Cột phải: nếu đang mở trang chi tiết cổ phiếu → hiện "Tin liên quan - MÃ", ẩn "Tin được xem nhiều nhất"
             let relatedSymbol = '';
             if (page.includes('StockDetail')) {
@@ -2821,6 +2826,9 @@
                 if (frame) {
                     frame.addEventListener('load', () => {
                         syncEmbeddedContentTheme(isDarkMode ? 'dark' : 'light');
+                        if (frame.contentWindow) {
+                            frame.contentWindow.scrollTo(0, 0);
+                        }
                     });
                 }
                 return;
