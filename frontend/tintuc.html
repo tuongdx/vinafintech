@@ -306,7 +306,7 @@
         .source-copy .source a {
             color: #0066cc;
             font-weight: 600;
-            text-decoration: none;
+            text-decoration: underline;
         }
 
         .source-copy .source a:hover {
@@ -994,12 +994,25 @@
                         if (n.source) sourceEl.textContent = n.source;
                         if (n.source_url) {
                             sourceEl.href = n.source_url;
-                            sourceEl.target = '_blank';
-                            sourceEl.rel = 'noopener';
+                            sourceEl.removeAttribute('target');
                         } else {
                             sourceEl.href = '#';
                             sourceEl.removeAttribute('target');
                         }
+                        // Mở nguồn bài viết: target=_blank bị chặn bởi popup blocker trong iframe,
+                        // nên nhờ parent (index.html) mở tab mới. Nếu mở standalone thì dùng window.open.
+                        sourceEl.onclick = function(e) {
+                            const url = this.getAttribute('href');
+                            if (!url || url === '#') return;
+                            e.preventDefault();
+                            try {
+                                if (window.parent && window.parent !== window) {
+                                    window.parent.postMessage({ type: 'tunix-open-url', url: url }, '*');
+                                } else {
+                                    window.open(url, '_blank', 'noopener');
+                                }
+                            } catch (err) { /* ignore */ }
+                        };
                     }
                     window.__currentSourceUrl = n.source_url || '';
                     document.title = n.title + ' - TuniX';

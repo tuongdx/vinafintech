@@ -3225,6 +3225,11 @@
                 openStockDetailInIndex(data.symbol);
                 return;
             }
+            if (data.type === 'tunix-open-url' && data.url) {
+                // Mở link ngoài (VD: Nguồn bài viết) từ parent — tránh popup blocker chặn _blank trong iframe
+                window.open(data.url, '_blank', 'noopener');
+                return;
+            }
             if (data.type !== 'tunix-home-height' && data.type !== 'tunix-embed-height') return;
             const frame = document.getElementById('contentEmbedFrame');
             if (!frame) return;
