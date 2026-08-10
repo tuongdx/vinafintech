@@ -1595,7 +1595,7 @@
                 <span class="lg lg-flat">Đứng</span>
                 <span class="lg lg-down">Giảm</span>
                 <span class="lg lg-floor"><i class="fas fa-arrow-down"></i> Sàn</span>
-                <span class="lg" style="background: transparent; color: #8a99b1;"><i class="fas fa-info-circle"></i> Diện tích theo khối lượng giao dịch</span>
+                <span class="lg" style="background: transparent; color: #8a99b1;"><i class="fas fa-info-circle"></i> Diện tích = khối lượng giao dịch</span>
             </div>
         </div>
         <div id="marketMap" class="market-map"></div>
@@ -2931,14 +2931,7 @@
             }
             const w = marketMapEl.clientWidth;
             const h = marketMapEl.clientHeight;
-            // Áp mức khối lượng tối thiểu: cổ phiếu khối lượng cực nhỏ (thường là
-            // trần/sàn micro-cap) bị đè thành ô dưới 1px → không nhìn thấy màu.
-            // Dùng floor để mọi ô luôn hiển thị rõ, vẫn giữ thứ tự to-nhỏ theo khối lượng.
-            const volumes = cells.map(c => Math.max(Number(c.volume) || 1, 1));
-            const maxV = Math.max(...volumes);
-            const floorV = Math.max(1, maxV * 0.001); // 0.1% khối lượng lớn nhất
-            const sizes = volumes.map(v => Math.max(v, floorV));
-            const rects = marketMapTreemap(sizes, 0, 0, w, h);
+            const rects = marketMapTreemap(cells.map(c => Math.max(Number(c.volume) || 1, 1)), 0, 0, w, h);
             marketMapEl.innerHTML = '';
             const frag = document.createDocumentFragment();
             cells.forEach((cell, i) => {
