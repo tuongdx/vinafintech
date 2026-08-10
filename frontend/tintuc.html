@@ -36,6 +36,14 @@
             padding: 0 0 40px;
         }
 
+        /* Khi nhúng trong left-col: bài viết lấp đầy độ rộng bằng với các block cột trái
+           (index-row, watchlist, ... đều rộng = iframe). Bản standalone (mở trực tiếp)
+           vẫn giữ max-width 880px để đọc thoải mái. */
+        .embedded .article-container {
+            max-width: none;
+            width: 100%;
+        }
+
         /* ============================================================
                    ARTICLE CONTAINER
                 ============================================================ */
