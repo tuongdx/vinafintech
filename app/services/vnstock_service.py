@@ -1007,13 +1007,45 @@ def get_watchlist() -> list[dict[str, Any]]:
 _EXCHANGE_LIMIT_PCT = {"HOSE": 7.0, "HNX": 10.0, "UPCOM": 15.0}
 
 
+def _get_tick_size(exchange: str, price: float) -> float:
+    """Bước giá (tick) theo quy định hiện hành của từng sàn.
+
+    - HOSE: 10đ (thị giá < 10.000), 50đ (10.000 – 49.950), 100đ (≥ 50.000).
+    - HNX & UPCoM: 100đ cho mọi mức giá.
+    """
+    if exchange == "HOSE":
+        if price < 10000:
+            return 10.0
+        if price < 50000:
+            return 50.0
+        return 100.0
+    return 100.0
+
+
+def _compute_ceiling_floor(exchange: str, reference: float) -> tuple[float, float]:
+    """Tính giá trần/sàn thực tế theo công thức chuẩn của 3 sàn.
+
+    - Giá trần lý thuyết = tham chiếu × (1 + biên độ) → làm tròn XUỐNG bội của bước giá.
+    - Giá sàn lý thuyết  = tham chiếu × (1 − biên độ) → làm tròn LÊN bội của bước giá.
+    - Nếu giá sàn ≤ 0 → mặc định bằng bước giá.
+    """
+    limit = _EXCHANGE_LIMIT_PCT[exchange] / 100.0
+    tick = _get_tick_size(exchange, reference)
+    ceiling = math.floor(reference * (1 + limit) / tick) * tick
+    floor = math.ceil(reference * (1 - limit) / tick) * tick
+    if floor <= 0:
+        floor = tick
+    return ceiling, floor
+
+
 def get_market_map() -> dict[str, Any]:
     """Bản đồ thị trường (treemap): toàn bộ cổ phiếu có giao dịch phiên gần nhất.
 
     - Mỗi ô là một cổ phiếu; diện tích ô TỶ LỆ với KHỐI LƯỢNG giao dịch.
-    - Màu theo trạng thái phiên: trần (tím) / tăng (xanh) / đứng (xám) / giảm (đỏ) / sàn (xanh lơ).
+    - Màu theo trạng thái phiên: trần (tím) / tăng (xanh) / đứng (vàng) / giảm (đỏ) / sàn (xanh lơ).
+    - Trần/sàn tính theo công thức chuẩn (làm tròn theo bước giá), không so % thô.
     - Bao phủ cả 3 sàn HOSE, HNX, UPCOM, mọi ngành nghề.
-    Dữ liệu lấy từ screener Simplize (volume = khối lượng phiên hiện tại, pricePctChgIntraDay = % thay đổi).
+    Dữ liệu lấy từ screener Simplize (volume = khối lượng, priceReferrance = giá tham chiếu).
     """
     dataset = _get_screener_dataset()
 
@@ -1030,24 +1062,41 @@ def get_market_map() -> dict[str, Any]:
         volume = _to_float(row.get("volume"))
         if volume <= 0:
             continue  # chỉ cổ phiếu có giao dịch trong phiên gần nhất
+        price = _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
+        reference = _to_float(row.get("priceReferrance"))
         pct = _to_float(row.get("pricePctChgIntraDay"))
-        limit = _EXCHANGE_LIMIT_PCT[exchange]
-        if pct >= limit:
-            status = "ceiling"
-        elif pct <= -limit:
-            status = "floor"
-        elif pct > 0:
-            status = "up"
-        elif pct < 0:
-            status = "down"
+        # Trạng thái theo công thức trần/sàn chuẩn (làm tròn theo bước giá).
+        # Nếu thiếu giá tham chiếu/giá → fallback theo % biến động.
+        if reference and reference > 0 and price and price > 0:
+            ceiling, floor = _compute_ceiling_floor(exchange, reference)
+            if price >= ceiling - 0.01:
+                status = "ceiling"
+            elif price <= floor + 0.01:
+                status = "floor"
+            elif price > reference:
+                status = "up"
+            elif price < reference:
+                status = "down"
+            else:
+                status = "flat"
         else:
-            status = "flat"
+            limit = _EXCHANGE_LIMIT_PCT[exchange]
+            if pct >= limit:
+                status = "ceiling"
+            elif pct <= -limit:
+                status = "floor"
+            elif pct > 0:
+                status = "up"
+            elif pct < 0:
+                status = "down"
+            else:
+                status = "flat"
         cells.append(
             {
                 "symbol": symbol,
                 "name": str(row.get("companyNameVi") or symbol),
                 "exchange": exchange,
-                "price": _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose")),
+                "price": price,
                 "percent_change": round(pct, 2),
                 "volume": int(volume),
                 "status": status,
