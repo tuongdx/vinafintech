@@ -2437,13 +2437,14 @@
             }
             const y = padding.top + chartHeight * (1 - value / currentLiquidityMax);
             return `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="#e5e7eb" stroke-width="1" />
-                <text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="#64748b">${value}(tỷ vnd)</text>`;
+                <text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="#64748b">${value}</text>`;
         }).join('');
 
         const xLabels = liquidityTicks.map((tick) => `<text x="${tick.x}" y="${height - 18}" text-anchor="middle" font-size="11" fill="#64748b">${tick.label}</text>`).join('');
 
         liquidityChartSvg.innerHTML = `
             <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
+            <text x="${padding.left - 8}" y="${padding.top - 6}" text-anchor="end" font-size="11" fill="#64748b">(tỷ vnd)</text>
             ${gridLines}
             <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1.2" />
             <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1.2" />
