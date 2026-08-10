@@ -1040,6 +1040,19 @@
             color: #0f1a2e;
         }
 
+        /* Mã cổ phiếu trong các bảng có thể click để mở trang chi tiết */
+        .top-table-wrapper .code,
+        .watchlist-section .stock-name,
+        .foreign-stock-list .stock-row .code {
+            cursor: pointer;
+        }
+        .top-table-wrapper .code:hover,
+        .watchlist-section .stock-name:hover,
+        .foreign-stock-list .stock-row .code:hover {
+            color: #00b3b3;
+            text-decoration: underline;
+        }
+
         .top-table-wrapper .price-val {
             font-weight: 500;
         }
@@ -2606,6 +2619,22 @@
     }
 
     loadWatchlist();
+
+    // Click vào mã cổ phiếu trong bảng (VN30, Top cổ phiếu, Khối ngoại/tự doanh)
+    // → gửi message cho index.html để mở trang chi tiết /cophieu-{symbol}
+    document.addEventListener('click', function(e) {
+        const el = e.target.closest('.stock-name, .code');
+        if (!el) return;
+        const symbol = (el.textContent || '').trim().toUpperCase();
+        if (!symbol) return;
+        try {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'tunix-open-stock', symbol: symbol }, '*');
+            } else {
+                window.location.href = '/cophieu-' + symbol;
+            }
+        } catch (err) { /* ignore */ }
+    });
 
     // Foreign/Proprietary trading (dữ liệu thực tế từ API /api/stocks/foreign-trading)
     let activeForeignTab = 'foreign';
