@@ -27,6 +27,9 @@ temp_*
 # === Repo con clone nhầm (không phải source chính) ===
 tunix-test/
 
+# === Công cụ local (cloudflared.exe, ...) — không đẩy lên git ===
+tools/
+
 # === IDE ===
 .vscode/
 .idea/

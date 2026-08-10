@@ -1,0 +1,37 @@
+# ============================================================
+# TuniX — Render Blueprint (Free tier)
+# Deploy cả web service + PostgreSQL bằng 1 file.
+# Cách dùng: push lên GitHub, vào render.com → New → Blueprint
+# → chọn repo tuongdx/tunix-test → Render tự tạo mọi thứ.
+# Docs: https://render.com/docs/blueprint-spec
+# ============================================================
+
+databases:
+  - name: tunix-db
+    plan: free                 # Free Postgres: 1 GB, hết hạn sau 30 ngày
+    databaseName: tunix
+    region: singapore          # Gần VN → độ trễ thấp, cùng region với web
+
+services:
+  - type: web
+    name: tunix
+    runtime: python
+    plan: free                 # 512 MB RAM, ngủ sau 15 phút không truy cập
+    region: singapore
+    autoDeploy: true           # Tự deploy lại khi push code mới lên main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      # Tạo SECRET_KEY ngẫu nhiên, an toàn khi deploy
+      - key: SECRET_KEY
+        generateValue: true
+      # Kết nối Postgres tự động (internal URL, cùng region)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tunix-db
+          property: connectionString
+      # Có thể set sau khi biết URL thật của service (để link reset mật khẩu đúng)
+      - key: FRONTEND_URL
+        value: https://tunix.onrender.com
