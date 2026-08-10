@@ -74,6 +74,15 @@ def main() -> None:
     # Tạo bảng nếu chưa có trên đích
     Base.metadata.create_all(bind=tgt_engine)
 
+    # Mở rộng cột users.avatar thành TEXT (data-URI base64 có thể > 500 ký tự,
+    # còn Render DB đã tạo sẵn với VARCHAR(500) nên cần ALTER)
+    try:
+        with tgt_engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ALTER COLUMN avatar TYPE TEXT"))
+        print("   → Đã mở rộng cột users.avatar thành TEXT.")
+    except Exception as e:
+        print(f"   ⚠️  Không mở rộng được users.avatar: {e}")
+
     ss, ts = SrcSession(), TgtSession()
 
     try:
