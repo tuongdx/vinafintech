@@ -17,7 +17,10 @@ env/
 *.sqlite3
 
 # === Cache dữ liệu tải về (tự tạo lại khi chạy) ===
-.cache/
+# Ngoại lệ: symbol_directory.json được commit lên git (app chỉ đọc, không tự tạo;
+# cần thiết để biết mã nào tồn tại trên 3 sàn khi deploy lên Render).
+.cache/*
+!.cache/symbol_directory.json
 
 # === File tạm / thăm dò ===
 tmp_*
