@@ -48,6 +48,23 @@ def main() -> None:
         print(f"❌ Không tìm thấy DB nguồn: {SOURCE_SQLITE}")
         sys.exit(1)
 
+    # --- Kiểm tra URL trước khi kết nối (tránh lỗi host bị cắt ngắn) ---
+    from sqlalchemy.engine import make_url
+    try:
+        parsed = make_url(TARGET_URL)
+        host = parsed.host or ""
+    except Exception as e:
+        print(f"❌ URL không hợp lệ: {e}")
+        sys.exit(1)
+    print(f"→ Host database đích: {host}")
+    if "." not in host or not host.endswith("render.com"):
+        print("❌ HOSTNAME KHÔNG ĐẦY ĐỦ! Hostname đích phải có dạng:")
+        print("     dpg-<id>-a.<region>-postgres.render.com")
+        print("   Bạn đã copy THIẾU phần đuôi URL. Hãy copy lại ĐẦY ĐỦ 'External Database URL'")
+        print("   trên Render (phải kết thúc bằng '...render.com/db?sslmode=require').")
+        sys.exit(1)
+    print("   ✅ Hostname đầy đủ, kết nối tiếp tục.")
+
     src_engine = create_engine(f"sqlite:///{SOURCE_SQLITE}")
     tgt_engine = create_engine(TARGET_URL)
 
