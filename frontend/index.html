@@ -3440,6 +3440,19 @@
             }
             const ADMIN_ROLES = ['super-admin', 'admin', 'content-manager', 'editor', 'support'];
 
+            // Cookie chỉ để server xác thực khi mở trực tiếp trang /QuanTri.
+            // Token vẫn lưu chính trong localStorage; cookie chỉ là "vé" đi kèm khi điều hướng.
+            function setAdminCookie() {
+                const token = localStorage.getItem('tunix_access_token');
+                if (!token) { clearAdminCookie(); return; }
+                const d = new Date();
+                d.setTime(d.getTime() + 60 * 60 * 1000); // 1 giờ, khớp access token mặc định
+                document.cookie = 'tunix_admin_token=' + encodeURIComponent(token) + '; path=/; SameSite=Lax; expires=' + d.toUTCString();
+            }
+            function clearAdminCookie() {
+                document.cookie = 'tunix_admin_token=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            }
+
             function closeDropdown() { dropdown.style.display = 'none'; }
 
             // Cập nhật lại menu khi người dùng đổi ảnh đại diện / thông tin (từ trang tài khoản)
@@ -3475,6 +3488,7 @@
                 items += '<div class="ud-item" data-act="profile"><i class="fas fa-user"></i> ' + (user.full_name || user.email) + '</div>';
                 items += '<div class="ud-item disabled" data-act="member" title="Tính năng Hội viên đang phát triển"><i class="fas fa-crown"></i> Hội viên <span class="soon">Sắp ra mắt</span></div>';
                 if (ADMIN_ROLES.includes(user.role)) {
+                    setAdminCookie();
                     items += '<div class="ud-item" data-act="admin"><i class="fas fa-shield-halved"></i> Quản trị</div>';
                 }
                 items += '<div class="ud-item" data-act="logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</div>';
@@ -3496,7 +3510,10 @@
                             } else {
                                 window.location.href = '/?page=taikhoan';
                             }
-                        } else if (act === 'admin') window.location.href = '/QuanTri';
+                        } else if (act === 'admin') {
+                            setAdminCookie();
+                            window.location.href = '/QuanTri';
+                        }
                         else if (act === 'logout') {
                             const refresh = localStorage.getItem('tunix_refresh_token');
                             const token = localStorage.getItem('tunix_access_token');
@@ -3509,6 +3526,7 @@
                             localStorage.removeItem('tunix_refresh_token');
                             localStorage.removeItem('tunix_user');
                             localStorage.removeItem('tunix_favorites');
+                            clearAdminCookie();
                             window.location.href = '/';
                         }
                     });

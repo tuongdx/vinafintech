@@ -1,14 +1,16 @@
 import re
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
-from app.db import Base, engine
+from app.core.security import decode_token
+from app.db import Base, SessionLocal, engine
 from app.db_schema import ensure_schema
+from app.models import RoleEnum, User
 from app.routers import auth, contact, dashboard, faqs, features, logs, news, plans, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
@@ -20,6 +22,60 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ============================================================
+# Bảo vệ khu vực Quản trị: chỉ user có quyền quản trị mới xem được.
+# Người không có quyền truy cập /QuanTri (hoặc file tĩnh QuanTri.html)
+# sẽ nhận 404 "Not Found" — giống hệt đường dẫn không tồn tại.
+# ============================================================
+ADMIN_ROLES = {
+    RoleEnum.super_admin,
+    RoleEnum.admin,
+    RoleEnum.content_manager,
+    RoleEnum.editor,
+    RoleEnum.support,
+}
+
+# Những đường dẫn thuộc khu vực quản trị cần chặn
+ADMIN_PAGE_PATHS = {"/QuanTri", "/frontend/QuanTri.html"}
+
+
+def _resolve_admin(request: Request) -> User | None:
+    """Trả về user admin nếu token hợp lệ (Authorization header hoặc cookie), ngược lại None."""
+    token: str | None = None
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
+    if not token:
+        token = request.cookies.get("tunix_admin_token")
+    if not token:
+        return None
+
+    payload = decode_token(token)
+    if not payload or "sub" not in payload:
+        return None
+    try:
+        user_id = int(payload["sub"])
+    except (TypeError, ValueError):
+        return None
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
+    finally:
+        db.close()
+
+    if user and user.role in ADMIN_ROLES:
+        return user
+    return None
+
+
+@app.middleware("http")
+async def protect_admin_pages(request: Request, call_next):
+    if request.url.path in ADMIN_PAGE_PATHS and _resolve_admin(request) is None:
+        # Giả vờ trang không tồn tại để không lộ khu vực quản trị
+        return JSONResponse(status_code=404, content={"detail": "Not Found"})
+    return await call_next(request)
 
 api = settings.api_prefix
 app.include_router(auth.router, prefix=api)

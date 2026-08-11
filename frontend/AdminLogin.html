@@ -280,6 +280,10 @@
                         localStorage.setItem('tunix_access_token', data.access_token);
                         localStorage.setItem('tunix_refresh_token', data.refresh_token);
                         localStorage.setItem('tunix_user', JSON.stringify(data.user));
+                        // Set cookie để server cho phép mở trang /QuanTri khi chuyển hướng
+                        const adminCookieExp = new Date();
+                        adminCookieExp.setTime(adminCookieExp.getTime() + 60 * 60 * 1000);
+                        document.cookie = 'tunix_admin_token=' + encodeURIComponent(data.access_token) + '; path=/; SameSite=Lax; expires=' + adminCookieExp.toUTCString();
                         showMessage('✅ Đăng nhập quản trị thành công!', 'success');
                         setTimeout(() => { window.location.href = '/QuanTri'; }, 600);
                     })
