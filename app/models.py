@@ -235,3 +235,19 @@ class NotificationRead(Base):
     read_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (UniqueConstraint("user_id", "news_id", name="uq_notif_read_user_news"),)
+
+
+class StockSymbol(Base):
+    """Mã cổ phiếu do quản trị viên thêm thủ công (VD: cổ phiếu IPO mới)
+    để hệ thống nhận dạng và lấy được dữ liệu từ API."""
+
+    __tablename__ = "stock_symbols"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    symbol: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), default="")
+    exchange: Mapped[str] = mapped_column(String(20), default="")
+    added_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    added_by: Mapped[User | None] = relationship("User")

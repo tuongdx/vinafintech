@@ -774,6 +774,36 @@
             background: #3a4353;
         }
 
+        /* Bảng danh sách cổ phiếu: scroll NỘI BỘ trong bảng (không scroll cả trang) */
+        .stock-table-scroll {
+            max-height: 560px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #c5cdd9 transparent;
+            -ms-overflow-style: auto;
+        }
+        .stock-table-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .stock-table-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .stock-table-scroll::-webkit-scrollbar-thumb {
+            background: #c5cdd9;
+            border-radius: 8px;
+        }
+        .stock-table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #aab3c2;
+        }
+        body.dark-mode .stock-table-scroll::-webkit-scrollbar-thumb {
+            background: #3a4353;
+        }
+        .stock-table-scroll thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -915,6 +945,67 @@
         body.dark-mode .status-badge.urgent {
             background: #2d1b1e;
             color: #f85149;
+        }
+
+        /* ---- Writing Tool: file chooser + ON/OFF switch ---- */
+        .import-file-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-top: 4px;
+            flex-wrap: wrap;
+        }
+        .import-file-name {
+            font-size: 13px;
+            color: #6b7a8f;
+            max-width: 320px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        body.dark-mode .import-file-name {
+            color: #8b949e;
+        }
+        .switch-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 22px;
+            border: 1px solid #dde5ee;
+            background: #f4f7fa;
+            color: #6b7a8f;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .switch-btn:hover:not(:disabled) {
+            border-color: #c3d0de;
+            background: #eaf0f6;
+        }
+        .switch-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .switch-btn[data-on="true"] {
+            background: #0f7b3a;
+            border-color: #0f7b3a;
+            color: #ffffff;
+        }
+        .switch-btn[data-on="true"]:hover:not(:disabled) {
+            background: #0d6b33;
+        }
+        body.dark-mode .switch-btn {
+            background: #21262d;
+            border-color: #363c45;
+            color: #8b949e;
+        }
+        body.dark-mode .switch-btn[data-on="true"] {
+            background: #238636;
+            border-color: #238636;
+            color: #ffffff;
         }
 
         .role-tag {
@@ -2114,6 +2205,121 @@
             background: #4fa8a2;
         }
 
+        .stock-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .stock-summary .summary-chip {
+            background: #ffffff;
+            border: 1px solid #eef2f6;
+            border-radius: 12px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        .stock-summary .summary-chip .chip-count {
+            font-weight: 700;
+            font-size: 16px;
+            color: #008080;
+        }
+        .stock-summary .summary-chip.chip-total {
+            background: #008080;
+            border-color: #008080;
+            color: #fff;
+        }
+        .stock-summary .summary-chip.chip-total .chip-count {
+            color: #fff;
+        }
+        body.dark-mode .stock-summary .summary-chip {
+            background: #161b22;
+            border-color: #30363d;
+            color: #e6edf3;
+        }
+        body.dark-mode .stock-summary .summary-chip.chip-total {
+            background: #4fa8a2;
+            border-color: #4fa8a2;
+        }
+
+        .stock-filters {
+            display: grid;
+            grid-template-columns: 1.2fr 1.6fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            background: #ffffff;
+            border: 1px solid #eef2f6;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+        body.dark-mode .stock-filters {
+            background: #161b22;
+            border-color: #30363d;
+        }
+        .stock-filters .filter-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+        .stock-filters .filter-cell label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #8a99b1;
+            transition: color 0.3s ease;
+        }
+        body.dark-mode .stock-filters .filter-cell label {
+            color: #6b7a8f;
+        }
+        .stock-filters .filter-cell input,
+        .stock-filters .filter-cell select {
+            width: 100%;
+            border: 1px solid #e5e9f0;
+            border-radius: 8px;
+            padding: 7px 10px;
+            font-size: 13px;
+            font-family: inherit;
+            background: #f8faff;
+            color: #1a1f36;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .stock-filters .filter-cell input:focus,
+        .stock-filters .filter-cell select:focus {
+            border-color: #008080;
+            background: #fff;
+        }
+        body.dark-mode .stock-filters .filter-cell input,
+        body.dark-mode .stock-filters .filter-cell select {
+            background: #0d1117;
+            border-color: #30363d;
+            color: #e6edf3;
+        }
+        body.dark-mode .stock-filters .filter-cell input:focus,
+        body.dark-mode .stock-filters .filter-cell select:focus {
+            background: #161b22;
+            border-color: #4fa8a2;
+        }
+        .stock-filters .filter-cell.filter-actions {
+            justify-content: flex-end;
+        }
+        @media (max-width: 1100px) {
+            .stock-filters {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+        @media (max-width: 640px) {
+            .stock-filters {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 1024px) {
             .sidebar {
@@ -2349,13 +2555,19 @@
                 <button class="nav-item" data-panel="users" onclick="switchPanel('users')" id="navUsers">
                     <i class="fas fa-users"></i>
                     <span>Tài khoản</span>
-                    <span class="badge" id="userCount">0</span>
                 </button>
                 <button class="nav-item" data-panel="news" onclick="switchPanel('news')" id="navNews">
                     <i class="fas fa-newspaper"></i>
                     <span>Tin tức</span>
-                    <span class="badge" id="newsCount">0</span>
                     <span class="badge pending-badge" id="pendingNewsBadge" style="display:none;">0</span>
+                </button>
+                <button class="nav-item" data-panel="stocks" onclick="switchPanel('stocks')" id="navStocks">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Cổ phiếu</span>
+                </button>
+                <button class="nav-item" data-panel="writingTool" onclick="switchPanel('writingTool')" id="navWritingTool">
+                    <i class="fas fa-file-import"></i>
+                    <span>Tool hỗ trợ viết bài</span>
                 </button>
 
                 <div class="nav-label" style="margin-top:12px;">Hội viên</div>
@@ -2532,6 +2744,8 @@
                     </button>
                 </div>
 
+                <div class="stock-summary" id="usersSummary"></div>
+
                 <div class="user-form-container" id="userFormContainer">
                     <div class="form-title">
                         <span class="form-icon"><i class="fas fa-user-plus"></i></span>
@@ -2661,6 +2875,8 @@
                         <button class="btn-secondary" onclick="filterNews('published')">Đã xuất bản</button>
                     </div>
                 </div>
+
+                <div class="stock-summary" id="newsSummary"></div>
 
                 <div class="approval-flow">
                     <div class="step">
@@ -2993,6 +3209,8 @@
                     </div>
                 </div>
 
+                <div class="stock-summary" id="contactSummary"></div>
+
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -3010,6 +3228,204 @@
                         </thead>
                         <tbody id="contactTableBody"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- PANEL: WRITING TOOL (TOOL HỖ TRỢ VIẾT BÀI - IMPORT JSON) -->
+            <!-- ============================================================ -->
+            <div class="panel" id="panelWritingTool">
+                <div class="panel-header">
+                    <h2>Tool hỗ trợ viết bài <small style="font-weight:400;font-size:13px;color:#8a99b1;">(Import bài viết từ file JSON)</small></h2>
+                </div>
+
+                <div class="faq-form-container show" id="importFormContainer">
+                    <div class="form-title">
+                        <span class="form-icon"><i class="fas fa-file-import"></i></span>
+                        <span>Thông tin import bài viết</span>
+                    </div>
+                    <form id="importForm" onsubmit="importNews(event)">
+                        <div class="form-group">
+                            <label>File JSON <span class="required">*</span></label>
+                            <div class="import-file-row">
+                                <input type="file" id="importFile" accept=".json,application/json" style="display:none;" onchange="handleFileSelect()" />
+                                <button type="button" class="btn-secondary" onclick="document.getElementById('importFile').click()">
+                                    <i class="fas fa-folder-open"></i> Chọn file JSON
+                                </button>
+                                <span class="import-file-name" id="importFileName">Chưa chọn file</span>
+                            </div>
+                            <div class="helper-text">Chọn file .json đã scrawl data tin tức từ máy tính của bạn.</div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tác giả</label>
+                                <input type="text" id="importAuthor" value="Ban biên tập TuniX" />
+                                <div class="helper-text">Mặc định: Ban biên tập TuniX — có thể thay đổi theo người thực hiện.</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Danh mục</label>
+                                <select id="importCategory">
+                                    <option value="tin-tuc" selected>Tin tức</option>
+                                    <option value="tin-luc">Tin Lúc</option>
+                                    <option value="bao-cao">Báo cáo</option>
+                                    <option value="tin-cong-ty">Tin công ty</option>
+                                    <option value="su-kien">Sự kiện</option>
+                                </select>
+                                <div class="helper-text">Mặc định: Tin tức — bài viết sẽ ở danh mục được chọn.</div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Phê duyệt bài viết?</label>
+                                <div style="display:flex;gap:10px;align-items:center;padding-top:6px;">
+                                    <button type="button" class="switch-btn" id="approveSwitch" data-on="false" onclick="toggleSwitch('approveSwitch','approveValue')">
+                                        <i class="fas fa-power-off"></i> <span class="switch-state">Tắt</span>
+                                    </button>
+                                    <input type="hidden" id="approveValue" value="false" />
+                                </div>
+                                <div class="helper-text">Bật = phê duyệt tự động (chờ xuất bản thủ công).<br>Tắt = chờ phê duyệt thủ công.</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Xuất bản bài viết?</label>
+                                <div style="display:flex;gap:10px;align-items:center;padding-top:6px;">
+                                    <button type="button" class="switch-btn" id="publishSwitch" data-on="false" onclick="toggleSwitch('publishSwitch','publishValue')" disabled>
+                                        <i class="fas fa-power-off"></i> <span class="switch-state">Tắt</span>
+                                    </button>
+                                    <input type="hidden" id="publishValue" value="false" />
+                                </div>
+                                <div class="helper-text">Bật = xuất bản tự động.<br>Tắt = chờ xuất bản thủ công.</div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="previewImport()">
+                                <i class="fas fa-eye"></i> Xem trước
+                            </button>
+                            <button type="submit" class="btn-primary" id="importBtn">
+                                <i class="fas fa-file-import"></i> Chuyển bài viết sang menu Tin tức
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="importResult"></div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- PANEL: STOCKS (QUẢN LÝ DANH SÁCH CỔ PHIẾU) -->
+            <!-- ============================================================ -->
+            <div class="panel" id="panelStocks">
+                <div class="panel-header">
+                    <h2>Quản lý danh sách cổ phiếu <small style="font-weight:400;font-size:13px;color:#8a99b1;">(Thêm mã IPO mới để API nhận dạng)</small></h2>
+                    <button class="btn-primary" id="toggleStockFormBtn" onclick="toggleStockForm()">
+                        <i class="fas fa-plus"></i> Thêm cổ phiếu mới IPO
+                    </button>
+                </div>
+
+                <div class="faq-form-container" id="stockFormContainer">
+                    <div class="form-title">
+                        <span class="form-icon" id="stockFormIcon"><i class="fas fa-plus-circle"></i></span>
+                        <span id="stockFormTitle">Thêm mã cổ phiếu mới</span>
+                    </div>
+                    <form id="stockForm" onsubmit="submitStockSymbol(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Mã cổ phiếu <span class="required">*</span></label>
+                                <input type="text" id="stockSymbolInput" placeholder="VD: ABC, DEF" maxlength="10" style="text-transform:uppercase;" oninput="lookupStockInfo()" required />
+                                <div class="helper-text">Chỉ chữ A-Z và số 0-9, ví dụ: VPB, FRT, SAB</div>
+                                <div class="helper-text" id="stockLookupMsg" style="color:#8e44ad;font-weight:500;"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Sàn giao dịch</label>
+                                <select id="stockExchangeInput" disabled>
+                                    <option value="">Chưa xác định</option>
+                                    <option value="HOSE">HOSE</option>
+                                    <option value="HNX">HNX</option>
+                                    <option value="UPCOM">UPCOM</option>
+                                </select>
+                                <div class="helper-text">Tự động hiển thị sàn chính thức khi nhập mã. Không thể chỉnh sửa.</div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tên công ty</label>
+                            <input type="text" id="stockNameInput" placeholder="Tự động hiển thị tên chính thức khi nhập mã…" readonly />
+                            <div class="helper-text">Tự động hiển thị tên chính thức khi nhập mã. Không thể chỉnh sửa.</div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary" id="stockSubmitBtn" disabled>
+                                <i class="fas fa-save"></i> Thêm mã cổ phiếu
+                            </button>
+                            <button type="button" class="btn-close-form" onclick="resetStockForm()">
+                                <i class="fas fa-times"></i> Đặt lại
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="stock-summary" id="stockSummary"></div>
+
+                <div class="stock-filters">
+                    <div class="filter-cell">
+                        <label>Mã cổ phiếu</label>
+                        <input type="text" id="filterSymbol" placeholder="Tìm mã…" oninput="renderStocks()" />
+                    </div>
+                    <div class="filter-cell">
+                        <label>Tên công ty</label>
+                        <input type="text" id="filterName" placeholder="Tìm tên…" oninput="renderStocks()" />
+                    </div>
+                    <div class="filter-cell">
+                        <label>Sàn</label>
+                        <select id="filterExchange" onchange="renderStocks()">
+                            <option value="">Tất cả</option>
+                            <option value="HOSE">HOSE</option>
+                            <option value="HNX">HNX</option>
+                            <option value="UPCOM">UPCOM</option>
+                            <option value="OTHER">Khác</option>
+                        </select>
+                    </div>
+                    <div class="filter-cell">
+                        <label>Loại</label>
+                        <select id="filterType" onchange="renderStocks()">
+                            <option value="">Tất cả</option>
+                            <option value="system">Hệ thống</option>
+                            <option value="custom">Thêm thủ công</option>
+                        </select>
+                    </div>
+                    <div class="filter-cell">
+                        <label>Ngày thêm</label>
+                        <input type="text" id="filterDate" placeholder="VD: 2026-08" oninput="renderStocks()" />
+                    </div>
+                    <div class="filter-cell filter-actions">
+                        <label>&nbsp;</label>
+                        <button type="button" class="btn-secondary" style="padding:7px 12px;font-size:12px;" onclick="resetStockFilters()">
+                            <i class="fas fa-times"></i> Xóa bộ lọc
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper stock-table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:15%;">Mã cổ phiếu</th>
+                                <th>Tên công ty</th>
+                                <th style="width:12%;">Sàn</th>
+                                <th style="width:12%;">Loại</th>
+                                <th style="width:16%;">Ngày thêm</th>
+                                <th style="width:14%;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="helper-text" style="margin-top:8px;">
+                    <i class="fas fa-info-circle"></i> Bảng liệt kê <strong>toàn bộ cổ phiếu</strong> hiện có trên các sàn
+                    (HOSE, HNX, UPCoM) cùng với các mã IPO mới do quản trị viên thêm thủ công (cột "Loại" = <em>Thêm thủ công</em>).
+                    Khi có cổ phiếu mới IPO, hãy thêm mã ở form bên trên để các API dữ liệu (giá, lịch sử, báo cáo…) nhận dạng được mã này.
                 </div>
             </div>
 
@@ -3368,9 +3784,26 @@
         // Tin nhắn liên hệ (dữ liệu thật từ backend /api/contact)
         let contactMessagesData = [];
 
+        // Cổ phiếu do admin thêm thủ công (mã IPO mới)
+        let stocksData = [];
+        // Mã đang ở chế độ chỉnh sửa (null = chế độ thêm mới)
+        let editingStockSymbol = null;
+        // Trạng thái tra cứu mã khi nhập: null | 'ok' | 'exists' | 'unknown'
+        let stockLookup = { symbol: '', status: null };
+
         // ============================================================
         // 3. PERMISSION CHECKS
         // ============================================================
+        function canManageStocks() {
+            return currentUser.role === 'super-admin' || currentUser.role === 'admin';
+        }
+        // Chỉ Super Admin được sửa/xóa mã cổ phiếu
+        function canEditStocks() {
+            return currentUser.role === 'super-admin';
+        }
+        function canDeleteStocks() {
+            return currentUser.role === 'super-admin';
+        }
         function canManageUsers() {
             return currentUser.role === 'super-admin' || currentUser.role === 'admin';
         }
@@ -3381,6 +3814,12 @@
         }
 
         function canCreateNews() {
+            return currentUser.role === 'super-admin' || currentUser.role === 'content-manager' ||
+                currentUser.role === 'editor';
+        }
+
+        // Tool hỗ trợ viết bài: dành cho người có quyền viết tin
+        function canUseWritingTool() {
             return currentUser.role === 'super-admin' || currentUser.role === 'content-manager' ||
                 currentUser.role === 'editor';
         }
@@ -3470,6 +3909,8 @@
         function applyPermissionUI() {
             setNavDisabled('navUsers', !canManageUsers());
             setNavDisabled('navNews', !canManageNews());
+            setNavDisabled('navStocks', !canManageStocks());
+            setNavDisabled('navWritingTool', !canUseWritingTool());
             setNavDisabled('navPlans', !canManagePlans());
             setNavDisabled('navFeatures', !canManageFeatures());
             setNavDisabled('navTickets', true); // TẠM disable menu Yêu cầu hỗ trợ cho mọi quyền (phát triển sau)
@@ -3568,7 +4009,13 @@
             const supportCount = usersData.filter(u => u.role === 'support').length;
 
             const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-            setText('userCount', totalUsers);
+            renderSummaryChips('usersSummary', [
+                { label: 'Tổng tài khoản', value: totalUsers, total: true, icon: '<i class="fas fa-users"></i>' },
+                { label: 'Quản trị viên', value: adminUsers.length, icon: '<i class="fas fa-user-shield" style="color:#008080;"></i>' },
+                { label: 'Thành viên', value: memberUsers.length, icon: '<i class="fas fa-user" style="color:#2ecc71;"></i>' },
+                { label: 'Hội viên trả phí', value: paidMembers.length, icon: '<i class="fas fa-crown" style="color:#f39c12;"></i>' },
+                { label: 'Miễn phí', value: freeMembers.length }
+            ]);
             setText('statUsers', totalUsers);
             setText('statAdmins', adminUsers.length);
             setText('statMembers', memberUsers.length);
@@ -3674,19 +4121,31 @@
             tbody.innerHTML = html;
 
             const totalNews = newsData.length;
-            const pendingCount = newsData.filter(n => n.status === 'pending-approval').length;
+            const pendingApprovalCount = newsData.filter(n => n.status === 'pending-approval').length;
+            const approvedCount = newsData.filter(n => n.status === 'approved').length;
+            const publishedCount = newsData.filter(n => n.status === 'published').length;
+            const notPublishedCount = pendingApprovalCount + approvedCount;
 
-            document.getElementById('newsCount').textContent = totalNews;
             const statPostsEl = document.getElementById('statPosts');
             if (statPostsEl) statPostsEl.textContent = totalNews;
 
+            // Badge menu Tin tức: tin mới chưa được phê duyệt và chưa được xuất bản
             const pendingBadge = document.getElementById('pendingNewsBadge');
-            if (pendingCount > 0) {
+            if (notPublishedCount > 0) {
                 pendingBadge.style.display = 'inline-block';
-                pendingBadge.textContent = pendingCount;
+                pendingBadge.textContent = notPublishedCount;
             } else {
                 pendingBadge.style.display = 'none';
             }
+
+            // Đếm ngay trong trang Tin tức (giống summary của trang Cổ phiếu)
+            renderSummaryChips('newsSummary', [
+                { label: 'Tổng tin tức', value: totalNews, total: true, icon: '<i class="fas fa-newspaper"></i>' },
+                { label: 'Chờ duyệt', value: pendingApprovalCount, icon: '<i class="fas fa-clock" style="color:#f39c12;"></i>' },
+                { label: 'Đã duyệt', value: approvedCount, icon: '<i class="fas fa-check-circle" style="color:#008080;"></i>' },
+                { label: 'Chưa xuất bản', value: notPublishedCount, icon: '<i class="fas fa-hourglass-half" style="color:#e67e22;"></i>' },
+                { label: 'Đã xuất bản', value: publishedCount, icon: '<i class="fas fa-globe" style="color:#2ecc71;"></i>' }
+            ]);
 
             updateApprovalFlow();
         }
@@ -3966,14 +4425,24 @@
                 `).join('');
             }
 
+            // Đếm ngay trong trang Liên hệ (giống summary các trang khác)
+            const totalCount = contactMessagesData.length;
             const unreadCount = contactMessagesData.filter(m => !m.is_read).length;
-            const badge = document.getElementById('contactUnreadBadge');
-            if (badge) {
+            const readCount = totalCount - unreadCount;
+            renderSummaryChips('contactSummary', [
+                { label: 'Tổng tin nhắn', value: totalCount, total: true, icon: '<i class="fas fa-envelope-open-text"></i>' },
+                { label: 'Chưa đọc', value: unreadCount, icon: '<i class="fas fa-envelope" style="color:#f39c12;"></i>' },
+                { label: 'Đã đọc', value: readCount, icon: '<i class="fas fa-envelope-open" style="color:#2ecc71;"></i>' }
+            ]);
+
+            // Badge menu Liên hệ: thông báo số tin CHƯA ĐỌC (chỉ hiện khi > 0)
+            const unreadBadge = document.getElementById('contactUnreadBadge');
+            if (unreadBadge) {
                 if (unreadCount > 0) {
-                    badge.style.display = 'inline-block';
-                    badge.textContent = unreadCount;
+                    unreadBadge.style.display = 'inline-block';
+                    unreadBadge.textContent = unreadCount;
                 } else {
-                    badge.style.display = 'none';
+                    unreadBadge.style.display = 'none';
                 }
             }
         }
@@ -4065,6 +4534,14 @@
                 showWarning('Bạn không có quyền quản lý tin tức.');
                 return;
             }
+            if (panelId === 'stocks' && !canManageStocks()) {
+                showWarning('Bạn không có quyền quản lý danh sách cổ phiếu.');
+                return;
+            }
+            if (panelId === 'writingTool' && !canUseWritingTool()) {
+                showWarning('Bạn không có quyền sử dụng Tool hỗ trợ viết bài.');
+                return;
+            }
             if ((panelId === 'plans' || panelId === 'features') && !canManagePlans()) {
                 showWarning('Bạn không có quyền quản lý hội viên.');
                 return;
@@ -4100,6 +4577,8 @@
                 'dashboard': 'Dashboard',
                 'users': 'Quản lý tài khoản & Hội viên',
                 'news': 'Quản lý tin tức',
+                'stocks': 'Quản lý danh sách cổ phiếu',
+                'writingTool': 'Tool hỗ trợ viết bài',
                 'plans': 'Quản lý gói hội viên',
                 'features': 'Quản lý tính năng',
                 'tickets': 'Quản lý yêu cầu hỗ trợ',
@@ -4114,6 +4593,7 @@
 
             if (panelId === 'users') loadUsers();
             if (panelId === 'news') loadNews();
+            if (panelId === 'stocks') loadStocks();
             if (panelId === 'plans') renderPlans();
             if (panelId === 'features') renderFeatures();
             if (panelId === 'tickets') renderTickets();
@@ -4911,6 +5391,553 @@
         }
 
         // ============================================================
+        // 11b. QUẢN LÝ DANH SÁCH CỔ PHIẾU (mã IPO mới do admin thêm)
+        // ============================================================
+        async function loadStocks() {
+            try {
+                const data = await authApi('/admin/stocks');
+                stocksData = Array.isArray(data) ? data : [];
+            } catch (e) {
+                stocksData = [];
+                console.error('Load stocks failed:', e);
+            }
+            renderStocks();
+        }
+
+        // Vẽ các chip đếm dạng summary (dùng cho Tài khoản, Tin tức, Cổ phiếu)
+        function renderSummaryChips(containerId, chips) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            el.innerHTML = chips.map(function(c) {
+                return `<div class="summary-chip ${c.total ? 'chip-total' : ''}">${c.icon || ''} ${c.label}: <span class="chip-count">${c.value}</span></div>`;
+            }).join('');
+        }
+
+        function renderStockSummary(list) {
+            const el = document.getElementById('stockSummary');
+            if (!el) return;
+            const counts = { HOSE: 0, HNX: 0, UPCOM: 0, KHAC: 0 };
+            list.forEach(function(s) {
+                const ex = String(s.exchange || '').toUpperCase();
+                if (ex === 'HOSE') counts.HOSE++;
+                else if (ex === 'HNX') counts.HNX++;
+                else if (ex === 'UPCOM') counts.UPCOM++;
+                else counts.KHAC++;
+            });
+            const custom = list.filter(function(s) { return s.is_custom; }).length;
+            el.innerHTML =
+                `<div class="summary-chip chip-total"><i class="fas fa-layer-group"></i> Tổng cổ phiếu: <span class="chip-count">${list.length}</span></div>` +
+                `<div class="summary-chip"><span style="color:#008080;font-weight:600;">HOSE</span> <span class="chip-count">${counts.HOSE}</span></div>` +
+                `<div class="summary-chip"><span style="color:#e67e22;font-weight:600;">HNX</span> <span class="chip-count">${counts.HNX}</span></div>` +
+                `<div class="summary-chip"><span style="color:#2ecc71;font-weight:600;">UPCOM</span> <span class="chip-count">${counts.UPCOM}</span></div>` +
+                `<div class="summary-chip"><span style="color:#8a99b1;">Khác</span> <span class="chip-count">${counts.KHAC}</span></div>` +
+                `<div class="summary-chip"><i class="fas fa-pen" style="color:#8e44ad;"></i> Thêm thủ công: <span class="chip-count">${custom}</span></div>`;
+        }
+
+        function renderStocks() {
+            const tbody = document.getElementById('stockTableBody');
+            if (!tbody) return;
+            renderStockSummary(stocksData);
+
+            // Bộ lọc theo từng cột
+            const fSymbol = ((document.getElementById('filterSymbol') || {}).value || '').trim().toUpperCase();
+            const fName = ((document.getElementById('filterName') || {}).value || '').trim().toUpperCase();
+            const fExchange = (document.getElementById('filterExchange') || {}).value || '';
+            const fType = (document.getElementById('filterType') || {}).value || '';
+            const fDate = ((document.getElementById('filterDate') || {}).value || '').trim();
+
+            let list = stocksData;
+            if (fSymbol || fName || fExchange || fType || fDate) {
+                list = list.filter(function(s) {
+                    const code = String(s.symbol || '').toUpperCase();
+                    const name = String(s.name || '').toUpperCase();
+                    const ex = String(s.exchange || '').toUpperCase();
+                    if (fSymbol && !code.includes(fSymbol)) return false;
+                    if (fName && !name.includes(fName)) return false;
+                    if (fExchange === 'OTHER') {
+                        if (ex === 'HOSE' || ex === 'HNX' || ex === 'UPCOM') return false;
+                    } else if (fExchange && ex !== fExchange) {
+                        return false;
+                    }
+                    if (fType === 'system' && s.is_custom) return false;
+                    if (fType === 'custom' && !s.is_custom) return false;
+                    if (fDate) {
+                        const createdStr = (s.is_custom && s.created_at) ? formatDateTime(s.created_at) : '';
+                        if (!createdStr.includes(fDate)) return false;
+                    }
+                    return true;
+                });
+            }
+
+            const hasFilters = !!(fSymbol || fName || fExchange || fType || fDate);
+            if (!list.length) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#8a99b1;padding:24px;">` +
+                    (hasFilters
+                        ? 'Không tìm thấy cổ phiếu phù hợp với bộ lọc hiện tại.'
+                        : 'Chưa có mã cổ phiếu nào trong danh sách.') +
+                    `</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(function(item) {
+                const symbol = escapeHtml(item.symbol || '');
+                const name = escapeHtml(item.name || symbol);
+                const exchange = escapeHtml(item.exchange || '—');
+                const isCustom = !!item.is_custom;
+                const typeHtml = isCustom
+                    ? '<span style="display:inline-block;background:#efe9f7;color:#8e44ad;font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;">Thêm thủ công</span>'
+                    : '<span style="color:#8a99b1;font-size:12px;">Hệ thống</span>';
+                const created = isCustom ? formatDateTime(item.created_at) : '—';
+
+                // Thao tác: chỉ mã thủ công mới có nút; Super Admin được Sửa/Xóa, admin thì không
+                let actionHtml = '<span style="color:#b0b9c8;font-size:12px;">—</span>';
+                if (isCustom) {
+                    const btns = [];
+                    if (canEditStocks()) {
+                        btns.push(`<button class="btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="openEditStock('${symbol}')"><i class="fas fa-edit"></i> Sửa</button>`);
+                    }
+                    if (canDeleteStocks()) {
+                        btns.push(`<button class="btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteStockSymbol('${symbol}')"><i class="fas fa-trash"></i> Xóa</button>`);
+                    }
+                    actionHtml = btns.length ? btns.join(' ') : '<span style="color:#b0b9c8;font-size:12px;">—</span>';
+                }
+
+                return `<tr>
+                    <td><strong>${symbol}</strong></td>
+                    <td>${name}</td>
+                    <td>${exchange}</td>
+                    <td>${typeHtml}</td>
+                    <td>${created}</td>
+                    <td>${actionHtml}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function resetStockForm() {
+            const form = document.getElementById('stockForm');
+            if (form) form.reset();
+            editingStockSymbol = null;
+            stockLookup = { symbol: '', status: null };
+            const symbolInput = document.getElementById('stockSymbolInput');
+            if (symbolInput) symbolInput.disabled = false;
+            const nameInput = document.getElementById('stockNameInput');
+            if (nameInput) nameInput.value = '';
+            const exInput = document.getElementById('stockExchangeInput');
+            if (exInput) exInput.value = '';
+            const lookupMsg = document.getElementById('stockLookupMsg');
+            if (lookupMsg) { lookupMsg.textContent = ''; lookupMsg.style.color = '#8e44ad'; }
+            const title = document.getElementById('stockFormTitle');
+            if (title) title.textContent = 'Thêm mã cổ phiếu mới';
+            const icon = document.getElementById('stockFormIcon');
+            if (icon) icon.innerHTML = '<i class="fas fa-plus-circle"></i>';
+            const submitBtn = document.getElementById('stockSubmitBtn');
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-save"></i> Thêm mã cổ phiếu'; }
+        }
+
+        // Tự động tra cứu & hiển thị tên + sàn chính thức khi gõ mã (không cho admin sửa).
+        // Đồng thời chặn nút Thêm khi mã đã có trong danh sách hoặc chưa IPO.
+        let stockLookupTimer = null;
+        function lookupStockInfo() {
+            const input = document.getElementById('stockSymbolInput');
+            const nameInput = document.getElementById('stockNameInput');
+            const exInput = document.getElementById('stockExchangeInput');
+            const msg = document.getElementById('stockLookupMsg');
+            const submitBtn = document.getElementById('stockSubmitBtn');
+            if (!input || !nameInput || !exInput || !submitBtn) return;
+
+            const symbol = (input.value || '').trim().toUpperCase();
+            input.value = symbol;
+            if (editingStockSymbol) return;
+
+            if (!symbol) {
+                nameInput.value = '';
+                exInput.value = '';
+                stockLookup = { symbol: '', status: null };
+                submitBtn.disabled = true;
+                if (msg) { msg.textContent = ''; msg.style.color = '#8e44ad'; }
+                return;
+            }
+
+            if (msg) { msg.textContent = 'Đang tra cứu thông tin…'; msg.style.color = '#8e44ad'; }
+            clearTimeout(stockLookupTimer);
+            stockLookupTimer = setTimeout(async function() {
+                try {
+                    const data = await authApi('/admin/stocks/lookup?symbol=' + encodeURIComponent(symbol));
+
+                    // Xác định trạng thái một cách chắc chắn (kể cả khi server trả thiếu trường status):
+                    // 1) Mã đã nằm trong danh sách cổ phiếu đang hiển thị → chắc chắn "đã có"
+                    // 2) Server trả đủ status → dùng trực tiếp
+                    // 3) Còn lại dựa vào found để phân biệt hợp lệ / chưa niêm yết
+                    const inList = stocksData.some(function(s) {
+                        return String(s.symbol || '').toUpperCase() === symbol;
+                    });
+                    let status = (data && data.status) || null;
+                    if (inList) {
+                        status = 'exists';
+                    } else if (!status && data && data.found) {
+                        status = 'ok';
+                    } else if (!status) {
+                        status = 'unknown';
+                    }
+                    stockLookup = { symbol: symbol, status: status };
+
+                    if (status === 'ok') {
+                        nameInput.value = (data && data.name) || '';
+                        exInput.value = (data && data.exchange) || '';
+                        submitBtn.disabled = false;
+                        if (msg) { msg.innerHTML = '<i class="fas fa-check-circle"></i> Đã tìm thấy thông tin mã này.'; msg.style.color = '#0f7b3a'; }
+                    } else if (status === 'exists') {
+                        nameInput.value = (data && data.name) || '';
+                        exInput.value = (data && data.exchange) || '';
+                        submitBtn.disabled = true;
+                        if (msg) { msg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Mã cổ phiếu đã có trong danh sách cổ phiếu của hệ thống.'; msg.style.color = '#d0314e'; }
+                    } else {
+                        nameInput.value = '';
+                        exInput.value = '';
+                        submitBtn.disabled = true;
+                        if (msg) { msg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Cổ phiếu chưa được niêm yết (IPO) lên sàn chứng khoán Việt Nam. Hãy kiểm tra lại mã chứng khoán bạn đang nhập.'; msg.style.color = '#d0314e'; }
+                    }
+                } catch (e) {
+                    stockLookup = { symbol: symbol, status: 'unknown' };
+                    submitBtn.disabled = true;
+                    if (msg) msg.textContent = '';
+                }
+            }, 350);
+        }
+
+        // Hiển thị/ẩn form Thêm mã cổ phiếu mới (chỉ khi bấm nút "Thêm cổ phiếu mới IPO")
+        function updateStockFormBtn() {
+            const btn = document.getElementById('toggleStockFormBtn');
+            const container = document.getElementById('stockFormContainer');
+            if (!btn || !container) return;
+            const open = container.classList.contains('show');
+            btn.innerHTML = open
+                ? '<i class="fas fa-times"></i> Đóng form thêm'
+                : '<i class="fas fa-plus"></i> Thêm cổ phiếu mới IPO';
+        }
+
+        function toggleStockForm() {
+            if (!canManageStocks()) {
+                showWarning('Bạn không có quyền quản lý danh sách cổ phiếu.');
+                return;
+            }
+            hideWarning();
+            const container = document.getElementById('stockFormContainer');
+            const isShowing = container.classList.contains('show');
+            if (isShowing) {
+                container.classList.remove('show');
+                resetStockForm();
+            } else {
+                resetStockForm();
+                container.classList.add('show');
+                container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            updateStockFormBtn();
+        }
+
+        function closeStockForm() {
+            const container = document.getElementById('stockFormContainer');
+            if (container) container.classList.remove('show');
+            updateStockFormBtn();
+        }
+
+        function resetStockFilters() {
+            ['filterSymbol', 'filterName', 'filterExchange', 'filterType', 'filterDate'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            renderStocks();
+        }
+
+        function openEditStock(symbol) {
+            if (!canEditStocks()) {
+                showWarning('Chỉ Super Admin được phép sửa mã cổ phiếu.');
+                return;
+            }
+            hideWarning();
+            const item = stocksData.find(function(s) {
+                return String(s.symbol || '').toUpperCase() === symbol.toUpperCase() && s.is_custom;
+            });
+            if (!item) {
+                showToast('Không tìm thấy mã cổ phiếu để sửa.', 'error');
+                return;
+            }
+
+            editingStockSymbol = item.symbol;
+            const title = document.getElementById('stockFormTitle');
+            if (title) title.textContent = 'Chỉnh sửa mã cổ phiếu: ' + item.symbol;
+            const icon = document.getElementById('stockFormIcon');
+            if (icon) icon.innerHTML = '<i class="fas fa-edit"></i>';
+            const submitBtn = document.getElementById('stockSubmitBtn');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi'; }
+
+            document.getElementById('stockSymbolInput').value = item.symbol;
+            document.getElementById('stockSymbolInput').disabled = true;
+            document.getElementById('stockNameInput').value = item.name || '';
+            document.getElementById('stockExchangeInput').value = item.exchange || '';
+            const lookupMsg = document.getElementById('stockLookupMsg');
+            if (lookupMsg) { lookupMsg.textContent = ''; lookupMsg.style.color = '#8e44ad'; }
+
+            const container = document.getElementById('stockFormContainer');
+            container.classList.add('show');
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            updateStockFormBtn();
+        }
+
+        async function submitStockSymbol(e) {
+            e.preventDefault();
+            if (!canManageStocks()) {
+                showWarning('Bạn không có quyền quản lý danh sách cổ phiếu.');
+                return;
+            }
+            hideWarning();
+
+            const symbol = document.getElementById('stockSymbolInput').value.trim().toUpperCase();
+            const name = document.getElementById('stockNameInput').value.trim();
+            const exchange = document.getElementById('stockExchangeInput').value;
+
+            // Chế độ chỉnh sửa (chỉ Super Admin)
+            if (editingStockSymbol) {
+                if (!canEditStocks()) {
+                    showWarning('Chỉ Super Admin được phép sửa mã cổ phiếu.');
+                    return;
+                }
+                hideWarning();
+                if (!symbol) {
+                    showToast('Vui lòng nhập mã cổ phiếu.', 'error');
+                    return;
+                }
+                try {
+                    await authApi('/admin/stocks/' + encodeURIComponent(editingStockSymbol), 'PUT', {
+                        symbol: symbol, name: name, exchange: exchange
+                    });
+                    showToast(`✅ Đã cập nhật mã ${editingStockSymbol}.`, 'success');
+                    resetStockForm();
+                    closeStockForm();
+                    await loadStocks();
+                } catch (err) {
+                    showToast('❌ ' + (err.message || 'Không thể sửa mã cổ phiếu.'), 'error');
+                }
+                return;
+            }
+
+            // Chế độ thêm mới (admin & super-admin)
+            if (!symbol) {
+                showToast('Vui lòng nhập mã cổ phiếu.', 'error');
+                return;
+            }
+            if (!/^[A-Z0-9]{1,10}$/.test(symbol)) {
+                showToast('Mã cổ phiếu chỉ gồm chữ A-Z và số 0-9 (tối đa 10 ký tự).', 'error');
+                return;
+            }
+            // Chặn nếu mã đã có trong danh sách hoặc chưa IPO (phòng khi bấm Enter)
+            if (stockLookup.symbol === symbol && stockLookup.status === 'exists') {
+                showToast('❌ Mã cổ phiếu đã có trong danh sách cổ phiếu của hệ thống.', 'error');
+                return;
+            }
+            if (stockLookup.symbol === symbol && stockLookup.status === 'unknown') {
+                showToast('❌ Cổ phiếu chưa được niêm yết (IPO) lên sàn chứng khoán Việt Nam. Hãy kiểm tra lại mã chứng khoán bạn đang nhập.', 'error');
+                return;
+            }
+
+            const payload = { symbol: symbol, name: name, exchange: exchange };
+            try {
+                await authApi('/admin/stocks', 'POST', payload);
+                showToast(`✅ Đã thêm mã ${symbol} vào danh sách cổ phiếu!`, 'success');
+                resetStockForm();
+                closeStockForm();
+                await loadStocks();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không thể thêm mã cổ phiếu.'), 'error');
+            }
+        }
+
+        async function deleteStockSymbol(symbol) {
+            if (!canDeleteStocks()) {
+                showWarning('Chỉ Super Admin được phép xóa mã cổ phiếu.');
+                return;
+            }
+            hideWarning();
+            if (!confirm(`Bạn có chắc chắn muốn xóa mã ${symbol} khỏi danh sách cổ phiếu?`)) return;
+            try {
+                await authApi('/admin/stocks/' + encodeURIComponent(symbol), 'DELETE');
+                showToast(`✅ Đã xóa mã ${symbol}.`, 'success');
+                await loadStocks();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không thể xóa mã cổ phiếu.'), 'error');
+            }
+        }
+
+        // ============================================================
+        // 11c. TOOL HỖ TRỢ VIẾT BÀI (Import bài viết từ file JSON)
+        // ============================================================
+        // Nút bật/tắt (ON/OFF): btnId = nút switch, valueId = input hidden lưu giá trị true/false
+        function toggleSwitch(btnId, valueId) {
+            const btn = document.getElementById(btnId);
+            const val = document.getElementById(valueId);
+            if (!btn || !val) return;
+            const on = btn.getAttribute('data-on') === 'true';
+            btn.setAttribute('data-on', on ? 'false' : 'true');
+            val.value = on ? 'false' : 'true';
+            const state = btn.querySelector('.switch-state');
+            if (state) state.textContent = on ? 'Tắt' : 'Bật';
+            updatePublishDisabled();
+        }
+
+        // Nếu "Phê duyệt" = Tắt → "Xuất bản" bị disable và quay về Tắt; nếu Bật → mở khóa "Xuất bản"
+        function updatePublishDisabled() {
+            const approve = document.getElementById('approveSwitch');
+            const publish = document.getElementById('publishSwitch');
+            const publishVal = document.getElementById('publishValue');
+            if (!approve || !publish || !publishVal) return;
+            const approveOn = approve.getAttribute('data-on') === 'true';
+            publish.disabled = !approveOn;
+            if (!approveOn && publishVal.value === 'true') {
+                publish.setAttribute('data-on', 'false');
+                publishVal.value = 'false';
+                const state = publish.querySelector('.switch-state');
+                if (state) state.textContent = 'Tắt';
+            }
+        }
+
+        function handleFileSelect() {
+            const input = document.getElementById('importFile');
+            const label = document.getElementById('importFileName');
+            if (input && label) {
+                label.textContent = input.files && input.files.length ? input.files[0].name : 'Chưa chọn file';
+            }
+        }
+
+        // Xây FormData: ưu tiên file đã chọn; nếu không chọn file thì gửi đường dẫn máy chủ
+        function buildImportFormData(dryRun) {
+            const fd = new FormData();
+            const fileInput = document.getElementById('importFile');
+            if (fileInput && fileInput.files && fileInput.files.length) {
+                fd.append('file', fileInput.files[0]);
+            }
+            fd.append('author', document.getElementById('importAuthor').value.trim());
+            fd.append('category', document.getElementById('importCategory').value);
+            fd.append('approve', document.getElementById('approveValue').value === 'true' ? 'true' : 'false');
+            fd.append('publish', document.getElementById('publishValue').value === 'true' ? 'true' : 'false');
+            fd.append('dry_run', dryRun ? 'true' : 'false');
+            return fd;
+        }
+
+        // Gửi request dạng multipart/form-data (tự đặt Content-Type có boundary) kèm Bearer token
+        async function authApiForm(path, formData, retried = false) {
+            const token = localStorage.getItem('tunix_access_token') || '';
+            const res = await fetch('/api' + path, {
+                method: 'POST',
+                headers: { Authorization: 'Bearer ' + token },
+                body: formData
+            });
+            if (!res.ok) {
+                if (res.status === 401 && !retried) {
+                    const refreshed = await refreshAccessToken();
+                    if (refreshed) {
+                        return authApiForm(path, formData, true);
+                    }
+                    localStorage.removeItem('tunix_access_token');
+                    localStorage.removeItem('tunix_refresh_token');
+                    localStorage.removeItem('tunix_user');
+                    window.location.replace('/admin/login?next=' + encodeURIComponent(window.location.pathname));
+                    throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                }
+                let detail = 'Yêu cầu thất bại.';
+                try { const d = await res.json(); detail = d.detail || detail; } catch (e) {}
+                const err = new Error(detail);
+                err.status = res.status;
+                throw err;
+            }
+            const ct = res.headers.get('content-type') || '';
+            if (res.status === 204) return null;
+            if (ct.includes('application/json')) return res.json();
+            return null;
+        }
+
+        function renderImportResult(data) {
+            const el = document.getElementById('importResult');
+            if (!el) return;
+            if (!data) { el.innerHTML = ''; return; }
+
+            const isPreview = data.dry_run;
+            const statusLabel = { 'pending-approval': 'Chờ duyệt', 'approved': 'Đã duyệt', 'published': 'Đã xuất bản' }[data.status] || data.status;
+            const titles = Array.isArray(data.titles) && data.titles.length
+                ? data.titles.map(t => `<li>${escapeHtml(t)}</li>`).join('')
+                : '<li>—</li>';
+            const errs = Array.isArray(data.error_details) && data.error_details.length
+                ? `<p style="color:#d0314e;font-size:12px;">${data.error_details.map(escapeHtml).join('<br>')}</p>`
+                : '';
+
+            el.innerHTML = `
+                <div style="background:#ffffff;border:1px solid #eef2f6;border-radius:16px;padding:20px;margin-top:16px;transition:all 0.3s ease;">
+                    <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">
+                        ${isPreview ? '👁️ Xem trước file JSON' : '📥 Kết quả import bài viết'}
+                    </h3>
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+                        <span class="status-badge active">Tổng: ${data.total}</span>
+                        <span class="status-badge published">Sẽ thêm/Đã thêm: ${data.inserted}</span>
+                        <span class="status-badge pending">Bỏ qua (trùng): ${data.skipped}</span>
+                        ${data.errors ? `<span class="status-badge rejected">Lỗi: ${data.errors}</span>` : ''}
+                        <span class="status-badge">Trạng thái: ${statusLabel}</span>
+                        <span class="status-badge">Danh mục: ${escapeHtml(data.category)}</span>
+                        <span class="status-badge">Tác giả: ${escapeHtml(data.author)}</span>
+                    </div>
+                    <div style="font-size:13px;color:#4a5a72;">
+                        <div style="font-weight:600;margin-bottom:4px;">${isPreview ? 'Sẽ import các bài:' : 'Các bài đã xử lý:'}</div>
+                        <ol style="margin:0;padding-left:18px;max-height:200px;overflow-y:auto;">${titles}</ol>
+                    </div>
+                    ${errs}
+                </div>`;
+        }
+
+        // Kiểm tra đã chọn file JSON
+        function hasImportSource() {
+            const fileInput = document.getElementById('importFile');
+            return !!(fileInput && fileInput.files && fileInput.files.length);
+        }
+
+        async function previewImport() {
+            if (!canUseWritingTool()) {
+                showWarning('Bạn không có quyền sử dụng Tool hỗ trợ viết bài.');
+                return;
+            }
+            hideWarning();
+            if (!hasImportSource()) { showToast('Vui lòng chọn file JSON.', 'error'); return; }
+            try {
+                const data = await authApiForm('/admin/tools/import-news', buildImportFormData(true));
+                renderImportResult(data);
+                showToast('✅ Đã đọc file — xem kết quả phía dưới.', 'success');
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không đọc được file.'), 'error');
+            }
+        }
+
+        async function importNews(e) {
+            e.preventDefault();
+            if (!canUseWritingTool()) {
+                showWarning('Bạn không có quyền sử dụng Tool hỗ trợ viết bài.');
+                return;
+            }
+            hideWarning();
+            if (!hasImportSource()) { showToast('Vui lòng chọn file JSON.', 'error'); return; }
+
+            const btn = document.getElementById('importBtn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang import...'; }
+            try {
+                const data = await authApiForm('/admin/tools/import-news', buildImportFormData(false));
+                renderImportResult(data);
+                showToast(`✅ Đã import ${data.inserted} bài viết!`, 'success');
+                // Làm mới danh sách tin tức & badge chờ duyệt trên menu Tin tức
+                if (window.loadNews) loadNews();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không thể import bài viết.'), 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-file-import"></i> Chuyển bài viết sang menu Tin tức'; }
+            }
+        }
+
+        // ============================================================
         // 12. CONTENT EDITOR FUNCTIONS
         // ============================================================
 
@@ -5161,12 +6188,25 @@
         renderFeatures();
         renderTickets();
         loadFaqs();
+        // Tải sẵn tin nhắn liên hệ để badge "chưa đọc" hiện ngay trên menu (nếu có quyền)
+        if (canViewContact()) loadContactMessages();
         switchPanel('dashboard');
 
         // Expose functions
         window.switchPanel = switchPanel;
         window.toggleUserForm = toggleUserForm;
         window.togglePasswordVisibility = togglePasswordVisibility;
+        window.submitStockSymbol = submitStockSymbol;
+        window.deleteStockSymbol = deleteStockSymbol;
+        window.resetStockForm = resetStockForm;
+        window.resetStockFilters = resetStockFilters;
+        window.openEditStock = openEditStock;
+        window.toggleStockForm = toggleStockForm;
+        window.lookupStockInfo = lookupStockInfo;
+        window.previewImport = previewImport;
+        window.importNews = importNews;
+        window.toggleSwitch = toggleSwitch;
+        window.handleFileSelect = handleFileSelect;
         window.submitUser = submitUser;
         window.openNewsForm = openNewsForm;
         window.closeNewsForm = closeNewsForm;

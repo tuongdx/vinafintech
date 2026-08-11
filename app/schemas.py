@@ -249,3 +249,30 @@ class FeatureOut(FeatureCreate):
 
     class Config:
         from_attributes = True
+
+
+class StockSymbolCreate(BaseModel):
+    symbol: str
+    name: str = ""
+    exchange: str = ""
+
+
+class StockSymbolOut(BaseModel):
+    id: int
+    symbol: str
+    name: str
+    exchange: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AdminStockSymbolOut(BaseModel):
+    """Mã cổ phiếu hiển thị trên trang quản trị — toàn bộ (gốc + thủ công)."""
+
+    symbol: str
+    name: str
+    exchange: str
+    is_custom: bool = False
+    created_at: datetime | None = None

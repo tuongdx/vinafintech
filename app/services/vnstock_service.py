@@ -46,8 +46,143 @@ class SimpleTTLCache:
     def set(self, key: str, value: Any, ttl_seconds: int = 60) -> None:
         self._store[key] = (time.time() + ttl_seconds, value)
 
+    def delete(self, key: str) -> None:
+        self._store.pop(key, None)
+
+    def delete_prefix(self, prefix: str) -> None:
+        for key in [k for k in self._store if k.startswith(prefix)]:
+            self._store.pop(key, None)
+
 
 cache = SimpleTTLCache()
+
+
+def _load_base_symbol_directory() -> list[dict[str, str]]:
+    """Directory gốc (toàn bộ mã HOSE/HNX/UPCoM) từ file cache."""
+
+    cache_key = "symbol-directory-base"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    file_cache = _read_symbol_directory_cache_file()
+    if file_cache:
+        cache.set(cache_key, file_cache, ttl_seconds=900)
+        return file_cache
+
+    fallback = [
+        {"symbol": "FPT", "name": "Cong ty Co phan FPT", "exchange": "HOSE"},
+        {"symbol": "VCB", "name": "Ngan hang TMCP Ngoai thuong Viet Nam", "exchange": "HOSE"},
+        {"symbol": "TCB", "name": "Ngan hang TMCP Ky thuong Viet Nam", "exchange": "HOSE"},
+    ]
+    cache.set(cache_key, fallback, ttl_seconds=300)
+    return fallback
+
+
+def _load_custom_symbols() -> list[dict[str, str]]:
+    """Mã cổ phiếu do quản trị viên thêm thủ công (VD: cổ phiếu IPO mới) — lưu trong DB."""
+
+    cache_key = "custom-symbols"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    rows: list[dict[str, str]] = []
+    try:
+        from app.db import SessionLocal
+        from app.models import StockSymbol
+
+        db = SessionLocal()
+        try:
+            for item in db.query(StockSymbol).order_by(StockSymbol.symbol).all():
+                symbol = str(item.symbol or "").strip().upper()
+                if not symbol:
+                    continue
+                rows.append(
+                    {
+                        "symbol": symbol,
+                        "name": str(item.name or symbol).strip(),
+                        "exchange": _EXCHANGE_CANONICAL.get(
+                            str(item.exchange or "").strip().upper(), ""
+                        ),
+                    }
+                )
+        finally:
+            db.close()
+    except Exception:
+        rows = []
+
+    cache.set(cache_key, rows, ttl_seconds=20)
+    return rows
+
+
+def _merge_custom_symbols(base: list[dict[str, str]]) -> list[dict[str, str]]:
+    custom = _load_custom_symbols()
+    if not custom:
+        return base
+    known = {item["symbol"] for item in base}
+    return base + [item for item in custom if item["symbol"] not in known]
+
+
+def _load_symbol_directory() -> list[dict[str, str]]:
+    """Toàn bộ directory cổ phiếu: gốc + mã do quản trị viên thêm thủ công."""
+    return _merge_custom_symbols(_load_base_symbol_directory())
+
+
+def invalidate_symbol_directory_cache() -> None:
+    """Xóa cache directory để mã cổ phiếu mới thêm/xóa hiện ra ngay lập tức."""
+    cache.delete("symbol-directory-base")
+    cache.delete("custom-symbols")
+    cache.delete_prefix("search:")
+
+
+def lookup_symbol_name(symbol: str) -> str:
+    """Tra cứu tên công ty từ Simplize cho mã cổ phiếu (trả về '' nếu không có).
+    Ưu tiên tên từ bảng giá; nếu chưa có thì lấy tên từ dữ liệu screener."""
+    try:
+        last_map = _simplize_last("stock", [symbol.upper()])
+        last = last_map.get(symbol.upper(), {}) or {}
+        name = str(last.get("name") or "").strip()
+        if name:
+            return name
+    except Exception:
+        pass
+
+    try:
+        symbol_upper = symbol.upper()
+        for row in _get_screener_dataset():
+            if str(row.get("ticker") or "").upper() == symbol_upper:
+                return str(row.get("companyNameVi") or "").strip()
+    except Exception:
+        pass
+    return ""
+
+
+def lookup_symbol_exchange(symbol: str) -> str:
+    """Tra cứu sàn giao dịch chính thức (HOSE/HNX/UPCOM) từ dữ liệu screener
+    của Simplize cho mã cổ phiếu (trả về '' nếu chưa có dữ liệu)."""
+    try:
+        symbol_upper = symbol.upper()
+        for row in _get_screener_dataset():
+            if str(row.get("ticker") or "").upper() == symbol_upper:
+                exchange = str(row.get("stockExchange") or "").strip().upper()
+                return _EXCHANGE_CANONICAL.get(exchange, exchange)
+    except Exception:
+        pass
+    return ""
+
+
+def is_listed_symbol(symbol: str) -> bool:
+    """Mã cổ phiếu đã được niêm yết trên HOSE/HNX/UPCoM hay chưa
+    (có trong dữ liệu screener của Simplize)."""
+    try:
+        symbol_upper = symbol.upper()
+        for row in _get_screener_dataset():
+            if str(row.get("ticker") or "").upper() == symbol_upper:
+                return True
+    except Exception:
+        pass
+    return False
 
 
 def _to_float(value: Any, default: float = 0.0) -> float:
@@ -203,26 +338,6 @@ def _read_symbol_directory_cache_file() -> list[dict[str, str]] | None:
             }
         )
     return rows
-
-
-def _load_symbol_directory() -> list[dict[str, str]]:
-    cache_key = "symbol-directory"
-    cached = cache.get(cache_key)
-    if cached is not None:
-        return cached
-
-    file_cache = _read_symbol_directory_cache_file()
-    if file_cache:
-        cache.set(cache_key, file_cache, ttl_seconds=900)
-        return file_cache
-
-    fallback = [
-        {"symbol": "FPT", "name": "Cong ty Co phan FPT", "exchange": "HOSE"},
-        {"symbol": "VCB", "name": "Ngan hang TMCP Ngoai thuong Viet Nam", "exchange": "HOSE"},
-        {"symbol": "TCB", "name": "Ngan hang TMCP Ky thuong Viet Nam", "exchange": "HOSE"},
-    ]
-    cache.set(cache_key, fallback, ttl_seconds=300)
-    return fallback
 
 
 _summary_file_cache: dict[str, dict[str, Any]] | None = None

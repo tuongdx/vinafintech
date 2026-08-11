@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.db import Base, engine
 from app.db_schema import ensure_schema
-from app.routers import auth, contact, dashboard, faqs, features, logs, news, plans, stocks, tickets, users, watchlist
+from app.routers import auth, contact, dashboard, faqs, features, logs, news, plans, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -25,6 +25,8 @@ api = settings.api_prefix
 app.include_router(auth.router, prefix=api)
 app.include_router(users.router, prefix=api)
 app.include_router(stocks.router, prefix=api)
+app.include_router(stocks_admin.router, prefix=api)
+app.include_router(tools.router, prefix=api)
 app.include_router(news.router, prefix=api)
 app.include_router(tickets.router, prefix=api)
 app.include_router(contact.router, prefix=api)
