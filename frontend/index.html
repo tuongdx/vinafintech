@@ -2498,6 +2498,142 @@
         </div>
     </div>
 
+    <!-- ===== TuniAI Chat Widget (Phase 1) ===== -->
+    <style>
+        #tunixAiFab {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #008080 0%, #006666 100%);
+            color: #fff;
+            border: none;
+            box-shadow: 0 8px 24px rgba(0, 128, 128, 0.35);
+            cursor: pointer;
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        #tunixAiFab:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0, 128, 128, 0.45); }
+        #tunixAiFab .ai-fab-dot {
+            position: absolute; top: 2px; right: 2px; width: 12px; height: 12px;
+            background: #ff5252; border: 2px solid #fff; border-radius: 50%;
+        }
+        #tunixAiPanel {
+            position: fixed;
+            right: 24px;
+            bottom: 92px;
+            width: 440px;
+            max-width: calc(100vw - 32px);
+            height: min(560px, calc(100vh - 120px));
+            background: #fff;
+            border: 1px solid #e5e9f0;
+            border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+            z-index: 301;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        body.dark-mode #tunixAiPanel { background: #161b22; border-color: #30363d; }
+        /* Thuộc tính hidden phải thắng display:flex để nút X (Đóng) ẩn panel được */
+        #tunixAiPanel[hidden] { display: none; }
+        .ai-panel-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.15);
+            background: linear-gradient(135deg, #008080 0%, #006666 100%); color: #fff;
+        }
+        .ai-panel-header .ai-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; }
+        .ai-panel-header .ai-title small { font-weight: 400; font-size: 11px; opacity: 0.85; }
+        .ai-header-actions { display: flex; gap: 6px; }
+        .ai-icon-btn { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+        .ai-icon-btn:hover { background: rgba(255,255,255,0.3); }
+        .ai-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .ai-messages::-webkit-scrollbar { width: 6px; }
+        .ai-messages::-webkit-scrollbar-thumb { background: #d0d6e0; border-radius: 3px; }
+        body.dark-mode .ai-messages::-webkit-scrollbar-thumb { background: #30363d; }
+        .ai-row { display: flex; }
+        .ai-row.ai-user { justify-content: flex-end; }
+        .ai-row.ai-bot { justify-content: flex-start; }
+        .ai-bubble {
+            max-width: 86%; padding: 10px 13px; border-radius: 14px;
+            font-size: 13px; line-height: 1.55; word-break: break-word;
+        }
+        .ai-user .ai-bubble { background: #008080; color: #fff; border-bottom-right-radius: 4px; }
+        .ai-bot .ai-bubble { background: #f2f5f9; color: #1a1f36; border-bottom-left-radius: 4px; }
+        body.dark-mode .ai-bot .ai-bubble { background: #21262d; color: #e6edf3; }
+        .ai-bubble .ai-p { margin: 0 0 6px; }
+        .ai-bubble .ai-p:last-child { margin-bottom: 0; }
+        .ai-bubble .ai-li { margin: 3px 0; }
+        .ai-bubble h1,.ai-bubble h2,.ai-bubble h3 { font-size: 14px; margin: 8px 0 4px; }
+        .ai-bubble pre { background: #0d1117; color: #e6edf3; padding: 8px 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+        .ai-bubble code { background: rgba(0,128,128,0.1); color: #008080; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+        .ai-bubble a { color: #008080; }
+        .ai-note { text-align: center; font-size: 12px; color: #8a99b1; padding: 2px 8px; }
+        body.dark-mode .ai-note { color: #8b949e; }
+        .ai-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .ai-actions .ai-action-btn {
+            display: inline-block; padding: 6px 16px; border-radius: 18px;
+            font-size: 12px; font-weight: 600; text-decoration: none; text-align: center;
+            background: #eef2f6; color: #1a1f36; border: 1px solid #e0e5ec; transition: all 0.2s;
+        }
+        .ai-actions .ai-action-btn:hover { border-color: #008080; color: #008080; }
+        .ai-actions .ai-action-primary { background: #008080; border-color: #008080; color: #fff; }
+        .ai-actions .ai-action-primary:hover { background: #006666; color: #fff; }
+        body.dark-mode .ai-actions .ai-action-btn { background: #21262d; border-color: #30363d; color: #e6edf3; }
+        body.dark-mode .ai-actions .ai-action-btn:hover { border-color: #4db6b6; color: #4db6b6; }
+        .ai-typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
+        .ai-typing span { width: 7px; height: 7px; background: #008080; border-radius: 50%; animation: aiBlink 1.2s infinite; }
+        .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes aiBlink { 0%,80%,100% { opacity: 0.25; } 40% { opacity: 1; } }
+        .ai-input-row { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; border-top: 1px solid #eef2f6; }
+        body.dark-mode .ai-input-row { border-top-color: #30363d; }
+        #aiInput {
+            flex: 1; border: 1px solid #e5e9f0; border-radius: 20px; padding: 9px 14px;
+            font-size: 13px; font-family: 'Inter', sans-serif; resize: none; max-height: 110px;
+            outline: none; color: #1a1f36; background: #fff;
+        }
+        body.dark-mode #aiInput { background: #0d1117; border-color: #30363d; color: #e6edf3; }
+        #aiInput:focus { border-color: #008080; box-shadow: 0 0 0 3px rgba(0,128,128,0.1); }
+        #aiSendBtn {
+            width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer;
+            background: #008080; color: #fff; font-size: 15px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #aiSendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .ai-disclaimer { font-size: 10px; color: #9aa8bd; text-align: center; padding: 6px 10px; background: #f8f9fb; }
+        body.dark-mode .ai-disclaimer { background: #0d1117; color: #6b7a8f; }
+        @media (max-width: 480px) {
+            #tunixAiFab { right: 16px; bottom: 16px; }
+            #tunixAiPanel { right: 16px; bottom: 84px; width: calc(100vw - 32px); }
+        }
+    </style>
+    <button id="tunixAiFab" title="TuniAI - Trợ lý chứng khoán" aria-label="Mở TuniAI">
+        <i class="fas fa-robot"></i>
+        <span class="ai-fab-dot"></span>
+    </button>
+    <div id="tunixAiPanel" hidden>
+        <div class="ai-panel-header">
+            <div class="ai-title"><i class="fas fa-robot"></i> TuniAI <small>Trợ lý chứng khoán</small></div>
+            <div class="ai-header-actions">
+                <button type="button" class="ai-icon-btn" id="aiClearBtn" title="Xóa hội thoại"><i class="fas fa-trash"></i></button>
+                <button type="button" class="ai-icon-btn" id="aiCloseBtn" title="Đóng"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="ai-messages" id="aiMessages"></div>
+        <div class="ai-input-row">
+            <textarea id="aiInput" rows="1" placeholder="Hỏi về cổ phiếu, thị trường, tin tức..."></textarea>
+            <button type="button" id="aiSendBtn" title="Gửi"><i class="fas fa-paper-plane"></i></button>
+        </div>
+        <div class="ai-disclaimer">TuniAI cung cấp thông tin tham khảo, không phải khuyến nghị đầu tư.</div>
+    </div>
+
     <script src="/static/header-search.js"></script>
     <script>
         const PAGE_FILE_MAP = {
@@ -3702,6 +3838,244 @@
             if (loggedIn()) {
                 loadNotifications();
             }
+        })();
+    </script>
+
+    <script>
+        // ============================================================
+        // TuniAI Chat Widget (Phase 1) — DeepSeek + Tool Calling
+        // ============================================================
+        (function() {
+            const fab = document.getElementById('tunixAiFab');
+            const panel = document.getElementById('tunixAiPanel');
+            const msgsEl = document.getElementById('aiMessages');
+            const input = document.getElementById('aiInput');
+            const sendBtn = document.getElementById('aiSendBtn');
+            const closeBtn = document.getElementById('aiCloseBtn');
+            const clearBtn = document.getElementById('aiClearBtn');
+            if (!fab || !panel || !msgsEl || !input || !sendBtn) return;
+
+            const HISTORY_KEY = 'tunix_ai_history';
+            let history = [];
+            let busy = false;
+
+            function loggedIn() { return !!localStorage.getItem('tunix_access_token'); }
+
+            function esc(s) {
+                return String(s == null ? '' : s)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
+            function scrollBottom() { msgsEl.scrollTop = msgsEl.scrollHeight; }
+
+            function renderAiText(text) {
+                let t = esc(text || '');
+                t = t.replace(/```([\s\S]*?)```/g, function(m, c) { return '<pre>' + c + '</pre>'; });
+                t = t.replace(/`([^`]+)`/g, function(m, c) { return '<code>' + c + '</code>'; });
+                t = t.replace(/\*\*([^*]+)\*\*/g, function(m, c) { return '<strong>' + c + '</strong>'; });
+                t = t.replace(/(https?:\/\/[^\s]+)/g, function(m) { return '<a href="' + m + '" target="_blank" rel="noopener">' + m + '</a>'; });
+                let out = '';
+                t.split('\n').forEach(function(line) {
+                    const h = line.match(/^(#{1,3})\s+(.*)$/);
+                    if (h) { out += '<h' + h[1].length + '>' + h[2] + '</h' + h[1].length + '>'; return; }
+                    if (/^\s*[-*]\s+/.test(line)) { out += '<div class="ai-li">• ' + line.replace(/^\s*[-*]\s+/, '') + '</div>'; return; }
+                    if (/^\s*\d+\.\s+/.test(line)) { out += '<div class="ai-li">' + esc(line.trim()) + '</div>'; return; }
+                    if (line.trim() === '') { return; }
+                    out += '<div class="ai-p">' + line + '</div>';
+                });
+                return out || '<div class="ai-p"></div>';
+            }
+
+            function addRow(role, html) {
+                const row = document.createElement('div');
+                row.className = 'ai-row ' + (role === 'user' ? 'ai-user' : 'ai-bot');
+                const bubble = document.createElement('div');
+                bubble.className = 'ai-bubble';
+                bubble.innerHTML = html;
+                row.appendChild(bubble);
+                msgsEl.appendChild(row);
+                scrollBottom();
+                return bubble;
+            }
+
+            function addNote(html) {
+                const d = document.createElement('div');
+                d.className = 'ai-note';
+                d.innerHTML = html;
+                msgsEl.appendChild(d);
+                scrollBottom();
+                return d;
+            }
+
+            function loadHistory() {
+                try {
+                    const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+                    if (Array.isArray(raw)) history = raw.slice(-30);
+                } catch (e) { history = []; }
+            }
+
+            function saveHistory() {
+                try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-30))); } catch (e) {}
+            }
+
+            function renderHistory() {
+                msgsEl.innerHTML = '';
+                history.forEach(function(m) {
+                    if (m.role === 'user') { addRow('user', esc(m.content)); }
+                    else if (m.role === 'assistant') { addRow('bot', renderAiText(m.content)); }
+                });
+                if (history.length === 0) {
+                    addRow('bot', renderAiText('Chào bạn! 👋 Tôi là **TuniAI** — trợ lý chứng khoán.\n\nBạn có thể hỏi:\n- "Phân tích cổ phiếu HDB"\n- "Thị trường hôm nay thế nào?"\n- "So sánh ACB và VPB"\n- "Tin tức mới về ACB"\n- "Cổ phiếu ngân hàng nào đang rẻ?"'));
+                }
+            }
+
+            let _refreshPromise = null;
+            async function refreshAccessToken() {
+                // Nhiều request cùng nhận 401 → dùng chung 1 lần refresh (tránh xoay token trùng)
+                if (_refreshPromise) return _refreshPromise;
+                _refreshPromise = (async function() {
+                    const refresh = localStorage.getItem('tunix_refresh_token');
+                    if (!refresh) return false;
+                    try {
+                        const res = await fetch('/api/auth/refresh-token', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ refresh_token: refresh })
+                        });
+                        if (!res.ok) return false;
+                        const data = await res.json();
+                        if (!data.access_token) return false;
+                        localStorage.setItem('tunix_access_token', data.access_token);
+                        if (data.refresh_token) localStorage.setItem('tunix_refresh_token', data.refresh_token);
+                        if (data.user) localStorage.setItem('tunix_user', JSON.stringify(data.user));
+                        return true;
+                    } catch (e) { return false; }
+                })().finally(function() { _refreshPromise = null; });
+                return _refreshPromise;
+            }
+
+            async function fetchChat(retried) {
+                const res = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('tunix_access_token') || '')
+                    },
+                    body: JSON.stringify({ messages: history, stream: true })
+                });
+                if (res.status === 401 && !retried) {
+                    const refreshed = await refreshAccessToken();
+                    if (refreshed) return fetchChat(true);
+                    // Refresh thất bại → phiên thật sự hết hạn
+                    localStorage.removeItem('tunix_access_token');
+                    localStorage.removeItem('tunix_refresh_token');
+                    localStorage.removeItem('tunix_user');
+                }
+                return res;
+            }
+
+            async function streamAnswer(bubble) {
+                const res = await fetchChat(false);
+                if (!res.ok) {
+                    let detail = 'Lỗi khi gọi TuniAI. Vui lòng thử lại.';
+                    try { const d = await res.json(); if (d && d.detail) detail = d.detail; } catch (e) {}
+                    if (res.status === 401) detail = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                    bubble.innerHTML = esc(detail);
+                    return '';
+                }
+                if (!res.body) { bubble.innerHTML = 'Trình duyệt không hỗ trợ streaming.'; return ''; }
+                const reader = res.body.getReader();
+                const dec = new TextDecoder();
+                let buf = '';
+                let full = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buf += dec.decode(value, { stream: true });
+                    let idx;
+                    while ((idx = buf.indexOf('\n\n')) >= 0) {
+                        const raw = buf.slice(0, idx);
+                        buf = buf.slice(idx + 2);
+                        raw.split('\n').forEach(function(line) {
+                            if (!line.startsWith('data:')) return;
+                            const data = line.slice(5).trim();
+                            if (data === '[DONE]') return;
+                            let ev;
+                            try { ev = JSON.parse(data); } catch (e) { return; }
+                            if (ev.type === 'delta') {
+                                full += (ev.content || '');
+                                bubble.innerHTML = renderAiText(full);
+                                scrollBottom();
+                            } else if (ev.type === 'done') {
+                                if (ev.truncated) {
+                                    bubble.innerHTML += '<div style="margin-top:8px;padding:6px 10px;border-radius:8px;background:rgba(255,152,0,0.12);color:#b26a00;font-size:11px;">⚠️ Câu trả lời bị cắt do giới hạn độ dài. Bạn hãy hỏi ngắn gọn hơn nhé.</div>';
+                                    scrollBottom();
+                                }
+                            } else if (ev.type === 'error') {
+                                bubble.innerHTML = esc(ev.content || 'Có lỗi xảy ra.');
+                            }
+                        });
+                    }
+                }
+                return full;
+            }
+
+            async function send() {
+                const text = input.value.trim();
+                if (!text || busy) return;
+                if (!loggedIn()) {
+                    const b = addRow('bot', renderAiText('Hãy **đăng nhập** để được hỏi đáp về cổ phiếu.'));
+                    const actions = document.createElement('div');
+                    actions.className = 'ai-actions';
+                    actions.innerHTML = '<a href="/Login" class="ai-action-btn ai-action-primary">Đăng nhập</a>';
+                    b.appendChild(actions);
+                    scrollBottom();
+                    return;
+                }
+                addRow('user', esc(text));
+                history.push({ role: 'user', content: text });
+                input.value = '';
+                input.style.height = 'auto';
+                busy = true;
+                sendBtn.disabled = true;
+                const bubble = addRow('bot', '<div class="ai-typing"><span></span><span></span><span></span></div>');
+                try {
+                    const reply = await streamAnswer(bubble);
+                    if (reply) {
+                        history.push({ role: 'assistant', content: reply });
+                        saveHistory();
+                    }
+                } catch (err) {
+                    bubble.innerHTML = esc('Lỗi kết nối: ' + err.message);
+                } finally {
+                    busy = false;
+                    sendBtn.disabled = false;
+                    input.focus();
+                }
+            }
+
+            sendBtn.addEventListener('click', send);
+            if (closeBtn) closeBtn.addEventListener('click', function() { panel.hidden = true; });
+            if (clearBtn) clearBtn.addEventListener('click', function() {
+                history = [];
+                saveHistory();
+                renderHistory();
+            });
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+            });
+            input.addEventListener('input', function() {
+                input.style.height = 'auto';
+                input.style.height = Math.min(input.scrollHeight, 110) + 'px';
+            });
+            fab.addEventListener('click', function() {
+                panel.hidden = !panel.hidden;
+                if (!panel.hidden) { renderHistory(); input.focus(); }
+            });
+
+            loadHistory();
+            renderHistory();
         })();
     </script>
 </body>

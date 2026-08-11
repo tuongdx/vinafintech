@@ -11,7 +11,7 @@ from app.core.security import decode_token
 from app.db import Base, SessionLocal, engine
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import auth, contact, dashboard, faqs, features, logs, news, plans, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, auth, contact, dashboard, faqs, features, logs, news, plans, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -78,6 +78,7 @@ async def protect_admin_pages(request: Request, call_next):
     return await call_next(request)
 
 api = settings.api_prefix
+app.include_router(ai.router, prefix=api)
 app.include_router(auth.router, prefix=api)
 app.include_router(users.router, prefix=api)
 app.include_router(stocks.router, prefix=api)

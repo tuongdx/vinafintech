@@ -45,6 +45,15 @@ class Settings(BaseSettings):
     login_rate_limit_minutes: int = 15
     login_rate_limit_max: int = 10
 
+    # TuniAI (DeepSeek) — Phase 1 AI Chat
+    deepseek_api_key: str = ""
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_model: str = "deepseek-chat"
+    ai_chat_max_turns: int = 8
+    ai_chat_max_tokens: int = 4096
+    ai_rate_limit_minutes: int = 5
+    ai_rate_limit_max: int = 30
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
 
 

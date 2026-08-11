@@ -11,6 +11,7 @@ bcrypt==4.2.1
 redis==5.2.0
 pydantic-settings==2.10.1
 email-validator==2.2.0
+httpx==0.28.1
 
 # vnstock + vnai: nguồn dữ liệu VCI cho Sổ lệnh (order-book) & Giao dịch gần nhất (intraday).
 # BẮT BUỘC khai báo ở đây, nếu không Render sẽ không cài -> hai block trên trả rỗng.
