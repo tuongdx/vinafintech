@@ -51,10 +51,18 @@ def _news_out(n: News) -> dict:
 # ---------------------------------------------------------------------------
 # Public: chỉ trả bài ĐÃ XUẤT BẢN (trang người dùng)
 # ---------------------------------------------------------------------------
+def _strip_diacritics(text: str) -> str:
+    """Bỏ dấu tiếng Việt (đ→d, nguyên âm có dấu → không dấu) để tìm kiếm không phân biệt dấu."""
+    text = (text or "").replace("đ", "d").replace("Đ", "D")
+    nfkd = unicodedata.normalize("NFKD", text)
+    return "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
+
+
 @router.get("", response_model=list[NewsOut])
 def list_published_news(
     limit: int = 20,
     category: str | None = None,
+    search: str | None = None,
     exclude_id: int | None = None,
     db: Session = Depends(get_db),
 ):
@@ -63,6 +71,30 @@ def list_published_news(
     )
     if category:
         query = query.filter(News.category == category)
+
+    if search and search.strip():
+        # Tìm kiếm không phân biệt dấu: bỏ dấu cả 2 vế rồi so sánh chuỗi con.
+        nkw = _strip_diacritics(search)
+        nkw_nospace = nkw.replace(" ", "")
+        rows = query.order_by(News.id.desc()).all()
+        if exclude_id:
+            rows = [n for n in rows if n.id != exclude_id]
+        if nkw:
+            matched = []
+            for n in rows:
+                hay = " ".join(
+                    [
+                        _strip_diacritics(n.title or ""),
+                        _strip_diacritics(n.summary or ""),
+                        _strip_diacritics(n.tags or ""),
+                    ]
+                )
+                hay_nospace = hay.replace(" ", "")
+                if nkw in hay or (nkw_nospace and nkw_nospace in hay_nospace):
+                    matched.append(n)
+            rows = matched
+        return [_news_out(n) for n in rows[: max(1, min(limit, 50))]]
+
     if exclude_id:
         query = query.filter(News.id != exclude_id)
     rows = query.order_by(News.id.desc()).limit(max(1, min(limit, 50))).all()
@@ -159,7 +191,7 @@ def create_news(
         title=payload.title,
         summary=payload.summary,
         content=payload.content,
-        category=payload.category or "tin-tuc",
+        category=payload.category or "chung-khoan",
         image_url=payload.image_url,
         author_name=payload.author_name,
         image_caption=payload.image_caption,

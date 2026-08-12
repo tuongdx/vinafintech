@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TuniX - Góp ý</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/typography.css" />
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="logo"><span style="color:#008080;font-weight:800;">Tuni</span><span style="color:#8A95A5;font-weight:800;">X</span></a>
+                <div class="header-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Tìm kiếm cổ phiếu..." />
+                </div>
+            </div>
+            <div class="header-right">
+                <i class="fas fa-bell"></i>
+                <i class="fas theme-toggle" id="themeToggle"></i>
+                <i class="fas fa-cog"></i>
+                <div class="user-avatar">N</div>
+            </div>
+        </header>
+
+        <!-- FEEDBACK PAGE -->
+        <div class="contact-page">
+            <div class="contact-container">
+
+                <a href="/" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Quay lại trang chủ
+                </a>
+
+                <!-- Header -->
+                <div class="contact-header">
+                    <h1>💡 Góp ý</h1>
+                    <p class="contact-subtitle">Chúng tôi luôn lắng nghe để TuniX ngày càng tốt hơn</p>
+                </div>
+
+                <div class="contact-grid">
+
+                    <!-- Form -->
+                    <div class="contact-form feedback-form">
+                        <h3>Gửi góp ý của bạn</h3>
+
+                        <div class="success-message" id="feedbackSuccess">
+                            <i class="fas fa-check-circle"></i>
+                            <h4>Gửi góp ý thành công!</h4>
+                            <p>Cảm ơn bạn đã đóng góp ý kiến. Chúng tôi sẽ xem xét và cải thiện trong thời gian sớm nhất.</p>
+                        </div>
+
+                        <form id="feedbackForm">
+                            <div class="form-group">
+                                <label>Bạn muốn góp ý về?</label>
+                                <div class="feedback-options">
+                                    <label class="feedback-option">
+                                        <input type="radio" name="feedbackType" value="news" checked />
+                                        <span class="feedback-option-icon"><i class="fas fa-newspaper"></i></span>
+                                        <span class="feedback-option-text">
+                                            <strong>Góp ý về Tin tức</strong>
+                                            <small>Nội dung, bài viết, chuyên mục tin tức</small>
+                                        </span>
+                                    </label>
+                                    <label class="feedback-option">
+                                        <input type="radio" name="feedbackType" value="market" />
+                                        <span class="feedback-option-icon"><i class="fas fa-chart-line"></i></span>
+                                        <span class="feedback-option-text">
+                                            <strong>Góp ý về Thị trường</strong>
+                                            <small>Giá, biểu đồ, dữ liệu thị trường, công cụ</small>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="feedbackContent">Nội dung góp ý <span class="required">*</span></label>
+                                <textarea id="feedbackContent" placeholder="Hãy mô tả chi tiết góp ý của bạn..." maxlength="2000" required></textarea>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="feedbackName">Họ và tên</label>
+                                    <input type="text" id="feedbackName" placeholder="Nhập họ và tên" maxlength="100" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="feedbackEmail">Email</label>
+                                    <input type="email" id="feedbackEmail" placeholder="example@email.com" maxlength="254" />
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-submit">
+                                <i class="fas fa-paper-plane"></i> Gửi góp ý
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Info -->
+                    <div class="contact-info">
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <div class="icon-circle"><i class="fas fa-lightbulb"></i></div>
+                                <h4>Ý kiến của bạn</h4>
+                                <p>Mỗi góp ý đều được<br />đội ngũ TuniX ghi nhận</p>
+                            </div>
+                            <div class="info-card">
+                                <div class="icon-circle"><i class="fas fa-clock"></i></div>
+                                <h4>Thời gian phản hồi</h4>
+                                <p>Thứ 2 - Thứ 6<br />8:00 - 18:00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <div class="footer-grid">
+                <div>
+                    <a href="/" class="logo"><span style="color:#008080;font-weight:800;">Tuni</span><span style="color:#8A95A5;font-weight:800;">X</span></a>
+                    <p class="footer-description">
+                        TuniX là nền tảng phân tích cổ phiếu toàn diện, dữ liệu thực tế giúp các nhà đầu tư và tư vấn đầu tư có nhận định chuyên sâu về thị trường chứng khoán Việt Nam. TuniX không khuyến nghị mua, bán, nắm giữ bất kỳ mã chứng khoán nào. Người dùng tự đánh giá và tự chịu trách nhiệm với quyết định đầu tư của mình.
+                    </p>
+                    <div class="footer-social">
+                        <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-facebook"></i></a>
+                        <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-youtube"></i></a>
+                        <a href="https://www.tiktok.com/@tunix.vn" target="_blank" rel="noopener"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4>Sản phẩm</h4>
+                    <ul>
+                        <li><span class="footer-label">Phân tích cổ phiếu</span></li>
+                        <li><span class="footer-label">Bảng điều khiển</span></li>
+                        <li><span class="footer-label">Báo cáo tài chính</span></li>
+                        <li><span class="footer-label">Công cụ so sánh</span></li>
+                        <li><span class="footer-label">TuniAI hỗ trợ phân tích</span><span class="footer-new-badge">mới</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Hỗ trợ</h4>
+                    <ul>
+                        <li><a href="/TrungTamTroGiup">Trung tâm trợ giúp</a></li>
+                        <li><a href="/HuongDanSuDung">Hướng dẫn sử dụng</a></li>
+                        <li><a href="/CauHoiThuongGap">Câu hỏi thường gặp</a></li>
+                        <li><a href="/LienHe">Liên hệ</a></li>
+                        <li><a href="/GopY">Góp ý</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Pháp lý</h4>
+                    <ul>
+                        <li><a href="/DieuKhoanSuDung">Điều khoản sử dụng</a></li>
+                        <li><a href="/ChinhSachBaoMat">Chính sách bảo mật</a></li>
+                        <li><a href="/MienTruTrachNhiem">Miễn trừ trách nhiệm</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2026 TuniX. Bảo lưu mọi quyền.</span>
+            </div>
+        </footer>
+
+    </div>
+</body>
+</html>

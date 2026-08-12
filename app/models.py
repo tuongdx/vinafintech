@@ -173,6 +173,21 @@ class ContactMessage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class Feedback(Base):
+    """Góp ý từ người dùng (Tin tức / Thị trường)."""
+
+    __tablename__ = "feedback"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    type: Mapped[str] = mapped_column(String(20), default="news")  # news | market
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    user_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    user_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class Plan(Base):
     __tablename__ = "plans"
 

@@ -735,6 +735,22 @@
             color: #6b7a8f;
         }
 
+        /* ===== RECENT ACTIVITY (Dashboard) ===== */
+        .act-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f2f6;
+            font-size: 13px;
+            color: #4a5a72;
+            transition: all 0.3s ease;
+        }
+        .act-row:last-child { border-bottom: none; }
+        body.dark-mode .act-row { border-bottom-color: #21262d; color: #adbac7; }
+        .act-row .act-time { font-size: 11px; color: #8a99b1; flex-shrink: 0; }
+        body.dark-mode .act-row .act-time { color: #6b7a8f; }
+
         /* ===== TABLES ===== */
         .table-wrapper {
             background: #ffffff;
@@ -2581,11 +2597,10 @@
                 </button>
 
                 <div class="nav-label" style="margin-top:12px;">Hỗ trợ</div>
-                <!-- TẠM DISABLE menu Yêu cầu hỗ trợ cho mọi quyền (phát triển sau) -->
-                <button class="nav-item disabled" data-panel="tickets" onclick="switchPanel('tickets')" id="navTickets" disabled>
-                    <i class="fas fa-ticket-alt"></i>
-                    <span>Yêu cầu hỗ trợ</span>
-                    <span class="badge ticket-badge" id="pendingTicketBadge" style="display:none;">0</span>
+                <button class="nav-item" data-panel="tickets" onclick="switchPanel('tickets')" id="navTickets">
+                    <i class="fas fa-comment-dots"></i>
+                    <span>Góp ý</span>
+                    <span class="badge ticket-badge" id="feedbackUnreadBadge" style="display:none;">0</span>
                 </button>
                 <button class="nav-item" data-panel="faq" onclick="switchPanel('faq')" id="navFaq">
                     <i class="fas fa-question-circle"></i>
@@ -2648,7 +2663,7 @@
                     <div class="stat-card">
                         <div class="stat-label">Tổng người dùng</div>
                         <div class="stat-value" id="statUsers">0</div>
-                        <div class="stat-sub"><i class="fas fa-arrow-up" style="color:#2ecc71;"></i> +12 tháng này</div>
+                        <div class="stat-sub">Tổng số tài khoản hệ thống</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Quản trị viên</div>
@@ -2671,9 +2686,19 @@
                         <div class="stat-sub">Trên tổng số tính năng</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Yêu cầu hỗ trợ</div>
-                        <div class="stat-value" id="statTickets">0</div>
-                        <div class="stat-sub"><span class="status-badge pending" id="statPendingTickets">0 chờ xử lý</span></div>
+                        <div class="stat-label">Tin tức</div>
+                        <div class="stat-value" id="statNews">0</div>
+                        <div class="stat-sub"><span class="status-badge pending" id="statPendingNews">0 chờ duyệt</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Góp ý</div>
+                        <div class="stat-value" id="statFeedback">0</div>
+                        <div class="stat-sub"><span class="status-badge pending" id="statPendingFeedback">0 chưa đọc</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Liên hệ</div>
+                        <div class="stat-value" id="statContact">0</div>
+                        <div class="stat-sub"><span class="status-badge pending" id="statPendingContact">0 chưa đọc</span></div>
                     </div>
                 </div>
 
@@ -2712,24 +2737,7 @@
                 <!-- Recent Activity -->
                 <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #eef2f6;margin-top:20px;transition:all 0.3s ease;">
                     <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;transition:color 0.3s ease;">Hoạt động gần đây</h3>
-                    <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#4a5a72;transition:color 0.3s ease;">
-                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f2f6;">
-                            <span><i class="fas fa-user-plus" style="color:#2ecc71;"></i> Nguyễn Văn A đã đăng ký gói Premium</span>
-                            <span style="font-size:11px;color:#8a99b1;">5 phút trước</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f2f6;">
-                            <span><i class="fas fa-ticket-alt" style="color:#e67e22;"></i> Yêu cầu hỗ trợ mới #003</span>
-                            <span style="font-size:11px;color:#8a99b1;">15 phút trước</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f2f6;">
-                            <span><i class="fas fa-edit" style="color:#f39c12;"></i> Bài viết mới: "5 mỏ vàng lớn nhất" <span class="status-badge pending-approval" style="font-size:9px;">Chờ duyệt</span></span>
-                            <span style="font-size:11px;color:#8a99b1;">1 giờ trước</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:4px 0;">
-                            <span><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Trần Thị B đã duyệt bài viết "Phân tích Q2/2026"</span>
-                            <span style="font-size:11px;color:#8a99b1;">3 giờ trước</span>
-                        </div>
-                    </div>
+                    <div id="recentActivityList" style="display:flex;flex-direction:column;"></div>
                 </div>
             </div>
 
@@ -2917,11 +2925,13 @@
                                 <div class="form-group">
                                     <label>Danh mục</label>
                                     <select id="newsCategory">
-                                        <option value="tin-tuc">Tin tức</option>
-                                        <option value="tin-luc">Tin Lúc</option>
-                                        <option value="bao-cao">Báo cáo</option>
-                                        <option value="tin-cong-ty">Tin công ty</option>
-                                        <option value="su-kien">Sự kiện</option>
+                                        <option value="chung-khoan" selected>Chứng Khoán</option>
+                                        <option value="ngan-hang">Ngân Hàng</option>
+                                        <option value="bat-dong-san">Bất Động Sản</option>
+                                        <option value="doanh-nghiep">Doanh Nghiệp</option>
+                                        <option value="dong-tien-thong-minh">Dòng Tiền Thông Minh</option>
+                                        <option value="tai-chinh-quoc-te">Tài Chính Quốc Tế</option>
+                                        <option value="cong-nghe">Công Nghệ</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -3084,35 +3094,35 @@
             </div>
 
             <!-- ============================================================ -->
-            <!-- PANEL: TICKETS (YÊU CẦU HỖ TRỢ) -->
+            <!-- PANEL: TICKETS (GÓP Ý) -->
             <!-- ============================================================ -->
             <div class="panel" id="panelTickets">
                 <div class="panel-header">
-                    <h2>Quản lý yêu cầu hỗ trợ</h2>
+                    <h2>Quản lý góp ý</h2>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="btn-secondary" onclick="filterTickets('all')">Tất cả</button>
-                        <button class="btn-secondary" onclick="filterTickets('pending')">Chờ xử lý</button>
-                        <button class="btn-secondary" onclick="filterTickets('processing')">Đang xử lý</button>
-                        <button class="btn-secondary" onclick="filterTickets('resolved')">Đã giải quyết</button>
-                        <button class="btn-secondary" onclick="filterTickets('closed')">Đã đóng</button>
+                        <button class="btn-secondary" onclick="filterFeedback('all')">Tất cả</button>
+                        <button class="btn-secondary" onclick="filterFeedback('unread')">Chưa đọc</button>
+                        <button class="btn-secondary" onclick="filterFeedback('read')">Đã đọc</button>
+                        <span style="align-self:center;margin-left:4px;font-size:12px;color:#8a99b1;" id="feedbackTypeHint"></span>
                     </div>
                 </div>
+
+                <div class="stock-summary" id="feedbackSummary"></div>
 
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
                                 <th>#ID</th>
-                                <th>Tiêu đề</th>
+                                <th>Loại</th>
                                 <th>Người gửi</th>
-                                <th>Danh mục</th>
-                                <th>Mức độ</th>
+                                <th>Nội dung</th>
+                                <th>Ngày gửi</th>
                                 <th>Trạng thái</th>
-                                <th>Ngày tạo</th>
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
-                        <tbody id="ticketTableBody"></tbody>
+                        <tbody id="feedbackTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -3266,13 +3276,15 @@
                             <div class="form-group">
                                 <label>Danh mục</label>
                                 <select id="importCategory">
-                                    <option value="tin-tuc" selected>Tin tức</option>
-                                    <option value="tin-luc">Tin Lúc</option>
-                                    <option value="bao-cao">Báo cáo</option>
-                                    <option value="tin-cong-ty">Tin công ty</option>
-                                    <option value="su-kien">Sự kiện</option>
+                                    <option value="chung-khoan" selected>Chứng Khoán</option>
+                                    <option value="ngan-hang">Ngân Hàng</option>
+                                    <option value="bat-dong-san">Bất Động Sản</option>
+                                    <option value="doanh-nghiep">Doanh Nghiệp</option>
+                                    <option value="dong-tien-thong-minh">Dòng Tiền Thông Minh</option>
+                                    <option value="tai-chinh-quoc-te">Tài Chính Quốc Tế</option>
+                                    <option value="cong-nghe">Công Nghệ</option>
                                 </select>
-                                <div class="helper-text">Mặc định: Tin tức — bài viết sẽ ở danh mục được chọn.</div>
+                                <div class="helper-text">Mặc định: Chứng Khoán — bài viết sẽ ở danh mục được chọn.</div>
                             </div>
                         </div>
 
@@ -3668,10 +3680,11 @@
                     return {
                         id: n.id,
                         title: n.title,
-                        category: n.category || 'tin-tuc',
+                        category: n.category || 'chung-khoan',
                         author: n.author_name || '—',
                         status: n.status || 'pending-approval',
                         date: formatDate(n.created_at) || '—',
+                        createdAt: n.created_at,
                         reviewer: null,
                         featuredImage: n.image_url || '',
                         content: n.content || '',
@@ -3784,6 +3797,10 @@
         // Tin nhắn liên hệ (dữ liệu thật từ backend /api/contact)
         let contactMessagesData = [];
 
+        // Góp ý (dữ liệu thật từ backend /api/feedback)
+        let feedbackData = [];
+        let currentFeedbackFilter = 'all';
+
         // Cổ phiếu do admin thêm thủ công (mã IPO mới)
         let stocksData = [];
         // Mã đang ở chế độ chỉnh sửa (null = chế độ thêm mới)
@@ -3866,6 +3883,16 @@
                 currentUser.role === 'support';
         }
 
+        // Góp ý: super-admin xem cả 2 loại, admin xem Thị trường, content-manager xem Tin tức, editor không xem
+        function canViewFeedback() {
+            return currentUser.role === 'super-admin' || currentUser.role === 'admin' ||
+                currentUser.role === 'content-manager';
+        }
+
+        function canManageFeedback() {
+            return currentUser.role === 'super-admin' || currentUser.role === 'admin';
+        }
+
         // Admin không được thêm/sửa/xóa admin khác & super-admin
         function canManageThisUser(user) {
             if (currentUser.role === 'super-admin') return true;
@@ -3913,7 +3940,7 @@
             setNavDisabled('navWritingTool', !canUseWritingTool());
             setNavDisabled('navPlans', !canManagePlans());
             setNavDisabled('navFeatures', !canManageFeatures());
-            setNavDisabled('navTickets', true); // TẠM disable menu Yêu cầu hỗ trợ cho mọi quyền (phát triển sau)
+            setNavDisabled('navTickets', !canViewFeedback());
             setNavDisabled('navFaq', !canManageFaq());
             setNavDisabled('navContact', !canViewContact());
 
@@ -4062,8 +4089,9 @@
             const tbody = document.getElementById('newsTableBody');
             if (!tbody) return;
 
-            const categoryMap = { 'tin-luc': 'Tin Lúc', 'bao-cao': 'Báo cáo', 'tin-cong-ty': 'Tin công ty',
-                'su-kien': 'Sự kiện', 'tin-tuc': 'Tin tức' };
+            const categoryMap = { 'chung-khoan': 'Chứng Khoán', 'ngan-hang': 'Ngân Hàng', 'bat-dong-san': 'Bất Động Sản',
+                'doanh-nghiep': 'Doanh Nghiệp', 'dong-tien-thong-minh': 'Dòng Tiền Thông Minh',
+                'tai-chinh-quoc-te': 'Tài Chính Quốc Tế', 'cong-nghe': 'Công Nghệ', 'tin-tuc': 'Tin tức' };
             const statusMap = {
                 'draft': 'Nháp',
                 'pending-approval': 'Chờ duyệt',
@@ -4148,6 +4176,13 @@
             ]);
 
             updateApprovalFlow();
+
+            // Cập nhật Dashboard: thẻ "Tin tức"
+            const statNewsEl = document.getElementById('statNews');
+            if (statNewsEl) statNewsEl.textContent = totalNews;
+            const statPendingNewsEl = document.getElementById('statPendingNews');
+            if (statPendingNewsEl) statPendingNewsEl.textContent = notPublishedCount + ' chờ duyệt';
+            renderRecentActivity();
         }
 
         function updateApprovalFlow() {
@@ -4288,18 +4323,20 @@
 
             tbody.innerHTML = html;
 
-            // Update stats
+            // Update stats (dead code — các element statTickets đã bị thay bằng Dashboard mới)
             const totalTickets = ticketsData.length;
             const pendingTickets = ticketsData.filter(t => t.status === 'pending' || t.status === 'processing').length;
 
-            document.getElementById('statTickets').textContent = totalTickets;
-            document.getElementById('statPendingTickets').textContent = pendingTickets + ' chờ xử lý';
+            const statTicketsEl = document.getElementById('statTickets');
+            if (statTicketsEl) statTicketsEl.textContent = totalTickets;
+            const statPendingTicketsEl = document.getElementById('statPendingTickets');
+            if (statPendingTicketsEl) statPendingTicketsEl.textContent = pendingTickets + ' chờ xử lý';
 
             const pendingBadge = document.getElementById('pendingTicketBadge');
-            if (pendingTickets > 0) {
+            if (pendingBadge && pendingTickets > 0) {
                 pendingBadge.style.display = 'inline-block';
                 pendingBadge.textContent = pendingTickets;
-            } else {
+            } else if (pendingBadge) {
                 pendingBadge.style.display = 'none';
             }
         }
@@ -4388,6 +4425,75 @@
                 pad(d.getHours()) + ':' + pad(d.getMinutes());
         }
 
+        function timeAgo(iso) {
+            if (!iso) return '—';
+            const t = new Date(iso).getTime();
+            if (isNaN(t)) return '—';
+            const diff = Date.now() - t;
+            const m = Math.floor(diff / 60000);
+            if (m < 1) return 'vừa xong';
+            if (m < 60) return m + ' phút trước';
+            const h = Math.floor(m / 60);
+            if (h < 24) return h + ' giờ trước';
+            const d = Math.floor(h / 24);
+            if (d < 30) return d + ' ngày trước';
+            return formatDateTime(iso);
+        }
+
+        // Dashboard: hiển thị hoạt động gần đây từ Góp ý + Liên hệ + Tin tức (theo quyền của người dùng)
+        function renderRecentActivity() {
+            const container = document.getElementById('recentActivityList');
+            if (!container) return;
+            const statusMap = {
+                'draft': ['Nháp', 'draft'],
+                'pending-approval': ['Chờ duyệt', 'pending-approval'],
+                'approved': ['Đã duyệt', 'approved'],
+                'published': ['Đã xuất bản', 'published'],
+                'rejected': ['Từ chối', 'rejected']
+            };
+            const items = [];
+
+            feedbackData.forEach(function(f) {
+                items.push({
+                    ts: new Date(f.created_at).getTime() || 0,
+                    html: '<div class="act-row"><span><i class="fas fa-comment-dots" style="color:#008080;"></i> Góp ý về ' +
+                        feedbackTypeLabel(f.type) + ': "' + escapeHtml(truncate(f.content, 40)) + '"' +
+                        (f.is_read ? '' : ' <span class="status-badge pending" style="font-size:9px;">Chưa đọc</span>') +
+                        '</span><span class="act-time">' + timeAgo(f.created_at) + '</span></div>'
+                });
+            });
+
+            contactMessagesData.forEach(function(m) {
+                items.push({
+                    ts: new Date(m.created_at).getTime() || 0,
+                    html: '<div class="act-row"><span><i class="fas fa-envelope-open-text" style="color:#e67e22;"></i> Liên hệ từ ' +
+                        escapeHtml(m.full_name) +
+                        (m.is_read ? '' : ' <span class="status-badge pending" style="font-size:9px;">Chưa đọc</span>') +
+                        '</span><span class="act-time">' + timeAgo(m.created_at) + '</span></div>'
+                });
+            });
+
+            newsData.forEach(function(n) {
+                const sm = statusMap[n.status] || ['', ''];
+                items.push({
+                    ts: new Date(n.createdAt || n.date).getTime() || 0,
+                    html: '<div class="act-row"><span><i class="fas fa-newspaper" style="color:#f39c12;"></i> Bài viết: "' +
+                        escapeHtml(truncate(n.title, 50)) + '"' +
+                        (sm[1] ? ' <span class="status-badge ' + sm[1] + '" style="font-size:9px;">' + sm[0] + '</span>' : '') +
+                        '</span><span class="act-time">' + (n.createdAt ? timeAgo(n.createdAt) : escapeHtml(n.date || '—')) + '</span></div>'
+                });
+            });
+
+            items.sort(function(a, b) { return b.ts - a.ts; });
+            const top = items.slice(0, 6);
+
+            if (!top.length) {
+                container.innerHTML = '<div style="color:#8a99b1;padding:8px 0;font-size:13px;">Chưa có hoạt động nào gần đây.</div>';
+                return;
+            }
+            container.innerHTML = top.map(function(i) { return i.html; }).join('');
+        }
+
         function filterContact(filter) {
             currentContactFilter = filter;
             renderContactMessages();
@@ -4445,6 +4551,13 @@
                     unreadBadge.style.display = 'none';
                 }
             }
+
+            // Cập nhật Dashboard: thẻ "Liên hệ"
+            const statContactEl = document.getElementById('statContact');
+            if (statContactEl) statContactEl.textContent = totalCount;
+            const statPendingContactEl = document.getElementById('statPendingContact');
+            if (statPendingContactEl) statPendingContactEl.textContent = unreadCount + ' chưa đọc';
+            renderRecentActivity();
         }
 
         async function loadContactMessages() {
@@ -4522,6 +4635,121 @@
         }
 
         // ============================================================
+        // GÓP Ý (feedback) — /api/feedback
+        // ============================================================
+        function feedbackTypeLabel(type) {
+            return type === 'market' ? 'Thị trường' : 'Tin tức';
+        }
+
+        function feedbackTypeHintText() {
+            if (currentUser.role === 'super-admin') return 'Bạn thấy: Góp ý Tin tức + Thị trường';
+            if (currentUser.role === 'admin') return 'Bạn chỉ thấy: Góp ý Thị trường';
+            if (currentUser.role === 'content-manager') return 'Bạn chỉ thấy: Góp ý Tin tức';
+            return '';
+        }
+
+        function filterFeedback(filter) {
+            currentFeedbackFilter = filter;
+            renderFeedback();
+        }
+
+        function renderFeedback() {
+            const tbody = document.getElementById('feedbackTableBody');
+            if (!tbody) return;
+
+            let filtered = feedbackData;
+            if (currentFeedbackFilter === 'unread') filtered = feedbackData.filter(f => !f.is_read);
+            if (currentFeedbackFilter === 'read') filtered = feedbackData.filter(f => f.is_read);
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a99b1;padding:14px 0;">Chưa có góp ý nào</td></tr>';
+            } else {
+                tbody.innerHTML = filtered.map(f => `
+                    <tr>
+                        <td><strong>#${String(f.id).padStart(3, '0')}</strong></td>
+                        <td><span class="status-badge ${f.type === 'market' ? 'approved' : 'pending'}">${feedbackTypeLabel(f.type)}</span></td>
+                        <td><strong>${escapeHtml(f.user_name || 'Khách')}</strong>${f.user_email ? `<br><span style="font-size:11px;color:#8a99b1;">${escapeHtml(f.user_email)}</span>` : ''}</td>
+                        <td style="max-width:300px;" title="${escapeHtml(f.content)}">${escapeHtml(truncate(f.content, 90))}</td>
+                        <td>${formatDateTime(f.created_at)}</td>
+                        <td><span class="status-badge ${f.is_read ? 'resolved' : 'pending'}">${f.is_read ? 'Đã đọc' : 'Chưa đọc'}</span></td>
+                        <td>
+                            <div class="action-btns">
+                                ${!f.is_read ? `<button title="Đánh dấu đã đọc" onclick="markFeedbackRead(${f.id})"><i class="fas fa-check"></i></button>` : '<span style="color:#2ecc71;" title="Đã đọc"><i class="fas fa-check-circle"></i></span>'}
+                                ${canManageFeedback() ? `<button class="danger" title="Xóa" onclick="deleteFeedback(${f.id})"><i class="fas fa-trash"></i></button>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            const hint = document.getElementById('feedbackTypeHint');
+            if (hint) hint.textContent = feedbackTypeHintText();
+
+            const total = feedbackData.length;
+            const unread = feedbackData.filter(f => !f.is_read).length;
+            renderSummaryChips('feedbackSummary', [
+                { label: 'Tổng góp ý', value: total, total: true, icon: '<i class="fas fa-comment-dots"></i>' },
+                { label: 'Chưa đọc', value: unread, icon: '<i class="fas fa-envelope" style="color:#f39c12;"></i>' },
+                { label: 'Đã đọc', value: total - unread, icon: '<i class="fas fa-envelope-open" style="color:#2ecc71;"></i>' }
+            ]);
+
+            // Badge menu Góp ý: số góp ý CHƯA ĐỌC (chỉ hiện khi > 0)
+            const unreadBadge = document.getElementById('feedbackUnreadBadge');
+            if (unreadBadge) {
+                if (unread > 0) {
+                    unreadBadge.style.display = 'inline-block';
+                    unreadBadge.textContent = unread;
+                } else {
+                    unreadBadge.style.display = 'none';
+                }
+            }
+
+            // Cập nhật Dashboard: thẻ "Góp ý"
+            const statFeedbackEl = document.getElementById('statFeedback');
+            if (statFeedbackEl) statFeedbackEl.textContent = total;
+            const statPendingFeedbackEl = document.getElementById('statPendingFeedback');
+            if (statPendingFeedbackEl) statPendingFeedbackEl.textContent = unread + ' chưa đọc';
+            renderRecentActivity();
+        }
+
+        async function loadFeedback() {
+            try {
+                const data = await authApi('/feedback');
+                feedbackData = Array.isArray(data) ? data : [];
+            } catch (e) {
+                feedbackData = [];
+                console.error('Load feedback failed:', e);
+            }
+            renderFeedback();
+        }
+
+        async function markFeedbackRead(id) {
+            if (!canViewFeedback()) { showWarning('Bạn không có quyền xử lý góp ý.'); return; }
+            try {
+                await authApi('/feedback/' + id, 'PATCH');
+                showToast('✅ Đã đánh dấu góp ý là đã đọc.', 'success');
+                await loadFeedback();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không thể cập nhật.'), 'error');
+            }
+        }
+
+        async function deleteFeedback(id) {
+            if (!canManageFeedback()) { showWarning('Bạn không có quyền xóa góp ý.'); return; }
+            const item = feedbackData.find(f => f.id === id);
+            if (!item) return;
+            if (confirm(`Xóa góp ý #${String(id).padStart(3, '0')}?`)) {
+                try {
+                    await authApi('/feedback/' + id, 'DELETE');
+                    showToast('✅ Đã xóa góp ý.', 'success');
+                    await loadFeedback();
+                } catch (err) {
+                    showToast('❌ ' + (err.message || 'Không thể xóa.'), 'error');
+                }
+            }
+        }
+
+        // ============================================================
         // 5. NAVIGATION
         // ============================================================
 
@@ -4546,8 +4774,8 @@
                 showWarning('Bạn không có quyền quản lý hội viên.');
                 return;
             }
-            if (panelId === 'tickets') {
-                showWarning('Tính năng "Yêu cầu hỗ trợ" đang được phát triển. Vui lòng quay lại sau.');
+            if (panelId === 'tickets' && !canViewFeedback()) {
+                showWarning('Bạn không có quyền xem góp ý.');
                 return;
             }
             if (panelId === 'faq' && !canManageFaq()) {
@@ -4581,7 +4809,7 @@
                 'writingTool': 'Tool hỗ trợ viết bài',
                 'plans': 'Quản lý gói hội viên',
                 'features': 'Quản lý tính năng',
-                'tickets': 'Quản lý yêu cầu hỗ trợ',
+                'tickets': 'Quản lý góp ý',
                 'faq': 'Quản lý FAQ',
                 'contact': 'Tin nhắn liên hệ',
                 'settings': 'Cài đặt hệ thống',
@@ -4596,9 +4824,10 @@
             if (panelId === 'stocks') loadStocks();
             if (panelId === 'plans') renderPlans();
             if (panelId === 'features') renderFeatures();
-            if (panelId === 'tickets') renderTickets();
+            if (panelId === 'tickets') loadFeedback();
             if (panelId === 'faq') loadFaqs();
             if (panelId === 'contact') loadContactMessages();
+            if (panelId === 'dashboard') renderRecentActivity();
         }
 
         // ============================================================
@@ -4807,7 +5036,8 @@
                 if (titleEl) titleEl.textContent = 'Chỉnh sửa bài viết';
                 if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
                 document.getElementById('newsTitle').value = item.title || '';
-                document.getElementById('newsCategory').value = item.category || 'tin-tuc';
+                const allowedCat = ['chung-khoan', 'ngan-hang', 'bat-dong-san', 'doanh-nghiep', 'dong-tien-thong-minh', 'tai-chinh-quoc-te', 'cong-nghe'];
+                document.getElementById('newsCategory').value = allowedCat.includes(item.category) ? item.category : 'chung-khoan';
                 document.getElementById('newsSummary').value = item.summary || '';
                 document.getElementById('newsAuthor').value = item.author && item.author !== '—' ? item.author : '';
                 document.getElementById('newsImageCaption').value = item.imageCaption || '';
@@ -6173,7 +6403,7 @@
         if (!canManageNews()) {
             document.getElementById('navNews').classList.add('disabled');
         }
-        if (!canViewTickets()) {
+        if (!canViewFeedback()) {
             document.getElementById('navTickets').classList.add('disabled');
         }
         if (!canManageFaq()) {
@@ -6186,7 +6416,7 @@
         loadNews();
         renderPlans();
         renderFeatures();
-        renderTickets();
+        loadFeedback();
         loadFaqs();
         // Tải sẵn tin nhắn liên hệ để badge "chưa đọc" hiện ngay trên menu (nếu có quyền)
         if (canViewContact()) loadContactMessages();

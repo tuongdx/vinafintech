@@ -768,3 +768,109 @@ body.dark-mode #dynamicContent .success-message {
     font-size: 12px;
   }
 }
+
+/* ============================================================
+   GÓP Ý (feedback)
+   ============================================================ */
+#dynamicContent .feedback-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+/* Ghi đè rule #dynamicContent .contact-form label (display:block) bằng specificity cao hơn */
+#dynamicContent .contact-form .feedback-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 0;
+  padding: 14px;
+  border: 2px solid #e5e9f0;
+  border-radius: 12px;
+  cursor: pointer;
+  background: #ffffff;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+#dynamicContent .contact-form .feedback-option:hover {
+  border-color: #008080;
+}
+
+#dynamicContent .contact-form .feedback-option input[type="radio"] {
+  /* Ẩn radio — bấm vào card vẫn chọn được (label activation + JS handler) */
+  display: none;
+}
+
+#dynamicContent .contact-form .feedback-option-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #f0f6f6;
+  color: #008080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+#dynamicContent .contact-form .feedback-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#dynamicContent .contact-form .feedback-option-text strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1f36;
+}
+
+#dynamicContent .contact-form .feedback-option-text small {
+  font-size: 11px;
+  color: #8a99b1;
+  line-height: 1.4;
+}
+
+#dynamicContent .contact-form .feedback-option.selected {
+  border-color: #008080;
+  background: #f0f6f6;
+  box-shadow: 0 2px 8px rgba(0, 128, 128, 0.12);
+}
+
+#dynamicContent .contact-form .feedback-option.selected .feedback-option-icon {
+  background: #008080;
+  color: #ffffff;
+}
+
+body.dark-mode #dynamicContent .contact-form .feedback-option {
+  background: #0d1117;
+  border-color: #30363d;
+}
+
+body.dark-mode #dynamicContent .contact-form .feedback-option:hover,
+body.dark-mode #dynamicContent .contact-form .feedback-option.selected {
+  border-color: #008080;
+  background: #161b22;
+}
+
+body.dark-mode #dynamicContent .contact-form .feedback-option-text strong {
+  color: #e6edf3;
+}
+
+body.dark-mode #dynamicContent .contact-form .feedback-option-icon {
+  background: #21262d;
+}
+
+body.dark-mode #dynamicContent .contact-form .feedback-option.selected .feedback-option-icon {
+  background: #008080;
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  #dynamicContent .feedback-options {
+    grid-template-columns: 1fr;
+  }
+}

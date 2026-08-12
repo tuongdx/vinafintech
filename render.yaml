@@ -27,6 +27,10 @@ services:
       # Tạo SECRET_KEY ngẫu nhiên, an toàn khi deploy
       - key: SECRET_KEY
         generateValue: true
+      # TuniAI (DeepSeek) — Điền API key tại Dashboard Render (không lưu secret trong git)
+      # Sau khi thêm, vào Render → Service tunix → Environment → set DEEPSEEK_API_KEY rồi Deploy lại.
+      - key: DEEPSEEK_API_KEY
+        sync: false
       # Kết nối Postgres tự động (internal URL, cùng region)
       - key: DATABASE_URL
         fromDatabase:

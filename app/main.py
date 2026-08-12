@@ -11,7 +11,7 @@ from app.core.security import decode_token
 from app.db import Base, SessionLocal, engine
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, auth, contact, dashboard, faqs, features, logs, news, plans, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, auth, contact, dashboard, faqs, features, feedback, logs, news, plans, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -87,6 +87,7 @@ app.include_router(tools.router, prefix=api)
 app.include_router(news.router, prefix=api)
 app.include_router(tickets.router, prefix=api)
 app.include_router(contact.router, prefix=api)
+app.include_router(feedback.router, prefix=api)
 app.include_router(faqs.router, prefix=api)
 app.include_router(plans.router, prefix=api)
 app.include_router(features.router, prefix=api)
@@ -123,6 +124,7 @@ PAGE_MAP: dict[str, str] = {
     "reset-password": "reset-password.html",
     "NewsDetail": "NewsDetail.html",
     "tintuc": "tintuc.html",
+    "tin-tuc": "tin-tuc.html",
     "caidat": "caidat.html",
     "taikhoan": "taikhoan.html",
     "doimatkhau": "doimatkhau.html",
@@ -132,9 +134,18 @@ PAGE_MAP: dict[str, str] = {
     "HuongDanSuDung": "HuongDanSuDung.html",
     "CauHoiThuongGap": "CauHoiThuongGap.html",
     "LienHe": "LienHe.html",
+    "GopY": "GopY.html",
     "DieuKhoanSuDung": "DieuKhoanSuDung.html",
     "ChinhSachBaoMat": "ChinhSachBaoMat.html",
     "MienTruTrachNhiem": "MienTruTrachNhiem.html",
+    # Danh mục tin tức (URL đẹp: /ngan-hang, /chung-khoan, ...) → mở shell index + trang tin tức
+    "chung-khoan": "tin-tuc.html",
+    "ngan-hang": "tin-tuc.html",
+    "bat-dong-san": "tin-tuc.html",
+    "doanh-nghiep": "tin-tuc.html",
+    "dong-tien-thong-minh": "tin-tuc.html",
+    "tai-chinh-quoc-te": "tin-tuc.html",
+    "cong-nghe": "tin-tuc.html",
 }
 
 INDEX_SHELL_PAGES = {
@@ -142,9 +153,20 @@ INDEX_SHELL_PAGES = {
     "HuongDanSuDung",
     "CauHoiThuongGap",
     "LienHe",
+    "GopY",
     "DieuKhoanSuDung",
     "ChinhSachBaoMat",
     "MienTruTrachNhiem",
+    # Trang tin tức: /tin-tuc giữ nguyên shell (header + right-col), nội dung nạp vào left-col.
+    "tin-tuc",
+    # URL đẹp danh mục tin tức
+    "chung-khoan",
+    "ngan-hang",
+    "bat-dong-san",
+    "doanh-nghiep",
+    "dong-tien-thong-minh",
+    "tai-chinh-quoc-te",
+    "cong-nghe",
 }
 
 

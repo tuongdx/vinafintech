@@ -79,7 +79,7 @@ class NewsCreate(BaseModel):
     title: str
     summary: str = ""
     content: str = ""
-    category: str = "tin-tuc"
+    category: str = "chung-khoan"
     image_url: str | None = None
     author_name: str | None = None
     image_caption: str | None = None
@@ -212,6 +212,26 @@ class ContactMessageOut(BaseModel):
     phone: str | None = None
     subject: str
     message: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class FeedbackCreate(BaseModel):
+    type: str = "news"  # news | market
+    content: str
+    user_name: str | None = None
+    user_email: str | None = None
+
+
+class FeedbackOut(BaseModel):
+    id: int
+    type: str
+    content: str
+    user_name: str | None = None
+    user_email: str | None = None
     is_read: bool
     created_at: datetime
 

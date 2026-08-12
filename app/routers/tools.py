@@ -30,7 +30,15 @@ router = APIRouter(prefix="/admin/tools", tags=["admin-tools"])
 # Những vai trò được phép viết bài & dùng tool (giống quyền tạo tin tức)
 _TOOL_ROLES = (RoleEnum.super_admin, RoleEnum.content_manager, RoleEnum.editor)
 
-_ALLOWED_CATEGORIES = {"tin-tuc", "tin-luc", "bao-cao", "tin-cong-ty", "su-kien"}
+_ALLOWED_CATEGORIES = {
+    "chung-khoan",
+    "ngan-hang",
+    "bat-dong-san",
+    "doanh-nghiep",
+    "dong-tien-thong-minh",
+    "tai-chinh-quoc-te",
+    "cong-nghe",
+}
 
 # Block quảng cáo / banner cần XÓA bỏ hoàn toàn
 _AD_BLOCK_SELECTOR = (
@@ -107,7 +115,7 @@ def _join_tags(tags) -> str | None:
 
 def _resolve_category(category: str) -> str:
     cat = (category or "").strip().lower()
-    return cat if cat in _ALLOWED_CATEGORIES else "tin-tuc"
+    return cat if cat in _ALLOWED_CATEGORIES else "chung-khoan"
 
 
 def _read_json(path: Path) -> list[dict]:
@@ -137,7 +145,7 @@ async def import_news(
     file: UploadFile | None = File(None),
     file_path: str = Form(""),
     author: str = Form("Ban biên tập TuniX"),
-    category: str = Form("tin-tuc"),
+    category: str = Form("chung-khoan"),
     approve: str = Form("false"),
     publish: str = Form("false"),
     dry_run: str = Form("false"),
