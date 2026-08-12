@@ -1577,6 +1577,90 @@
             justify-content: flex-end;
         }
 
+        /* Confirm dialog (thay thế confirm() gốc để tránh bị trình duyệt chặn) */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .confirm-modal.show {
+            display: flex;
+        }
+        .confirm-modal .modal-content {
+            background: #fff;
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        body.dark-mode .confirm-modal .modal-content {
+            background: #161b22;
+            border: 1px solid #30363d;
+        }
+        .confirm-modal .modal-content .confirm-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #fef3e2;
+            color: #f59e0b;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        body.dark-mode .confirm-modal .modal-content .confirm-icon {
+            background: rgba(245, 158, 11, 0.15);
+        }
+        .confirm-modal .modal-content h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            transition: color 0.3s ease;
+        }
+        body.dark-mode .confirm-modal .modal-content h3 {
+            color: #e6edf3;
+        }
+        .confirm-modal .modal-content p {
+            font-size: 14px;
+            color: #4a5a72;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        body.dark-mode .confirm-modal .modal-content p {
+            color: #8b949e;
+        }
+        .confirm-modal .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 22px;
+            justify-content: center;
+        }
+        .confirm-modal .modal-actions .btn-confirm-danger {
+            background: #e5484d;
+            color: #fff;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .confirm-modal .modal-actions .btn-confirm-danger:hover {
+            background: #c9302c;
+        }
+
         /* ===== PLANS ===== */
         .plans-grid {
             display: grid;
@@ -3023,6 +3107,19 @@
                         </div>
                         <div class="modal-actions">
                             <button type="button" class="btn-secondary" onclick="closeImageUploadModal()">Hủy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== CONFIRM DIALOG (thay thế confirm() gốc) ===== -->
+                <div class="confirm-modal" id="confirmModal">
+                    <div class="modal-content">
+                        <div class="confirm-icon"><i class="fas fa-question"></i></div>
+                        <h3>Xác nhận thao tác</h3>
+                        <p id="confirmModalMessage"></p>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" onclick="confirmDialogResolve(false)">Hủy</button>
+                            <button type="button" class="btn-confirm-danger" id="confirmModalOk" onclick="confirmDialogResolve(true)">Xác nhận</button>
                         </div>
                     </div>
                 </div>
@@ -4618,7 +4715,7 @@
             if (!canManageContact()) { showWarning('Bạn không có quyền xóa tin nhắn.'); return; }
             const msg = contactMessagesData.find(m => m.id === id);
             if (!msg) return;
-            if (confirm(`Xóa tin nhắn từ "${msg.full_name}"?`)) {
+            if (await confirmDialog(`Xóa tin nhắn từ "${msg.full_name}"?`)) {
                 try {
                     await authApi('/contact/' + id, 'DELETE');
                     showToast('✅ Đã xóa tin nhắn.', 'success');
@@ -4738,7 +4835,7 @@
             if (!canManageFeedback()) { showWarning('Bạn không có quyền xóa góp ý.'); return; }
             const item = feedbackData.find(f => f.id === id);
             if (!item) return;
-            if (confirm(`Xóa góp ý #${String(id).padStart(3, '0')}?`)) {
+            if (await confirmDialog(`Xóa góp ý #${String(id).padStart(3, '0')}?`)) {
                 try {
                     await authApi('/feedback/' + id, 'DELETE');
                     showToast('✅ Đã xóa góp ý.', 'success');
@@ -5155,7 +5252,7 @@
             }
             const item = newsData.find(n => n.id === id);
             if (!item) return;
-            if (!confirm('Từ chối duyệt bài viết "' + item.title + '"?')) return;
+            if (!await confirmDialog('Từ chối duyệt bài viết "' + item.title + '"?')) return;
             try {
                 await authApi('/news/' + id + '/reject', 'POST');
                 showToast('❌ Đã từ chối bài viết "' + item.title + '"', 'error');
@@ -5199,7 +5296,7 @@
                 showToast('❌ Bạn không thể xóa chính mình.', 'error');
                 return;
             }
-            if (confirm('Bạn có chắc chắn muốn xóa người dùng "' + user.name + '"?')) {
+            if (await confirmDialog('Bạn có chắc chắn muốn xóa người dùng "' + user.name + '"?')) {
                 try {
                     await authApi('/users/' + id, 'DELETE');
                     showToast('✅ Đã xóa người dùng.', 'success');
@@ -5254,7 +5351,7 @@
             }
             const item = newsData.find(n => n.id === id);
             if (!item) return;
-            if (confirm('Bạn có chắc chắn muốn xóa bài viết "' + item.title + '"?')) {
+            if (await confirmDialog('Bạn có chắc chắn muốn xóa bài viết "' + item.title + '"?')) {
                 try {
                     await authApi('/news/' + id, 'DELETE');
                     showToast('✅ Đã xóa bài viết.', 'success');
@@ -5452,7 +5549,7 @@
             showToast(`✅ Đã đánh dấu yêu cầu #${String(id).padStart(3, '0')} là đã giải quyết.`, 'success');
         }
 
-        function closeTicket(id) {
+        async function closeTicket(id) {
             if (!canManageTickets()) {
                 showWarning('Bạn không có quyền đóng yêu cầu hỗ trợ.');
                 return;
@@ -5464,7 +5561,7 @@
                 return;
             }
             if (ticket.status !== 'resolved') {
-                if (!confirm('Yêu cầu này chưa được đánh dấu là đã giải quyết. Bạn có chắc muốn đóng?')) {
+                if (!await confirmDialog('Yêu cầu này chưa được đánh dấu là đã giải quyết. Bạn có chắc muốn đóng?')) {
                     return;
                 }
             }
@@ -5609,7 +5706,7 @@
             }
             const item = faqsData.find(f => f.id === id);
             if (!item) return;
-            if (confirm(`Bạn có chắc chắn muốn xóa câu hỏi "${item.question}"?`)) {
+            if (await confirmDialog(`Bạn có chắc chắn muốn xóa câu hỏi "${item.question}"?`)) {
                 try {
                     await authApi('/faqs/' + id, 'DELETE');
                     showToast('✅ Đã xóa câu hỏi.', 'success');
@@ -5988,7 +6085,7 @@
                 return;
             }
             hideWarning();
-            if (!confirm(`Bạn có chắc chắn muốn xóa mã ${symbol} khỏi danh sách cổ phiếu?`)) return;
+            if (!await confirmDialog(`Bạn có chắc chắn muốn xóa mã ${symbol} khỏi danh sách cổ phiếu?`)) return;
             try {
                 await authApi('/admin/stocks/' + encodeURIComponent(symbol), 'DELETE');
                 showToast(`✅ Đã xóa mã ${symbol}.`, 'success');
@@ -6288,6 +6385,32 @@
         }
 
         // ============================================================
+        // 13b. CONFIRM DIALOG (thay thế confirm() gốc của trình duyệt)
+        // ============================================================
+        // Lý do: nếu người dùng tick checkbox "Ngăn trang này tạo thêm hộp thoại"
+        // trên hộp thoại confirm() gốc, trình duyệt sẽ im lặng trả về false cho
+        // MỌI confirm() sau đó -> không xóa được bài, không đăng xuất được.
+        // Dùng modal tùy chỉnh để không bao giờ bị trình duyệt chặn.
+
+        let _confirmResolve = null;
+
+        function confirmDialog(message) {
+            document.getElementById('confirmModalMessage').textContent = message;
+            document.getElementById('confirmModal').classList.add('show');
+            return new Promise(function(resolve) {
+                _confirmResolve = resolve;
+            });
+        }
+
+        function confirmDialogResolve(result) {
+            document.getElementById('confirmModal').classList.remove('show');
+            if (typeof _confirmResolve === 'function') {
+                _confirmResolve(result);
+                _confirmResolve = null;
+            }
+        }
+
+        // ============================================================
         // 14. THEME TOGGLE
         // ============================================================
 
@@ -6330,8 +6453,8 @@
             }
         });
 
-        function handleLogout() {
-            if (!confirm('Bạn có chắc chắn muốn đăng xuất?')) return;
+        async function handleLogout() {
+            if (!await confirmDialog('Bạn có chắc chắn muốn đăng xuất?')) return;
             const refresh = localStorage.getItem('tunix_refresh_token');
             const token = localStorage.getItem('tunix_access_token');
             fetch('/api/auth/logout', {
@@ -6468,6 +6591,8 @@
         window.deleteFaq = deleteFaq;
         window.handleLogout = handleLogout;
         window.showToast = showToast;
+        window.confirmDialog = confirmDialog;
+        window.confirmDialogResolve = confirmDialogResolve;
         window.toggleMobileSidebar = toggleMobileSidebar;
         window.execCmd = execCmd;
         window.openImageUploadModal = openImageUploadModal;
