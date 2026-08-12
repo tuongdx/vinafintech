@@ -226,6 +226,276 @@
             font-size: 14px;
         }
 
+        /* Nút "Xem thêm" tải thêm bài viết */
+        .load-more {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 22px 0 6px;
+        }
+        .load-more-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ffffff;
+            color: #008080;
+            border: 1px solid #008080;
+            border-radius: 30px;
+            padding: 10px 28px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .load-more-btn:hover {
+            background: #008080;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(0, 128, 128, 0.25);
+        }
+        .load-more-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        body.dark-mode .load-more-btn {
+            background: #1c2128;
+            color: #4fb3b3;
+        }
+        body.dark-mode .load-more-btn:hover {
+            background: #008080;
+            color: #ffffff;
+        }
+
+        /* ===== BẢN TIN TỔNG HỢP (tab "Tất cả"): mỗi menu 1-2 bài, so le to/nhỏ ===== */
+        .news-grid-sole {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: 150px;
+            grid-auto-flow: row dense;
+            gap: 14px;
+        }
+
+        .news-cell {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #1e2b41, #33415e);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .news-cell:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+        }
+        .news-cell.big {
+            grid-row: span 2;
+        }
+        /* So le: bài TO trái + 2 bài NHỎ phải, rồi đảo bên */
+        .news-cell.big:nth-child(6n+1) { grid-column: 1 / 3; }
+        .news-cell.small:nth-child(6n+2) { grid-column: 3; }
+        .news-cell.small:nth-child(6n+3) { grid-column: 3; }
+        .news-cell.big:nth-child(6n+4) { grid-column: 2 / 4; }
+        .news-cell.small:nth-child(6n+5) { grid-column: 1; }
+        .news-cell.small:nth-child(6n+6) { grid-column: 1; }
+
+        .news-cell-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .news-cell-shade {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(8, 12, 22, 0.82) 0%, rgba(8, 12, 22, 0.30) 55%, rgba(8, 12, 22, 0.08) 100%);
+        }
+        .news-cell-cat {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 3;
+            background: rgba(0, 128, 128, 0.92);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            backdrop-filter: blur(2px);
+        }
+        .news-cell-body {
+            position: relative;
+            z-index: 3;
+            margin-top: auto;
+            padding: 14px;
+        }
+        .news-cell-title {
+            color: #ffffff;
+            font-weight: 700;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .news-cell.big .news-cell-title {
+            font-size: 17px;
+            -webkit-line-clamp: 3;
+        }
+        .news-cell.small .news-cell-title {
+            font-size: 13px;
+            -webkit-line-clamp: 2;
+        }
+        .news-cell-meta {
+            margin-top: 6px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.78);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* ===== BẢN TIN TỔNG HỢP: 4 khối (1 to + 5 nhỏ / list 5 / chia đôi 2 / trung bình ~4) ===== */
+        .news-grid-digest {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        /* Khối 1: 1 bài TO bên trái + 5 bài NHỎ bên cạnh (vừa khít chiều cao) */
+        .digest-featured {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-auto-rows: 120px;
+            gap: 14px;
+        }
+        .digest-featured .news-cell.big {
+            grid-column: 1;
+            grid-row: 1 / span 5;
+        }
+        .digest-featured .news-cell.small {
+            grid-column: 2;
+        }
+
+        /* Khối 2: list 5 bài */
+        .digest-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .news-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            border: 1px solid #eef1f5;
+            border-radius: 12px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .news-row:hover {
+            border-color: #008080;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+        }
+        .news-row .nr-img {
+            width: 64px;
+            height: 64px;
+            flex-shrink: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1e2b41, #33415e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #b8c2d0;
+            font-size: 20px;
+        }
+        .news-row .nr-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .news-row .nr-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .news-row .nr-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1f36;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .news-row:hover .nr-title {
+            color: #008080;
+        }
+        .news-row .nr-meta {
+            margin-top: 4px;
+            font-size: 11px;
+            color: #8a99b1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .news-row .nr-cat {
+            font-weight: 600;
+            color: #008080;
+        }
+        body.dark-mode .news-row {
+            background: #1c2128;
+            border-color: #2a3038;
+        }
+        body.dark-mode .news-row:hover {
+            border-color: #008080;
+        }
+        body.dark-mode .news-row .nr-title {
+            color: #e6edf3;
+        }
+        body.dark-mode .news-row:hover .nr-title {
+            color: #4fb3b3;
+        }
+        body.dark-mode .news-row .nr-meta {
+            color: #768390;
+        }
+        body.dark-mode .news-row .nr-cat {
+            color: #4fb3b3;
+        }
+
+        /* Khối 3: 2 bài chia đôi */
+        .digest-half {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-auto-rows: 220px;
+            gap: 14px;
+        }
+        .news-cell.half .news-cell-title {
+            font-size: 15px;
+            -webkit-line-clamp: 2;
+        }
+
+        /* Khối 4: ~4 bài cỡ trung bình */
+        .digest-medium {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: 190px;
+            gap: 14px;
+        }
+        .news-cell.medium .news-cell-title {
+            font-size: 14px;
+            -webkit-line-clamp: 2;
+        }
+
         /* ============================================================
                    DARK MODE
                 ============================================================ */
@@ -295,6 +565,13 @@
         <div class="news-grid" id="newsGrid">
             <div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải tin tức...</div>
         </div>
+
+        <div class="load-more" id="loadMore" style="display:none;">
+            <button type="button" id="loadMoreBtn" class="load-more-btn">
+                <i class="fas fa-chevron-down"></i>
+                <span id="loadMoreText">Xem thêm bài viết</span>
+            </button>
+        </div>
     </div>
 
     <script>
@@ -319,11 +596,26 @@
             CATEGORIES.forEach(function (c) { if (c.slug) LABEL_MAP[c.slug] = c.label; });
             LABEL_MAP['tin-tuc'] = 'Tin Tức';
 
-            var LIMIT = 12;
+            // Các menu (chuyên mục) dùng cho bản tin tổng hợp tab "Tất cả"
+            var DIGEST_MENUS = [
+                'chung-khoan', 'ngan-hang', 'bat-dong-san', 'doanh-nghiep',
+                'dong-tien-thong-minh', 'tai-chinh-quoc-te', 'cong-nghe',
+            ];
+
+            var PAGE_SIZE = 12;  // số bài mỗi lần nạp khi phân trang (cuộn)
+            var MAX_INIT = 50;   // giới hạn bài hiển thị ban đầu (backend tối đa 50)
+            var GRID_GAP = 16;   // row-gap của lưới tin
             var currentCat = '';
             var currentQ = '';
 
+            // ---------------- Phân trang (tải thêm khi cuộn) ----------------
+            var nextOffset = 0;      // vị trí bắt đầu lần nạp kế tiếp
+            var hasMore = true;      // còn bài để tải thêm?
+            var isLoadingMore = false; // đang tải thêm?
+            var alignTimer = null;   // hẹn giờ căn chỉnh lại theo block cột phải
+
             var gridEl = document.getElementById('newsGrid');
+            var loadMoreEl = document.getElementById('loadMore');
             var searchInfoEl = document.getElementById('searchInfo');
             var searchInfoTextEl = document.getElementById('searchInfoText');
             var searchClearBtn = document.getElementById('searchClearBtn');
@@ -434,6 +726,12 @@
                 searchClearBtn.addEventListener('click', clearSearch);
             }
 
+            // Nút "Xem thêm": bấm để tải thêm 1 trang bài viết
+            var loadMoreBtnEl = document.getElementById('loadMoreBtn');
+            if (loadMoreBtnEl) {
+                loadMoreBtnEl.addEventListener('click', function () { loadMore(); });
+            }
+
             function selectCategory(slug) {
                 // Chuyển chuyên mục → cuộn về đầu trang tin tức
                 window.scrollTo(0, 0);
@@ -462,44 +760,61 @@
             }
 
             // ---------------- Render news ----------------
-            function renderNews(list) {
-                if (!list.length) {
-                    gridEl.innerHTML =
-                        '<div class="news-empty"><i class="fas fa-inbox"></i><p>Chưa có bài viết trong chuyên mục này.</p></div>';
-                    notifyParentHeight();
-                    return;
-                }
+            function cardHtml(n) {
+                var img = n.image_url
+                    ? '<img src="' + esc(n.image_url) + '" alt="" loading="lazy" onload="window.__newsNotify && window.__newsNotify()" />'
+                    : '<div class="no-img"><i class="fas fa-newspaper"></i></div>';
+                var cat = categoryLabel(n.category);
+                var catIc = categoryIcon(n.category);
+                var time = formatTime(n.created_at);
+                return '<article class="news-card" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+                    '<div class="thumb">' + img +
+                        '<span class="cat-badge"><i class="fas ' + catIc + '"></i>' + esc(cat) + '</span>' +
+                    '</div>' +
+                    '<div class="body">' +
+                        '<div class="title">' + esc(n.title) + '</div>' +
+                        (n.summary ? '<div class="summary">' + esc(n.summary) + '</div>' : '') +
+                        (time ? '<div class="meta"><span><i class="far fa-clock"></i>' + esc(time) + '</span></div>' : '') +
+                    '</div>' +
+                '</article>';
+            }
 
-                gridEl.innerHTML = list.map(function (n) {
-                    var img = n.image_url
-                        ? '<img src="' + esc(n.image_url) + '" alt="" loading="lazy" onload="window.__newsNotify && window.__newsNotify()" />'
-                        : '<div class="no-img"><i class="fas fa-newspaper"></i></div>';
-                    var cat = categoryLabel(n.category);
-                    var catIc = categoryIcon(n.category);
-                    var time = formatTime(n.created_at);
-                    return '<article class="news-card" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
-                        '<div class="thumb">' + img +
-                            '<span class="cat-badge"><i class="fas ' + catIc + '"></i>' + esc(cat) + '</span>' +
-                        '</div>' +
-                        '<div class="body">' +
-                            '<div class="title">' + esc(n.title) + '</div>' +
-                            (n.summary ? '<div class="summary">' + esc(n.summary) + '</div>' : '') +
-                            (time ? '<div class="meta"><span><i class="far fa-clock"></i>' + esc(time) + '</span></div>' : '') +
-                        '</div>' +
-                    '</article>';
-                }).join('');
-
-                gridEl.querySelectorAll('.news-card').forEach(function (card) {
-                    card.addEventListener('click', function () {
-                        var id = card.getAttribute('data-id');
-                        var slug = card.getAttribute('data-slug');
-                        if (!id) return;
-                        if (window.parent && window.parent !== window) {
-                            window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug }, '*');
-                        }
-                    });
+            function bindCard(card) {
+                card.addEventListener('click', function () {
+                    var id = card.getAttribute('data-id');
+                    var slug = card.getAttribute('data-slug');
+                    if (!id) return;
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug }, '*');
+                    }
                 });
+            }
 
+            function showLoadMore(show) {
+                if (loadMoreEl) loadMoreEl.style.display = show ? 'flex' : 'none';
+            }
+
+            // Không có bài viết nào trong chuyên mục/tìm kiếm
+            function renderEmpty() {
+                gridEl.innerHTML =
+                    '<div class="news-empty"><i class="fas fa-inbox"></i><p>Chưa có bài viết trong chuyên mục này.</p></div>';
+                hasMore = false;
+                nextOffset = 0;
+                showLoadMore(false);
+                notifyParentHeight();
+            }
+
+            // Các trang sau: thêm bài mới vào cuối lưới tin
+            function appendNews(list, limit) {
+                var before = gridEl.querySelectorAll('.news-card').length;
+                gridEl.insertAdjacentHTML('beforeend', list.map(cardHtml).join(''));
+                var cards = gridEl.querySelectorAll('.news-card');
+                for (var i = before; i < cards.length; i++) {
+                    bindCard(cards[i]);
+                }
+                nextOffset += list.length;
+                if (list.length < limit) hasMore = false;
+                showLoadMore(hasMore);
                 notifyParentHeight();
             }
 
@@ -510,25 +825,357 @@
                 window.__newsNotifyTimer = setTimeout(notifyParentHeight, 300);
             };
 
-            async function loadNews() {
-                gridEl.innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải tin tức...</div>';
+            function buildQuery(offset, limit) {
+                var params = 'limit=' + limit + '&offset=' + offset;
+                if (currentQ) {
+                    params += '&search=' + encodeURIComponent(currentQ);
+                    if (currentCat) params += '&category=' + encodeURIComponent(currentCat);
+                } else if (currentCat) {
+                    params += '&category=' + encodeURIComponent(currentCat);
+                }
+                return params;
+            }
+
+            async function fetchNews(offset, limit) {
+                var res = await fetch('/api/news?' + buildQuery(offset, limit), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                var data = await res.json();
+                return Array.isArray(data) ? data : [];
+            }
+
+            // ---------------- Đo vị trí trong trang cha (cùng origin) ----------------
+            function getParentIframe() {
                 try {
-                    var params = 'limit=' + LIMIT;
-                    if (currentQ) {
-                        params += '&search=' + encodeURIComponent(currentQ);
-                        if (currentCat) params += '&category=' + encodeURIComponent(currentCat);
-                    } else if (currentCat) {
-                        params += '&category=' + encodeURIComponent(currentCat);
+                    if (window.parent && window.parent !== window && window.parent.document) {
+                        var pd = window.parent.document;
+                        var frames = pd.querySelectorAll('iframe');
+                        for (var i = 0; i < frames.length; i++) {
+                            try {
+                                if (frames[i].contentWindow === window) return frames[i];
+                            } catch (e2) {}
+                        }
                     }
-                    var res = await fetch('/api/news?' + params, { cache: 'no-store' });
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    var data = await res.json();
-                    renderNews(Array.isArray(data) ? data : []);
+                } catch (e) {}
+                return null;
+            }
+
+            function parentScrollY() {
+                try {
+                    if (window.parent && window.parent !== window) {
+                        var pd = window.parent.document;
+                        return window.parent.pageYOffset || pd.documentElement.scrollTop || 0;
+                    }
+                } catch (e) {}
+                return 0;
+            }
+
+            // Đáy block "Tin được xem nhiều nhất" (cột phải) trong tọa độ document cha.
+            // Chỉ áp dụng khi block nằm BÊN PHẢI iframe (layout 2 cột máy tính).
+            // Trả về null nếu không có (mobile/tablet cột phải nằm dưới, hoặc mở trực tiếp).
+            function mostViewedBottomDoc() {
+                try {
+                    if (window.parent && window.parent !== window && window.parent.document) {
+                        var pd = window.parent.document;
+                        var block = pd.getElementById('newsBlockMostViewed');
+                        var frame = getParentIframe();
+                        if (block && block.offsetHeight > 0 && frame) {
+                            var bRect = block.getBoundingClientRect();
+                            var fRect = frame.getBoundingClientRect();
+                            if (bRect.left >= fRect.right - 10) {
+                                return bRect.bottom + parentScrollY();
+                            }
+                        }
+                    }
+                } catch (e) {}
+                return null;
+            }
+
+            // Vị trí đỉnh lưới tin trong tọa độ document trang cha
+            function gridTopDoc() {
+                var iframeTop = 0;
+                var frame = getParentIframe();
+                if (frame) {
+                    var r = frame.getBoundingClientRect();
+                    iframeTop = r.top + parentScrollY();
+                }
+                var ourScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+                return iframeTop + gridEl.getBoundingClientRect().top + ourScrollY;
+            }
+
+            // Vị trí đáy lưới tin trong tọa độ document trang cha
+            function gridBottomDoc() {
+                return gridTopDoc() + gridEl.offsetHeight;
+            }
+
+            // Số cột hiện tại của lưới tin
+            function gridCols() {
+                try {
+                    var tc = getComputedStyle(gridEl).gridTemplateColumns;
+                    if (tc && tc !== 'none') {
+                        var cols = tc.split(' ').filter(Boolean).length;
+                        if (cols > 0) return cols;
+                    }
+                } catch (e) {}
+                return 1;
+            }
+
+            // ---------------- Bản tin tổng hợp (tab "Tất cả") ----------------
+            function digestCellHtml(n, size) {
+                var img = n.image_url
+                    ? '<img class="news-cell-img" src="' + esc(n.image_url) + '" alt="" loading="lazy" onload="window.__newsNotify && window.__newsNotify()">'
+                    : '';
+                var cat = categoryLabel(n.category);
+                var catIc = categoryIcon(n.category);
+                var time = formatTime(n.created_at);
+                return '<div class="news-cell ' + size + '" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+                    img +
+                    '<div class="news-cell-shade"></div>' +
+                    '<span class="news-cell-cat"><i class="fas ' + catIc + '"></i>' + esc(cat) + '</span>' +
+                    '<div class="news-cell-body">' +
+                        '<div class="news-cell-title">' + esc(n.title) + '</div>' +
+                        (time ? '<div class="news-cell-meta"><i class="far fa-clock"></i>' + esc(time) + '</div>' : '') +
+                    '</div>' +
+                '</div>';
+            }
+
+            // Dòng list (khối 2)
+            function digestRowHtml(n) {
+                var img = n.image_url
+                    ? '<img src="' + esc(n.image_url) + '" alt="" loading="lazy" onload="window.__newsNotify && window.__newsNotify()">'
+                    : '<i class="fas fa-newspaper"></i>';
+                var cat = categoryLabel(n.category);
+                var time = formatTime(n.created_at);
+                return '<div class="news-row" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+                    '<div class="nr-img">' + img + '</div>' +
+                    '<div class="nr-body">' +
+                        '<div class="nr-title">' + esc(n.title) + '</div>' +
+                        '<div class="nr-meta">' +
+                            '<span class="nr-cat">' + esc(cat) + '</span>' +
+                            (time ? '<span><i class="far fa-clock"></i>' + esc(time) + '</span>' : '') +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+
+            // Mỗi menu lấy tối đa 5 bài mới nhất → bản tin tổng hợp 4 khối
+            async function loadDigest() {
+                gridEl.className = 'news-grid-digest';
+                gridEl.innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải tin tức...</div>';
+                showLoadMore(false);
+                try {
+                    var lists = await Promise.all(DIGEST_MENUS.map(function (slug) {
+                        return fetch('/api/news?category=' + encodeURIComponent(slug) + '&limit=5', { cache: 'no-store' })
+                            .then(function (r) { return r.ok ? r.json() : []; })
+                            .then(function (arr) { return Array.isArray(arr) ? arr : []; })
+                            .catch(function () { return []; });
+                    }));
+                    // Trộn đều giữa các menu: mỗi vòng lấy bài mới nhất của từng menu
+                    var items = [];
+                    var maxPerMenu = 0;
+                    lists.forEach(function (arr) { if (arr.length > maxPerMenu) maxPerMenu = arr.length; });
+                    for (var r = 0; r < maxPerMenu; r++) {
+                        lists.forEach(function (arr) {
+                            if (arr[r]) items.push(arr[r]);
+                        });
+                    }
+                    if (!items.length) {
+                        gridEl.innerHTML = '<div class="news-empty"><i class="fas fa-inbox"></i><p>Chưa có bài viết trong chuyên mục này.</p></div>';
+                        hasMore = false;
+                        nextOffset = 0;
+                        showLoadMore(false);
+                        notifyParentHeight();
+                        return;
+                    }
+
+                    // Layout 5 khối:
+                    // 1) 6 bài đầu: 1 bài TO + 5 bài NHỎ
+                    // 2) list 5 bài
+                    // 3) 2 bài chia đôi (ngang nhau)
+                    // 4) 12 bài cỡ trung bình (4 + 8 thêm)
+                    // 5) list thêm 5 bài ở dưới cùng
+                    var featured = items.slice(0, 6);
+                    var listItems = items.slice(6, 11);
+                    var halfItems = items.slice(11, 13);
+                    var mediumItems = items.slice(13, 25);
+                    var listItems2 = items.slice(25, 30);
+
+                    var html = '';
+                    if (featured.length) {
+                        html += '<div class="digest-featured">' + featured.map(function (n, i) {
+                            return digestCellHtml(n, i === 0 ? 'big' : 'small');
+                        }).join('') + '</div>';
+                    }
+                    if (listItems.length) {
+                        html += '<div class="digest-list">' + listItems.map(digestRowHtml).join('') + '</div>';
+                    }
+                    if (halfItems.length) {
+                        html += '<div class="digest-half">' + halfItems.map(function (n) {
+                            return digestCellHtml(n, 'half');
+                        }).join('') + '</div>';
+                    }
+                    if (mediumItems.length) {
+                        html += '<div class="digest-medium">' + mediumItems.map(function (n) {
+                            return digestCellHtml(n, 'medium');
+                        }).join('') + '</div>';
+                    }
+                    if (listItems2.length) {
+                        html += '<div class="digest-list">' + listItems2.map(digestRowHtml).join('') + '</div>';
+                    }
+
+                    gridEl.innerHTML = html;
+                    gridEl.querySelectorAll('.news-cell, .news-row').forEach(function (el) {
+                        el.addEventListener('click', function () {
+                            var id = el.getAttribute('data-id');
+                            var slug = el.getAttribute('data-slug');
+                            if (!id) return;
+                            if (window.parent && window.parent !== window) {
+                                window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug }, '*');
+                            }
+                        });
+                    });
+                    hasMore = false;
+                    nextOffset = items.length;
+                    showLoadMore(false);
+                    notifyParentHeight();
                 } catch (e) {
                     gridEl.innerHTML = '<div class="news-empty"><i class="fas fa-exclamation-triangle"></i><p>Không thể tải tin tức. Vui lòng thử lại.</p></div>';
+                    hasMore = false;
+                    showLoadMore(false);
                     notifyParentHeight();
                 }
             }
+
+            // Nạp lại từ đầu (chuyển chuyên mục / xóa tìm kiếm / lần mở đầu)
+            async function loadNews() {
+                nextOffset = 0;
+                hasMore = true;
+                isLoadingMore = false;
+                if (alignTimer) { clearTimeout(alignTimer); alignTimer = null; }
+                gridEl.innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải tin tức...</div>';
+                showLoadMore(false);
+                try {
+                    if (!currentCat && !currentQ) {
+                        // Tab "Tất cả": bản tin tổng hợp — mỗi menu 1-2 bài mới nhất, so le to/nhỏ
+                        await loadDigest();
+                    } else {
+                        // Chuyên mục / tìm kiếm: lưới tin có phân trang (Xem thêm)
+                        gridEl.className = 'news-grid';
+                        await loadInitial();
+                    }
+                } catch (e) {
+                    gridEl.innerHTML = '<div class="news-empty"><i class="fas fa-exclamation-triangle"></i><p>Không thể tải tin tức. Vui lòng thử lại.</p></div>';
+                    hasMore = false;
+                    showLoadMore(false);
+                    notifyParentHeight();
+                }
+            }
+
+            // Trang đầu: hiển thị đủ số bài để chạm đáy block "Tin được xem nhiều nhất"
+            // (cột phải). Không có cột phải → hiển thị 1 trang PAGE_SIZE.
+            async function loadInitial() {
+                var target = mostViewedBottomDoc();
+
+                // Đo chiều cao 1 thẻ bằng cách render 1 bài tạm
+                var probe = await fetchNews(0, 1);
+                if (!probe.length) { renderEmpty(); return; }
+                gridEl.innerHTML = probe.map(cardHtml).join('');
+                var probeCard = gridEl.querySelector('.news-card');
+                var cardH = probeCard ? probeCard.offsetHeight : 0;
+                var cols = gridCols();
+
+                var count;
+                if (target == null) {
+                    count = PAGE_SIZE;
+                } else {
+                    var availH = target - gridTopDoc();
+                    var rows = Math.max(1, Math.floor((availH + GRID_GAP) / (cardH + GRID_GAP)));
+                    count = Math.max(cols, rows * cols);
+                }
+                count = Math.max(1, Math.min(count, MAX_INIT));
+
+                var data = await fetchNews(0, count);
+                if (!data.length) { renderEmpty(); return; }
+                gridEl.innerHTML = data.map(cardHtml).join('');
+                gridEl.querySelectorAll('.news-card').forEach(bindCard);
+
+                nextOffset = data.length;
+                hasMore = data.length >= count;
+                showLoadMore(hasMore);
+                notifyParentHeight();
+                scheduleRealign();
+            }
+
+            function setLoadMoreLoading(loading) {
+                var btn = document.getElementById('loadMoreBtn');
+                var text = document.getElementById('loadMoreText');
+                if (btn) btn.disabled = loading;
+                if (text) {
+                    text.innerHTML = loading
+                        ? '<i class="fas fa-spinner fa-spin"></i> Đang tải...'
+                        : 'Xem thêm bài viết';
+                }
+            }
+
+            // Nút "Xem thêm": tải thêm 1 trang (PAGE_SIZE bài)
+            async function loadMore() {
+                if (isLoadingMore || !hasMore) return;
+                isLoadingMore = true;
+                setLoadMoreLoading(true);
+                try {
+                    var data = await fetchNews(nextOffset, PAGE_SIZE);
+                    if (!data.length) {
+                        hasMore = false;
+                    } else {
+                        appendNews(data, PAGE_SIZE);
+                    }
+                } catch (e) {
+                    // Lỗi mạng: giữ nút để người dùng bấm lại
+                } finally {
+                    isLoadingMore = false;
+                    setLoadMoreLoading(false);
+                    showLoadMore(hasMore);
+                    notifyParentHeight();
+                }
+            }
+
+            // Block cột phải tải muộn hơn (8 bài xem nhiều) → chờ rồi căn lại số bài cho khớp
+            function scheduleRealign() {
+                if (alignTimer) clearTimeout(alignTimer);
+                alignTimer = setTimeout(realignToTarget, 1200);
+            }
+
+            function realignToTarget() {
+                alignTimer = null;
+                if (isLoadingMore) { scheduleRealign(); return; }
+                var target = mostViewedBottomDoc();
+                if (target == null) return;
+                var probeCard = gridEl.querySelector('.news-card');
+                if (!probeCard) return;
+                var cardH = probeCard.offsetHeight;
+                var cols = gridCols();
+                var availH = target - gridTopDoc();
+                var rows = Math.max(1, Math.floor((availH + GRID_GAP) / (cardH + GRID_GAP)));
+                var want = Math.max(cols, rows * cols);
+                var current = gridEl.querySelectorAll('.news-card').length;
+                if (want <= current || !hasMore) return;
+                var add = Math.min(want - current, PAGE_SIZE);
+                isLoadingMore = true;
+                showLoadMore(true);
+                fetchNews(nextOffset, add).then(function (data) {
+                    isLoadingMore = false;
+                    showLoadMore(false);
+                    if (data.length) {
+                        appendNews(data, add);
+                        notifyParentHeight();
+                        if (hasMore) scheduleRealign();
+                    }
+                }).catch(function () {
+                    isLoadingMore = false;
+                    showLoadMore(false);
+                });
+            }
+
+            // Nút "Xem thêm" — người dùng chủ động bấm để tải thêm, không tự động tải khi cuộn.
 
             // ---------------- Khởi tạo ----------------
             var params = new URLSearchParams(window.location.search);

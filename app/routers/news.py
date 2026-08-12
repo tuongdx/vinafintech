@@ -61,16 +61,22 @@ def _strip_diacritics(text: str) -> str:
 @router.get("", response_model=list[NewsOut])
 def list_published_news(
     limit: int = 20,
+    offset: int = 0,
     category: str | None = None,
     search: str | None = None,
     exclude_id: int | None = None,
     db: Session = Depends(get_db),
 ):
+    """Danh sách tin đã xuất bản. Hỗ trợ phân trang (limit + offset) để
+    frontend tải thêm bài khi người dùng cuộn (infinite scroll)."""
     query = db.query(News).filter(
         News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published])
     )
     if category:
         query = query.filter(News.category == category)
+
+    count = max(1, min(limit, 50))
+    start = max(0, offset)
 
     if search and search.strip():
         # Tìm kiếm không phân biệt dấu: bỏ dấu cả 2 vế rồi so sánh chuỗi con.
@@ -93,11 +99,11 @@ def list_published_news(
                 if nkw in hay or (nkw_nospace and nkw_nospace in hay_nospace):
                     matched.append(n)
             rows = matched
-        return [_news_out(n) for n in rows[: max(1, min(limit, 50))]]
+        return [_news_out(n) for n in rows[start : start + count]]
 
     if exclude_id:
         query = query.filter(News.id != exclude_id)
-    rows = query.order_by(News.id.desc()).limit(max(1, min(limit, 50))).all()
+    rows = query.order_by(News.id.desc()).offset(start).limit(count).all()
     return [_news_out(n) for n in rows]
 
 
