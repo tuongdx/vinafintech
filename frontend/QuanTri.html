@@ -3170,19 +3170,6 @@
                     </div>
                 </div>
 
-                <!-- ===== CONFIRM DIALOG (thay thế confirm() gốc) ===== -->
-                <div class="confirm-modal" id="confirmModal">
-                    <div class="modal-content">
-                        <div class="confirm-icon"><i class="fas fa-question"></i></div>
-                        <h3>Xác nhận thao tác</h3>
-                        <p id="confirmModalMessage"></p>
-                        <div class="modal-actions">
-                            <button type="button" class="btn-secondary" onclick="confirmDialogResolve(false)">Hủy</button>
-                            <button type="button" class="btn-confirm-danger" id="confirmModalOk" onclick="confirmDialogResolve(true)">Xác nhận</button>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="table-wrapper stock-table-scroll" id="newsTableWrapper">
                     <table>
                         <thead>
@@ -3631,6 +3618,19 @@
             </div>
 
         </main>
+    </div>
+
+    <!-- ===== CONFIRM DIALOG (thay thế confirm() gốc) ===== -->
+    <div class="confirm-modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="confirm-icon"><i class="fas fa-question"></i></div>
+            <h3>Xác nhận thao tác</h3>
+            <p id="confirmModalMessage"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="confirmDialogResolve(false)">Hủy</button>
+                <button type="button" class="btn-confirm-danger" id="confirmModalOk" onclick="confirmDialogResolve(true)">Xác nhận</button>
+            </div>
+        </div>
     </div>
 
     <!-- ===== TOAST ===== -->
