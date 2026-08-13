@@ -918,6 +918,180 @@
             border-bottom: none;
         }
 
+        /* ===== SORTABLE TABLE ===== */
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        th.sortable:hover {
+            color: #008080;
+            background: #eef5f5;
+        }
+        body.dark-mode th.sortable:hover {
+            color: #4dd0c9;
+            background: #16211f;
+        }
+        th.sorted-asc::after,
+        th.sorted-desc::after {
+            content: "";
+            display: inline-block;
+            margin-left: 6px;
+            border: 4px solid transparent;
+            vertical-align: middle;
+        }
+        th.sorted-asc::after {
+            border-bottom: 5px solid #008080;
+            border-top: none;
+        }
+        th.sorted-desc::after {
+            border-top: 5px solid #008080;
+            border-bottom: none;
+        }
+
+        /* ===== YÊU CẦU XÓA TÀI KHOẢN (super admin) ===== */
+        .delete-requests-panel {
+            background: #fff;
+            border: 1px solid #eef2f6;
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin-bottom: 18px;
+        }
+        body.dark-mode .delete-requests-panel {
+            background: #161b22;
+            border-color: #30363d;
+        }
+        .delete-requests-panel .dr-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .delete-requests-panel .dr-head h3 {
+            margin: 0;
+            font-size: 15px;
+            color: #1a1f36;
+        }
+        body.dark-mode .delete-requests-panel .dr-head h3 {
+            color: #e6edf3;
+        }
+        .dr-badge {
+            background: #f39c12;
+            color: #fff;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 1px 9px;
+        }
+        .delete-request-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 10px 12px;
+            border: 1px solid #eef2f6;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        body.dark-mode .delete-request-item {
+            border-color: #30363d;
+        }
+        .delete-request-item .req-info strong {
+            color: #1a1f36;
+        }
+        body.dark-mode .delete-request-item .req-info strong {
+            color: #e6edf3;
+        }
+        .delete-request-item .req-meta {
+            font-size: 12px;
+            color: #8a99b1;
+            margin-top: 2px;
+        }
+        .delete-request-item .req-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .dr-empty {
+            color: #8a99b1;
+            font-size: 13px;
+            padding: 6px 0;
+        }
+        .pending-del-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #b7791f;
+            background: #fdf3e3;
+            border: 1px solid #f3d9a9;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        body.dark-mode .pending-del-badge {
+            color: #f0c674;
+            background: rgba(243, 156, 18, 0.12);
+            border-color: rgba(243, 156, 18, 0.35);
+        }
+
+        /* ===== BỘ LỌC BẢNG TÀI KHOẢN ===== */
+        .table-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .table-toolbar .filter-search {
+            position: relative;
+            flex: 1 1 220px;
+            min-width: 200px;
+            max-width: 320px;
+        }
+        .table-toolbar .filter-search i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a99b1;
+            font-size: 13px;
+        }
+        .table-toolbar .filter-search input {
+            width: 100%;
+            padding: 9px 12px 9px 34px;
+            border: 1px solid #dce1e9;
+            border-radius: 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1a1f36;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .table-toolbar .filter-search input:focus {
+            border-color: #008080;
+        }
+        .table-toolbar select {
+            padding: 9px 12px;
+            border: 1px solid #dce1e9;
+            border-radius: 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1a1f36;
+            outline: none;
+            cursor: pointer;
+        }
+        body.dark-mode .table-toolbar .filter-search input,
+        body.dark-mode .table-toolbar select {
+            background: #21262d;
+            color: #e6edf3;
+            border-color: #30363d;
+        }
+        body.dark-mode .table-toolbar .filter-search i {
+            color: #768390;
+        }
+
         .status-badge {
             font-size: 11px;
             font-weight: 500;
@@ -2897,6 +3071,15 @@
 
                 <div class="stock-summary" id="usersSummary"></div>
 
+                <!-- Yêu cầu xóa tài khoản (chỉ Super Admin) -->
+                <div class="delete-requests-panel" id="deleteRequestsSection" style="display:none;">
+                    <div class="dr-head">
+                        <h3><i class="fas fa-hourglass-half" style="color:#f39c12;"></i> Yêu cầu xóa tài khoản</h3>
+                        <span class="dr-badge" id="deleteRequestsBadge">0</span>
+                    </div>
+                    <div id="deleteRequestsList"></div>
+                </div>
+
                 <div class="user-form-container" id="userFormContainer">
                     <div class="form-title">
                         <span class="form-icon"><i class="fas fa-user-plus"></i></span>
@@ -2922,8 +3105,6 @@
                                     <option value="editor">Biên tập viên</option>
                                     <option value="content-manager">Quản trị nội dung</option>
                                     <option value="admin">Quản trị viên</option>
-                                    <option value="super-admin">Super Admin</option>
-                                    <option value="support">Hỗ trợ (Support)</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -2991,6 +3172,27 @@
                     </form>
                 </div>
 
+                <div class="table-toolbar" id="usersFilterBar">
+                    <div class="filter-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="userSearch" placeholder="Tìm theo tên hoặc email..." oninput="applyUsersFilter()" />
+                    </div>
+                    <select id="userRoleFilter" onchange="applyUsersFilter()">
+                        <option value="">Tất cả vai trò</option>
+                        <option value="member">Thành viên</option>
+                        <option value="editor">Biên tập viên</option>
+                        <option value="content-manager">Quản trị nội dung</option>
+                        <option value="admin">Quản trị viên</option>
+                        <option value="super-admin">Super Admin</option>
+                    </select>
+                    <select id="userStatusFilter" onchange="applyUsersFilter()">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Không hoạt động</option>
+                        <option value="pending">Chờ kích hoạt</option>
+                    </select>
+                </div>
+
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -3019,6 +3221,9 @@
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <button class="btn-primary" id="createNewsBtn" onclick="openNewsForm()">
                             <i class="fas fa-plus"></i> Viết bài mới
+                        </button>
+                        <button class="btn-danger" id="deleteAllNewsBtn" onclick="deleteAllNews()" style="display:none;">
+                            <i class="fas fa-trash-alt"></i> Xóa toàn bộ bài viết
                         </button>
                         <button class="btn-secondary" onclick="filterNews('all')">Tất cả</button>
                         <button class="btn-secondary" onclick="filterNews('pending')">Chờ duyệt</button>
@@ -3174,11 +3379,11 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Tiêu đề</th>
-                                <th>Danh mục</th>
-                                <th>Tác giả</th>
-                                <th>Trạng thái</th>
-                                <th>Ngày đăng</th>
+                                <th class="sortable" data-sort="title" onclick="sortNews('title')">Tiêu đề</th>
+                                <th class="sortable" data-sort="category" onclick="sortNews('category')">Danh mục</th>
+                                <th class="sortable" data-sort="author" onclick="sortNews('author')">Tác giả</th>
+                                <th class="sortable" data-sort="status" onclick="sortNews('status')">Trạng thái</th>
+                                <th class="sortable" data-sort="date" onclick="sortNews('date')">Ngày đăng</th>
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
@@ -3833,6 +4038,8 @@
         let newsData = [];
         let newsPageSize = 100;  // số bài mỗi trang (bảng tin quản trị)
         let newsPage = 1;        // trang hiện tại
+        let newsSortField = null;
+        let newsSortDir = 1;
 
         async function loadNews() {
             try {
@@ -4110,6 +4317,9 @@
             setBtnDisabled('addPlanBtn', !canManagePlans());
             setBtnDisabled('toggleFreeModeBtn', !canManageFeatures());
             setBtnDisabled('addFaqBtn', !canManageFaq());
+            // Nút xóa toàn bộ bài viết: chỉ Super Admin
+            const delAllNewsBtn = document.getElementById('deleteAllNewsBtn');
+            if (delAllNewsBtn) delAllNewsBtn.style.display = currentUser.role === 'super-admin' ? '' : 'none';
         }
 
         function isAdminRole(role) {
@@ -4119,6 +4329,85 @@
         // ============================================================
         // 4. RENDER FUNCTIONS
         // ============================================================
+
+        // Bộ lọc bảng tài khoản (tìm kiếm + vai trò + trạng thái)
+        let usersFilter = { search: '', role: '', status: '' };
+        function applyUsersFilter() {
+            usersFilter.search = (document.getElementById('userSearch').value || '').trim().toLowerCase();
+            usersFilter.role = document.getElementById('userRoleFilter').value;
+            usersFilter.status = document.getElementById('userStatusFilter').value;
+            renderUsers();
+        }
+
+        // Yêu cầu xóa tài khoản (admin gửi yêu cầu → super admin phê duyệt)
+        let myDeleteRequests = [];
+        async function loadDeleteRequests() {
+            try {
+                const data = await authApi('/users/delete-requests');
+                myDeleteRequests = Array.isArray(data) ? data : [];
+            } catch (e) {
+                myDeleteRequests = [];
+            }
+            renderDeleteRequests();
+        }
+        function renderDeleteRequests() {
+            const list = document.getElementById('deleteRequestsList');
+            if (!list) return;
+            const section = document.getElementById('deleteRequestsSection');
+            const badge = document.getElementById('deleteRequestsBadge');
+
+            // Cập nhật lại bảng users để hiện badge "Chờ duyệt" (admin)
+            if (typeof renderUsers === 'function') renderUsers();
+
+            if (currentUser.role !== 'super-admin') {
+                if (section) section.style.display = 'none';
+                return;
+            }
+            const pending = myDeleteRequests.filter(r => r.status === 'pending');
+            if (badge) badge.textContent = pending.length;
+            if (section) section.style.display = 'block';
+            if (pending.length === 0) {
+                list.innerHTML = '<div class="dr-empty">Không có yêu cầu xóa nào đang chờ phê duyệt.</div>';
+                return;
+            }
+            list.innerHTML = pending.map(function(r) {
+                const when = r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : '';
+                return '<div class="delete-request-item">' +
+                    '<div class="req-info"><strong>' + (r.target_name || '') + '</strong> <span style="color:#8a99b1;font-size:12px;">(' + (r.target_email || '') + ')</span>' +
+                    '<div class="req-meta">Yêu cầu bởi: ' + (r.requester_name || '—') + ' (' + (r.requester_email || '') + ') · ' + when + '</div>' +
+                    (r.reason ? '<div class="req-meta">Lý do: ' + r.reason + '</div>' : '') +
+                    '</div>' +
+                    '<div class="req-actions">' +
+                    '<button class="btn-success" onclick="approveDeleteRequest(' + r.id + ')"><i class="fas fa-check"></i> Phê duyệt</button>' +
+                    '<button class="btn-secondary" onclick="rejectDeleteRequest(' + r.id + ')"><i class="fas fa-times"></i> Từ chối</button>' +
+                    '</div></div>';
+            }).join('');
+        }
+        async function approveDeleteRequest(requestId) {
+            const req = myDeleteRequests.find(r => r.id === requestId);
+            if (!req) return;
+            if (!await confirmDialog('Phê duyệt xóa tài khoản "' + (req.target_name || '') + '"?')) return;
+            try {
+                await authApi('/users/delete-requests/' + requestId + '/approve', 'POST');
+                showToast('✅ Đã phê duyệt và xóa "' + (req.target_name || '') + '".', 'success');
+                await loadUsers();
+                await loadDeleteRequests();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không thể phê duyệt.'), 'error');
+            }
+        }
+        async function rejectDeleteRequest(requestId) {
+            const req = myDeleteRequests.find(r => r.id === requestId);
+            if (!req) return;
+            if (!await confirmDialog('Từ chối yêu cầu xóa tài khoản "' + (req.target_name || '') + '"?')) return;
+            try {
+                await authApi('/users/delete-requests/' + requestId + '/reject', 'POST');
+                showToast('ℹ️ Đã từ chối yêu cầu xóa "' + (req.target_name || '') + '".', 'info');
+                await loadDeleteRequests();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không thể từ chối.'), 'error');
+            }
+        }
 
         function renderUsers() {
             const tbody = document.getElementById('userTableBody');
@@ -4145,8 +4434,24 @@
             const planColors = { free: 'free', basic: 'basic', premium: 'premium', pro: 'pro', admin: 'admin' };
             const planNames = { free: 'Miễn phí', basic: 'Basic', premium: 'Premium', pro: 'Pro', admin: 'Quản trị' };
 
+            let rows = usersData;
+            if (usersFilter.search) {
+                rows = rows.filter(u =>
+                    (u.name || '').toLowerCase().includes(usersFilter.search) ||
+                    (u.email || '').toLowerCase().includes(usersFilter.search)
+                );
+            }
+            if (usersFilter.role) {
+                rows = rows.filter(u => u.role === usersFilter.role);
+            }
+            if (usersFilter.status) {
+                rows = rows.filter(u => u.status === usersFilter.status);
+            }
+
             let html = '';
-            usersData.forEach(user => {
+            rows.forEach(user => {
+                const isSuperAdminActor = currentUser.role === 'super-admin';
+                const hasPendingDel = myDeleteRequests.some(r => r.status === 'pending' && r.target_user_id === user.id);
                 const canEdit = (canManageUsers() && canManageThisUser(user)) || user.id === currentUser.id;
                 const canDelete = canManageUsers() && canManageThisUser(user) && user.id !== currentUser.id;
                 const isAdmin = isAdminRole(user.role);
@@ -4173,7 +4478,12 @@
                                 <td>
                                     <div class="action-btns">
                                         ${canEdit ? `<button title="Sửa" onclick="editUser(${user.id})"><i class="fas fa-edit"></i></button>` : ''}
-                                        ${canDelete ? `<button class="danger" title="Xóa" onclick="deleteUser(${user.id})"><i class="fas fa-trash"></i></button>` : ''}
+                                        ${canDelete ? (hasPendingDel
+                                            ? `<span class="pending-del-badge"><i class="fas fa-hourglass-half"></i> Chờ duyệt</span>`
+                                            : (isSuperAdminActor
+                                                ? `<button class="danger" title="Xóa" onclick="deleteUser(${user.id})"><i class="fas fa-trash"></i></button>`
+                                                : `<button class="danger" title="Yêu cầu xóa (cần phê duyệt)" onclick="requestDeleteUser(${user.id})"><i class="fas fa-trash"></i></button>`)
+                                        ) : ''}
                                         ${canManageUsers() && canManageThisUser(user) && !isAdmin ? `<button title="Đổi gói" onclick="changeUserPlan(${user.id})"><i class="fas fa-crown"></i></button>` : ''}
                                     </div>
                                 </td>
@@ -4255,7 +4565,47 @@
             } else if (currentNewsFilter === 'published') {
                 filtered = newsData.filter(n => n.status === 'published');
             }
+            if (newsSortField) {
+                const sField = newsSortField;
+                const sDir = newsSortDir;
+                const catMap = { 'chung-khoan': 'Chứng Khoán', 'ngan-hang': 'Ngân Hàng', 'bat-dong-san': 'Bất Động Sản', 'doanh-nghiep': 'Doanh Nghiệp', 'dong-tien-thong-minh': 'Dòng Tiền Thông Minh', 'tai-chinh-quoc-te': 'Tài Chính Quốc Tế', 'cong-nghe': 'Công Nghệ', 'tin-tuc': 'Tin tức' };
+                filtered = filtered.slice().sort(function(a, b) {
+                    let va, vb;
+                    if (sField === 'date') {
+                        va = a.createdAt || '';
+                        vb = b.createdAt || '';
+                    } else if (sField === 'category') {
+                        va = catMap[a.category] || a.category || '';
+                        vb = catMap[b.category] || b.category || '';
+                    } else {
+                        va = (a[sField] || '').toString().toLowerCase();
+                        vb = (b[sField] || '').toString().toLowerCase();
+                    }
+                    if (va < vb) return -sDir;
+                    if (va > vb) return sDir;
+                    return 0;
+                });
+            }
             return filtered;
+        }
+
+        function sortNews(field) {
+            if (newsSortField === field) {
+                newsSortDir *= -1;
+            } else {
+                newsSortField = field;
+                newsSortDir = 1;
+            }
+            newsPage = 1;
+            renderNews();
+        }
+        function renderNewsSortIndicators() {
+            document.querySelectorAll('#newsTableWrapper th.sortable').forEach(function(th) {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if (th.getAttribute('data-sort') === newsSortField) {
+                    th.classList.add(newsSortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+                }
+            });
         }
 
         // Phân trang tin tức: 100 bài/trang, cuộn trong bảng
@@ -4365,6 +4715,7 @@
             });
 
             tbody.innerHTML = html;
+            renderNewsSortIndicators();
             renderNewsPagination(totalPages);
 
             const totalNews = newsData.length;
@@ -5038,7 +5389,7 @@
 
             document.getElementById('sidebar').classList.remove('mobile-open');
 
-            if (panelId === 'users') loadUsers();
+            if (panelId === 'users') { loadUsers(); loadDeleteRequests(); }
             if (panelId === 'news') loadNews();
             if (panelId === 'stocks') loadStocks();
             if (panelId === 'plans') renderPlans();
@@ -5090,6 +5441,8 @@
             if (userSubmitBtn) userSubmitBtn.innerHTML = '<i class="fas fa-save"></i> Tạo tài khoản';
             document.getElementById('userEmail').disabled = false;
             document.getElementById('userPasswordRow').style.display = '';
+            document.getElementById('userPassword').required = true;
+            document.getElementById('userConfirmPassword').required = true;
             document.getElementById('userForm').reset();
 
             const roleSelect = document.getElementById('userRole');
@@ -5140,6 +5493,9 @@
             document.getElementById('userJoined').value = user.joined && user.joined !== '—' ? user.joined : '';
 
             document.getElementById('userPasswordRow').style.display = 'none';
+            // Chỉnh sửa: bỏ required ở 2 ô mật khẩu (đang ẩn) để native validation không chặn submit
+            document.getElementById('userPassword').required = false;
+            document.getElementById('userConfirmPassword').required = false;
             const roleSelect = document.getElementById('userRole');
             configureRoleSelect();
             roleSelect.value = user.role;
@@ -5413,8 +5769,9 @@
         }
 
         async function deleteUser(id) {
-            if (!canManageUsers()) {
-                showWarning('Bạn không có quyền xóa người dùng.');
+            // Chỉ Super Admin mới được xóa tài khoản trực tiếp
+            if (currentUser.role !== 'super-admin') {
+                showWarning('Chỉ Super Admin mới được xóa tài khoản trực tiếp.');
                 return;
             }
             const user = usersData.find(u => u.id === id);
@@ -5428,8 +5785,32 @@
                     await authApi('/users/' + id, 'DELETE');
                     showToast('✅ Đã xóa người dùng.', 'success');
                     await loadUsers();
+                    await loadDeleteRequests();
                 } catch (err) {
                     showToast('❌ ' + (err.message || 'Không thể xóa người dùng.'), 'error');
+                }
+            }
+        }
+
+        async function requestDeleteUser(id) {
+            if (!canManageUsers()) {
+                showWarning('Bạn không có quyền yêu cầu xóa người dùng.');
+                return;
+            }
+            const user = usersData.find(u => u.id === id);
+            if (!user) return;
+            if (user.id === currentUser.id) {
+                showToast('❌ Bạn không thể xóa chính mình.', 'error');
+                return;
+            }
+            if (await confirmDialog('Gửi yêu cầu xóa người dùng "' + user.name + '"? Yêu cầu cần Super Admin phê duyệt.')) {
+                try {
+                    await authApi('/users/delete-requests', 'POST', { user_id: id, reason: '' });
+                    showToast('📨 Đã gửi yêu cầu xóa "' + user.name + '". Chờ Super Admin phê duyệt.', 'success');
+                    await loadUsers();
+                    await loadDeleteRequests();
+                } catch (err) {
+                    showToast('❌ ' + (err.message || 'Không thể gửi yêu cầu xóa.'), 'error');
                 }
             }
         }
@@ -5486,6 +5867,19 @@
                 } catch (err) {
                     showToast('❌ ' + (err.message || 'Không thể xóa bài viết.'), 'error');
                 }
+            }
+        }
+
+        async function deleteAllNews() {
+            if (currentUser.role !== 'super-admin') return;
+            const total = newsData.length;
+            if (!await confirmDialog('Xóa toàn bộ ' + total + ' bài viết? Hành động này không thể hoàn tác.')) return;
+            try {
+                await authApi('/news/all', 'DELETE');
+                showToast('🗑️ Đã xóa toàn bộ ' + total + ' bài viết.', 'success');
+                await loadNews();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không thể xóa bài viết.'), 'error');
             }
         }
 
@@ -6720,6 +7114,12 @@
         window.showToast = showToast;
         window.confirmDialog = confirmDialog;
         window.confirmDialogResolve = confirmDialogResolve;
+        window.sortNews = sortNews;
+        window.applyUsersFilter = applyUsersFilter;
+        window.deleteAllNews = deleteAllNews;
+        window.requestDeleteUser = requestDeleteUser;
+        window.approveDeleteRequest = approveDeleteRequest;
+        window.rejectDeleteRequest = rejectDeleteRequest;
         window.toggleMobileSidebar = toggleMobileSidebar;
         window.execCmd = execCmd;
         window.openImageUploadModal = openImageUploadModal;

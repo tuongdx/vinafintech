@@ -723,6 +723,51 @@
                 font-size: 13px;
             }
         }
+
+        /* Bài viết không tồn tại */
+        .article-not-found {
+            text-align: center;
+            padding: 64px 24px;
+            color: #6b7a8f;
+        }
+        .article-not-found i {
+            font-size: 44px;
+            color: #b8c4d4;
+            margin-bottom: 16px;
+        }
+        .article-not-found h2 {
+            font-size: 20px;
+            color: #1a1f36;
+            margin-bottom: 10px;
+        }
+        .article-not-found p {
+            font-size: 14px;
+            max-width: 420px;
+            margin: 0 auto 20px;
+            line-height: 1.6;
+        }
+        .article-not-found a {
+            display: inline-block;
+            background: #008080;
+            color: #fff;
+            padding: 9px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .article-not-found a:hover {
+            background: #006b6b;
+        }
+        body.dark-mode .article-not-found {
+            color: #9fb0c7;
+        }
+        body.dark-mode .article-not-found i {
+            color: #39414d;
+        }
+        body.dark-mode .article-not-found h2 {
+            color: #e6edf3;
+        }
     </style>
     <link rel="stylesheet" href="/static/typography.css" />
 </head>
@@ -738,6 +783,14 @@
         ARTICLE CONTAINER
         ========================================================== -->
         <main class="article-container">
+
+            <!-- ===== BÀI VIẾT KHÔNG TỒN TẠI ===== -->
+            <div class="article-not-found" id="articleNotFound" hidden>
+                <i class="fas fa-file-circle-question"></i>
+                <h2>Bài viết không tồn tại</h2>
+                <p>Bài viết này có thể đã bị gỡ hoặc không còn khả dụng. Vui lòng quay lại danh sách tin tức.</p>
+                <a href="/tin-tuc" target="_top">← Quay lại Tin tức</a>
+            </div>
 
             <!-- ===== HEADER BÀI VIẾT ===== -->
             <header class="article-header">
@@ -997,7 +1050,15 @@
             fetch('/api/news/' + encodeURIComponent(id))
                 .then(function(r) { return r.ok ? r.json() : null; })
                 .then(function(n) {
-                    if (!n) return;
+                    if (!n) {
+                        // Bài viết đã bị xoá → ẩn bài mẫu, hiện thông báo "không tồn tại"
+                        const nf = document.getElementById('articleNotFound');
+                        if (nf) nf.hidden = false;
+                        const hidden = document.querySelectorAll('.article-header, .featured-image, .article-body, .article-footer, .related-news');
+                        hidden.forEach(function(el) { el.style.display = 'none'; });
+                        document.title = 'Bài viết không tồn tại - TuniX';
+                        return;
+                    }
                     function esc(s) {
                         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                     }
@@ -1074,10 +1135,11 @@
                                     ? '<img src="' + esc(rn.image_url) + '" alt="" />'
                                     : '<i class="fas fa-newspaper" style="font-size:20px;color:#6b7a8f;display:flex;align-items:center;justify-content:center;height:100%;"></i>';
                                 const time = rn.created_at ? new Date(rn.created_at).toLocaleString('vi-VN') : '';
+                                const rUrl = rn.slug ? '/' + rn.slug + '-' + rn.id + '.html' : '/tintuc?id=' + rn.id;
                                 return '<article class="related-item" data-id="' + rn.id + '" data-slug="' + esc(rn.slug || '') + '" style="cursor:pointer;">' +
                                     '<div class="thumb">' + thumb + '</div>' +
                                     '<div class="info">' +
-                                        '<a href="#">' + esc(rn.title) + '</a>' +
+                                        '<a href="' + rUrl + '">' + esc(rn.title) + '</a>' +
                                         '<span class="time">' + esc(time) + '</span>' +
                                     '</div></article>';
                             }).join('');

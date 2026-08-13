@@ -123,6 +123,7 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             transition: color 0.2s ease;
+            text-decoration: none;
         }
 
         .news-card:hover .title {
@@ -343,6 +344,7 @@
             display: -webkit-box;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            text-decoration: none;
         }
         .news-cell.big .news-cell-title {
             font-size: 17px;
@@ -436,6 +438,7 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            text-decoration: none;
         }
         .news-row:hover .nr-title {
             color: #008080;
@@ -767,12 +770,13 @@
                 var cat = categoryLabel(n.category);
                 var catIc = categoryIcon(n.category);
                 var time = formatTime(n.created_at);
+                var url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
                 return '<article class="news-card" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                     '<div class="thumb">' + img +
                         '<span class="cat-badge"><i class="fas ' + catIc + '"></i>' + esc(cat) + '</span>' +
                     '</div>' +
                     '<div class="body">' +
-                        '<div class="title">' + esc(n.title) + '</div>' +
+                        '<a class="title" href="' + url + '">' + esc(n.title) + '</a>' +
                         (n.summary ? '<div class="summary">' + esc(n.summary) + '</div>' : '') +
                         (time ? '<div class="meta"><span><i class="far fa-clock"></i>' + esc(time) + '</span></div>' : '') +
                     '</div>' +
@@ -780,10 +784,11 @@
             }
 
             function bindCard(card) {
-                card.addEventListener('click', function () {
+                card.addEventListener('click', function (e) {
                     var id = card.getAttribute('data-id');
                     var slug = card.getAttribute('data-slug');
                     if (!id) return;
+                    if (e && e.preventDefault) e.preventDefault();
                     if (window.parent && window.parent !== window) {
                         window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug }, '*');
                     }
@@ -927,12 +932,13 @@
                 var cat = categoryLabel(n.category);
                 var catIc = categoryIcon(n.category);
                 var time = formatTime(n.created_at);
+                var url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
                 return '<div class="news-cell ' + size + '" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                     img +
                     '<div class="news-cell-shade"></div>' +
                     '<span class="news-cell-cat"><i class="fas ' + catIc + '"></i>' + esc(cat) + '</span>' +
                     '<div class="news-cell-body">' +
-                        '<div class="news-cell-title">' + esc(n.title) + '</div>' +
+                        '<a class="news-cell-title" href="' + url + '">' + esc(n.title) + '</a>' +
                         (time ? '<div class="news-cell-meta"><i class="far fa-clock"></i>' + esc(time) + '</div>' : '') +
                     '</div>' +
                 '</div>';
@@ -945,10 +951,11 @@
                     : '<i class="fas fa-newspaper"></i>';
                 var cat = categoryLabel(n.category);
                 var time = formatTime(n.created_at);
+                var url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
                 return '<div class="news-row" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                     '<div class="nr-img">' + img + '</div>' +
                     '<div class="nr-body">' +
-                        '<div class="nr-title">' + esc(n.title) + '</div>' +
+                        '<a class="nr-title" href="' + url + '">' + esc(n.title) + '</a>' +
                         '<div class="nr-meta">' +
                             '<span class="nr-cat">' + esc(cat) + '</span>' +
                             (time ? '<span><i class="far fa-clock"></i>' + esc(time) + '</span>' : '') +
@@ -1024,10 +1031,11 @@
 
                     gridEl.innerHTML = html;
                     gridEl.querySelectorAll('.news-cell, .news-row').forEach(function (el) {
-                        el.addEventListener('click', function () {
+                        el.addEventListener('click', function (e) {
                             var id = el.getAttribute('data-id');
                             var slug = el.getAttribute('data-slug');
                             if (!id) return;
+                            if (e && e.preventDefault) e.preventDefault();
                             if (window.parent && window.parent !== window) {
                                 window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug }, '*');
                             }

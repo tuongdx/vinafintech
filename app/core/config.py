@@ -36,11 +36,6 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     google_redirect_uri: str = ""
 
-    # OAuth Facebook
-    facebook_client_id: str = ""
-    facebook_client_secret: str = ""
-    facebook_redirect_uri: str = ""
-
     # Rate limit đăng nhập (chống brute-force) — in-memory
     login_rate_limit_minutes: int = 15
     login_rate_limit_max: int = 10

@@ -71,6 +71,28 @@ class UserOut(UserBase):
         from_attributes = True
 
 
+class UserDeleteRequestCreate(BaseModel):
+    user_id: int
+    reason: str = ""
+
+
+class UserDeleteRequestOut(BaseModel):
+    id: int
+    target_user_id: int
+    target_name: str = ""
+    target_email: str = ""
+    requested_by_id: int
+    requester_name: str = ""
+    requester_email: str = ""
+    reason: str = ""
+    status: str
+    created_at: datetime | None = None
+    reviewed_at: datetime | None = None
+
+    class Config:
+        from_attributes = True
+
+
 class AuthResponse(TokenPair):
     user: UserOut
 
@@ -181,6 +203,46 @@ class NotificationReadCreate(BaseModel):
 class NotificationsOut(BaseModel):
     favorites: list[WatchlistOut]
     items: list[NotificationItem]
+
+
+class NotificationOut(BaseModel):
+    id: int
+    type: str
+    title: str
+    body: str = ""
+    symbol: str | None = None
+    link: str | None = None
+    is_read: bool = False
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class NotificationListOut(BaseModel):
+    items: list[NotificationOut]
+    unread: int
+
+
+class NotificationReadAllCreate(BaseModel):
+    type: str | None = None  # "stock" | "news" | "system" | null = đọc tất cả
+
+
+class SystemAnnouncementCreate(BaseModel):
+    title: str
+    body: str = ""
+    link: str | None = None
+
+
+class SystemAnnouncementOut(BaseModel):
+    id: int
+    title: str
+    body: str = ""
+    link: str | None = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class FAQCreate(BaseModel):

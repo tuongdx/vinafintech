@@ -21,6 +21,7 @@ _SYMBOL_DIRECTORY_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / 
 _SYMBOL_SUMMARY_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "symbol_summaries.json"
 _SYMBOL_SCREENER_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "symbol_screener.json"
 _SYMBOL_DIVIDEND_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "symbol_dividends.json"
+_SYMBOL_BUSINESS_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "symbol_business.json"
 _EXCHANGE_CANONICAL = {"HSX": "HOSE", "HOSE": "HOSE", "HNX": "HNX", "UPCOM": "UPCOM", "UPCOMM": "UPCOM"}
 _EXCHANGE_CHART_SYMBOLS = {
     "HOSE": ("VNINDEX", "index"),
@@ -555,6 +556,87 @@ def _strip_html(value: Any) -> str:
     return text
 
 
+_business_file_cache: dict[str, str] | None = None
+
+
+def _read_business_cache_file() -> dict[str, str]:
+    global _business_file_cache
+    if _business_file_cache is not None:
+        return _business_file_cache
+    if not _SYMBOL_BUSINESS_CACHE_PATH.exists():
+        _business_file_cache = {}
+        return _business_file_cache
+    try:
+        raw = json.loads(_SYMBOL_BUSINESS_CACHE_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        _business_file_cache = {}
+        return _business_file_cache
+    if not isinstance(raw, dict):
+        _business_file_cache = {}
+        return _business_file_cache
+    _business_file_cache = {str(k).upper(): (v if isinstance(v, str) else "") for k, v in raw.items()}
+    return _business_file_cache
+
+
+def _write_business_cache_file() -> None:
+    _ensure_cache_dir()
+    cache_data = _read_business_cache_file() or {}
+    try:
+        _SYMBOL_BUSINESS_CACHE_PATH.write_text(json.dumps(cache_data, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _fetch_vnstock_business_model(symbol: str) -> str:
+    """Ngành nghề kinh doanh của doanh nghiệp từ vnstock company.info (cột business_model)."""
+    symbol_upper = symbol.upper().strip()
+    if not symbol_upper:
+        return ""
+    try:
+        from vnstock import Reference  # lazy import
+
+        df = Reference().company(symbol_upper).info()
+        if df is not None and not df.empty:
+            return _strip_html(df.iloc[0].get("business_model"))
+    except Exception:
+        return ""
+    return ""
+
+
+def get_business_line(symbol: str) -> str:
+    """Ngành nghề kinh doanh (ưu tiên vnstock, có memory + file cache)."""
+    symbol_upper = symbol.upper().strip()
+    if not symbol_upper:
+        return ""
+    cache_key = f"business-line:{symbol_upper}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    file_cache = _read_business_cache_file()
+    if symbol_upper in file_cache:
+        cache.set(cache_key, file_cache[symbol_upper], ttl_seconds=86400)
+        return file_cache[symbol_upper]
+    business = _fetch_vnstock_business_model(symbol_upper)
+    if business:
+        file_cache[symbol_upper] = business
+        cache.set(cache_key, business, ttl_seconds=86400)
+        _write_business_cache_file()
+    return business
+
+
+def _safe_business_line(symbol: str, summary: dict[str, Any]) -> str:
+    """Ngành nghề kinh doanh cho mọi mã: ưu tiên vnstock; nếu không có thì chỉ
+    dùng businessLine của Simplize khi nó KHÁC businessOverall (tránh trùng nội dung)."""
+    line = get_business_line(symbol)
+    if line:
+        return line
+    simplize_line = _strip_html(summary.get("businessLine"))
+    simplize_overall = _strip_html(summary.get("businessOverall"))
+    if simplize_line and simplize_line != simplize_overall:
+        return simplize_line
+    return ""
+
+
 def get_company_summary(symbol: str) -> dict[str, Any]:
     """Tóm tắt thông tin doanh nghiệp (Simplize summary) cho popup."""
     symbol_upper = symbol.upper().strip()
@@ -570,7 +652,8 @@ def get_company_summary(symbol: str) -> dict[str, Any]:
         "sector": str(summary.get("bcEconomicSectorName") or ""),
         "website": str(summary.get("website") or ""),
         "main_service": _strip_html(summary.get("mainService")),
-        "business_line": _strip_html(summary.get("businessLine")),
+        # Ngành nghề kinh doanh cho toàn bộ mã cổ phiếu (ưu tiên vnstock, không trùng Giới thiệu chung)
+        "business_line": _safe_business_line(symbol_upper, summary),
         "business_strategy": _strip_html(summary.get("businessStrategy")),
         "business_risk": _strip_html(summary.get("businessRisk")),
         "business_overall": _strip_html(summary.get("businessOverall")),
@@ -1835,6 +1918,166 @@ def get_market_overview() -> list[dict[str, Any]]:
     except Exception:
         cache.set(key, fallback, ttl_seconds=10)
         return fallback
+
+
+_YAHOO_BASE = "https://query1.finance.yahoo.com"
+
+
+def _yahoo_index(symbol: str, period: str = "1y") -> dict[str, Any] | None:
+    """Lấy giá + lịch sử chỉ số quốc tế từ Yahoo Finance (fallback khi Simplize không có)."""
+    period_map = {"1m": "1mo", "3m": "3mo", "6m": "6mo", "1y": "1y", "5y": "5y"}
+    rng = period_map.get(period, "1y")
+    url = f"{_YAHOO_BASE}/v8/finance/chart/{_encode_ticker_for_api(symbol)}?range={rng}&interval=1d"
+    try:
+        req = Request(url, headers={"User-Agent": "Mozilla/5.0", "accept": "application/json"})
+        with urlopen(req, timeout=15) as resp:  # nosec B310
+            data = json.loads(resp.read().decode("utf-8"))
+        result = (data.get("chart") or {}).get("result")
+        if not result:
+            return None
+        r0 = result[0]
+        meta = r0.get("meta", {})
+        timestamps = r0.get("timestamp") or []
+        quote = ((r0.get("indicators") or {}).get("quote") or [{}])[0]
+        opens = quote.get("open") or []
+        highs = quote.get("high") or []
+        lows = quote.get("low") or []
+        closes = quote.get("close") or []
+        volumes = quote.get("volume") or []
+        history: list[dict[str, Any]] = []
+        for i in range(len(timestamps)):
+            c = closes[i] if i < len(closes) else None
+            if c is None:
+                continue
+            history.append(
+                {
+                    "time": _unix_to_iso(timestamps[i]),
+                    "open": _to_float(opens[i] if i < len(opens) else c),
+                    "high": _to_float(highs[i] if i < len(highs) else c),
+                    "low": _to_float(lows[i] if i < len(lows) else c),
+                    "close": _to_float(c),
+                    "volume": int(_to_float(volumes[i] if i < len(volumes) else 0)),
+                }
+            )
+        price = _to_float(meta.get("regularMarketPrice", 0))
+        prev = _to_float(meta.get("chartPreviousClose", 0))
+        if (not price or price <= 0) and history:
+            price = history[-1]["close"]
+        if (not prev or prev <= 0) and len(history) >= 2:
+            prev = history[-2]["close"]
+        change = (price - prev) if price and prev else 0.0
+        pct = (change / prev * 100) if prev else 0.0
+        return {
+            "price": price,
+            "change": change,
+            "percent_change": pct,
+            "as_of": history[-1]["time"] if history else "",
+            "history": history,
+        }
+    except Exception:  # noqa: BLE001
+        return None
+
+
+_INDEX_DEFS: dict[str, dict[str, Any]] = {
+    "vnindex": {"label": "VNINDEX", "unit": "", "decimals": 1, "simplize": ("VNINDEX", "index")},
+    "vn30": {"label": "VN30", "unit": "", "decimals": 1, "simplize": ("VN30", "index")},
+    "hnx": {"label": "HNX", "unit": "", "decimals": 1, "simplize": ("HNXINDEX", "index")},
+    "hnx30": {"label": "HNX30", "unit": "", "decimals": 1, "simplize": ("HNX30", "index")},
+    "upcom": {"label": "UPCOM", "unit": "", "decimals": 1, "simplize": ("UPINDEX", "index")},
+    "bitcoin": {"label": "Bitcoin", "unit": "USD", "decimals": 0, "simplize": ("BTCUSDT", "crypto")},
+    "gold_world": {"label": "Vàng thế giới", "unit": "USD/oz", "decimals": 2, "simplize": ("GC=F", "futures")},
+    "gold_vn": {"label": "Vàng trong nước", "unit": "triệu/lượng", "decimals": 2, "simplize": ("GOLD:VN:SELL", "index"), "gold_vn_scale": True},
+    "oil": {"label": "Dầu thô", "unit": "USD/thùng", "decimals": 2, "simplize": ("CL=F", "futures")},
+    "dowjones": {"label": "Dow Jones", "unit": "điểm", "decimals": 1, "yahoo": "^DJI"},
+    "nikkei": {"label": "Nikkei", "unit": "điểm", "decimals": 1, "yahoo": "^N225"},
+    "kospi": {"label": "KOSPI", "unit": "điểm", "decimals": 1, "yahoo": "^KS11"},
+    "hkex": {"label": "HKEX", "unit": "điểm", "decimals": 1, "yahoo": "^HSI"},
+    "sgx": {"label": "SGX", "unit": "điểm", "decimals": 1, "yahoo": "^STI"},
+    "sp500": {"label": "S&P 500", "unit": "điểm", "decimals": 1, "yahoo": "^GSPC"},
+    "nasdaq": {"label": "NASDAQ", "unit": "điểm", "decimals": 1, "yahoo": "^IXIC"},
+}
+
+
+def get_index_detail(key: str, period: str = "1y") -> dict[str, Any]:
+    """Chi tiết một chỉ số: giá hiện tại + lịch sử OHLCV để vẽ biểu đồ / xu hướng.
+
+    Nguồn: Simplize (VN index/crypto/futures) → fallback Yahoo Finance (chỉ số quốc tế)
+    → fallback market-overview.
+    """
+    key = str(key).strip().lower()
+    cfg = _INDEX_DEFS.get(key)
+    if not cfg:
+        return {"valid": False, "key": key, "message": "Không tìm thấy chỉ số."}
+
+    cache_key = f"index-detail:{key}:{period}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    result: dict[str, Any] = {
+        "valid": True,
+        "key": key,
+        "label": cfg["label"],
+        "unit": cfg["unit"],
+        "decimals": cfg["decimals"],
+        "value": 0.0,
+        "change": 0.0,
+        "percent_change": 0.0,
+        "as_of": "",
+        "history": [],
+    }
+
+    # 1) Simplize
+    simplize = cfg.get("simplize")
+    if simplize:
+        ticker, type_name = simplize
+        try:
+            last_map = _simplize_last(type_name, [ticker])
+            last = last_map.get(ticker.upper(), {})
+            value = _to_float(last.get("price", 0))
+            if cfg.get("gold_vn_scale"):
+                value = round(value / 1000, 4)
+            result["value"] = round(value, 4)
+            result["change"] = round(_to_float(last.get("netChange", 0)), 4)
+            result["percent_change"] = round(_to_float(last.get("pctChange", 0)), 4)
+            result["as_of"] = _unix_to_iso(last.get("date", 0))
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            history = _simplize_chart(ticker, type_name, _map_period(period))
+            if cfg.get("gold_vn_scale"):
+                for point in history:
+                    for field in ("open", "high", "low", "close"):
+                        if point.get(field) is not None:
+                            point[field] = round(point[field] / 1000, 4)
+            result["history"] = history
+            if not result.get("as_of") and history:
+                result["as_of"] = history[-1].get("time", "")
+        except Exception:  # noqa: BLE001
+            result["history"] = []
+
+    # 2) Yahoo fallback cho chỉ số quốc tế (nikkei/kospi/hkex/sgx/dowjones)
+    if (result["value"] == 0 or not result["history"]) and cfg.get("yahoo"):
+        y = _yahoo_index(cfg["yahoo"], period)
+        if y:
+            result["value"] = round(y["price"], 4)
+            result["change"] = round(y["change"], 4)
+            result["percent_change"] = round(y["percent_change"], 4)
+            result["as_of"] = y.get("as_of", "")
+            result["history"] = y.get("history", [])
+
+    # 3) Fallback market-overview (vnindex/vn30/dowjones/bitcoin/gold_*)
+    if result["value"] == 0:
+        for item in get_market_overview():
+            if item.get("key") == key:
+                result["value"] = item.get("value", 0)
+                result["change"] = item.get("change", 0)
+                result["percent_change"] = item.get("percent_change", 0)
+                result["as_of"] = item.get("as_of", "")
+                break
+
+    cache.set(cache_key, result, ttl_seconds=30)
+    return result
 
 
 def get_indices() -> list[dict[str, Any]]:

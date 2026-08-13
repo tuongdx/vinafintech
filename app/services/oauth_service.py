@@ -1,4 +1,4 @@
-"""OAuth 2.0 / OpenID Connect cho Google & Facebook.
+"""OAuth 2.0 / OpenID Connect cho Google.
 
 - Luồng chuẩn Authorization Code, verify hoàn toàn ở BACKEND (không tin dữ liệu frontend gửi lên).
 - ``state`` ngẫu nhiên được lưu server-side (in-memory, có TTL) để chống CSRF.
@@ -16,7 +16,7 @@ from app.core.config import settings
 
 logger = logging.getLogger("tunix.oauth")
 
-_PROVIDERS = {"google", "facebook"}
+_PROVIDERS = {"google"}
 
 # state -> {next, created_at}; in-memory (single process) — note trong report.
 _STATE_STORE: dict[str, dict[str, Any]] = {}
@@ -49,9 +49,6 @@ def _client_config(provider: str) -> tuple[str, str, str] | None:
     if provider == "google":
         if settings.google_client_id and settings.google_client_secret and settings.google_redirect_uri:
             return settings.google_client_id, settings.google_client_secret, settings.google_redirect_uri
-    elif provider == "facebook":
-        if settings.facebook_client_id and settings.facebook_client_secret and settings.facebook_redirect_uri:
-            return settings.facebook_client_id, settings.facebook_client_secret, settings.facebook_redirect_uri
     return None
 
 
@@ -71,18 +68,6 @@ def authorize_url(provider: str, state: str) -> str:
                     "scope": "openid email profile",
                     "state": state,
                     "prompt": "select_account",
-                }
-            )
-        )
-    if provider == "facebook":
-        return (
-            "https://www.facebook.com/v19.0/dialog/oauth?"
-            + urlencode(
-                {
-                    "client_id": settings.facebook_client_id,
-                    "redirect_uri": settings.facebook_redirect_uri,
-                    "state": state,
-                    "scope": "email",
                 }
             )
         )
@@ -128,42 +113,7 @@ def _google_exchange_code(code: str) -> dict[str, Any]:
     }
 
 
-def _facebook_exchange_code(code: str) -> dict[str, Any]:
-    client_id, client_secret, redirect_uri = _client_config("facebook")  # type: ignore[misc]
-    token = _http(
-        "https://graph.facebook.com/v19.0/oauth/access_token?"
-        + urlencode(
-            {
-                "client_id": client_id,
-                "redirect_uri": redirect_uri,
-                "client_secret": client_secret,
-                "code": code,
-            }
-        )
-    )
-    access_token = token.get("access_token")
-    if not access_token:
-        raise RuntimeError("Facebook token exchange failed")
-    info = _http(
-        "https://graph.facebook.com/v19.0/me?"
-        + urlencode({"fields": "id,name,email,picture.type(large)", "access_token": access_token})
-    )
-    avatar = ""
-    pic = info.get("picture") or {}
-    if isinstance(pic, dict):
-        pic_data = pic.get("data") or {}
-        avatar = pic_data.get("url") or ""
-    return {
-        "provider_user_id": str(info.get("id", "")),
-        "email": (info.get("email") or "").lower(),
-        "full_name": info.get("name") or "",
-        "avatar": avatar,
-    }
-
-
 def exchange_code(provider: str, code: str) -> dict[str, Any]:
     if provider == "google":
         return _google_exchange_code(code)
-    if provider == "facebook":
-        return _facebook_exchange_code(code)
     raise ValueError(f"Unsupported provider: {provider}")

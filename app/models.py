@@ -37,6 +37,12 @@ class PlanTierEnum(str, enum.Enum):
     pro = "pro"
 
 
+class UserDeleteRequestStatus(str, enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -64,20 +70,37 @@ class User(Base):
 
 
 class SocialAccount(Base):
-    """Liên kết tài khoản mạng xã hội (Google/Facebook) với user."""
+    """Liên kết tài khoản mạng xã hội (Google) với user."""
 
     __tablename__ = "social_accounts"
     __table_args__ = (UniqueConstraint("provider", "provider_user_id", name="uq_social_provider_user"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
-    provider: Mapped[str] = mapped_column(String(50), nullable=False)  # google | facebook
+    provider: Mapped[str] = mapped_column(String(50), nullable=False)  # google
     provider_user_id: Mapped[str] = mapped_column(String(255), nullable=False)
     provider_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user: Mapped[User] = relationship("User", back_populates="social_accounts")
+
+
+class UserDeleteRequest(Base):
+    """Yêu cầu xóa tài khoản do admin gửi, chờ super-admin phê duyệt."""
+
+    __tablename__ = "user_delete_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    target_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    requested_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), default="")
+    status: Mapped[UserDeleteRequestStatus] = mapped_column(
+        Enum(UserDeleteRequestStatus), default=UserDeleteRequestStatus.pending, nullable=False
+    )
+    reviewed_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class RevokedToken(Base):
@@ -250,6 +273,44 @@ class NotificationRead(Base):
     read_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (UniqueConstraint("user_id", "news_id", name="uq_notif_read_user_news"),)
+
+
+class NotificationType(str, enum.Enum):
+    stock = "stock"
+    news = "news"
+    system = "system"
+
+
+class Notification(Base):
+    """Thông báo cá nhân cho user: cổ phiếu / tin tức / hệ thống (có lịch sử + trạng thái đã đọc)."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    type: Mapped[NotificationType] = mapped_column(Enum(NotificationType), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), default="")
+    body: Mapped[str] = mapped_column(Text, default="")
+    symbol: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    link: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # ref_key giúp tránh sinh trùng (vd: report:12, news:34, ceiling:TCB:2026-08-13, sys:1)
+    ref_key: Mapped[str] = mapped_column(String(255), default="", index=True)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("user_id", "type", "ref_key", name="uq_notif_user_type_ref"),)
+
+
+class SystemAnnouncement(Base):
+    """Thông báo hệ thống phát đến toàn bộ thành viên (TuniX đổi mới, mở khoá tính năng...)."""
+
+    __tablename__ = "system_announcements"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String(255), default="")
+    body: Mapped[str] = mapped_column(Text, default="")
+    link: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class StockSymbol(Base):

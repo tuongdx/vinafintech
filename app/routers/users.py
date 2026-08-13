@@ -1,11 +1,21 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, require_roles
 from app.core.security import get_password_hash
 from app.db import get_db
-from app.models import PlanTierEnum, RoleEnum, User
-from app.schemas import UserCreate, UserOut, UserSettingsOut, UserSettingsUpdate, UserUpdate
+from app.models import PlanTierEnum, RoleEnum, User, UserDeleteRequest, UserDeleteRequestStatus
+from app.schemas import (
+    UserCreate,
+    UserDeleteRequestCreate,
+    UserDeleteRequestOut,
+    UserOut,
+    UserSettingsOut,
+    UserSettingsUpdate,
+    UserUpdate,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -46,6 +56,24 @@ def _last_super_admin(db: Session) -> int:
     return (
         db.query(User).filter(User.role == RoleEnum.super_admin, User.is_active.is_(True)).count() or 0
     )
+
+
+def _delete_request_out(r: UserDeleteRequest, db: Session) -> dict:
+    target = db.query(User).filter(User.id == r.target_user_id).first()
+    requester = db.query(User).filter(User.id == r.requested_by_id).first()
+    return {
+        "id": r.id,
+        "target_user_id": r.target_user_id,
+        "target_name": target.full_name if target else "Đã xóa",
+        "target_email": target.email if target else "",
+        "requested_by_id": r.requested_by_id,
+        "requester_name": requester.full_name if requester else "",
+        "requester_email": requester.email if requester else "",
+        "reason": r.reason or "",
+        "status": r.status.value,
+        "created_at": r.created_at,
+        "reviewed_at": r.reviewed_at,
+    }
 
 
 @router.get("", response_model=list[UserOut])
@@ -147,8 +175,9 @@ def update_user(
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(RoleEnum.admin, RoleEnum.super_admin)),
+    current_user: User = Depends(require_roles(RoleEnum.super_admin)),
 ):
+    # Chỉ Super Admin mới được xóa trực tiếp; admin phải gửi yêu cầu phê duyệt.
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="Không thể xóa tài khoản của chính mình.")
     user = db.query(User).filter(User.id == user_id).first()
@@ -237,3 +266,99 @@ def update_my_settings(
     db.commit()
     db.refresh(current_user)
     return _settings_of(current_user)
+
+
+# ---------------------------------------------------------------------------
+# Yêu cầu xóa tài khoản (admin gửi yêu cầu, super-admin phê duyệt)
+# ---------------------------------------------------------------------------
+@router.post("/delete-requests", response_model=UserDeleteRequestOut)
+def create_delete_request(
+    payload: UserDeleteRequestCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(RoleEnum.admin, RoleEnum.super_admin)),
+):
+    target = db.query(User).filter(User.id == payload.user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    if target.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Không thể xóa tài khoản của chính mình.")
+    if not _can_manage_user(current_user, target):
+        raise HTTPException(status_code=403, detail="Bạn không có quyền xóa tài khoản này.")
+    if target.role == RoleEnum.super_admin and _last_super_admin(db) <= 1:
+        raise HTTPException(status_code=400, detail="Không thể xóa super admin cuối cùng.")
+    existing = (
+        db.query(UserDeleteRequest)
+        .filter(
+            UserDeleteRequest.target_user_id == target.id,
+            UserDeleteRequest.status == UserDeleteRequestStatus.pending,
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Đã có yêu cầu xóa đang chờ phê duyệt cho tài khoản này.")
+    req = UserDeleteRequest(
+        target_user_id=target.id,
+        requested_by_id=current_user.id,
+        reason=payload.reason or "",
+    )
+    db.add(req)
+    db.commit()
+    db.refresh(req)
+    return _delete_request_out(req, db)
+
+
+@router.get("/delete-requests", response_model=list[UserDeleteRequestOut])
+def list_delete_requests(
+    status: str | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(RoleEnum.admin, RoleEnum.super_admin)),
+):
+    query = db.query(UserDeleteRequest)
+    # Super-admin xem được tất cả; admin chỉ xem yêu cầu của chính mình
+    if current_user.role != RoleEnum.super_admin:
+        query = query.filter(UserDeleteRequest.requested_by_id == current_user.id)
+    if status:
+        query = query.filter(UserDeleteRequest.status == status)
+    query = query.order_by(UserDeleteRequest.created_at.desc())
+    return [_delete_request_out(r, db) for r in query.all()]
+
+
+@router.post("/delete-requests/{request_id}/approve")
+def approve_delete_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(RoleEnum.super_admin)),
+):
+    req = db.query(UserDeleteRequest).filter(UserDeleteRequest.id == request_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Yêu cầu không tồn tại.")
+    if req.status != UserDeleteRequestStatus.pending:
+        raise HTTPException(status_code=400, detail="Yêu cầu đã được xử lý trước đó.")
+    target = db.query(User).filter(User.id == req.target_user_id).first()
+    if target:
+        if target.role == RoleEnum.super_admin and _last_super_admin(db) <= 1:
+            raise HTTPException(status_code=400, detail="Không thể xóa super admin cuối cùng.")
+        db.delete(target)
+    req.status = UserDeleteRequestStatus.approved
+    req.reviewed_by_id = current_user.id
+    req.reviewed_at = datetime.utcnow()
+    db.commit()
+    return {"message": "Approved"}
+
+
+@router.post("/delete-requests/{request_id}/reject")
+def reject_delete_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(RoleEnum.super_admin)),
+):
+    req = db.query(UserDeleteRequest).filter(UserDeleteRequest.id == request_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Yêu cầu không tồn tại.")
+    if req.status != UserDeleteRequestStatus.pending:
+        raise HTTPException(status_code=400, detail="Yêu cầu đã được xử lý trước đó.")
+    req.status = UserDeleteRequestStatus.rejected
+    req.reviewed_by_id = current_user.id
+    req.reviewed_at = datetime.utcnow()
+    db.commit()
+    return {"message": "Rejected"}

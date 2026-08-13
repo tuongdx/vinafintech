@@ -9,6 +9,7 @@ from app.services.vnstock_service import (
     get_financials,
     get_foreign_trading,
     get_history,
+    get_index_detail,
     get_indices,
     get_insider_trades,
     get_market_map,
@@ -101,6 +102,11 @@ def indices():
 @router.get("/market-overview")
 def market_overview():
     return get_market_overview()
+
+
+@router.get("/index-detail")
+def index_detail(key: str, period: str = "1y"):
+    return get_index_detail(key, period=period)
 
 
 @router.get("/market-map")

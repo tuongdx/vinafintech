@@ -11,7 +11,7 @@ from app.core.security import decode_token
 from app.db import Base, SessionLocal, engine
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, auth, contact, dashboard, faqs, features, feedback, logs, news, plans, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, auth, contact, dashboard, faqs, features, feedback, logs, news, notifications, plans, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -94,6 +94,7 @@ app.include_router(features.router, prefix=api)
 app.include_router(dashboard.router, prefix=api)
 app.include_router(logs.router, prefix=api)
 app.include_router(watchlist.router, prefix=api)
+app.include_router(notifications.router, prefix=api)
 
 frontend_path = Path(settings.frontend_dir)
 if frontend_path.exists():

@@ -559,7 +559,6 @@
         <div class="divider">hoặc</div>
         <div class="social-buttons">
             <button type="button"><i class="fab fa-google"></i> Google</button>
-            <button type="button"><i class="fab fa-facebook-f"></i> Facebook</button>
         </div>
 
         <div class="auth-switch">
@@ -627,7 +626,7 @@
                 return saved || '/';
             }
 
-            // ---- Xử lý redirect từ Google/Facebook OAuth ----
+            // ---- Xử lý redirect từ Google OAuth ----
             (function handleOAuthRedirect() {
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('oauth') === 'success') {
@@ -708,10 +707,8 @@
             // ---- Social buttons: chuyển hướng tới OAuth backend ----
             document.querySelectorAll('.social-buttons button').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const text = this.textContent.trim().toLowerCase();
-                    const provider = text.includes('google') ? 'google' : 'facebook';
                     const next = new URLSearchParams(window.location.search).get('next') || localStorage.getItem('tunix_next') || '/';
-                    window.location.href = '/api/auth/oauth/' + provider + '/authorize?next=' + encodeURIComponent(next);
+                    window.location.href = '/api/auth/oauth/google/authorize?next=' + encodeURIComponent(next);
                 });
             });
 

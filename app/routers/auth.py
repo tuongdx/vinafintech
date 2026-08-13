@@ -254,7 +254,7 @@ def change_password(
 
 
 # ---------------------------------------------------------------------------
-# OAuth Google / Facebook
+# OAuth Google
 # ---------------------------------------------------------------------------
 @router.get("/oauth/{provider}/authorize")
 def oauth_authorize(provider: str, next: str | None = Query(default=None), db: Session = Depends(get_db)):
@@ -296,7 +296,7 @@ def _oauth_callback(db: Session, provider: str, code: str | None, state: str | N
     else:
         email = profile.get("email")
         if not email:
-            # Facebook không trả email → yêu cầu bổ sung (không tạo tài khoản lỗi)
+            # Nhà cung cấp không trả email → yêu cầu bổ sung (không tạo tài khoản lỗi)
             return RedirectResponse(url=f"{settings.frontend_url}/Login?oauth_error=email_required&provider={provider}")
 
         user = _safe_user_lookup(email, db)
@@ -352,13 +352,3 @@ def oauth_google_callback(
     db: Session = Depends(get_db),
 ):
     return _oauth_callback(db, "google", code, state, error)
-
-
-@router.get("/oauth/facebook/callback")
-def oauth_facebook_callback(
-    code: str | None = Query(default=None),
-    state: str | None = Query(default=None),
-    error: str | None = Query(default=None),
-    db: Session = Depends(get_db),
-):
-    return _oauth_callback(db, "facebook", code, state, error)

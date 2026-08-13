@@ -250,6 +250,16 @@ def update_news(
     return _news_out(news)
 
 
+@router.delete("/all")
+def delete_all_news(
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_roles(RoleEnum.super_admin)),
+):
+    count = db.query(News).delete()
+    db.commit()
+    return {"message": f"Deleted {count} articles"}
+
+
 @router.delete("/{news_id}")
 def delete_news(
     news_id: int,

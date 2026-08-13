@@ -88,10 +88,10 @@
                     }
                     dd.innerHTML = items.map(function (it) {
                         const sym = String(it.symbol || '').trim().toUpperCase();
-                        return '<div class="hsd-item" data-symbol="' + escapeHtml(sym) + '">' +
+                        return '<a class="hsd-item" data-symbol="' + escapeHtml(sym) + '" href="/cophieu-' + encodeURIComponent(sym) + '">' +
                             '<span class="hsd-title">' + escapeHtml(sym) + '</span>' +
                             (it.name ? '<span class="hsd-meta">' + escapeHtml(it.name) + '</span>' : '') +
-                            '</div>';
+                            '</a>';
                     }).join('');
                     dd.style.display = 'block';
                 })
@@ -145,6 +145,7 @@
             const symbol = item.getAttribute('data-symbol');
             hideDropdown();
             if (symbol) {
+                e.preventDefault();
                 goToIndexStock(symbol);
             }
         });

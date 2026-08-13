@@ -662,7 +662,6 @@
         <div class="divider">hoặc</div>
         <div class="social-buttons">
             <button type="button"><i class="fab fa-google"></i> Google</button>
-            <button type="button"><i class="fab fa-facebook-f"></i> Facebook</button>
         </div>
 
         <div class="auth-switch">
@@ -874,9 +873,7 @@
             // ---- Social buttons: chuyển hướng tới OAuth backend ----
             document.querySelectorAll('.social-buttons button').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const text = this.textContent.trim().toLowerCase();
-                    const provider = text.includes('google') ? 'google' : 'facebook';
-                    window.location.href = '/api/auth/oauth/' + provider + '/authorize?next=/register';
+                    window.location.href = '/api/auth/oauth/google/authorize?next=/register';
                 });
             });
 

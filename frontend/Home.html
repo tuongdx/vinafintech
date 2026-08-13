@@ -253,6 +253,227 @@
 
         .index-item {
             display: table-row;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .index-item:hover {
+            background: #f4f8fb;
+        }
+        .index-item.active {
+            background: #e6f4f4;
+        }
+        body.dark-mode .index-item:hover {
+            background: #1c2128;
+        }
+        body.dark-mode .index-item.active {
+            background: rgba(0, 128, 128, 0.15);
+        }
+
+        /* ----- CHI TIẾT CHỈ SỐ (nở ra trong block) ----- */
+        .index-detail {
+            margin-top: 14px;
+            padding: 14px 16px 16px;
+            background: #f8faff;
+            border: 1px solid #e3e9f2;
+            border-radius: 12px;
+        }
+        .index-detail .idxd-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .index-detail .idxd-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1c2a44;
+        }
+        /* ----- DROPDOWN CHỌN CHỈ SỐ (hoà trộn với nền block) ----- */
+        .idxd-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .idxd-desc {
+            font-size: 12px;
+            font-weight: 500;
+            color: #8a99b1;
+        }
+        body.dark-mode .idxd-desc { color: #9fb0c7; }
+        .idxd-select {
+            position: relative;
+            display: inline-block;
+        }
+        .idxd-select-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border: none;
+            padding: 4px 6px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            color: #1c2a44;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+        .idxd-select-btn:hover { color: #008080; }
+        .idxd-select-btn .idxd-sel-icon { color: #4270b3; margin-right: 2px; }
+        .idxd-select-btn .idxd-sel-arrow {
+            font-size: 11px;
+            color: #8a99b1;
+            transition: transform 0.2s;
+        }
+        .idxd-select.open .idxd-sel-arrow { transform: rotate(180deg); }
+        .idxd-select-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            min-width: 230px;
+            max-height: 340px;
+            overflow-y: auto;
+            /* Ẩn thanh cuộn nhưng vẫn cuộn được */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            background: #fff;
+            border: 1px solid #e3e9f2;
+            border-radius: 12px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+            padding: 6px;
+            z-index: 60;
+        }
+        .idxd-select-menu::-webkit-scrollbar {
+            display: none;
+        }
+        .idxd-select-menu .idxd-sel-opt {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1f2937;
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+        .idxd-select-menu .idxd-sel-opt:hover { background: #f0f4f7; color: #008080; }
+        .idxd-select-menu .idxd-sel-opt.active { background: #e6f4f4; color: #008080; font-weight: 700; }
+        .idxd-select-menu .idxd-sel-opt.active .idxd-sel-check { display: inline-flex; }
+        .idxd-select-menu .idxd-sel-opt .idxd-sel-check {
+            display: none;
+            font-size: 11px;
+            color: #008080;
+        }
+        body.dark-mode .idxd-select-btn { color: #e6edf3; }
+        body.dark-mode .idxd-select-btn:hover { color: #4dd0c9; }
+        body.dark-mode .idxd-select-btn .idxd-sel-arrow { color: #9fb0c7; }
+        body.dark-mode .idxd-select-menu { background: #161b22; border-color: #30363d; box-shadow: 0 10px 28px rgba(0,0,0,0.5); }
+        body.dark-mode .idxd-select-menu .idxd-sel-opt { color: #adbac7; }
+        body.dark-mode .idxd-select-menu .idxd-sel-opt:hover { background: #21262d; color: #4dd0c9; }
+        body.dark-mode .idxd-select-menu .idxd-sel-opt.active { background: rgba(0,128,128,0.16); color: #4dd0c9; }
+        .index-detail .idxd-periods {
+            display: flex;
+            gap: 6px;
+        }
+        .index-detail .idxd-periods span {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7a8f;
+            background: #fff;
+            border: 1px solid #e3e9f2;
+            padding: 4px 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .index-detail .idxd-periods span.active {
+            background: #008080;
+            color: #fff;
+            border-color: #008080;
+        }
+        .index-detail .idxd-quote {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .index-detail .idxd-quote .idxd-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: #1c2a44;
+            font-variant-numeric: tabular-nums;
+        }
+        .index-detail .idxd-quote .idxd-value.up { color: #0f7b3a; }
+        .index-detail .idxd-quote .idxd-value.down { color: #d0314e; }
+        .index-detail .idxd-quote .idxd-unit { font-size: 12px; color: #8a99b1; }
+        .index-detail .idxd-quote .idxd-change {
+            font-size: 13px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 16px;
+            font-variant-numeric: tabular-nums;
+        }
+        .index-detail .idxd-quote .idxd-change.up { background: #e3f5ec; color: #0f7b3a; }
+        .index-detail .idxd-quote .idxd-change.down { background: #fde8e5; color: #d0314e; }
+        .index-detail .idxd-quote .idxd-change.flat { background: #eef1f5; color: #6b7a8f; }
+        .index-detail .idxd-chart svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        .index-detail .idxd-empty {
+            padding: 36px 12px;
+            text-align: center;
+            color: #8a99b1;
+            font-size: 12px;
+        }
+        .index-detail .idxd-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .index-detail .idxd-stat {
+            background: #fff;
+            border: 1px solid #eef1f5;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .index-detail .idxd-stat .st-l { font-size: 10px; color: #8a99b1; margin-bottom: 4px; }
+        .index-detail .idxd-stat .st-v {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1c2a44;
+            font-variant-numeric: tabular-nums;
+        }
+        .index-detail .idxd-stat .st-v.up { color: #0f7b3a; }
+        .index-detail .idxd-stat .st-v.down { color: #d0314e; }
+        .index-detail .idxd-stat .st-s { font-size: 9px; color: #b0bccb; margin-top: 2px; }
+        body.dark-mode .index-detail { background: #161b22; border-color: #30363d; }
+        body.dark-mode .index-detail .idxd-title { color: #e6edf3; }
+        body.dark-mode .index-detail .idxd-periods span { background: #161b22; border-color: #30363d; color: #8b949e; }
+        body.dark-mode .index-detail .idxd-periods span.active { background: #008080; color: #fff; border-color: #008080; }
+        body.dark-mode .index-detail .idxd-value,
+        body.dark-mode .index-detail .idxd-stat .st-v { color: #e6edf3; }
+        body.dark-mode .index-detail .idxd-value.up,
+        body.dark-mode .index-detail .idxd-stat .st-v.up { color: #4ade80; }
+        body.dark-mode .index-detail .idxd-value.down,
+        body.dark-mode .index-detail .idxd-stat .st-v.down { color: #f87171; }
+        body.dark-mode .index-detail .idxd-stat { background: #161b22; border-color: #30363d; }
+        body.dark-mode .index-detail .idxd-empty,
+        body.dark-mode .index-detail .idxd-unit,
+        body.dark-mode .index-detail .idxd-stat .st-l { color: #9fb0c7; }
+        @media (max-width: 600px) {
+            .index-detail .idxd-stats { grid-template-columns: repeat(2, 1fr); }
         }
 
         .index-label {
@@ -1543,59 +1764,30 @@
     <!-- INDEX ROW -->
     <div class="index-row">
         <div class="index-header">
-            <div class="index-title">
-                <i class="fas fa-chart-line"></i> Các chỉ số cơ bản
+            <div class="idxd-head">
+                <div class="idxd-select" id="idxdSelect">
+                    <button type="button" class="idxd-select-btn" id="idxdSelectBtn">
+                        <i class="fas fa-chart-line idxd-sel-icon"></i>
+                        <span id="idxdSelectLabel">VNINDEX</span>
+                        <i class="fas fa-chevron-down idxd-sel-arrow"></i>
+                    </button>
+                    <div class="idxd-select-menu" id="idxdSelectMenu" hidden></div>
+                </div>
+                <div class="idxd-desc" id="idxdDesc">Chỉ số VN-Index – sàn HOSE</div>
             </div>
         </div>
-        <div class="table-wrapper">
-            <table class="index-table">
-                <thead>
-                    <tr>
-                        <th>Chỉ số</th>
-                        <th>Giá</th>
-                        <th>Thay đổi</th>
-                        <th>Đơn vị</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="index-item" data-market-key="vnindex">
-                        <td><span class="index-label"><i class="fas fa-chart-line index-icon stock"></i> VNINDEX</span></td>
-                        <td><span class="index-value">1,686.1</span></td>
-                        <td><span class="index-change negative"><i class="fas fa-caret-down"></i> -13.27 (-0.78%)</span></td>
-                        <td><span class="index-sub">-</span></td>
-                    </tr>
-                    <tr class="index-item" data-market-key="vn30">
-                        <td><span class="index-label"><i class="fas fa-chart-bar index-icon stock"></i> VN30</span></td>
-                        <td><span class="index-value">1,829.3</span></td>
-                        <td><span class="index-change negative"><i class="fas fa-caret-down"></i> -15.96 (-0.86%)</span></td>
-                        <td><span class="index-sub">-</span></td>
-                    </tr>
-                    <tr class="index-item" data-market-key="dowjones">
-                        <td><span class="index-label"><i class="fas fa-building index-icon stock"></i> Dow Jones</span></td>
-                        <td><span class="index-value">51,947.2</span></td>
-                        <td><span class="index-change positive"><i class="fas fa-caret-up"></i> +235.59 (0.45%)</span></td>
-                        <td><span class="index-sub">-</span></td>
-                    </tr>
-                    <tr class="index-item" data-market-key="bitcoin">
-                        <td><span class="index-label"><i class="fab fa-bitcoin index-icon crypto"></i> Bitcoin</span></td>
-                        <td><span class="index-value">64,544</span></td>
-                        <td><span class="index-change positive"><i class="fas fa-caret-up"></i> +169.09 (0.26%)</span></td>
-                        <td><span class="index-sub">USD</span></td>
-                    </tr>
-                    <tr class="index-item" data-market-key="gold_world">
-                        <td><span class="index-label"><i class="fas fa-globe-asia index-icon gold"></i> Vàng TG</span></td>
-                        <td><span class="index-value">2,417.80</span></td>
-                        <td><span class="index-change positive"><i class="fas fa-caret-up"></i> +3.27 (+0.14%)</span></td>
-                        <td><span class="index-sub">USD/oz</span></td>
-                    </tr>
-                    <tr class="index-item" data-market-key="gold_vn">
-                        <td><span class="index-label"><i class="fas fa-map-pin index-icon gold"></i> Vàng TN</span></td>
-                        <td><span class="index-value">87.25</span></td>
-                        <td><span class="index-change positive"><i class="fas fa-caret-up"></i> +0.15 (+0.17%)</span></td>
-                        <td><span class="index-sub">triệu/lượng</span></td>
-                    </tr>
-                </tbody>
-            </table>
+
+        <!-- CHI TIẾT CHỈ SỐ -->
+        <div class="index-detail" id="indexDetail">
+            <div class="idxd-top">
+                <div class="idxd-periods" id="idxdPeriods"></div>
+            </div>
+            <div class="idxd-quote" id="idxdQuote"></div>
+            <div class="idxd-chart">
+                <svg id="idxdChart" viewBox="0 0 840 300" role="img" aria-label="Biểu đồ chỉ số"></svg>
+                <div class="idxd-empty" id="idxdEmpty" hidden>Không có dữ liệu biểu đồ cho chỉ số này.</div>
+            </div>
+            <div class="idxd-stats" id="idxdStats"></div>
         </div>
     </div>
 
@@ -2216,6 +2408,266 @@
             this.classList.add('active');
         });
     });
+
+    // ===== CHI TIẾT CHỈ SỐ TRONG BLOCK =====
+    const INDEX_META_INLINE = {
+        vnindex:    { label: 'VNINDEX',         unit: '', desc: 'Chỉ số VN-Index – sàn HOSE' },
+        vn30:       { label: 'VN30',            unit: '', desc: 'Top 30 vốn hoá lớn nhất sàn HOSE' },
+        hnx:        { label: 'HNX',             unit: '', desc: 'Chỉ số HNX-Index – sàn HNX' },
+        hnx30:      { label: 'HNX30',           unit: '', desc: 'Top 30 vốn hoá lớn nhất sàn HNX' },
+        upcom:      { label: 'UPCOM',           unit: '', desc: 'Chỉ số UPCoM-Index – sàn UPCoM' },
+        bitcoin:    { label: 'Bitcoin',         unit: 'USD', desc: 'Tiền mã hoá Bitcoin (USD)' },
+        gold_world: { label: 'Vàng thế giới',   unit: 'USD/oz', desc: 'Giá vàng thế giới (USD/oz)' },
+        gold_vn:    { label: 'Vàng trong nước', unit: 'triệu/lượng', desc: 'Giá vàng trong nước (triệu/lượng)' },
+        oil:        { label: 'Dầu thô',         unit: 'USD/thùng', desc: 'Giá dầu thô WTI (USD/thùng)' },
+        nikkei:     { label: 'Nikkei',          unit: 'điểm', desc: 'Thị trường chứng khoán Nhật Bản (Nikkei 225)' },
+        kospi:      { label: 'KOSPI',           unit: 'điểm', desc: 'Thị trường chứng khoán Hàn Quốc (KOSPI)' },
+        hkex:       { label: 'HKEX',            unit: 'điểm', desc: 'Thị trường chứng khoán Hồng Kông (Hang Seng)' },
+        sgx:        { label: 'SGX',             unit: 'điểm', desc: 'Thị trường chứng khoán Singapore (SGX)' },
+        dowjones:   { label: 'Dow Jones',       unit: 'điểm', desc: 'Chỉ số Dow Jones – chứng khoán Mỹ' },
+        sp500:      { label: 'S&P 500',         unit: 'điểm', desc: 'Chỉ số S&P 500 – chứng khoán Mỹ' },
+        nasdaq:     { label: 'NASDAQ',          unit: 'điểm', desc: 'Chỉ số NASDAQ – chứng khoán Mỹ' },
+    };
+    const IDX_PERIOD_LABEL = { '1m': '1 tháng', '3m': '3 tháng', '6m': '6 tháng', '1y': '1 năm', '5y': '5 năm' };
+    let idxActivePeriod = '1y';
+    let idxOpenKey = null;
+    let idxDetailEl = null, idxSelectEl = null, idxSelectBtnEl = null, idxSelectLabelEl = null, idxSelectMenuEl = null,
+        idxDescEl = null, idxPeriodsEl = null, idxQuoteEl = null, idxChartEl = null, idxEmptyEl = null, idxStatsEl = null;
+
+    function idxEsc(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function idxFmt(n, d) {
+        const v = Number(n);
+        if (!Number.isFinite(v)) return '--';
+        const dd = Number.isFinite(Number(d)) ? Number(d) : 0;
+        return v.toLocaleString('en-US', { minimumFractionDigits: dd, maximumFractionDigits: dd });
+    }
+    function idxFmtSigned(n, d) {
+        const v = Number(n);
+        if (!Number.isFinite(v)) return '--';
+        const a = idxFmt(Math.abs(v), d);
+        return v > 0 ? '+' + a : (v < 0 ? '-' + a : a);
+    }
+    function idxFmtDate(iso) {
+        try {
+            const dt = new Date(iso);
+            if (Number.isNaN(dt.getTime())) return '';
+            return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '/' + String(dt.getFullYear()).slice(-2);
+        } catch (e) { return ''; }
+    }
+    function idxSma(values, n) {
+        if (values.length < n) return [];
+        const out = [];
+        for (let i = n - 1; i < values.length; i++) {
+            let s = 0;
+            for (let j = i - n + 1; j <= i; j++) s += values[j];
+            out.push(s / n);
+        }
+        return out;
+    }
+
+    function renderIdxChart(history) {
+        const closes = history.map(p => Number(p.close)).filter(Number.isFinite);
+        if (closes.length < 2) {
+            idxChartEl.innerHTML = '';
+            idxEmptyEl.hidden = false;
+            return;
+        }
+        idxEmptyEl.hidden = true;
+        const W = 840, H = 300, padL = 8, padR = 70, padT = 12, padB = 26;
+        const cw = W - padL - padR, ch = H - padT - padB;
+        const min = Math.min(...closes), max = Math.max(...closes), span = (max - min) || 1;
+        const yMin = min - span * 0.08, yMax = max + span * 0.08;
+        const xAt = (i) => padL + (closes.length === 1 ? cw : (i / (closes.length - 1)) * cw);
+        const yAt = (v) => padT + (1 - (v - yMin) / (yMax - yMin)) * ch;
+        const up = closes[closes.length - 1] >= closes[0];
+        const lineColor = up ? '#0f7b3a' : '#d0314e';
+        const areaId = 'idxInlineArea';
+        let parts = [];
+        for (let g = 0; g <= 4; g++) {
+            const gy = padT + (g / 4) * ch;
+            const val = yMax - (g / 4) * (yMax - yMin);
+            parts.push('<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="#eef1f5" stroke-width="1"/>');
+            parts.push('<text x="' + (W - padR + 6) + '" y="' + (gy + 4).toFixed(1) + '" font-size="10" fill="#8a99b1">' + idxFmt(val, 0) + '</text>');
+        }
+        let area = 'M' + xAt(0).toFixed(1) + ' ' + yAt(closes[0]).toFixed(1);
+        for (let i = 1; i < closes.length; i++) area += ' L' + xAt(i).toFixed(1) + ' ' + yAt(closes[i]).toFixed(1);
+        area += ' L' + xAt(closes.length - 1).toFixed(1) + ' ' + (padT + ch).toFixed(1) + ' L' + xAt(0).toFixed(1) + ' ' + (padT + ch).toFixed(1) + ' Z';
+        parts.push('<path d="' + area + '" fill="url(#' + areaId + ')" opacity="0.35"/>');
+        let line = 'M' + xAt(0).toFixed(1) + ' ' + yAt(closes[0]).toFixed(1);
+        for (let i = 1; i < closes.length; i++) line += ' L' + xAt(i).toFixed(1) + ' ' + yAt(closes[i]).toFixed(1);
+        parts.push('<path d="' + line + '" fill="none" stroke="' + lineColor + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>');
+        const s20 = idxSma(closes, 20);
+        if (s20.length >= 2) {
+            let sp = 'M' + xAt(19).toFixed(1) + ' ' + yAt(s20[0]).toFixed(1);
+            for (let i = 1; i < s20.length; i++) sp += ' L' + xAt(i + 19).toFixed(1) + ' ' + yAt(s20[i]).toFixed(1);
+            parts.push('<path d="' + sp + '" fill="none" stroke="#8a99b1" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.9"/>');
+        }
+        const n = closes.length, mid = Math.floor(n / 2);
+        [0, mid, n - 1].forEach(function(idx) {
+            const lbl = idxFmtDate(history[idx].time);
+            if (lbl) parts.push('<text x="' + xAt(idx).toFixed(1) + '" y="' + (H - 6) + '" font-size="10" fill="#8a99b1" text-anchor="middle">' + lbl + '</text>');
+        });
+        const lx = xAt(n - 1), ly = yAt(closes[n - 1]);
+        parts.push('<circle cx="' + lx.toFixed(1) + '" cy="' + ly.toFixed(1) + '" r="4" fill="' + lineColor + '" stroke="#fff" stroke-width="1.5"/>');
+        parts.push('<rect x="' + (lx - 38).toFixed(1) + '" y="' + Math.max(padT - 2, ly - 22).toFixed(1) + '" width="70" height="18" rx="9" fill="' + lineColor + '"/>');
+        parts.push('<text x="' + lx.toFixed(1) + '" y="' + (Math.max(padT - 2, ly - 22) + 13).toFixed(1) + '" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">' + idxFmt(closes[n - 1], 0) + '</text>');
+        idxChartEl.innerHTML = '<defs><linearGradient id="' + areaId + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + lineColor + '" stop-opacity="0.5"/><stop offset="100%" stop-color="' + lineColor + '" stop-opacity="0"/></linearGradient></defs>' + parts.join('');
+    }
+
+    function renderIdxStats(history, d) {
+        const closes = history.map(p => Number(p.close)).filter(Number.isFinite);
+        if (closes.length < 2) { idxStatsEl.innerHTML = ''; return; }
+        const first = closes[0], last = closes[closes.length - 1];
+        const pct = ((last - first) / first) * 100;
+        const orC = (v, c) => { const nn = Number(v); return Number.isFinite(nn) && nn > 0 ? nn : Number(c); };
+        const highs = history.map(p => orC(p.high, p.close));
+        const lows = history.map(p => orC(p.low, p.close));
+        const hi = Math.max(...highs), lo = Math.min(...lows);
+        const avg = closes.reduce((a, b) => a + b, 0) / closes.length;
+        const opens = history.map(p => orC(p.open, p.close));
+        const open0 = opens.length ? opens[0] : first;
+        const s20 = idxSma(closes, 20);
+        const s20v = s20.length ? s20[s20.length - 1] : null;
+        const dec = Number(d.decimals);
+        const trend = pct > 0.5 ? 'up' : (pct < -0.5 ? 'down' : 'flat');
+        const tText = trend === 'up' ? 'Xu hướng tăng' : (trend === 'down' ? 'Xu hướng giảm' : 'Đi ngang');
+        const card = (l, v, c, sub) => '<div class="idxd-stat"><div class="st-l">' + l + '</div><div class="st-v ' + (c || '') + '">' + v + '</div>' + (sub ? '<div class="st-s">' + idxEsc(sub) + '</div>' : '') + '</div>';
+        let html = '';
+        html += card('Xu hướng', tText, trend === 'up' ? 'up' : (trend === 'down' ? 'down' : ''), 'Kỳ ' + (IDX_PERIOD_LABEL[idxActivePeriod] || ''));
+        html += card('Thay đổi kỳ', idxFmtSigned(pct, 2) + '%', pct >= 0 ? 'up' : 'down', 'Từ đầu kỳ');
+        html += card('Giá mở kỳ', idxFmt(open0, dec), '', 'Đầu kỳ');
+        html += card('Cao nhất kỳ', idxFmt(hi, dec), 'up', '');
+        html += card('Thấp nhất kỳ', idxFmt(lo, dec), 'down', '');
+        html += card('Trung bình kỳ', idxFmt(avg, dec), '', '');
+        html += card('SMA 20', s20v !== null ? idxFmt(s20v, dec) : '--', s20v !== null ? (last >= s20v ? 'up' : 'down') : '', 'Giá ' + (s20v !== null ? (last >= s20v ? 'trên' : 'dưới') : '') + ' SMA20');
+        html += card('Giá hiện tại', idxFmt(last, dec), '', 'Cuối kỳ');
+        idxStatsEl.innerHTML = html;
+    }
+
+    function renderIdxQuote(d) {
+        const meta = INDEX_META_INLINE[idxOpenKey] || { label: idxOpenKey, unit: '' };
+        const val = Number(d.value);
+        if (!val || val <= 0) {
+            // Chưa có dữ liệu cho chỉ số này → hiển thị "--"
+            idxQuoteEl.innerHTML = '<span class="idxd-value">--</span>' +
+                (meta.unit ? '<span class="idxd-unit">' + idxEsc(meta.unit) + '</span>' : '') +
+                '<span class="idxd-change flat"><i class="fas fa-minus"></i> --</span>';
+            return;
+        }
+        const pct = Number(d.percent_change);
+        const cls = pct > 0 ? 'up' : (pct < 0 ? 'down' : 'flat');
+        const arrow = pct > 0 ? 'fa-caret-up' : (pct < 0 ? 'fa-caret-down' : 'fa-minus');
+        idxQuoteEl.innerHTML = '<span class="idxd-value ' + cls + '">' + idxFmt(d.value, d.decimals) + '</span>' +
+            '<span class="idxd-unit">' + idxEsc(meta.unit || '') + '</span>' +
+            '<span class="idxd-change ' + cls + '"><i class="fas ' + arrow + '"></i> ' + idxFmtSigned(d.change, 2) + ' (' + idxFmtSigned(pct, 2) + '%)</span>';
+    }
+
+    function renderIdxPeriods() {
+        idxPeriodsEl.innerHTML = ['1m', '3m', '6m', '1y', '5y'].map(function(p) {
+            return '<span data-period="' + p + '" class="' + (p === idxActivePeriod ? 'active' : '') + '">' + p.toUpperCase() + '</span>';
+        }).join('');
+        idxPeriodsEl.querySelectorAll('span').forEach(function(el) {
+            el.addEventListener('click', function() {
+                idxActivePeriod = this.getAttribute('data-period');
+                renderIdxPeriods();
+                loadIdxDetail();
+            });
+        });
+    }
+
+    async function loadIdxDetail() {
+        if (!idxOpenKey) return;
+        idxQuoteEl.innerHTML = '<span class="idxd-value">Đang tải...</span>';
+        try {
+            const res = await fetch('/api/stocks/index-detail?key=' + encodeURIComponent(idxOpenKey) + '&period=' + encodeURIComponent(idxActivePeriod));
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const d = await res.json();
+            renderIdxQuote(d);
+            renderIdxChart(d.history || []);
+            renderIdxStats(d.history || [], d);
+        } catch (e) {
+            idxChartEl.innerHTML = '';
+            idxEmptyEl.hidden = false;
+            idxStatsEl.innerHTML = '';
+            idxQuoteEl.innerHTML = '<span class="idxd-value">--</span>';
+        }
+        notifyParentHeight();
+    }
+
+    // Dropdown chọn chỉ số: cập nhật nhãn nút + mô tả + menu
+    function renderIdxSelect() {
+        const meta = INDEX_META_INLINE[idxOpenKey] || { label: idxOpenKey, desc: '' };
+        idxSelectLabelEl.textContent = meta.label;
+        if (idxDescEl) idxDescEl.textContent = meta.desc || '';
+        idxSelectMenuEl.innerHTML = Object.keys(INDEX_META_INLINE).map(function(k) {
+            const m = INDEX_META_INLINE[k];
+            return '<div class="idxd-sel-opt' + (k === idxOpenKey ? ' active' : '') + '" data-key="' + k + '">' +
+                '<span>' + idxEsc(m.label) + '</span>' +
+                '<i class="fas fa-check idxd-sel-check"></i></div>';
+        }).join('');
+        idxSelectMenuEl.querySelectorAll('.idxd-sel-opt').forEach(function(el) {
+            el.addEventListener('click', function() {
+                const nk = this.getAttribute('data-key');
+                if (nk !== idxOpenKey) switchIndexDetail(nk);
+                closeIdxSelect();
+            });
+        });
+    }
+
+    function openIdxSelect() {
+        idxSelectEl.classList.add('open');
+        idxSelectMenuEl.hidden = false;
+    }
+    function closeIdxSelect() {
+        idxSelectEl.classList.remove('open');
+        idxSelectMenuEl.hidden = true;
+    }
+
+    function switchIndexDetail(key) {
+        idxOpenKey = key;
+        idxDetailEl = document.getElementById('indexDetail');
+        idxSelectEl = document.getElementById('idxdSelect');
+        idxSelectBtnEl = document.getElementById('idxdSelectBtn');
+        idxSelectLabelEl = document.getElementById('idxdSelectLabel');
+        idxSelectMenuEl = document.getElementById('idxdSelectMenu');
+        idxDescEl = document.getElementById('idxdDesc');
+        idxPeriodsEl = document.getElementById('idxdPeriods');
+        idxQuoteEl = document.getElementById('idxdQuote');
+        idxChartEl = document.getElementById('idxdChart');
+        idxEmptyEl = document.getElementById('idxdEmpty');
+        idxStatsEl = document.getElementById('idxdStats');
+        idxActivePeriod = '1y';
+        renderIdxSelect();
+        renderIdxPeriods();
+        loadIdxDetail();
+        notifyParentHeight();
+    }
+
+    // Mở/đóng dropdown + đóng khi click ra ngoài
+    if (document.getElementById('idxdSelectBtn')) {
+        document.getElementById('idxdSelectBtn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('idxdSelectMenu');
+            const wrap = document.getElementById('idxdSelect');
+            if (menu.hidden) {
+                wrap.classList.add('open');
+                menu.hidden = false;
+            } else {
+                wrap.classList.remove('open');
+                menu.hidden = true;
+            }
+        });
+        document.addEventListener('click', function(e) {
+            const wrap = document.getElementById('idxdSelect');
+            if (wrap && !wrap.contains(e.target)) {
+                wrap.classList.remove('open');
+                const menu = document.getElementById('idxdSelectMenu');
+                if (menu) menu.hidden = true;
+            }
+        });
+    }
 
     let liquidityLabels = [];
     let liquidityTicks = [];
@@ -2848,12 +3300,8 @@
 
     window.addEventListener('load', () => {
         applyTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
-        loadRealtimeMarketOverview();
+        switchIndexDetail('vnindex');
         loadMarketMap();
-        if (marketRefreshTimer) {
-            clearInterval(marketRefreshTimer);
-        }
-        marketRefreshTimer = setInterval(loadRealtimeMarketOverview, 15000);
         notifyParentHeight();
         setTimeout(notifyParentHeight, 120);
     });
