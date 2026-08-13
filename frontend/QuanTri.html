@@ -2981,7 +2981,7 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="btn-primary">
+                            <button type="submit" class="btn-primary" id="userSubmitBtn">
                                 <i class="fas fa-save"></i> Tạo tài khoản
                             </button>
                             <button type="button" class="btn-close-form" onclick="toggleUserForm()">
@@ -4073,7 +4073,7 @@
             } else if (currentUser.role === 'admin') {
                 roleSelect.disabled = false;
                 Array.from(roleSelect.options).forEach(o => {
-                    o.disabled = (o.value === 'admin' || o.value === 'super-admin');
+                    o.disabled = (o.value === 'admin');
                 });
             } else {
                 roleSelect.disabled = true;
@@ -5086,6 +5086,8 @@
             // Chế độ tạo mới
             editingUserId = null;
             document.getElementById('userFormTitle').textContent = 'Thêm người dùng mới';
+            const userSubmitBtn = document.getElementById('userSubmitBtn');
+            if (userSubmitBtn) userSubmitBtn.innerHTML = '<i class="fas fa-save"></i> Tạo tài khoản';
             document.getElementById('userEmail').disabled = false;
             document.getElementById('userPasswordRow').style.display = '';
             document.getElementById('userForm').reset();
@@ -5127,6 +5129,8 @@
 
             editingUserId = id;
             document.getElementById('userFormTitle').textContent = 'Chỉnh sửa người dùng';
+            const userSubmitBtn = document.getElementById('userSubmitBtn');
+            if (userSubmitBtn) userSubmitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
             document.getElementById('userFullName').value = user.name;
             document.getElementById('userEmail').value = user.email;
             document.getElementById('userEmail').disabled = true;
