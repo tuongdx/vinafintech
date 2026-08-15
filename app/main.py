@@ -11,7 +11,7 @@ from app.core.security import decode_token
 from app.db import Base, SessionLocal, engine
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, auth, contact, dashboard, faqs, features, feedback, logs, news, notifications, plans, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, auth, chart, contact, dashboard, faqs, features, feedback, logs, news, notifications, plans, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -80,6 +80,7 @@ async def protect_admin_pages(request: Request, call_next):
 api = settings.api_prefix
 app.include_router(ai.router, prefix=api)
 app.include_router(auth.router, prefix=api)
+app.include_router(chart.router, prefix=api)
 app.include_router(users.router, prefix=api)
 app.include_router(stocks.router, prefix=api)
 app.include_router(stocks_admin.router, prefix=api)
@@ -178,6 +179,15 @@ def admin_login_page():
     if not page_file.exists():
         raise HTTPException(status_code=404, detail="Page file not found")
     return FileResponse(str(page_file), headers={"Cache-Control": "no-store"})
+
+
+@app.get("/favicon.ico")
+def favicon_ico():
+    """Favicon gốc — trả logo TuniX (ICO) để trình duyệt tự tìm tại /favicon.ico."""
+    icon_file = frontend_path / "Logo" / "favicon.ico"
+    if icon_file.exists():
+        return FileResponse(str(icon_file), media_type="image/x-icon")
+    raise HTTPException(status_code=404, detail="Favicon not found")
 
 
 @app.get("/cophieu-{symbol}")

@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
+    <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
     <title>TuniX - Phân tích cổ phiếu toàn diện cho nhà đầu tư thực</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
@@ -292,34 +296,6 @@
             background: #2d1b1e;
         }
 
-        body.dark-mode .chart-controls span {
-            color: #8b949e;
-        }
-
-        body.dark-mode .chart-controls span:hover {
-            background: #21262d;
-        }
-
-        body.dark-mode .chart-controls .active {
-            background: #008080;
-            color: #fff;
-        }
-
-        body.dark-mode .chart-source-tabs span {
-            color: #8b949e;
-            border-color: #30363d;
-        }
-
-        body.dark-mode .chart-source-tabs span:hover {
-            background: #21262d;
-        }
-
-        body.dark-mode .chart-source-tabs span.active {
-            background: #008080;
-            color: #fff;
-            border-color: #008080;
-        }
-
         body.dark-mode .text-red {
             color: #f85149 !important;
         }
@@ -530,6 +506,7 @@
 
         /* ----- 2. BIỂU ĐỒ CHART ----- */
         .chart-block {
+            position: relative;
             background: #fff;
             border-radius: 16px;
             padding: 18px 20px 14px;
@@ -545,82 +522,708 @@
             flex-wrap: wrap;
             gap: 6px;
         }
+        /* Nhóm trái: textbox + button có text. Nhóm phải: button icon-only. */
+        .chart-header-left,
+        .chart-header-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+            flex-wrap: wrap;
+        }
 
         .chart-header h3 {
             font-size: 15px;
             font-weight: 600;
         }
-
-        .chart-controls {
-            display: flex;
-            gap: 6px;
-            font-size: 12px;
-            color: #6b7a8f;
-            flex-wrap: wrap;
-            transition: color 0.3s ease;
-        }
-
-        .chart-controls span {
-            cursor: pointer;
-            padding: 2px 10px;
-            border-radius: 12px;
+        .chart-title { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; min-width: 0; }
+        .chart-title input#chartSymbolInput {
+            width: 78px;
+            font: inherit;
+            font-weight: 600;
+            color: #1a1f36;
+            background: #eef2f6;
+            border: 1px solid #dce1e9;
+            border-radius: 8px;
+            padding: 3px 8px;
+            outline: none;
+            text-transform: uppercase;
             transition: all 0.2s;
         }
+        .chart-title input#chartSymbolInput::placeholder { text-transform: none; color: #8a99b1; font-weight: 500; }
+        .chart-title input#chartSymbolInput:focus { border-color: #008080; background: #fff; box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.15); }
+        body.dark-mode .chart-title input#chartSymbolInput { background: #0d1117; border-color: #30363d; color: #e6edf3; }
+        body.dark-mode .chart-title input#chartSymbolInput:focus { border-color: #58a6ff; background: #161b22; }
 
-        .chart-controls span:hover {
-            background: #f0f2f6;
-        }
-
-        .chart-controls .active {
-            background: #008080;
-            color: #fff;
-        }
-
-        .chart-source-tabs {
-            display: flex;
-            gap: 4px;
-            font-size: 12px;
-            flex-wrap: wrap;
-        }
-
-        .chart-source-tabs span {
-            cursor: pointer;
-            padding: 3px 12px;
+        /* ----- DROPDOWN TIMEFRAME (Giờ/Ngày/Tuần/Tháng) ----- */
+        .chart-tf-wrap { position: relative; display: flex; align-items: center; }
+        .tf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
             border-radius: 12px;
             border: 1px solid #dce1e9;
-            color: #6b7a8f;
+            background: #eef2f6;
+            color: #3c4b5f;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
         }
-
-        .chart-source-tabs span:hover {
-            background: #f0f2f6;
+        .tf-btn:hover { background: #e2e8f0; color: #008080; }
+        body.dark-mode .tf-btn { background: #21262d; border-color: #30363d; color: #d7dee8; }
+        body.dark-mode .tf-btn:hover { color: #58a6ff; }
+        .tf-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            z-index: 40;
+            min-width: 140px;
+            background: #fff;
+            border: 1px solid #e5eaf0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+            padding: 6px;
         }
-
-        .chart-source-tabs span.active {
-            background: #008080;
-            color: #fff;
-            border-color: #008080;
-        }
-
-        .chart-source-tabs span.disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-        .chart-source-tabs span.disabled:hover {
+        body.dark-mode .tf-menu { background: #161b22; border-color: #30363d; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+        .tf-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 7px 10px;
+            border: none;
+            border-radius: 8px;
             background: transparent;
+            color: #3c4b5f;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .tf-menu button:hover { background: #f0f2f6; }
+        body.dark-mode .tf-menu button { color: #d7dee8; }
+        body.dark-mode .tf-menu button:hover { background: #21262d; }
+        .tf-menu button.active { background: #008080; color: #fff; }
+
+        .chart-legend {
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            z-index: 5;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            align-items: baseline;
+            font-size: 11px;
+            font-weight: 500;
+            color: #6b7a8f;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .chart-legend .cl-symbol {
+            color: #008080;
+            font-weight: 700;
+        }
+
+        .chart-legend .cl-up { color: #0f7b3a; }
+        .chart-legend .cl-down { color: #e74c3c; }
+        .chart-legend .cl-vol { color: #94a3b8; }
+
+        .chart-legend .cl-ind {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.65);
+            border: 1px solid #e5eaf0;
+        }
+        body.dark-mode .chart-legend .cl-ind {
+            background: rgba(22, 27, 34, 0.65);
+            border-color: #2a3648;
+        }
+        .chart-legend .cl-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+
+        body.dark-mode .chart-legend {
+            color: #8b949e;
         }
 
         .chart-placeholder {
             width: 100%;
-            height: 280px;
+            height: 480px;
             background: linear-gradient(180deg, #eef2ff 0%, #f8faff 100%);
             border-radius: 8px;
-            display: block;
+            display: flex;
+            flex-direction: row;
             position: relative;
             overflow: hidden;
             transition: background 0.3s ease;
         }
+
+        /* ----- THANH CÔNG CỤ DRAWING (PHASE 2) ----- */
+        .chart-toolbar-wrap {
+            flex: 0 0 46px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 4px;
+            background: rgba(255, 255, 255, 0.7);
+            border-right: 1px solid #e5eaf0;
+            overflow-y: auto;
+            scrollbar-width: none;         /* Firefox: ẩn scrollbar */
+            -ms-overflow-style: none;      /* Edge legacy: ẩn scrollbar */
+            z-index: 3;
+        }
+        .chart-toolbar-wrap::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        body.dark-mode .chart-toolbar-wrap {
+            background: rgba(22, 27, 34, 0.55);
+            border-right-color: #2a3648;
+        }
+        .chart-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .ct-btn {
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            color: #5c6b80;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .ct-btn:hover { background: #eef2f6; color: #008080; }
+        .ct-btn.ct-active { background: #008080; color: #fff; }
+        body.dark-mode .ct-btn { color: #8b949e; }
+        body.dark-mode .ct-btn:hover { background: #21262d; color: #58a6ff; }
+        body.dark-mode .ct-btn.ct-active { background: #008080; color: #fff; }
+        .ct-divider { height: 1px; width: 26px; background: #e5eaf0; margin: 3px 0; }
+        body.dark-mode .ct-divider { background: #2a3648; }
+        .ct-fib-text { font-size: 11px; font-weight: 700; }
+        .ct-trendline i { transform: rotate(-45deg); }
+
+        .chart-canvas-wrap {
+            flex: 1;
+            position: relative;
+            min-width: 0;
+        }
+
+        /* ----- TRẠNG THÁI TẢI LỊCH SỬ (lazy-load dataset) ----- */
+        .chart-status {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            z-index: 20;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(13, 23, 42, 0.78);
+            color: #e6edf3;
+            max-width: 70%;
+            box-sizing: border-box;
+            pointer-events: auto;
+        }
+        body.dark-mode .chart-status { background: rgba(13, 17, 23, 0.85); }
+        .chart-status .cs-spin { animation: cs-spin 1s linear infinite; display: inline-block; }
+        @keyframes cs-spin { to { transform: rotate(360deg); } }
+        .chart-status.cs-error { background: rgba(170, 40, 40, 0.92); }
+        .chart-status .cs-retry {
+            border: none;
+            background: rgba(255, 255, 255, 0.22);
+            color: #fff;
+            border-radius: 10px;
+            padding: 2px 9px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .chart-status .cs-retry:hover { background: rgba(255, 255, 255, 0.35); }
+
+        /* ----- SVG DRAWING OVERLAY (PHASE 2) ----- */
+        .chart-overlay { pointer-events: none; }
+        .chart-overlay.co-active { pointer-events: all; cursor: crosshair; }
+        .chart-overlay .co-drawing { pointer-events: none; }
+        .chart-overlay .co-drawing .co-body { pointer-events: auto; cursor: pointer; }
+        .chart-overlay .co-drawing .co-handle { pointer-events: auto; cursor: move; }
+        .chart-overlay .co-drawing.co-selected .co-body {
+            filter: drop-shadow(0 0 2px rgba(0, 128, 128, 0.7));
+        }
+        .chart-overlay .co-drawing.co-locked .co-body { cursor: not-allowed; opacity: 0.75; }
+        .chart-overlay .co-drawing .co-label {
+            pointer-events: none;
+            font-size: 11px;
+            paint-order: stroke;
+            stroke: #f8faff;
+            stroke-width: 3px;
+            stroke-linejoin: round;
+        }
+        body.dark-mode .chart-overlay .co-drawing .co-label { stroke: #161b22; }
+        .chart-overlay .co-drawing .co-text { pointer-events: auto; cursor: pointer; }
+        .chart-overlay .co-drawing.co-preview .co-body { stroke-dasharray: 5 4; opacity: 0.8; }
+        .chart-overlay .co-measure { pointer-events: none; }
+        .chart-overlay .co-measure rect { stroke: none; }
+        .chart-overlay .co-measure text { stroke: none; fill: #e6edf3; font-weight: 500; }
+
+        /* ----- VÁCH NGĂN KÉO RESIZE PANE (PHASE 16) ----- */
+        .pane-sep {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 7px;
+            cursor: ns-resize;
+            pointer-events: auto;
+            z-index: 6;
+            background: transparent;
+            transition: background 0.15s;
+        }
+        .pane-sep:hover,
+        .pane-sep.pane-sep-active { background: rgba(0, 128, 128, 0.18); }
+
+        /* ----- MENU CHUỘT PHẢI TRÊN DRAWING (PHASE 14) ----- */
+        .co-ctx {
+            position: absolute;
+            z-index: 40;
+            background: #fff;
+            border: 1px solid #e5eaf0;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+            padding: 6px;
+            min-width: 176px;
+        }
+        body.dark-mode .co-ctx { background: #161b22; border-color: #30363d; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+        .co-ctx-row { display: flex; gap: 4px; padding: 2px; }
+        .co-ctx-swatch { width: 18px; height: 18px; border-radius: 5px; border: 2px solid transparent; cursor: pointer; padding: 0; }
+        .co-ctx-swatch.on { border-color: #008080; }
+        .co-ctx-w {
+            width: 22px; height: 22px;
+            border: 1px solid #dce1e9; background: transparent; color: #3c4b5f;
+            border-radius: 5px; cursor: pointer; font-size: 12px; padding: 0;
+        }
+        .co-ctx-w.on { background: #008080; color: #fff; border-color: #008080; }
+        body.dark-mode .co-ctx-w { color: #d7dee8; border-color: #30363d; }
+        .co-ctx-item {
+            display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+            border: none; background: transparent; color: #3c4b5f;
+            padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;
+        }
+        .co-ctx-item:hover { background: #f0f2f6; color: #008080; }
+        body.dark-mode .co-ctx-item { color: #d7dee8; }
+        body.dark-mode .co-ctx-item:hover { background: #21262d; color: #58a6ff; }
+        .co-ctx-divider { height: 1px; background: #e5eaf0; margin: 4px 0; }
+        body.dark-mode .co-ctx-divider { background: #2a3648; }
+
+        /* ----- NÚT + PANEL CHỈ BÁO (PHASE 3) ----- */
+        .chart-ind-wrap { position: relative; }
+        .ind-btn {            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            background: #eef2f6;
+            color: #3c4b5f;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .ind-btn:hover { background: #e2e8f0; color: #008080; }
+        body.dark-mode .ind-btn { background: #21262d; color: #9fb0c7; }
+        body.dark-mode .ind-btn:hover { background: #2a3648; color: #58a6ff; }
+        .indicator-panel {
+            position: absolute;
+            left: 0; /* nút ở bên trái header → mở sang phải, không bị khuất khỏi màn hình */
+            top: calc(100% + 8px);
+            z-index: 30;
+            min-width: 250px;
+            background: #fff;
+            border: 1px solid #e5eaf0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+            padding: 8px;
+            max-height: 340px;
+            overflow-y: auto;
+            scrollbar-width: none;         /* Firefox: ẩn scrollbar */
+            -ms-overflow-style: none;      /* Edge legacy: ẩn scrollbar */
+        }
+        .indicator-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        body.dark-mode .indicator-panel {
+            background: #161b22;
+            border-color: #30363d;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+        .ind-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #3c4b5f;
+        }
+        .ind-row:hover { background: #f0f2f6; }
+        body.dark-mode .ind-row { color: #d7dee8; }
+        body.dark-mode .ind-row:hover { background: #21262d; }
+        .ind-cb { accent-color: #008080; cursor: pointer; }
+        .ind-dot { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+        .ind-name { flex: 1; white-space: nowrap; }
+        .ind-desc { margin-left: 8px; font-size: 11px; color: #8a99b1; white-space: nowrap; }
+        body.dark-mode .ind-desc { color: #6b7a8f; }
+        .an-drop { position: relative; display: flex; align-items: center; }
+        .ind-fields { display: flex; gap: 4px; }
+        .ind-num {
+            width: 52px;
+            padding: 3px 4px;
+            font-size: 11px;
+            text-align: center;
+            border: 1px solid #dce1e9;
+            border-radius: 6px;
+            background: #fff;
+            color: #1a1f36;
+        }
+        body.dark-mode .ind-num { background: #0d1117; border-color: #30363d; color: #e6edf3; }
+        /* Ẩn nút tăng/giảm (spinner) native của input số */
+        .ind-num::-webkit-inner-spin-button,
+        .ind-num::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+        .ind-num { -moz-appearance: textfield; }
+
+        /* ----- NÚT PHÂN TÍCH S/R + VOLUME PROFILE (PHASE 4) ----- */
+        .chart-an-wrap { display: flex; gap: 6px; align-items: center; }
+        .an-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            background: #eef2f6;
+            color: #3c4b5f;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .an-btn:hover { background: #e2e8f0; color: #008080; }
+        .an-btn.an-active {
+            background: #008080;
+            border-color: #008080;
+            color: #fff;
+        }
+        body.dark-mode .an-btn { background: #21262d; color: #9fb0c7; }
+        body.dark-mode .an-btn:hover { background: #2a3648; color: #58a6ff; }
+        body.dark-mode .an-btn.an-active { background: #008080; border-color: #008080; color: #fff; }
+
+        /* overlay S/R + Volume Profile */
+        .analysis-overlay { pointer-events: none; }
+        .analysis-overlay .an-label {
+            font-size: 11px;
+            font-weight: 600;
+            paint-order: stroke;
+            stroke: #f8faff;
+            stroke-width: 3px;
+            stroke-linejoin: round;
+        }
+        body.dark-mode .analysis-overlay .an-label { stroke: #161b22; }
+
+        /* ----- PANEL ĐỘ RỘNG THỊ TRƯỜNG (PHASE 5) ----- */
+        .chart-export-wrap { display: flex; align-items: center; }
+        .chart-reset-wrap { display: flex; align-items: center; }
+        .reset-btn { color: #8a99b1 !important; }
+        .reset-btn:hover { color: #e74c3c !important; }
+
+        /* ----- NÚT + BẢNG PHÍM TẮT (PHASE 21) ----- */
+        .chart-help-wrap { display: flex; align-items: center; }
+        .hotkey-help {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(13, 17, 23, 0.5);
+            padding: 16px;
+            border-radius: 16px;
+        }
+        .hh-card {
+            width: 100%;
+            max-width: 500px;
+            max-height: 100%;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #e5eaf0;
+            border-radius: 14px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+            padding: 14px 18px;
+            color: #3c4b5f;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+        body.dark-mode .hh-card { background: #161b22; border-color: #30363d; color: #d7dee8; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); }
+        .hh-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .hh-head h4 { margin: 0; font-size: 14px; }
+        .hh-close { border: none; background: transparent; cursor: pointer; font-size: 14px; color: #8a99b1; padding: 4px 9px; border-radius: 8px; }
+        .hh-close:hover { background: #eef2f6; color: #e74c3c; }
+        body.dark-mode .hh-close:hover { background: #21262d; }
+        .hh-body { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; }
+        .hh-gtitle { font-weight: 700; color: #008080; margin-bottom: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+        body.dark-mode .hh-gtitle { color: #58a6ff; }
+        .hh-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+        .hh-row kbd {
+            display: inline-block;
+            min-width: 18px;
+            padding: 1px 6px;
+            text-align: center;
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 600;
+            background: #eef2f6;
+            border: 1px solid #d7dde6;
+            border-bottom-width: 2px;
+            border-radius: 5px;
+            color: #334155;
+        }
+        body.dark-mode .hh-row kbd { background: #21262d; border-color: #30363d; color: #e6edf3; }
+        .hh-row span { margin-left: 6px; color: #5b6b81; }
+        body.dark-mode .hh-row span { color: #9fb0c7; }
+        .hh-foot { margin-top: 12px; text-align: center; color: #8a99b1; font-size: 11px; }
+        @media (max-width: 640px) {
+            .hh-body { grid-template-columns: 1fr; }
+        }
+
+        /* ----- TOÀN MÀN HÌNH BIỂU ĐỒ (PHASE 22) ----- */
+        .chart-fs-wrap { display: flex; align-items: center; }
+        .fs-btn { color: #3c4b5f; }
+        body.dark-mode .fs-btn { color: #9fb0c7; }
+        .fs-btn.fs-active { color: #008080 !important; }
+        body.dark-mode .fs-btn.fs-active { color: #58a6ff !important; }
+        /* Khi toàn màn hình (Fullscreen API): dựng chart-block phủ kín viewport. */
+        body.chart-fullscreen {
+            overflow: hidden;
+            height: 100vh;
+        }
+        body.chart-fullscreen .chart-block {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            box-sizing: border-box;
+            background: #f4f6f9;
+            overflow: auto;
+        }
+        body.dark-mode.chart-fullscreen .chart-block { background: #0d1117; }
+        body.chart-fullscreen .chart-header { flex: 0 0 auto; }
+        body.chart-fullscreen .chart-placeholder {
+            flex: 1 1 auto;
+            min-height: 0;
+            height: auto !important;
+        }
+        body.chart-fullscreen .market-breadth-wrap { flex: 0 0 auto; }
+
+        /* ----- CÀI ĐẶT BIỂU ĐỒ (PHASE 23) ----- */
+        .chart-set-wrap { position: relative; display: flex; align-items: center; }
+        .set-pop {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            z-index: 36;
+            min-width: 250px;
+            background: #fff;
+            border: 1px solid #e5eaf0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+            padding: 8px;
+        }
+        body.dark-mode .set-pop { background: #161b22; border-color: #30363d; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+        .set-title { font-weight: 700; font-size: 12px; color: #3c4b5f; padding: 2px 6px 8px; }
+        body.dark-mode .set-title { color: #d7dee8; }
+        .set-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 7px 6px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .set-row:hover { background: #f0f2f6; }
+        body.dark-mode .set-row:hover { background: #21262d; }
+        .set-info { display: flex; flex-direction: column; gap: 1px; }
+        .set-name { font-size: 12px; color: #3c4b5f; }
+        body.dark-mode .set-name { color: #d7dee8; }
+        .set-desc { font-size: 11px; color: #8a99b1; }
+        body.dark-mode .set-desc { color: #6b7a8f; }
+        .set-cb { width: 16px; height: 16px; accent-color: #008080; cursor: pointer; flex: 0 0 auto; }
+
+
+
+        .chart-cmp-wrap { position: relative; display: flex; align-items: center; gap: 6px; }
+        .cmp-pop {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            z-index: 35;
+            min-width: 220px;
+            background: #fff;
+            border: 1px solid #e5eaf0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+            padding: 8px;
+        }
+        body.dark-mode .cmp-pop { background: #161b22; border-color: #30363d; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+        .cmp-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 6px 8px;
+            font-size: 12px;
+            border: 1px solid #dce1e9;
+            border-radius: 8px;
+            outline: none;
+            background: #fff;
+            color: #1a1f36;
+        }
+        body.dark-mode .cmp-input { background: #0d1117; border-color: #30363d; color: #e6edf3; }
+        .cmp-sug { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+        .cmp-mode { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+        .cmp-mode-label { font-size: 12px; color: #6b7a8f; }
+        body.dark-mode .cmp-mode-label { color: #9fb0c7; }
+        .cmp-mode-btn {
+            border: 1px solid #dce1e9;
+            background: #f3f6fa;
+            color: #3c4b5f;
+            border-radius: 8px;
+            padding: 3px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .cmp-mode-btn.active { background: #008080; border-color: #008080; color: #fff; }
+        body.dark-mode .cmp-mode-btn { background: #21262d; border-color: #30363d; color: #d7dee8; }
+        body.dark-mode .cmp-mode-btn.active { background: #008080; border-color: #008080; color: #fff; }
+        .cmp-sug-chip {
+            border: 1px solid #dce1e9;
+            background: #f3f6fa;
+            color: #3c4b5f;
+            border-radius: 8px;
+            padding: 3px 8px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .cmp-sug-chip:hover { border-color: #008080; color: #008080; }
+        body.dark-mode .cmp-sug-chip { background: #21262d; border-color: #30363d; color: #d7dee8; }
+        .cmp-clear {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: #e74c3c;
+            font-size: 12px;
+            padding: 6px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .cmp-clear:hover { background: rgba(231, 76, 60, 0.08); }
+        .cmp-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 10px;
+            border: 1px solid #e5eaf0;
+            background: #fbfcfe;
+            font-size: 12px;
+            color: #3c4b5f;
+            white-space: nowrap;
+        }
+        body.dark-mode .cmp-chip { background: #161b22; border-color: #2a3648; color: #d7dee8; }
+        .cmp-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+        .cmp-chip b.up { color: #0f7b3a; }
+        .cmp-chip b.down { color: #e74c3c; }
+        .cmp-chip-x {
+            border: none;
+            background: transparent;
+            color: #8a99b1;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 1;
+            padding: 0 2px;
+        }
+        .cmp-chip-x:hover { color: #e74c3c; }
+        .market-breadth-wrap { margin-top: 8px; }
+        .market-breadth {
+            border: 1px solid #e5eaf0;
+            border-radius: 10px;
+            background: #fbfcfe;
+            overflow: hidden;
+        }
+        body.dark-mode .market-breadth { background: #161b22; border-color: #2a3648; }
+        .mb-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #3c4b5f;
+            border-bottom: 1px solid #e5eaf0;
+            background: #f3f6fa;
+        }
+        body.dark-mode .mb-head { color: #d7dee8; border-bottom-color: #2a3648; background: #1c2330; }
+        .mb-gauge {
+            margin-left: auto;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .mb-gauge.up { color: #0f7b3a; }
+        .mb-gauge.down { color: #e74c3c; }
+        .mb-gauge.flat { color: #8a99b1; }
+        .mb-close {
+            border: none;
+            background: transparent;
+            color: #8a99b1;
+            cursor: pointer;
+            padding: 2px 4px;
+            font-size: 12px;
+        }
+        .mb-close:hover { color: #e74c3c; }
+        .mb-body { padding: 6px 8px; }
+        .mb-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+        .mb-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            background: #fff;
+            border: 1px solid #eef1f6;
+            font-size: 12px;
+        }
+        body.dark-mode .mb-row { background: #0d1117; border-color: #21262d; }
+        .mb-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: #c3ccd8; }
+        .mb-dot.up { background: #26a69a; }
+        .mb-dot.down { background: #ef5350; }
+        .mb-name { font-weight: 600; color: #3c4b5f; }
+        body.dark-mode .mb-name { color: #d7dee8; }
+        .mb-val { margin-left: auto; color: #6b7a8f; }
+        .mb-chg { font-weight: 600; }
+        .mb-chg.up { color: #0f7b3a; }
+        .mb-chg.down { color: #e74c3c; }
+        .mb-ma { font-size: 11px; padding: 1px 5px; border-radius: 8px; background: #eef2f6; }
+        .mb-ma.up { color: #0f7b3a; }
+        .mb-ma.down { color: #e74c3c; }
+        body.dark-mode .mb-ma { background: #21262d; }
+        .mb-loading, .mb-error { padding: 10px; text-align: center; color: #8a99b1; font-size: 12px; }
 
         .chart-bars {
             display: flex;
@@ -1946,16 +2549,32 @@
                 font-size: 10px;
             }
             .chart-placeholder {
-                height: 180px;
+                height: 320px;
             }
-            .chart-controls span {
-                padding: 2px 6px;
-                font-size: 10px;
+        }
+
+        /* ----- RESPONSIVE / MOBILE (PHASE 18) ----- */
+        .btn-label { display: inline; }
+        @media (max-width: 640px) {
+            .btn-label { display: none; }
+            .ind-btn, .an-btn { padding: 5px 8px; }
+            .tf-btn { padding: 5px 8px; }
+            .tf-menu { right: auto; left: 0; max-width: 78vw; }
+            .indicator-panel, .an-panel, .cmp-pop {
+                right: auto;
+                left: 0;
+                max-width: 78vw;
             }
+            .chart-legend { font-size: 10px; }
+            .chart-toolbar-wrap { flex: 0 0 40px; }
+            .ct-btn { width: 30px; height: 30px; }
+            .cmp-chip { font-size: 11px; }
+            .mb-rows { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
     <link rel="stylesheet" href="/static/typography.css" />
-    <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- Biểu đồ nến: Lightweight Charts (TradingView open-source) + dữ liệu OHLCV TuniX -->
+    <script src="/static/vendor/lightweight-charts.standalone.production.js?v=5.2.1"></script>
 </head>
 <body>
     <div class="app-container">
@@ -2008,29 +2627,86 @@
                 </div>
             </div>
 
-            <!-- 2. BIỂU ĐỒ CHART -->
+            <!-- 2. BIỂU ĐỒ CHART (Lightweight Charts — TradingView open-source, dữ liệu TuniX) -->
             <div class="chart-block">
                 <div class="chart-header">
-                    <h3 id="chartTitle">TCB · 1Y · HOSE</h3>
-                    <div class="chart-source-tabs" id="chartSourceTabs">
-                        <span class="active" data-chart-source="self">Cố định</span>
-                        <span data-chart-source="tradingview" class="disabled" title="Tạm thời chưa khả dụng">Tuỳ biến</span>
+                    <div class="chart-header-left">
+                        <h3 class="chart-title" id="chartTitle">
+                            <input type="text" id="chartSymbolInput" value="TCB" placeholder="Mã CP" autocomplete="off" spellcheck="false" maxlength="10" aria-label="Tìm mã cổ phiếu" />
+                        </h3>
+                        <div class="chart-tf-wrap">
+                            <button type="button" class="tf-btn" id="tfBtn">Ngày <i class="fa-solid fa-chevron-down"></i></button>
+                            <div class="tf-menu" id="tfMenu" style="display:none">
+                                <button type="button" data-tf="1H">Giờ</button>
+                                <button type="button" data-tf="1D" class="active">Ngày</button>
+                                <button type="button" data-tf="1W">Tuần</button>
+                                <button type="button" data-tf="1M">Tháng</button>
+                            </div>
+                        </div>
+                        <div class="chart-ind-wrap" id="indicatorEl"></div>
+                        <div class="chart-an-wrap" id="analysisEl"></div>
+                        <div class="chart-cmp-wrap" id="compareEl"></div>
                     </div>
-                    <div class="chart-controls" id="chartControls">
-                        <span data-chart-period="1W">1W</span>
-                        <span data-chart-period="1M">1M</span>
-                        <span data-chart-period="3M">3M</span>
-                        <span data-chart-period="6M">6M</span>
-                        <span class="active" data-chart-period="1Y">1Y</span>
-                        <span data-chart-period="3Y">3Y</span>
-                        <span data-chart-period="5Y">5Y</span>
-                        <span data-chart-period="ALL">ALL</span>
+                    <div class="chart-header-right">
+                        <div class="chart-reset-wrap" id="resetEl"></div>
+                        <div class="chart-export-wrap" id="exportEl"></div>
+                        <div class="chart-help-wrap" id="helpEl"></div>
+                        <div class="chart-fs-wrap" id="fsEl"></div>
+                        <div class="chart-set-wrap" id="settingsEl"></div>
                     </div>
                 </div>
                 <div class="chart-placeholder" id="chartPlaceholder">
-                    <div id="selfChartContainer" style="height:100%;width:100%;"></div>
-                    <div class="tradingview-widget-container" id="tvWidgetContainer" style="display:none;height:100%;width:100%">
-                        <div class="tradingview-widget-container__widget" id="tvWidgetRoot" style="height:100%;width:100%"></div>
+                    <div class="chart-toolbar-wrap" id="chartToolbar"></div>
+                    <div class="chart-canvas-wrap">
+                        <div id="lwcChartContainer" style="height:100%;width:100%;"></div>
+                        <div class="chart-status" id="chartStatus" style="display:none"></div>
+                        <div class="chart-legend" id="chartLegend"></div>
+                    </div>
+                </div>
+                <div class="market-breadth-wrap" id="marketBreadth"></div>
+
+                <!-- BẢNG PHÍM TẮT BIỂU ĐỒ (PHASE 21) — hiển thị TRONG khung chart-block -->
+                <div class="hotkey-help" id="hotkeyHelp">
+                    <div class="hh-card">
+                        <div class="hh-head">
+                            <h4><i class="fa-solid fa-keyboard"></i> Phím tắt biểu đồ</h4>
+                            <button type="button" class="hh-close" id="hotkeyHelpClose" title="Đóng (Esc)"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="hh-body">
+                            <div class="hh-group">
+                                <div class="hh-gtitle">Điều hướng</div>
+                                <div class="hh-row"><kbd>←</kbd><kbd>→</kbd><span>Cuộn biểu đồ</span></div>
+                                <div class="hh-row"><kbd>Shift</kbd>+<kbd>←</kbd><kbd>→</kbd><span>Di chuyển crosshair từng nến</span></div>
+                                <div class="hh-row"><kbd>+</kbd><kbd>−</kbd><span>Phóng to / thu nhỏ</span></div>
+                                <div class="hh-row"><kbd>F</kbd><span>Khớp toàn bộ dữ liệu</span></div>
+                            </div>
+                            <div class="hh-group">
+                                <div class="hh-gtitle">Timeframe</div>
+                                <div class="hh-row"><kbd>[</kbd><kbd>]</kbd><span>Ngày · Tuần · Tháng · Giờ</span></div>
+                            </div>
+                            <div class="hh-group">
+                                <div class="hh-gtitle">Phân tích</div>
+                                <div class="hh-row"><kbd>S</kbd><span>Hỗ trợ / Kháng cự</span></div>
+                                <div class="hh-row"><kbd>V</kbd><span>Volume Profile</span></div>
+                                <div class="hh-row"><kbd>C</kbd><span>Hội tụ</span></div>
+                                <div class="hh-row"><kbd>B</kbd><span>Độ rộng thị trường</span></div>
+                            </div>
+                            <div class="hh-group">
+                                <div class="hh-gtitle">Công cụ vẽ</div>
+                                <div class="hh-row"><kbd>1</kbd>–<kbd>9</kbd><kbd>0</kbd><kbd>M</kbd><span>Chọn công cụ</span></div>
+                                <div class="hh-row"><kbd>Del</kbd><span>Xoá đối tượng</span></div>
+                                <div class="hh-row"><kbd>Ctrl</kbd>+<kbd>Z</kbd><span>Hoàn tác</span></div>
+                                <div class="hh-row"><kbd>Ctrl</kbd>+<kbd>Y</kbd><span>Làm lại</span></div>
+                            </div>
+                            <div class="hh-group">
+                                <div class="hh-gtitle">Hành động</div>
+                                <div class="hh-row"><kbd>E</kbd><span>Xuất ảnh PNG</span></div>
+                                <div class="hh-row"><kbd>R</kbd><span>Đặt lại bố cục</span></div>
+                                <div class="hh-row"><kbd>?</kbd><span>Bảng phím tắt</span></div>
+                                <div class="hh-row"><kbd>Esc</kbd><span>Đóng popup / huỷ vẽ</span></div>
+                            </div>
+                        </div>
+                        <div class="hh-foot">Nhấn <kbd>?</kbd> hoặc <kbd>Esc</kbd> để đóng</div>
                     </div>
                 </div>
             </div>
@@ -2184,11 +2860,16 @@
     <script>
         let lastSentHeight = 0;
         let currentQuote = null;
-        // Biểu đồ: nguồn hiển thị (self = tự vẽ, tradingview = nhúng TradingView) và kỳ hạn
-        let currentChartSource = 'self';
-        let currentChartPeriod = '1Y';   // 1W, 1M, 3M, 6M, 1Y, 3Y, 5Y, ALL
-        let selfChart = null;
-        let selfCandleSeries = null;
+        // Biểu đồ nến: TuniX Chart Engine (Lightweight Charts, modular) — dữ liệu OHLCV từ TuniX
+        let currentTimeframe = '1D';   // 1H, 1D, 1W, 1M
+        let tunixChart = null;
+        let tunixChartModulePromise = null;
+        function getTunixChartModule() {
+            if (!tunixChartModulePromise) {
+                tunixChartModulePromise = import('/static/chart/stockDetailChart.js');
+            }
+            return tunixChartModulePromise;
+        }
 
         function formatNumber(value, decimals = 0) {
             const num = Number(value || 0);
@@ -2224,6 +2905,64 @@
         function getSymbolFromQuery() {
             const params = new URLSearchParams(window.location.search);
             return (params.get('symbol') || 'TCB').trim().toUpperCase();
+        }
+
+        // Các mã CHỈ SỐ (VNINDEX, VN30, HNX, UPCOM...) — chart có dữ liệu nhưng
+        // KHÔNG có sổ lệnh / khớp lệnh / so sánh / phân tích / cổ đông / báo cáo / tích sản.
+        const INDEX_SYMBOLS = new Set(['VNINDEX', 'VN30', 'HNX', 'HNXINDEX', 'HNX30', 'UPCOM', 'UPINDEX', 'UPCOMM']);
+
+        function isIndexSymbol(symbol) {
+            return INDEX_SYMBOLS.has((symbol || '').trim().toUpperCase());
+        }
+
+        function getFsFromQuery() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('fs') === '1';
+        }
+
+        // ?fs=1 → bật SỚM class toàn màn hình: chart-block phủ kín ngay khi load
+        // (không lộ trang embed bên dưới), rồi Fullscreen API vào sau khi chart sẵn sàng.
+        if (getFsFromQuery()) {
+            document.body.classList.add('chart-fullscreen');
+        }
+        // ?fs=1 từ icon header: parent sẽ fullscreen chính iframe này (có user activation)
+        // → đồng bộ class chart-fullscreen theo trạng thái fullscreen của parent (tự bật/xoá khi thoát).
+        if (getFsFromQuery() && window.parent && window.parent !== window) {
+            const syncParentFs = () => {
+                const pd = window.parent.document;
+                const pe = pd.fullscreenElement || pd.webkitFullscreenElement;
+                document.body.classList.toggle('chart-fullscreen', pe === window.frameElement);
+            };
+            window.parent.document.addEventListener('fullscreenchange', syncParentFs);
+            syncParentFs();
+        }
+
+        // URL có ?fs=1 → sau khi chart nạp xong, tự động bật TOÀN MÀN HÌNH (mặc định VNINDEX).
+        function maybeAutoFullscreen() {
+            if (!getFsFromQuery()) return;
+            let tries = 0;
+            const t = setInterval(() => {
+                tries++;
+                // Parent đã fullscreen iframe này (icon header) → không tự request nữa, chỉ giữ class.
+                const parentFsEl = (window.parent && window.parent.document) ?
+                    (window.parent.document.fullscreenElement || window.parent.document.webkitFullscreenElement) : null;
+                if (parentFsEl === window.frameElement) {
+                    document.body.classList.add('chart-fullscreen');
+                    clearInterval(t);
+                    return;
+                }
+                const fs = window.__tunixChartDebug && window.__tunixChartDebug.fullscreen;
+                if (fs && fs.isSupported()) {
+                    if (!fs.isActive()) fs.toggle();
+                    // Fullscreen API đã vào nhưng đôi khi sự kiện fullscreenchange bị bỏ lỡ
+                    // trong lúc chart vừa khởi tạo → đảm bảo class chart-fullscreen bám trên body.
+                    if (fs.isActive() && !document.body.classList.contains('chart-fullscreen')) {
+                        document.body.classList.add('chart-fullscreen');
+                    }
+                    if (fs.isActive()) { clearInterval(t); return; }
+                }
+                if (tries > 60) clearInterval(t); // giới hạn ~12s
+            }, 200);
         }
 
         async function api(path) {
@@ -2268,240 +3007,74 @@
             root.innerHTML = group1.map(render).join('') + '<div class="metric-divider"></div>' + group2.map(render).join('');
         }
 
-        function mapExchangeToTradingView(exchange) {
-            const ex = String(exchange || '').toUpperCase();
-            if (ex === 'HNX') return 'HNX';
-            if (ex === 'UPCOM' || ex === 'UPCOMM') return 'UPCOM';
-            return 'HOSE';
-        }
+        // ===== TuniX Chart Engine (Lightweight Charts — modular) =====
+        // PHASE 1 — Chart Core. Toàn bộ OHLCV lấy từ TuniX (backend /api/chart/history).
+        // Timeframe hỗ trợ: 1D/1W/1M (dữ liệu TuniX daily) — không giả lập intraday.
 
-        function mapChartConfigToTradingView(rawLabel) {
-            const label = String(rawLabel || '').toUpperCase();
-            const mapped = {
-                '1W': { interval: '30', range: '5D', label: '1W' },
-                '1M': { interval: '60', range: '1M', label: '1M' },
-                '3M': { interval: 'D', range: '3M', label: '3M' },
-                '6M': { interval: 'D', range: '6M', label: '6M' },
-                '1Y': { interval: 'W', range: '12M', label: '1Y' },
-                '3Y': { interval: 'M', range: 'ALL', label: '3Y' },
-                '5Y': { interval: 'M', range: 'ALL', label: '5Y' },
-                'ALL': { interval: 'M', range: 'ALL', label: 'ALL' },
-            };
-            return mapped[label] || { interval: 'W', range: '12M', label: '1Y' };
-        }
-
-        function buildTradingViewSymbolCandidates(quote) {
-            const symbol = String(quote.symbol || getSymbolFromQuery()).toUpperCase();
-            const preferredExchange = mapExchangeToTradingView(quote.exchange);
-            const exchanges = [preferredExchange, 'HOSE', 'HNX', 'UPCOM'];
-            const deduped = [];
-            for (const ex of exchanges) {
-                const candidate = `${ex}:${symbol}`;
-                if (!deduped.includes(candidate)) {
-                    deduped.push(candidate);
-                }
-            }
-            deduped.push(symbol);
-            return deduped;
-        }
-
-        function renderTradingViewWidget(quote) {
-            const root = document.getElementById('tvWidgetRoot');
-            const wrapper = document.getElementById('tvWidgetContainer');
-            if (!root || !wrapper) return;
-            const symbol = String(quote.symbol || getSymbolFromQuery()).toUpperCase();
-            const exchange = mapExchangeToTradingView(quote.exchange);
-            const tvSymbols = buildTradingViewSymbolCandidates(quote);
-            const isDark = document.body.classList.contains('dark-mode');
-            const cfg = mapChartConfigToTradingView(currentChartPeriod);
-
-            root.innerHTML = '';
-            const script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-            script.async = true;
-            script.text = JSON.stringify({
-                allow_symbol_change: true,
-                calendar: false,
-                details: false,
-                hide_side_toolbar: true,
-                hide_top_toolbar: false,
-                hide_legend: false,
-                hide_volume: false,
-                hotlist: false,
-                interval: cfg.interval,
-                range: cfg.range,
-                locale: 'en',
-                save_image: true,
-                style: '1',
-                symbol: tvSymbols[0],
-                watchlist: tvSymbols,
-                theme: isDark ? 'dark' : 'light',
-                timezone: 'Etc/UTC',
-                backgroundColor: isDark ? '#0d1117' : '#ffffff',
-                gridColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(46, 46, 46, 0.06)',
-                withdateranges: false,
-                compareSymbols: [],
-                studies: [],
-                autosize: true,
-            });
-            root.appendChild(script);
-
-            setTimeout(notifyParentHeight, 120);
-            setTimeout(notifyParentHeight, 450);
-        }
-
-        function renderChart(history, quote) {
-            const title = document.getElementById('chartTitle');
-            if (title) {
-                title.textContent = `${quote.symbol} · ${currentChartPeriod} · ${quote.exchange || '--'}`;
-            }
-
-            if (currentChartSource === 'self') {
-                loadSelfChart(quote.symbol || getSymbolFromQuery());
-            } else {
-                renderTradingViewWidget(quote);
+        function destroyTunixChart() {
+            if (tunixChart) {
+                try { tunixChart.destroy(); } catch (e) {}
+                tunixChart = null;
             }
         }
 
-        // ===== Biểu đồ nến tự vẽ (Lightweight Charts — miễn phí, dữ liệu thực /history) =====
-        function mapSelfPeriod(period) {
-            const map = {
-                '1W':  { bp: '1m', keepDays: 7 },
-                '1M':  { bp: '1m', keepDays: null },
-                '3M':  { bp: '3m', keepDays: null },
-                '6M':  { bp: '6m', keepDays: null },
-                '1Y':  { bp: '1y', keepDays: null },
-                '3Y':  { bp: '5y', keepDays: 365 * 3 },
-                '5Y':  { bp: '5y', keepDays: null },
-                'ALL': { bp: '5y', keepDays: null },
-            };
-            return map[period] || { bp: '1y', keepDays: null };
-        }
-
-        async function loadSelfChart(symbol) {
-            const container = document.getElementById('selfChartContainer');
+        async function loadTunixChart(symbol) {
+            const container = document.getElementById('lwcChartContainer');
             if (!container) return;
-            const info = mapSelfPeriod(currentChartPeriod);
-            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8a99b1;font-size:13px;"><i class="fas fa-spinner fa-spin"></i>&nbsp; Đang tải dữ liệu...</div>';
             try {
-                const data = await api(`/stocks/${encodeURIComponent(symbol)}/history?period=${encodeURIComponent(info.bp)}`);
-                let points = Array.isArray(data) ? data : [];
-                if (info.keepDays) {
-                    const cutoff = Date.now() - info.keepDays * 86400000;
-                    points = points.filter(p => new Date(p.time).getTime() >= cutoff);
+                const mod = await getTunixChartModule();
+                if (!tunixChart) {
+                    tunixChart = mod.createStockDetailChart({
+                        container: container,
+                        placeholderEl: document.getElementById('chartPlaceholder'),
+                        toolbarEl: document.getElementById('chartToolbar'),
+                        indicatorEl: document.getElementById('indicatorEl'),
+                        analysisEl: document.getElementById('analysisEl'),
+                        breadthEl: document.getElementById('marketBreadth'),
+                        exportEl: document.getElementById('exportEl'),
+                        compareEl: document.getElementById('compareEl'),
+                        resetEl: document.getElementById('resetEl'),
+                        helpEl: document.getElementById('helpEl'),
+                        fsEl: document.getElementById('fsEl'),
+                        settingsEl: document.getElementById('settingsEl'),
+                        legendEl: document.getElementById('chartLegend'),
+                        symbol: symbol,
+                        timeframe: currentTimeframe,
+                        theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light',
+                        onHeightChange: function () { notifyParentHeight(); },
+                        onTimeframeChange: function (tf) { setChartTimeframe(tf); },
+                    });
                 }
-                if (!points.length) {
-                    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8a99b1;font-size:13px;">Không có dữ liệu cho kỳ hạn này</div>';
-                    return;
-                }
-                renderSelfChart(points, symbol);
+                await tunixChart.load(symbol);
             } catch (e) {
-                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#e74c3c;font-size:13px;">Không tải được dữ liệu biểu đồ</div>';
+                const dark = document.body.classList.contains('dark-mode');
+                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:24px;text-align:center;font-size:13px;color:' + (dark ? '#9fb0c7' : '#8a99b1') + ';">Không tải được dữ liệu biểu đồ. Vui lòng thử lại.</div>';
             }
             notifyParentHeight();
         }
 
-        function renderSelfChart(points, symbol) {
-            const container = document.getElementById('selfChartContainer');
-            if (!container) return;
-            container.innerHTML = '';
-            if (typeof LightweightCharts === 'undefined') {
-                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#e74c3c;font-size:13px;">Thư viện biểu đồ chưa sẵn sàng</div>';
-                return;
+        function setChartTimeframe(tf) {
+            tf = (tf || '1D').toUpperCase();
+            currentTimeframe = tf;
+            document.querySelectorAll('#tfMenu button').forEach(b => b.classList.toggle('active', b.dataset.tf === tf));
+            const btn = document.getElementById('tfBtn');
+            if (btn) {
+                const labels = { '1D': 'Ngày', '1W': 'Tuần', '1M': 'Tháng', '1H': 'Giờ' };
+                btn.innerHTML = (labels[tf] || 'Ngày') + ' <i class="fa-solid fa-chevron-down"></i>';
             }
-            const isDark = document.body.classList.contains('dark-mode');
-            const chart = LightweightCharts.createChart(container, {
-                width: container.clientWidth || 600,
-                height: container.clientHeight || 280,
-                layout: {
-                    background: { type: 'solid', color: isDark ? '#0d1117' : '#ffffff' },
-                    textColor: isDark ? '#8b949e' : '#6b7a8f',
-                },
-                grid: {
-                    vertLines: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(46,46,46,0.05)' },
-                    horzLines: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(46,46,46,0.05)' },
-                },
-                rightPriceScale: { borderColor: isDark ? '#30363d' : '#e2e8f0' },
-                timeScale: { borderColor: isDark ? '#30363d' : '#e2e8f0', timeVisible: true, secondsVisible: false },
-                crosshair: { mode: 0 },
-                localization: {
-                    // Trục đứng (giá) hiển thị theo VND, có phân tách hàng nghìn
-                    priceFormatter: (price) => {
-                        const p = Number(price);
-                        if (!Number.isFinite(p)) return '--';
-                        return Math.round(p).toLocaleString('en-US') + ' đ';
-                    },
-                },
-            });
-
-            const series = chart.addCandlestickSeries({
-                upColor: '#26a69a',
-                downColor: '#ef5350',
-                borderUpColor: '#26a69a',
-                borderDownColor: '#ef5350',
-                wickUpColor: '#26a69a',
-                wickDownColor: '#ef5350',
-            });
-
-            const mapped = points
-                .map(p => ({
-                    time: Math.floor(new Date(p.time).getTime() / 1000),
-                    open: Number(p.open),
-                    high: Number(p.high),
-                    low: Number(p.low),
-                    close: Number(p.close),
-                }))
-                .sort((a, b) => a.time - b.time);
-            series.setData(mapped);
-            chart.timeScale().fitContent();
-
-            selfChart = chart;
-            selfCandleSeries = series;
-        }
-
-        function setChartSource(source) {
-            currentChartSource = source;
-            document.querySelectorAll('#chartSourceTabs span').forEach(s => s.classList.toggle('active', s.dataset.chartSource === source));
-            const selfEl = document.getElementById('selfChartContainer');
-            const tvEl = document.getElementById('tvWidgetContainer');
-            if (!selfEl || !tvEl) return;
-            if (source === 'self') {
-                tvEl.style.display = 'none';
-                selfEl.style.display = '';
-                const symbol = (currentQuote && currentQuote.symbol) || getSymbolFromQuery();
-                loadSelfChart(symbol);
+            if (tunixChart) {
+                tunixChart.setTimeframe(tf);
             } else {
-                selfEl.style.display = 'none';
-                tvEl.style.display = '';
-                if (currentQuote) renderTradingViewWidget(currentQuote);
-            }
-            notifyParentHeight();
-        }
-
-        function setChartPeriod(period) {
-            currentChartPeriod = period;
-            document.querySelectorAll('#chartControls span').forEach(s => s.classList.toggle('active', s.dataset.chartPeriod === period));
-            const title = document.getElementById('chartTitle');
-            if (title && currentQuote) {
-                title.textContent = `${currentQuote.symbol} · ${currentChartPeriod} · ${currentQuote.exchange || '--'}`;
-            }
-            const symbol = (currentQuote && currentQuote.symbol) || getSymbolFromQuery();
-            if (currentChartSource === 'self') {
-                loadSelfChart(symbol);
-            } else if (currentQuote) {
-                renderTradingViewWidget(currentQuote);
+                loadTunixChart((currentQuote && currentQuote.symbol) || getSymbolFromQuery());
             }
         }
 
-        window.addEventListener('resize', function() {
-            if (selfChart && currentChartSource === 'self') {
-                const container = document.getElementById('selfChartContainer');
-                if (container && container.clientWidth > 0) {
-                    selfChart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
-                }
-            }
-        });
+        function renderChart(quote) {
+            const symbol = (quote && quote.symbol) || getSymbolFromQuery();
+            const titleInput = document.getElementById('chartSymbolInput');
+            if (titleInput) titleInput.value = symbol;
+            loadTunixChart(symbol);
+        }
 
         function renderOrderBook(book) {
             const body = document.getElementById('orderBookBody');
@@ -3192,18 +3765,64 @@
             notifyParentHeight();
         }
 
-        async function loadStockDetail() {
-            const symbol = getSymbolFromQuery();
-            // Phân tích lợi nhuận + cơ cấu cổ đông + báo cáo chạy độc lập ngay (không chờ quote chậm).
-            loadProfitAnalysis(symbol);
-            loadShareholderStructure(symbol);
-            loadReports(symbol, 'financial');
-            loadAccumulation(symbol);
+        // Toàn màn hình: hiển thị chart "không có dữ liệu" + thông báo (không thoát fullscreen).
+        function showChartNoData(message) {
+            if (tunixChart) { try { tunixChart.destroy(); } catch (e) { /* ignore */ } tunixChart = null; }
+            // destroy() gỡ class chart-fullscreen (qua destroyFullscreen) — nếu vẫn đang
+            // fullscreen thì giữ lại layout toàn màn hình cho khối chart.
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                document.body.classList.add('chart-fullscreen');
+            }
+            const container = document.getElementById('lwcChartContainer');
+            if (container) {
+                const dark = document.body.classList.contains('dark-mode');
+                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:24px;text-align:center;font-size:13px;line-height:1.7;color:' +
+                    (dark ? '#9fb0c7' : '#8a99b1') + ';">' + message + '</div>';
+            }
+            notifyParentHeight();
+        }
+
+        // Toàn màn hình: đổi mã cổ phiếu NGAY trong chart (không thoát fullscreen, không reload trang).
+        // Đúng mã → nạp lại tại chỗ. Sai mã → chart không dữ liệu + thông báo.
+        async function switchSymbolInFullscreen(sym) {
+            const input = document.getElementById('chartSymbolInput');
+            if (input) input.value = sym;
+            let quote = null;
+            try { quote = await api(`/stocks/${encodeURIComponent(sym)}/quote`); } catch (err) { quote = null; }
+            if (!quote || quote.valid === false) {
+                showChartNoData('Hiện tại TuniX không có cổ phiếu này. Hãy vui lòng nhập đúng cổ phiếu trên sàn HOSE, HNX, UpCOM.');
+                return;
+            }
+            // Nạp lại toàn bộ trang (quote + chart + sổ lệnh...) TẠI CHỖ — giữ nguyên fullscreen
+            await loadStockDetail(sym);
+        }
+
+        // Đổi mã cổ phiếu NGAY TRONG TRANG (không reload iframe/trang) — parent gửi
+        // tunix-switch-stock khi người dùng tìm cổ phiếu khác từ header khi đang ở trang chi tiết.
+        async function switchSymbol(sym) {
+            const input = document.getElementById('chartSymbolInput');
+            if (input) input.value = sym;
+            // Cập nhật URL của chính iframe (không reload) để getSymbolFromQuery() trả đúng mã mới.
+            const params = new URLSearchParams({ symbol: sym });
+            if (getFsFromQuery()) params.set('fs', '1');
             try {
-                const [quote, history] = await Promise.all([
-                    api(`/stocks/${encodeURIComponent(symbol)}/quote`),
-                    api(`/stocks/${encodeURIComponent(symbol)}/history`),
-                ]);
+                window.history.replaceState({}, '', `/StockDetail?${params.toString()}`);
+            } catch (e) { /* ignore */ }
+            await loadStockDetail(sym);
+        }
+
+        async function loadStockDetail(symbolOverride) {
+            const symbol = (symbolOverride || getSymbolFromQuery()).trim().toUpperCase();
+            const isIndex = isIndexSymbol(symbol);
+            if (!isIndex) {
+                // Phân tích lợi nhuận + cơ cấu cổ đông + báo cáo chạy độc lập ngay (không chờ quote chậm).
+                loadProfitAnalysis(symbol);
+                loadShareholderStructure(symbol);
+                loadReports(symbol, 'financial');
+                loadAccumulation(symbol);
+            }
+            try {
+                const quote = await api(`/stocks/${encodeURIComponent(symbol)}/quote`);
 
                 // Mã cổ phiếu không tồn tại trên HOSE/HNX/UPCoM → hiển thị thông báo
                 if (quote && quote.valid === false) {
@@ -3233,14 +3852,18 @@
 
                 currentQuote = quote;
                 renderMetrics(quote);
-                renderChart(history, quote);
-                loadOrderBook(symbol);
-                loadRecentTrades(symbol);
-                loadPeerComparison(symbol);
-                // Giá trị hiện tại trong bảng cổ đông cần giá -> render lại sau khi có quote.
-                if (shareholderData) {
-                    renderShareholderTable();
+                renderChart(quote);
+                if (!isIndex) {
+                    loadOrderBook(symbol);
+                    loadRecentTrades(symbol);
+                    loadPeerComparison(symbol);
+                    // Giá trị hiện tại trong bảng cổ đông cần giá -> render lại sau khi có quote.
+                    if (shareholderData) {
+                        renderShareholderTable();
+                    }
                 }
+                // ?fs=1 → bật toàn màn hình sau khi chart nạp (mặc định VNINDEX).
+                maybeAutoFullscreen();
                 notifyParentHeight();
             } catch (error) {
                 console.error('Failed to load stock detail:', error);
@@ -3286,34 +3909,67 @@
             });
         });
 
-        // Biểu đồ: chọn nguồn (Cố định / Tuỳ biến)
-        document.querySelectorAll('#chartSourceTabs span').forEach(el => {
-            el.addEventListener('click', function() {
-                if (this.classList.contains('active') || this.classList.contains('disabled')) return;
-                setChartSource(this.dataset.chartSource);
-            });
-        });
-
-        // Biểu đồ: chọn kỳ hạn (1W, 1M, 3M, 6M, 1Y, 3Y, 5Y, ALL)
-        document.querySelectorAll('#chartControls span').forEach(el => {
-            el.addEventListener('click', function() {
-                setChartPeriod(this.dataset.chartPeriod);
-            });
-        });
-
         // Theme toggle (cho phép dark mode)
         const savedTheme = localStorage.getItem('left-col-theme');
         if (savedTheme === 'dark') {
             document.body.classList.add('dark-mode');
         }
 
-        const defaultActivePeriod = document.querySelector('#chartControls .active');
-        if (defaultActivePeriod) {
-            currentChartPeriod = defaultActivePeriod.dataset.chartPeriod || '1Y';
+        // Biểu đồ: dropdown chọn TIMEFRAME (Giờ / Ngày / Tuần / Tháng)
+        const tfBtn = document.getElementById('tfBtn');
+        const tfMenu = document.getElementById('tfMenu');
+        if (tfBtn && tfMenu) {
+            tfBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                tfMenu.style.display = tfMenu.style.display === 'none' ? 'block' : 'none';
+            });
+            tfMenu.querySelectorAll('button').forEach(b => {
+                b.addEventListener('click', () => {
+                    tfMenu.style.display = 'none';
+                    setChartTimeframe(b.dataset.tf);
+                });
+            });
+            document.addEventListener('click', (e) => {
+                if (!tfMenu.contains(e.target) && e.target !== tfBtn) tfMenu.style.display = 'none';
+            });
+        }
+        const defaultTf = document.querySelector('#tfMenu button.active');
+        if (defaultTf) currentTimeframe = defaultTf.dataset.tf || '1D';
+
+        // Nhập mã cổ phiếu trên tiêu đề chart → Enter chuyển sang mã khác.
+        // Ở TOÀN MÀN HÌNH: xử lý NGAY tại chart (không thoát fullscreen, không reload trang).
+        const chartSymbolInput = document.getElementById('chartSymbolInput');
+        if (chartSymbolInput) {
+            chartSymbolInput.addEventListener('keydown', async (e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                const sym = chartSymbolInput.value.trim().toUpperCase();
+                const cur = getSymbolFromQuery();
+                if (!sym) { chartSymbolInput.value = cur; return; }
+                const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+                if (isFs) {
+                    await switchSymbolInFullscreen(sym);
+                    return;
+                }
+                if (sym === cur) return;
+                try {
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                    } else {
+                        window.location.href = `/cophieu-${sym}`;
+                    }
+                } catch (err) {
+                    window.location.href = `/cophieu-${sym}`;
+                }
+            });
         }
 
-        // Lắng nghe sự kiện theme từ parent (nếu có)
+        // Lắng nghe sự kiện từ parent: đổi mã cổ phiếu ngay trong trang (tìm mã khác từ header).
         window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'tunix-switch-stock' && event.data.symbol) {
+                switchSymbol(event.data.symbol);
+                return;
+            }
             if (event.data && (event.data.type === 'toggleTheme' || event.data.type === 'tunix-theme')) {
                 const shouldUseDark = event.data.type === 'tunix-theme' ? event.data.mode === 'dark' : Boolean(event.data.isDark);
                 if (shouldUseDark) {
@@ -3321,12 +3977,10 @@
                 } else {
                     document.body.classList.remove('dark-mode');
                 }
-                if (currentQuote) {
-                    if (currentChartSource === 'self') {
-                        loadSelfChart(currentQuote.symbol || getSymbolFromQuery());
-                    } else {
-                        renderTradingViewWidget(currentQuote);
-                    }
+                if (tunixChart) {
+                    tunixChart.setTheme(shouldUseDark ? 'dark' : 'light');
+                } else if (currentQuote) {
+                    loadTunixChart(currentQuote.symbol || getSymbolFromQuery());
                 }
                 notifyParentHeight();
             }
@@ -3751,5 +4405,6 @@
             }
         }
     </script>
+
 </body>
 </html>

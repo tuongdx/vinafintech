@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="/frontend/Logo/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
+    <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
     <title>TuniX - Phân tích cổ phiếu toàn diện cho nhà đầu tư thực</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
@@ -750,6 +755,25 @@
         }
 
         body.dark-mode .header-right i:hover {
+            color: #008080;
+        }
+
+        /* Icon biểu đồ nến ở header — hiển thị GIỐNG icon thông báo (không nền/padding nút). */
+        .header-chart-icon {
+            display: flex;
+            align-items: center;
+            color: #4a5a72;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .header-chart-icon:hover {
+            color: #008080;
+        }
+        body.dark-mode .header-chart-icon {
+            color: #8b949e;
+        }
+        body.dark-mode .header-chart-icon:hover {
             color: #008080;
         }
 
@@ -2500,6 +2524,14 @@
                 </div>
                 <div class="header-right">
                     <a href="/tin-tuc" class="header-link" id="newsPageLink" title="Tin tức"><i class="fas fa-newspaper"></i> Tin tức</a>
+                    <a href="/cophieu-VNINDEX?fs=1" class="header-chart-icon" id="chartFullscreenLink" title="Biểu đồ phân tích kỹ thuật">
+                        <svg width="18" height="18" viewBox="0 1.5 24 21" fill="currentColor" aria-hidden="true" style="display:block;">
+                            <rect x="6" y="3" width="2" height="18" rx="0.8"/>
+                            <rect x="4" y="7.5" width="5.8" height="9.5" rx="0.8"/>
+                            <rect x="16" y="2" width="2" height="20" rx="0.8"/>
+                            <rect x="14" y="6" width="5.8" height="10.5" rx="0.8"/>
+                        </svg>
+                    </a>
                     <div class="notif-wrap" id="notifWrap">
                         <i class="fas fa-bell" id="notifBell"></i>
                         <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
@@ -3157,15 +3189,38 @@
         window.addEventListener('scroll', updateHeaderScrolled, { passive: true });
         updateHeaderScrolled();
 
-        function openStockDetailInIndex(symbol) {
+        function isStockDetailEmbedded() {
+            const frame = document.getElementById('contentEmbedFrame');
+            if (!frame) return false;
+            try {
+                return /StockDetail/.test(frame.getAttribute('src') || '');
+            } catch (e) { return false; }
+        }
+
+        function openStockDetailInIndex(symbol, fs) {
             const normalized = String(symbol || '').trim().toUpperCase();
             if (!normalized) return;
             const searchInput = document.querySelector('.header-search input');
             if (searchInput) {
                 searchInput.value = normalized;
             }
-            loadContent(`/StockDetail?symbol=${encodeURIComponent(normalized)}`);
-            window.history.replaceState({}, '', `/cophieu-${encodeURIComponent(normalized)}`);
+            // Đang ở trang chi tiết cổ phiếu → chỉ ĐỔI MÃ NGAY TRONG TRANG (postMessage tới iframe),
+            // không tải lại cả trang / không recreate iframe.
+            if (!fs && isStockDetailEmbedded()) {
+                const frame = document.getElementById('contentEmbedFrame');
+                if (frame && frame.contentWindow) {
+                    frame.contentWindow.postMessage({ type: 'tunix-switch-stock', symbol: normalized }, '*');
+                }
+                window.history.replaceState({}, '', `/cophieu-${encodeURIComponent(normalized)}`);
+                if (typeof updateRightColumnForStock === 'function') {
+                    updateRightColumnForStock(normalized);
+                }
+                return;
+            }
+            const params = new URLSearchParams({ symbol: normalized });
+            if (fs) params.set('fs', '1');
+            loadContent(`/StockDetail?${params.toString()}`);
+            window.history.replaceState({}, '', `/cophieu-${encodeURIComponent(normalized)}` + (fs ? '?fs=1' : ''));
         }
 
         window.openStockDetailInIndex = openStockDetailInIndex;
@@ -3268,6 +3323,23 @@
                     setHeaderContext(false);
                 } else {
                     openNewsPage();
+                }
+            });
+        }
+
+        // Button biểu đồ nến ở header → mở BIỂU ĐỒ TOÀN MÀN HÌNH mặc định VNINDEX (load in-place, không reload trang).
+        const chartFullscreenLink = document.getElementById('chartFullscreenLink');
+        if (chartFullscreenLink) {
+            chartFullscreenLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                openStockDetailInIndex('VNINDEX', true);
+                // Bật fullscreen NGAY TRONG cử chỉ click (parent có user activation) →
+                // đảm bảo 1 click là fullscreen trên MỌI trình duyệt, không phụ thuộc
+                // user-activation của iframe vừa tạo. Iframe nhận ?fs=1 → tự giữ layout toàn màn hình.
+                const frame = document.getElementById('contentEmbedFrame');
+                if (frame && frame.requestFullscreen) {
+                    const p = frame.requestFullscreen();
+                    if (p && typeof p.catch === 'function') p.catch(() => { /* fallback: iframe tự fullscreen qua maybeAutoFullscreen */ });
                 }
             });
         }
@@ -3443,6 +3515,7 @@
                         title="TuniX Embedded Content"
                         style="display:block;width:100%;height:560px;min-height:560px;border:none;border-radius:16px;background:transparent;"
                         loading="lazy"
+                        allow="fullscreen"
                     ></iframe>
                 `;
 
@@ -3991,9 +4064,9 @@
         const cophieuMatch = window.location.pathname.match(/^\/cophieu-([A-Za-z0-9.]+)$/i);
         const pathPage = window.location.pathname.replace(/^\//, '');
         if (initialSymbol) {
-            openStockDetailInIndex(initialSymbol);
+            openStockDetailInIndex(initialSymbol, initialParams.get('fs') === '1');
         } else if (cophieuMatch) {
-            openStockDetailInIndex(cophieuMatch[1]);
+            openStockDetailInIndex(cophieuMatch[1], initialParams.get('fs') === '1');
         } else if (prettyMatch) {
             loadContent('/tintuc?id=' + prettyMatch[1]);
         } else if (initialPage === 'tintuc' && initialNewsId) {

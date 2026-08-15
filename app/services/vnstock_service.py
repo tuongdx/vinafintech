@@ -302,6 +302,110 @@ def _simplize_chart(ticker: str, type_name: str, period: str) -> list[dict[str, 
     return points
 
 
+# ---------------------------------------------------------------------------
+# KBS (KB Securities) — nguồn OHLCV lịch sử SÂU (~10 năm daily) + intraday 1H
+# ---------------------------------------------------------------------------
+# KBS endpoint: https://kbbuddywts.kbsec.com.vn/iis-server/investment/stocks/{sym}/data_{suffix}
+#   "1D"→day, "1W"→week, "1M"→month, "1H"→60P ; params sdate/edate (DD-MM-YYYY).
+# Đã kiểm chứng: daily ~2553 bar (2016→2026), weekly 529, monthly 124, 1H hoạt động.
+_KBS_BASE_URL = "https://kbbuddywts.kbsec.com.vn/iis-server/investment"
+_KBS_INTERVAL_SUFFIX = {"1D": "day", "1W": "week", "1M": "month", "1H": "60P"}
+_KBS_TIMEOUT_SECONDS = 15
+_KBS_DATA_TTL = 60        # cache dữ liệu KBS ngắn (tránh spam khi lazy-load)
+_KBS_EARLIEST_TTL = 3600  # cache mốc lịch sử xa nhất (1 giờ)
+
+
+def _kbs_chart(symbol: str, interval: str, from_ts: int = 0, to_ts: int = 0) -> list[dict[str, Any]]:
+    """Lấy OHLCV từ KB Securities (KBS) cho (symbol, interval) trong [from, to].
+
+    Trả list [{time(unix), open, high, low, close, volume}] tăng dần theo time.
+    - from_ts = 0 -> từ 01-01-2000.
+    - to_ts   = 0 -> đến hôm nay.
+    - Timestamp KBS theo giờ VN (Asia/Ho_Chi_Minh); daily 07:00 ICT = 00:00 UTC.
+    """
+    interval = str(interval or "").upper()
+    suffix = _KBS_INTERVAL_SUFFIX.get(interval)
+    if not suffix:
+        return []
+    symbol = str(symbol or "").upper()
+
+    sdate = "01-01-2000" if not from_ts else datetime.fromtimestamp(int(from_ts), _VN_TZ).strftime("%d-%m-%Y")
+    edate = datetime.now(_VN_TZ).strftime("%d-%m-%Y") if not to_ts else datetime.fromtimestamp(int(to_ts), _VN_TZ).strftime("%d-%m-%Y")
+
+    cache_key = f"kbs-chart:{symbol}:{interval}:{sdate}:{edate}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    url = f"{_KBS_BASE_URL}/stocks/{symbol}/data_{suffix}?sdate={sdate}&edate={edate}"
+    req = Request(
+        url,
+        headers={
+            "user-agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/120 Safari/537.36"
+            ),
+            "referer": "https://kbbuddywts.kbsec.com.vn/",
+            "accept": "application/json, text/plain, */*",
+        },
+    )
+    with urlopen(req, timeout=_KBS_TIMEOUT_SECONDS) as response:  # nosec B310
+        payload = json.loads(response.read().decode("utf-8"))
+
+    rows = payload.get("data_" + suffix) if isinstance(payload, dict) else None
+    if not isinstance(rows, list):
+        return []
+
+    out: list[dict[str, Any]] = []
+    for item in rows:
+        if not isinstance(item, dict):
+            continue
+        t_raw = str(item.get("t", "") or "").strip()
+        try:
+            t = datetime.strptime(t_raw, "%Y-%m-%d %H:%M").replace(tzinfo=_VN_TZ)
+        except Exception:
+            continue
+        o = _to_float(item.get("o"))
+        h = _to_float(item.get("h"))
+        l = _to_float(item.get("l"))
+        c = _to_float(item.get("c"))
+        v = int(_to_float(item.get("v"), 0))
+        if o <= 0 or h <= 0 or l <= 0 or c <= 0 or h < l:
+            continue
+        out.append({"time": int(t.timestamp()), "open": o, "high": h, "low": l, "close": c, "volume": v})
+
+    # KBS trả giảm dần (mới trước) -> sort tăng dần + dedupe theo time.
+    out.sort(key=lambda b: b["time"])
+    seen: set[int] = set()
+    unique: list[dict[str, Any]] = []
+    for b in out:
+        if b["time"] in seen:
+            continue
+        seen.add(b["time"])
+        unique.append(b)
+
+    if unique:
+        cache.set(cache_key, unique, ttl_seconds=_KBS_DATA_TTL)
+    return unique
+
+
+def _kbs_earliest_time(symbol: str) -> int | None:
+    """Mốc lịch sử xa nhất KBS có cho symbol (probe 1D từ 2000, cache 1 giờ).
+
+    Dùng chung cho mọi timeframe (dữ liệu KBS của 1 mã bắt đầu cùng một mốc).
+    """
+    symbol = str(symbol or "").upper()
+    key = f"kbs-earliest:{symbol}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    rows = _kbs_chart(symbol, "1D", 0, 0)
+    earliest = rows[0]["time"] if rows else None
+    if earliest:
+        cache.set(key, earliest, ttl_seconds=_KBS_EARLIEST_TTL)
+    return earliest
+
+
 def _fallback_quote(symbol: str) -> dict[str, Any]:
     return {
         "symbol": symbol.upper(),
@@ -1756,6 +1860,31 @@ def get_quote(symbol: str) -> dict[str, Any]:
     if cached is not None:
         return cached
 
+    # Chỉ số (VNINDEX, VN30, HNX, HNX30, UPCOM...) — trả quote như mã để frontend + chart hiển thị.
+    index_key = _INDEX_SYMBOL_KEYS.get(symbol.upper())
+    if index_key:
+        detail = get_index_detail(index_key, "1y")
+        value = _to_float(detail.get("value", 0))
+        change = _to_float(detail.get("change", 0))
+        result = {
+            "valid": True,
+            "symbol": symbol.upper(),
+            "name": str(detail.get("label") or symbol.upper()),
+            "exchange": "INDEX",
+            "price": round(value, 4),
+            "matched_price": round(value, 4),
+            "change": round(change, 4),
+            "percent_change": round(_to_float(detail.get("percent_change", 0)), 4),
+            "reference_price": round(value - change, 4),
+            "open": 0, "high": 0, "low": 0, "volume": 0, "value": 0,
+            "bid_price_1": 0.0, "bid_volume_1": 0, "ask_price_1": 0.0, "ask_volume_1": 0,
+            "trading_status": "",
+            "as_of": str(detail.get("as_of", "")),
+            "source": "index-detail",
+        }
+        cache.set(key, result, ttl_seconds=15)
+        return result
+
     metadata = _lookup_symbol_metadata(symbol)
 
     # Mã không tồn tại trên HOSE/HNX/UPCoM → báo invalid để frontend hiển thị thông báo
@@ -1978,6 +2107,45 @@ def _yahoo_index(symbol: str, period: str = "1y") -> dict[str, Any] | None:
         return None
 
 
+# Kỳ hạn → cửa sổ Simplize cho biểu đồ chỉ số (luôn daily, hoặc weekly cho 5y).
+# KHÔNG dùng "3m" (Simplize trả bar 2h) hay "6m" (Simplize trả ~1 năm, trùng với 1y).
+_INDEX_SIMPLIZE_PERIOD = {"1m": "1m_d", "3m": "1y", "6m": "1y", "1y": "1y", "5y": "5y"}
+_INDEX_CUTOFF_DAYS = {"1m": 31, "3m": 92, "6m": 184, "1y": 366, "5y": 0}
+
+
+def _index_simplize_period(period: str) -> str:
+    return _INDEX_SIMPLIZE_PERIOD.get(str(period).lower(), "1y")
+
+
+def _filter_history_by_period(history: list[dict[str, Any]], period: str) -> list[dict[str, Any]]:
+    """Lọc lịch sử theo kỳ hạn (chỉ giữ các bar trong N ngày gần nhất)."""
+    days = _INDEX_CUTOFF_DAYS.get(str(period).lower(), 0)
+    if not days or not history:
+        return history
+    cutoff_ts = time.time() - days * 86400
+    out: list[dict[str, Any]] = []
+    for point in history:
+        try:
+            raw = str(point.get("time", "")).replace("Z", "+00:00")
+            ts = datetime.fromisoformat(raw).timestamp()
+        except Exception:
+            continue
+        if ts >= cutoff_ts:
+            out.append(point)
+    return out
+
+
+_INDEX_SYMBOL_KEYS: dict[str, str] = {
+    "VNINDEX": "vnindex",
+    "VN30": "vn30",
+    "HNX": "hnx",
+    "HNXINDEX": "hnx",
+    "HNX30": "hnx30",
+    "UPCOM": "upcom",
+    "UPINDEX": "upcom",
+    "UPCOMM": "upcom",
+}
+
 _INDEX_DEFS: dict[str, dict[str, Any]] = {
     "vnindex": {"label": "VNINDEX", "unit": "", "decimals": 1, "simplize": ("VNINDEX", "index")},
     "vn30": {"label": "VN30", "unit": "", "decimals": 1, "simplize": ("VN30", "index")},
@@ -2044,7 +2212,10 @@ def get_index_detail(key: str, period: str = "1y") -> dict[str, Any]:
         except Exception:  # noqa: BLE001
             pass
         try:
-            history = _simplize_chart(ticker, type_name, _map_period(period))
+            history = _filter_history_by_period(
+                _simplize_chart(ticker, type_name, _index_simplize_period(period)),
+                period,
+            )
             if cfg.get("gold_vn_scale"):
                 for point in history:
                     for field in ("open", "high", "low", "close"):
