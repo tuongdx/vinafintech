@@ -428,7 +428,11 @@ export function createStockDetailChart(options) {
             fsBtn = btn;
         }
         if (!fsManager) {
-            fsManager = new FullscreenManager({ onChange: (active) => refreshFsBtn(active) });
+            fsManager = new FullscreenManager({ onChange: (active) => {
+                refreshFsBtn(active);
+                // Thoát toàn màn hình (tự fullscreen trong iframe) → trả chart về chiều cao bình thường.
+                if (!active) resetChartHeightAfterFullscreen();
+            } });
             fsManager.create();
         }
         refreshFsBtn(fsManager.isActive());
@@ -438,6 +442,17 @@ export function createStockDetailChart(options) {
     function destroyFullscreen() {
         if (fsManager) { try { fsManager.destroy(); } catch (e) { /* ignore */ } fsManager = null; }
         if (fsBtn) { try { fsBtn.remove(); } catch (e) { /* ignore */ } fsBtn = null; }
+    }
+
+    // Sau khi thoát toàn màn hình: trả chart về chiều cao mặc định (CSS .chart-placeholder ~480px).
+    // Khi chart được khởi tạo trong lúc fullscreen (?fs=1), `baseChartHeight` ghi nhận chiều cao
+    // fullscreen (placeholder height:auto !important) rồi giữ nguyên bằng inline style → sau khi
+    // thoát fullscreen chart vẫn cao hơn bình thường. Hàm này reset để recalc lại từ chiều cao CSS.
+    function resetChartHeightAfterFullscreen() {
+        if (!placeholderEl) return;
+        placeholderEl.style.height = '';
+        baseChartHeight = 0;
+        recalcChartHeight();
     }
 
     // ---------- Cài đặt biểu đồ (PHASE 23) ----------
@@ -962,5 +977,5 @@ export function createStockDetailChart(options) {
         legend.clear();
     }
 
-    return { load, setTimeframe, setTheme, destroy };
+    return { load, setTimeframe, setTheme, destroy, resetChartHeight: resetChartHeightAfterFullscreen };
 }

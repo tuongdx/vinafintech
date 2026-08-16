@@ -3189,6 +3189,14 @@
         window.addEventListener('scroll', updateHeaderScrolled, { passive: true });
         updateHeaderScrolled();
 
+        // Mã cổ phiếu đang xem ở trang chi tiết — để icon nến fullscreen ĐÚNG mã hiện tại
+        // (không phải lúc nào cũng mặc định VNINDEX). Cập nhật mỗi khi mở/đổi mã.
+        let currentChartSymbol = 'VNINDEX';
+        // Trang đang hiển thị (page path cuối cùng truyền vào loadContent) + trạng thái phục hồi
+        // sau khi thoát fullscreen mở từ trang KHÔNG phải chi tiết cổ phiếu (icon nến).
+        let lastLoadedPage = null;
+        let fsReturnState = null;
+
         function isStockDetailEmbedded() {
             const frame = document.getElementById('contentEmbedFrame');
             if (!frame) return false;
@@ -3200,6 +3208,7 @@
         function openStockDetailInIndex(symbol, fs) {
             const normalized = String(symbol || '').trim().toUpperCase();
             if (!normalized) return;
+            currentChartSymbol = normalized;
             const searchInput = document.querySelector('.header-search input');
             if (searchInput) {
                 searchInput.value = normalized;
@@ -3327,12 +3336,22 @@
             });
         }
 
-        // Button biểu đồ nến ở header → mở BIỂU ĐỒ TOÀN MÀN HÌNH mặc định VNINDEX (load in-place, không reload trang).
+        // Button biểu đồ nến ở header → mở BIỂU ĐỒ TOÀN MÀN HÌNH (load in-place, không reload trang).
+        // Đang ở trang chi tiết cổ phiếu → fullscreen ĐÚNG mã đang xem; nơi khác → mặc định VNINDEX.
+        // Nếu mở từ trang KHÔNG phải chi tiết cổ phiếu → khi thoát fullscreen QUAY LẠI trang trước đó.
         const chartFullscreenLink = document.getElementById('chartFullscreenLink');
         if (chartFullscreenLink) {
             chartFullscreenLink.addEventListener('click', function(e) {
                 e.preventDefault();
-                openStockDetailInIndex('VNINDEX', true);
+                const fromStockPage = isStockDetailEmbedded();
+                if (fromStockPage) {
+                    fsReturnState = null;
+                    openStockDetailInIndex(currentChartSymbol, true);
+                } else {
+                    // Lưu trang hiện tại (nội dung + URL) để thoát fullscreen quay lại đúng trang này.
+                    fsReturnState = { page: lastLoadedPage, url: location.href };
+                    openStockDetailInIndex('VNINDEX', true);
+                }
                 // Bật fullscreen NGAY TRONG cử chỉ click (parent có user activation) →
                 // đảm bảo 1 click là fullscreen trên MỌI trình duyệt, không phụ thuộc
                 // user-activation của iframe vừa tạo. Iframe nhận ?fs=1 → tự giữ layout toàn màn hình.
@@ -3343,6 +3362,22 @@
                 }
             });
         }
+
+        // Thoát fullscreen (mở từ trang không phải chi tiết cổ phiếu) → quay lại trang trước khi bấm icon nến.
+        function restorePreviousPage() {
+            if (!fsReturnState) return;
+            const s = fsReturnState;
+            fsReturnState = null;
+            try {
+                if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
+                if (s.page) loadContent(s.page);
+                if (s.url) window.history.replaceState({}, '', s.url);
+            } catch (err) { /* ignore */ }
+        }
+        document.addEventListener('fullscreenchange', function() {
+            const pe = document.fullscreenElement || document.webkitFullscreenElement;
+            if (!pe && fsReturnState) restorePreviousPage();
+        });
 
         // ===== Header: thanh danh mục tin tức =====
         const NEWS_CATEGORIES = [
@@ -3479,6 +3514,8 @@
         function loadContent(page) {
             const container = document.getElementById('dynamicContent');
             if (!container) return;
+            // Lưu trang đang hiển thị — dùng để quay lại trang trước đó sau khi thoát fullscreen icon nến.
+            lastLoadedPage = page;
 
             // Cập nhật header theo trang đang xem: trang tin tức / bài viết tin tức → logo thêm chữ "Tin tức", nút đổi thành "Thị trường".
             setHeaderContext(page.includes('tintuc') || page.includes('tin-tuc'));
@@ -4023,6 +4060,12 @@
                 openStockDetailInIndex(data.symbol);
                 return;
             }
+            if (data.type === 'tunix-symbol-changed' && data.symbol) {
+                // iframe StockDetail báo đổi mã NGAY TRONG TRANG (vd đổi mã khi fullscreen)
+                // → đồng bộ mã hiện tại để icon nến fullscreen đúng mã.
+                currentChartSymbol = String(data.symbol).trim().toUpperCase();
+                return;
+            }
             if (data.type === 'tunix-open-url' && data.url) {
                 // Mở link ngoài (VD: Nguồn bài viết) từ parent — tránh popup blocker chặn _blank trong iframe
                 window.open(data.url, '_blank', 'noopener');
@@ -4275,7 +4318,7 @@
                 const loggedIn = !!localStorage.getItem('tunix_access_token');
                 if (loggedIn) {
                     if (icon) icon.innerHTML = '<i class="fas fa-robot" style="color:#fff;"></i>';
-                    if (title) title.innerHTML = '<i class="fas fa-robot" style="margin-right:6px;color:#008080;"></i>TuniX mới cho ra mắt TuniAI';
+                    if (title) title.textContent = 'TuniX mới cho ra mắt TuniAI';
                     if (text) text.textContent = 'Với TuniAI bạn có thể hỏi về cổ phiếu, mã chứng khoán, thị trường, so sánh mã, lấy dữ liệu realtime từ TuniX, tin tức, BCTC và có thể phân tích thông minh như broker nhiều kinh nghiệm trong thị trường.';
                     if (btn) {
                         btn.textContent = 'Trải nghiệm TuniAI ngay';

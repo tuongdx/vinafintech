@@ -1759,6 +1759,22 @@
             font-weight: 600;
         }
 
+        /* Tooltip cột ĐẦU / CUỐI trong "So sánh tương quan" và "Phân tích lợi nhuận":
+           khi canh giữa (left:50% + translateX(-50%)) tooltip của cột đầu/cuối tràn ra mép
+           block và bị CẮT MẤT thông tin (body/html có overflow:hidden). Căn sát mép trong để
+           tooltip luôn hiển thị trọn vẹn trong block. */
+        .peer-chart > .peer-col:first-child .tooltip,
+        .profit-chart-inner > .profit-bar-col:first-child .tooltip {
+            left: 0;
+            transform: none;
+        }
+        .peer-chart > .peer-col:last-child .tooltip,
+        .profit-chart-inner > .profit-bar-col:last-child .tooltip {
+            left: auto;
+            right: 0;
+            transform: none;
+        }
+
         /* ----- 6. CƠ CẤU CỔ ĐÔNG ----- */
         .shareholder-block {
             background: #fff;
@@ -1947,6 +1963,11 @@
         }
 
         #accumMonthlyInput {
+            /* Ẩn button tăng/giảm (spinner) của ô nhập số trên mọi trình duyệt.
+               WebKit (Chrome/Edge/Safari) dùng ::-webkit-*-spin-button bên dưới,
+               Firefox cần -moz-appearance: textfield trên chính input. */
+            -moz-appearance: textfield;
+            appearance: textfield;
             width: 56px;
             padding: 4px 8px;
             border: 1px solid #dce2ec;
@@ -2931,15 +2952,25 @@
             const syncParentFs = () => {
                 const pd = window.parent.document;
                 const pe = pd.fullscreenElement || pd.webkitFullscreenElement;
-                document.body.classList.toggle('chart-fullscreen', pe === window.frameElement);
+                const isFs = pe === window.frameElement;
+                document.body.classList.toggle('chart-fullscreen', isFs);
+                // Thoát fullscreen (parent-driven, icon nến ở header) → trả chart về chiều cao bình
+                // thường. Không làm thì placeholder giữ nguyên chiều cao lúc fullscreen
+                // (baseChartHeight ghi nhận sai) → biểu đồ "to hơn bình thường" sau khi thoát.
+                if (!isFs && tunixChart && typeof tunixChart.resetChartHeight === 'function') {
+                    tunixChart.resetChartHeight();
+                }
             };
             window.parent.document.addEventListener('fullscreenchange', syncParentFs);
             syncParentFs();
         }
 
         // URL có ?fs=1 → sau khi chart nạp xong, tự động bật TOÀN MÀN HÌNH (mặc định VNINDEX).
+        // Chỉ tự bật MỘT LẦN/trang: nếu người dùng đã thoát fullscreen thì khi đổi mã cổ phiếu
+        // (loadStockDetail chạy lại) KHÔNG tự nhảy lại fullscreen.
+        let autoFullscreenDone = false;
         function maybeAutoFullscreen() {
-            if (!getFsFromQuery()) return;
+            if (!getFsFromQuery() || autoFullscreenDone) return;
             let tries = 0;
             const t = setInterval(() => {
                 tries++;
@@ -2948,6 +2979,7 @@
                     (window.parent.document.fullscreenElement || window.parent.document.webkitFullscreenElement) : null;
                 if (parentFsEl === window.frameElement) {
                     document.body.classList.add('chart-fullscreen');
+                    autoFullscreenDone = true;
                     clearInterval(t);
                     return;
                 }
@@ -2959,9 +2991,9 @@
                     if (fs.isActive() && !document.body.classList.contains('chart-fullscreen')) {
                         document.body.classList.add('chart-fullscreen');
                     }
-                    if (fs.isActive()) { clearInterval(t); return; }
+                    if (fs.isActive()) { autoFullscreenDone = true; clearInterval(t); return; }
                 }
-                if (tries > 60) clearInterval(t); // giới hạn ~12s
+                if (tries > 60) { autoFullscreenDone = true; clearInterval(t); } // giới hạn ~12s
             }, 200);
         }
 
@@ -3207,7 +3239,7 @@
                 const isCurrent = p.is_current ? ' current' : '';
                 const name = escapeHtml(p.name || p.symbol);
                 return `
-                    <div class="peer-col${isCurrent}" title="${escapeHtml(p.symbol)}">
+                    <div class="peer-col${isCurrent}" data-symbol="${escapeHtml(p.symbol)}" title="${escapeHtml(p.symbol)}">
                         <div class="tooltip">
                             <div class="tt-name">${escapeHtml(p.symbol)}</div>
                             <div>${metric.label}: <strong>${formatPeerValue(val)}</strong></div>
@@ -3233,6 +3265,41 @@
                     chart.innerHTML = '<div class="info-empty">Không có dữ liệu so sánh</div>';
                 }
             }
+        }
+
+        // Đổi sang mã cổ phiếu khác NGAY TRONG TRANG — dùng chung khi click mã ở "So sánh tương quan".
+        // Logic giống ô nhập mã chart: fullscreen → đổi tại chart giữ fullscreen; nhúng trong index
+        // → báo parent (đổi trong trang, không reload); mở thẳng → điều hướng /cophieu-{MÃ}.
+        function goToStock(sym) {
+            sym = String(sym || '').trim().toUpperCase();
+            if (!sym) return;
+            if (sym === getSymbolFromQuery()) return; // đang xem mã này rồi
+            const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            if (isFs) {
+                switchSymbolInFullscreen(sym);
+                return;
+            }
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                } else {
+                    window.location.href = `/cophieu-${sym}`;
+                }
+            } catch (err) {
+                window.location.href = `/cophieu-${sym}`;
+            }
+        }
+
+        // Click vào cột/mã cổ phiếu trong "So sánh tương quan" → chuyển sang mã cổ phiếu đó.
+        const peerChartClickEl = document.getElementById('peerChart');
+        if (peerChartClickEl && !peerChartClickEl.__peerClickBound) {
+            peerChartClickEl.__peerClickBound = true;
+            peerChartClickEl.addEventListener('click', function(e) {
+                const col = e.target.closest ? e.target.closest('.peer-col') : null;
+                if (!col) return;
+                const sym = col.getAttribute('data-symbol') || '';
+                if (sym) goToStock(sym);
+            });
         }
 
         const peerMetricSelect = document.getElementById('peerMetricSelect');
@@ -3795,6 +3862,10 @@
             }
             // Nạp lại toàn bộ trang (quote + chart + sổ lệnh...) TẠI CHỖ — giữ nguyên fullscreen
             await loadStockDetail(sym);
+            // Báo parent mã đã đổi (để icon nến ở header fullscreen đúng mã mới, kể cả khi đổi mã trong fullscreen).
+            if (window.parent && window.parent !== window) {
+                try { window.parent.postMessage({ type: 'tunix-symbol-changed', symbol: sym }, '*'); } catch (e) { /* ignore */ }
+            }
         }
 
         // Đổi mã cổ phiếu NGAY TRONG TRANG (không reload iframe/trang) — parent gửi
