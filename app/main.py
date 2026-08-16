@@ -124,7 +124,6 @@ PAGE_MAP: dict[str, str] = {
     "register": "register.html",
     "forgot-password": "forgot-password.html",
     "reset-password": "reset-password.html",
-    "NewsDetail": "NewsDetail.html",
     "tintuc": "tintuc.html",
     "tin-tuc": "tin-tuc.html",
     "caidat": "caidat.html",

@@ -3101,13 +3101,6 @@
             }
         }
 
-        function renderChart(quote) {
-            const symbol = (quote && quote.symbol) || getSymbolFromQuery();
-            const titleInput = document.getElementById('chartSymbolInput');
-            if (titleInput) titleInput.value = symbol;
-            loadTunixChart(symbol);
-        }
-
         function renderOrderBook(book) {
             const body = document.getElementById('orderBookBody');
             const title = document.getElementById('orderBookTitle');
@@ -3885,12 +3878,19 @@
         async function loadStockDetail(symbolOverride) {
             const symbol = (symbolOverride || getSymbolFromQuery()).trim().toUpperCase();
             const isIndex = isIndexSymbol(symbol);
+            // Vẽ chart NGAY (chỉ cần symbol) — không chờ quote (quote có thể chậm 1-30s lần đầu).
+            const titleInput = document.getElementById('chartSymbolInput');
+            if (titleInput) titleInput.value = symbol;
+            loadTunixChart(symbol);
             if (!isIndex) {
-                // Phân tích lợi nhuận + cơ cấu cổ đông + báo cáo chạy độc lập ngay (không chờ quote chậm).
+                // Các panel độc lập chạy SONG SONG với quote để hiển thị sớm hơn.
                 loadProfitAnalysis(symbol);
                 loadShareholderStructure(symbol);
                 loadReports(symbol, 'financial');
                 loadAccumulation(symbol);
+                loadOrderBook(symbol);
+                loadRecentTrades(symbol);
+                loadPeerComparison(symbol);
             }
             try {
                 const quote = await api(`/stocks/${encodeURIComponent(symbol)}/quote`);
@@ -3923,11 +3923,7 @@
 
                 currentQuote = quote;
                 renderMetrics(quote);
-                renderChart(quote);
                 if (!isIndex) {
-                    loadOrderBook(symbol);
-                    loadRecentTrades(symbol);
-                    loadPeerComparison(symbol);
                     // Giá trị hiện tại trong bảng cổ đông cần giá -> render lại sau khi có quote.
                     if (shareholderData) {
                         renderShareholderTable();

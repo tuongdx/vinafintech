@@ -1901,9 +1901,16 @@ def get_quote(symbol: str) -> dict[str, Any]:
         }
 
     try:
-        last_map = _simplize_last("stock", [symbol.upper()])
+        # Nạp SONG SONG các nguồn độc lập (giá mới nhất / lịch sử 1M / chỉ số cơ bản) để
+        # giảm thời gian trả quote — trước đây chạy tuần tự nên lần đầu mất ~tổng 3 request.
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            f_last = pool.submit(_simplize_last, "stock", [symbol.upper()])
+            f_hist = pool.submit(get_history, symbol.upper(), "1d", "1m")
+            f_fund = pool.submit(_get_quote_fundamentals, symbol.upper())
+            last_map = f_last.result()
+            history = f_hist.result()
+            fundamentals = f_fund.result()
         last = last_map.get(symbol.upper(), {})
-        history = get_history(symbol.upper(), period="1m")
         latest_bar = history[-1] if history else {}
 
         price = _to_float(last.get("price", latest_bar.get("close", 0)))
@@ -1934,7 +1941,7 @@ def get_quote(symbol: str) -> dict[str, Any]:
             "source": "simplize-last",
         }
         result["valid"] = True
-        result.update(_get_quote_fundamentals(symbol.upper()))
+        result.update(fundamentals)
         cache.set(key, result, ttl_seconds=15)
         return result
     except Exception:
