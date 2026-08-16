@@ -513,6 +513,57 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
+        /* TICKER nhận định TuniAI dưới header (dòng chữ chạy) */
+        .ticker-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 16px;
+            background: linear-gradient(90deg, #0b5d5d 0%, #008080 100%);
+            color: #fff;
+            font-size: 12px;
+            overflow: hidden;
+        }
+        body.dark-mode .ticker-bar {
+            background: linear-gradient(90deg, #083f3f 0%, #005f5f 100%);
+        }
+        .ticker-label {
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 0.4px;
+            background: rgba(255, 255, 255, 0.16);
+            padding: 3px 9px;
+            border-radius: 999px;
+        }
+        .ticker-track {
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            height: 20px;
+        }
+        .ticker-marquee {
+            display: inline-flex;
+            white-space: nowrap;
+            will-change: transform;
+            animation: tunixTicker 45s linear infinite;
+        }
+        .ticker-marquee:hover { animation-play-state: paused; }
+        .ticker-text {
+            display: inline-block;
+            padding-right: 48px;
+            line-height: 20px;
+        }
+        @keyframes tunixTicker {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
+        }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -2544,6 +2595,16 @@
                 </div>
             </header>
 
+            <!-- TICKER: nhận định thị trường TuniAI (dòng chữ chạy dưới header) -->
+            <div class="ticker-bar" id="tuniAiTicker">
+                <span class="ticker-label"><i class="fas fa-robot"></i> TuniAI</span>
+                <div class="ticker-track">
+                    <div class="ticker-marquee" id="tuniAiTickerMarquee">
+                        <span class="ticker-text">Đang tải nhận định thị trường...</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- HEADER NAV: thanh danh mục tin tức (chỉ hiện khi ở trang tin tức) -->
             <div class="header-nav" id="newsCatNav" style="display:none;">
                 <div class="header-nav-inner" id="headerCatTabs"></div>
@@ -3189,6 +3250,54 @@
         window.addEventListener('scroll', updateHeaderScrolled, { passive: true });
         updateHeaderScrolled();
 
+        // ===== TICKER: nhận định thị trường TuniAI (dòng chữ chạy dưới header) =====
+        function loadTuniAiTicker() {
+            const marquee = document.getElementById('tuniAiTickerMarquee');
+            if (!marquee) return;
+            function setText(txt) {
+                const track = marquee.parentElement;
+                const text = (txt && txt.trim()) ? txt.trim() : 'TuniAI chưa có nhận định thị trường mới.';
+                marquee.innerHTML = '';
+                const span = document.createElement('span');
+                span.className = 'ticker-text';
+                span.textContent = text;
+                marquee.appendChild(span);
+                const trackW = track ? (track.clientWidth || 1200) : 1200;
+                let copies = 2;
+                while ((span.offsetWidth || 400) * copies < trackW * 2 && copies < 16) copies++;
+                if (copies % 2 !== 0) copies++; // chẵn để loop translateX(-50%) mượt
+                for (let i = 1; i < copies; i++) {
+                    const c = span.cloneNode(true);
+                    marquee.appendChild(c);
+                }
+                // Tốc độ cuộn tự thích ứng theo độ dài text (~55px/giây hiệu dụng — chạy chậm, dễ đọc):
+                // animation translateX 0 → -50% chỉ di chuyển NỬA bề rộng marquee,
+                // nên scrollDist = totalW/2.
+                const totalW = marquee.scrollWidth || (span.offsetWidth * copies);
+                const scrollDist = totalW / 2;
+                marquee.style.animationDuration = Math.max(20, Math.round(scrollDist / 55)) + 's';
+            }
+            function refresh() {
+                fetch('/api/ai/market-insight', { cache: 'no-store' })
+                    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(function (data) { if (data && data.text) setText(data.text); })
+                    .catch(function () { /* giữ text hiện tại */ });
+            }
+            setText('Đang tải nhận định thị trường...');
+            refresh();
+            // Cập nhật nhận định trong phiên: mỗi 5 phút lấy bản mới (không cần reload trang).
+            setInterval(refresh, 5 * 60 * 1000);
+        }
+        loadTuniAiTicker();
+
+        // Chỉ hiển thị ticker TuniAI trên TRANG CHỦ; sang trang khác (cổ phiếu, tin tức, cài đặt…) thì ẩn.
+        function updateTickerVisibility() {
+            const ticker = document.getElementById('tuniAiTicker');
+            if (!ticker) return;
+            const isHome = !!(lastLoadedPage && /^\/Home(?:\?|#|$)/i.test(lastLoadedPage));
+            ticker.style.display = isHome ? '' : 'none';
+        }
+
         // Mã cổ phiếu đang xem ở trang chi tiết — để icon nến fullscreen ĐÚNG mã hiện tại
         // (không phải lúc nào cũng mặc định VNINDEX). Cập nhật mỗi khi mở/đổi mã.
         let currentChartSymbol = 'VNINDEX';
@@ -3516,6 +3625,8 @@
             if (!container) return;
             // Lưu trang đang hiển thị — dùng để quay lại trang trước đó sau khi thoát fullscreen icon nến.
             lastLoadedPage = page;
+            // Ticker TuniAI chỉ hiện ở trang chủ → cập nhật ẩn/hiện mỗi lần chuyển trang.
+            if (typeof updateTickerVisibility === 'function') updateTickerVisibility();
 
             // Cập nhật header theo trang đang xem: trang tin tức / bài viết tin tức → logo thêm chữ "Tin tức", nút đổi thành "Thị trường".
             setHeaderContext(page.includes('tintuc') || page.includes('tin-tuc'));

@@ -81,6 +81,12 @@ def ai_status(db: Session = Depends(get_db)) -> dict[str, Any]:
     }
 
 
+@router.get("/market-insight")
+async def market_insight(force: bool = False) -> dict[str, Any]:
+    """Nhận định thị trường 1 câu (dòng chữ chạy dưới header) — public, không cần đăng nhập."""
+    return await ai_service.market_insight(force=force)
+
+
 @router.post("/chat")
 async def chat(
     payload: ChatRequest,

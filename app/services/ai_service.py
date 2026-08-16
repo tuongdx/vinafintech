@@ -10,6 +10,8 @@ Kiến trúc (theo yêu cầu):
 import asyncio
 import json
 import re
+import time
+from datetime import UTC, datetime
 from typing import Any, AsyncGenerator
 
 import httpx
@@ -625,3 +627,249 @@ async def stream_chat(messages: list[dict[str, Any]]) -> AsyncGenerator[dict[str
                 msgs.append({"role": "tool", "tool_call_id": tc["id"], "content": content})
 
     yield {"type": "error", "content": "Yêu cầu cần quá nhiều bước tra cứu."}
+
+
+# ---------------------------------------------------------------------------
+# Nhận định thị trường (ticker dưới header) — 1 câu tóm tắt dòng tiền VNINDEX
+# ---------------------------------------------------------------------------
+_MARKET_INSIGHT_TTL = 5 * 60           # làm mới nhận định mỗi 5 phút (cập nhật trong phiên)
+_market_insight_cache: dict[str, Any] = {}
+
+
+def _fmt_ti(v: Any) -> str:
+    """Số VND → 'X.X tỷ' (1 số lẻ, dấu chấm nghìn, giữ dấu âm)."""
+    try:
+        num = float(v)
+    except (TypeError, ValueError):
+        return "0"
+    ti = num / 1e9
+    s = f"{abs(ti):,.1f}"
+    return ("-" if ti < 0 else "") + s
+
+
+def _trend_note(trend: str) -> str:
+    """Lời nhắc nhở theo xu hướng VNINDEX (tăng/giảm/đi ngang)."""
+    if trend == "tăng":
+        return ("TuniAI đánh giá VNINDEX xu hướng tăng, các nhà đầu tư ngắn hạn chú ý "
+                "chốt lời, các nhà đầu tư trung, dài hạn chú ý tỷ trọng.")
+    if trend == "giảm":
+        return "TuniAI đánh giá VNINDEX xu hướng giảm, các nhà đầu tư chú ý cắt hoặc giảm tỷ trọng."
+    return "TuniAI đánh giá VNINDEX xu hướng đi ngang, các nhà đầu tư chú ý quan sát thêm."
+
+
+def _collect_market_core(include_breadth: bool = True) -> dict[str, Any]:
+    """Gom dữ liệu dòng tiền + VNINDEX — dùng chung cho chat tool và ticker.
+
+    - VNINDEX: giá, % thay đổi, xu hướng (1W/1M/3M/6M), đỉnh/đáy 1 năm.
+    - Khối ngoại: tổng mua/bán ròng + top mã mua/bán.
+    - Thanh khoản: khối lượng phiên gần nhất vs TB 1 tháng.
+    - Độ rộng (tuỳ chọn — tốn kém): số mã tăng/giảm.
+    """
+    flow: dict[str, Any] = {"vnindex": {}, "foreign": {}, "liquidity": {}, "breadth": {}}
+
+    # VNINDEX realtime (đã cache)
+    try:
+        for item in vns.get_market_overview() or []:
+            if str(item.get("symbol", "")).upper() == "VNINDEX":
+                flow["vnindex"].update({
+                    "value": item.get("value"),
+                    "change": item.get("change"),
+                    "percent_change": item.get("percent_change"),
+                })
+                break
+    except Exception:
+        pass
+
+    # Xu hướng + đỉnh/đáy + thanh khoản từ lịch sử 1 năm
+    try:
+        detail = vns.get_index_detail("vnindex", "1y")
+        hist = detail.get("history") or []
+        closes = [float(b.get("close")) for b in hist if b.get("close") is not None]
+        if len(closes) >= 2:
+            latest = closes[-1]
+
+            def _chg(back: int) -> float:
+                base = closes[-(back + 1)] if len(closes) > back else closes[0]
+                return ((latest / base) - 1.0) * 100.0 if base else 0.0
+
+            changes = {k: round(_chg(n), 2) for k, n in (("1w", 5), ("1m", 21), ("3m", 63), ("6m", 126))}
+            trend = "tăng" if (changes["1m"] > 0 and changes["3m"] > 0) else (
+                "giảm" if (changes["1m"] < 0 and changes["3m"] < 0) else "đi ngang")
+            flow["vnindex"]["trend"] = trend
+            flow["vnindex"]["changes"] = changes
+            flow["vnindex"]["high_1y"] = round(max(closes), 2)
+            flow["vnindex"]["low_1y"] = round(min(closes), 2)
+
+            vols = [float(b.get("volume") or 0) for b in hist if b.get("volume") is not None]
+            if len(vols) >= 2:
+                window = vols[-21:] or vols
+                avg = sum(window) / len(window)
+                flow["liquidity"] = {
+                    "last_volume": int(vols[-1]),
+                    "avg_volume_1m": int(round(avg)),
+                    "volume_ratio": round(vols[-1] / avg, 2) if avg else 0,
+                }
+    except Exception:
+        pass
+
+    # Dòng tiền khối ngoại (realtime, cache 90s)
+    try:
+        ft = vns.get_foreign_trading("foreign", "1D")
+        flow["foreign"] = {
+            "totals": ft.get("totals") or {},
+            "buy_top": (ft.get("buy_list") or [])[:5],
+            "sell_top": (ft.get("sell_list") or [])[:5],
+        }
+    except Exception:
+        pass
+
+    # Độ rộng thị trường (nặng — best-effort)
+    if include_breadth:
+        try:
+            board = vns.get_realtime_exchange_board(["HOSE", "HNX", "UPCOM"])
+            rows = board.get("data") or []
+
+            def _pct(r: dict[str, Any]) -> float:
+                v = r.get("percent_change")
+                return v if isinstance(v, (int, float)) else 0.0
+
+            up = sum(1 for r in rows if _pct(r) > 0)
+            down = sum(1 for r in rows if _pct(r) < 0)
+            flow["breadth"] = {"up": up, "down": down, "flat": max(0, len(rows) - up - down)}
+        except Exception:
+            flow["breadth"] = {}
+
+    return flow
+
+
+@_tool(
+    "get_market_flow",
+    "Dòng tiền ra/vào thị trường + VNINDEX: khối ngoại mua/bán ròng (tổng + top mã), thanh khoản, "
+    "độ rộng, xu hướng VNINDEX (1W/1M/3M/6M), đỉnh/đáy 1 năm. Dùng khi hỏi dòng tiền thị trường / xu hướng VNINDEX.",
+    {"type": "object", "properties": {}},
+)
+def _market_flow_tool() -> dict[str, Any]:
+    return _collect_market_core(include_breadth=True)
+
+
+def _template_insight(snap: dict[str, Any]) -> str:
+    """Dựng nhận định 1 câu từ dữ liệu (fallback khi DeepSeek lỗi/không cấu hình)."""
+    vni = snap.get("vnindex") or {}
+    totals = (snap.get("foreign") or {}).get("totals") or {}
+    sell_top = (snap.get("foreign") or {}).get("sell_top") or []
+    buy_top = (snap.get("foreign") or {}).get("buy_top") or []
+    breadth = snap.get("breadth") or {}
+
+    seg: list[str] = []
+    net = totals.get("net")
+    if net is not None:
+        dong = "rút ròng mạnh" if net < 0 else "mua ròng"
+        seg.append(f"dòng tiền khối ngoại đang {dong} {_fmt_ti(net)} tỷ đồng trong phiên")
+    else:
+        seg.append("dòng tiền khối ngoại chưa có số liệu đầy đủ")
+
+    if sell_top:
+        seg.append("tập trung bán tháo " + ", ".join(
+            f"{r.get('symbol')} {_fmt_ti(r.get('net_value'))} tỷ" for r in sell_top[:3]
+        ))
+    if buy_top:
+        seg.append("trong khi chỉ mua ròng nhẹ vào " + ", ".join(
+            str(r.get("symbol")) for r in buy_top[:3]
+        ))
+
+    val = vni.get("value")
+    pct = vni.get("percent_change")
+    if val is not None:
+        vstr = f"{float(val):,.0f}".replace(",", ".")
+        pstr = f"{abs(float(pct or 0)):.2f}".replace(".", ",")
+        dirw = "giảm" if (pct or 0) < 0 else "tăng"
+        seg.append(f"khiến VNINDEX {dirw} {pstr}% về mốc {vstr} điểm")
+
+    changes = vni.get("changes") or {}
+    if changes:
+        seg.append("xu hướng " + ", ".join(f"{k}: {v:+.2f}%" for k, v in list(changes.items())[:4]))
+    high = vni.get("high_1y")
+    low = vni.get("low_1y")
+    if high:
+        seg.append(f"đỉnh 1 năm {float(high):,.0f}".replace(",", "."))
+    if low:
+        seg.append(f"đáy 1 năm {float(low):,.0f}".replace(",", "."))
+
+    up = int(breadth.get("up") or 0)
+    down = int(breadth.get("down") or 0)
+    if up or down:
+        seg.append(f"độ rộng {'đỏ áp đảo' if down >= up else 'xanh'} ({down} giảm/{up} tăng)")
+
+    return "Theo TuniAI nhận định, " + ", ".join(seg) + "."
+
+
+async def _compose_insight_with_ai(flow: dict[str, Any]) -> str:
+    """Nhờ DeepSeek viết nhận định dòng tiền + VNINDEX + lời khuyên NĐT (không bịa số liệu)."""
+    _ensure_configured()
+    system = (
+        "Bạn là TuniAI - trợ lý phân tích chứng khoán Việt Nam của TuniX. "
+        "Dựa ĐÚNG vào dữ liệu được cung cấp (dòng tiền khối ngoại, thanh khoản, độ rộng, "
+        "VNINDEX giá/xu hướng/đỉnh đáy), viết GỌN trong 2-3 CÂU tiếng Việt cho dòng chữ chạy (ticker), gồm: "
+        "1) dòng tiền ra/vào thị trường; "
+        "2) VNINDEX xu hướng tăng/giảm + đỉnh/đáy gần nhất; "
+        "3) lời khuyên ngắn cho nhà đầu tư ngắn hạn, trung hạn, dài hạn. "
+        "Bắt đầu bằng 'Theo TuniAI nhận định,'. KHÔNG thêm số liệu không có trong dữ liệu, "
+        "KHÔNG khuyến nghị mua/bán mã cụ thể."
+    )
+    payload = {
+        "model": settings.deepseek_model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": "Dữ liệu hiện tại:\n" + json.dumps(flow, ensure_ascii=False, default=str)},
+        ],
+        "temperature": 0.4,
+        "max_tokens": 260,
+        "stream": False,
+    }
+    timeout = httpx.Timeout(30.0, connect=10.0)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        resp = await client.post(_deepseek_url(), json=payload, headers=_deepseek_headers())
+    if resp.status_code != 200:
+        raise DeepSeekError(f"DeepSeek trả lỗi {resp.status_code}: {resp.text[:200]}")
+    data = resp.json()
+    return (data["choices"][0]["message"].get("content") or "").strip()
+
+
+async def market_insight(force: bool = False) -> dict[str, Any]:
+    """Nhận định thị trường 1 đoạn (ticker dưới header) — cache 5 phút, cập nhật trong phiên."""
+    now = time.time()
+    cached = _market_insight_cache.get("insight")
+    if cached and not force and now < cached[0]:
+        return cached[1]
+
+    # Gom dữ liệu (độ rộng tốn kém → giới hạn thời gian; quá chậm thì bỏ độ rộng)
+    try:
+        flow = await asyncio.wait_for(asyncio.to_thread(_collect_market_core, True), timeout=14.0)
+    except Exception:
+        flow = await asyncio.to_thread(_collect_market_core, False)
+
+    text = ""
+    source = "template"
+    try:
+        text = await _compose_insight_with_ai(flow)
+        source = "tuniai"
+    except Exception:
+        text = ""
+    if not text:
+        text = _template_insight(flow)
+        source = "template"
+
+    # Đảm bảo có lời khuyên theo xu hướng (chỉ append khi AI chưa tự đưa ra lời khuyên nào).
+    trend = flow.get("vnindex", {}).get("trend")
+    if trend and not re.search(r"ngắn hạn|trung hạn|dài hạn|chốt lời|tỷ trọng|cắt hoặc giảm", text):
+        text = (text.rstrip().rstrip(".") + ". ") if text else ""
+        text += _trend_note(trend)
+
+    result: dict[str, Any] = {
+        "text": text,
+        "source": source,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "data": flow,
+    }
+    _market_insight_cache["insight"] = (now + _MARKET_INSIGHT_TTL, result)
+    return result
