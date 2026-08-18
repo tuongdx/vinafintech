@@ -4167,6 +4167,19 @@
                 openTintuc(data.id, data.slug);
                 return;
             }
+            if (data.type === 'tunix-ai-open') {
+                // Chart fullscreen workspace: mở TuniX AI + điền sẵn câu hỏi về mã đang xem.
+                if (typeof window.openTuniAi === 'function') window.openTuniAi();
+                const aiInput = document.getElementById('aiInput');
+                if (aiInput) {
+                    const sym = String(data.symbol || '').trim().toUpperCase();
+                    aiInput.value = sym
+                        ? ('Phân tích cổ phiếu ' + sym + ' (xu hướng, hỗ trợ/kháng cự, chỉ báo RSI/MACD).')
+                        : '';
+                    aiInput.style.height = 'auto';
+                }
+                return;
+            }
             if (data.type === 'tunix-open-stock' && data.symbol) {
                 openStockDetailInIndex(data.symbol);
                 return;
@@ -4180,6 +4193,11 @@
             if (data.type === 'tunix-open-url' && data.url) {
                 // Mở link ngoài (VD: Nguồn bài viết) từ parent — tránh popup blocker chặn _blank trong iframe
                 window.open(data.url, '_blank', 'noopener');
+                return;
+            }
+            if (data.type === 'tunix-go-login') {
+                // Chart fullscreen workspace: bấm "Đăng nhập" → về form đăng nhập (cùng tab).
+                window.location.href = '/Login';
                 return;
             }
             if (data.type === 'tunix-cat-changed' && typeof data.cat === 'string') {

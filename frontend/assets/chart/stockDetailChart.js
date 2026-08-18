@@ -33,6 +33,7 @@ import { FullscreenManager } from './core/fullscreen.js';
 import { SettingsPanel } from './ui/settingsPanel.js';
 import { LastPriceLine } from './core/lastPriceLine.js';
 import { HistoryLoader } from './core/historyLoader.js';
+import { FullscreenWorkspace } from './ui/fullscreenWorkspace.js';
 
 export function createStockDetailChart(options) {
     const container = options.container;
@@ -55,6 +56,8 @@ export function createStockDetailChart(options) {
     const fsEl = options.fsEl || null;
     const settingsEl = options.settingsEl || null;
     const legendEl = options.legendEl || null;
+    const sidebarEl = options.sidebarEl || null;
+    const bottomEl = options.bottomEl || null;
     let engine = null;
     let drawingManager = null;
     let drawingEngine = null;
@@ -82,12 +85,14 @@ export function createStockDetailChart(options) {
     let lastPriceLine = null;
     let historyLoader = null;
     let statusEl = null;
+    let workspace = null;
     let drawingsRestored = false;
     let indicatorsRestored = false;
     let analysisRestored = false;
 
     const onHeightChange = typeof options.onHeightChange === 'function' ? options.onHeightChange : null;
     const onTimeframeChange = typeof options.onTimeframeChange === 'function' ? options.onTimeframeChange : null;
+    const onSelectSymbol = typeof options.onSelectSymbol === 'function' ? options.onSelectSymbol : null;
 
     // PHASE 11 — tự tăng chiều cao chart theo số sub-pane (chỉ báo) để pane không bị ép quá thấp.
     function recalcChartHeight() {
@@ -736,6 +741,7 @@ export function createStockDetailChart(options) {
                     recalcChartHeight();
                     refreshLegend();
                     if (paneResizer) paneResizer.place();
+                    if (workspace) workspace.refreshIndicators();
                 },
             });
         }
@@ -766,7 +772,7 @@ export function createStockDetailChart(options) {
         if (!analysisEngine) {
             analysisEngine = new AnalysisEngine({
                 chartEngine: engine,
-                onChange: () => persistAnalysis(),
+                onChange: () => { persistAnalysis(); if (workspace) workspace.refreshSR(); if (workspace) workspace.syncSrCheckbox(); },
             });
         }
         analysisEngine.create(); // idempotent
@@ -859,12 +865,56 @@ export function createStockDetailChart(options) {
             ensureFullscreen();
             ensureSettings();
             ensureLastPriceLine();
+            ensureWorkspace();
             recalcChartHeight();
         } catch (e) {
             engine = null;
             showMessage('Không thể khởi tạo biểu đồ. Vui lòng tải lại trang.');
         }
         return engine;
+    }
+
+    // ---------- Fullscreen workspace (Right Sidebar + Bottom Dashboard) ----------
+    // Chỉ mở rộng layout FULLSCREEN — normal mode giữ nguyên (CSS ẩn sidebar/dashboard).
+    function ensureWorkspace() {
+        if (!sidebarEl && !bottomEl) return;
+        if (!workspace) {
+            workspace = new FullscreenWorkspace({
+                sidebarEl,
+                bottomEl,
+                getSymbol: () => state.getSymbol(),
+                getBars: () => (engine && engine.getBars ? engine.getBars() : []),
+                getTimeframe: () => state.getTimeframe(),
+                getEnabledIndicators: () => (indicatorEngine ? indicatorEngine.getEnabled() : []),
+                indicatorValuesAtTime: (t) => (indicatorEngine ? indicatorEngine.valuesAtTime(t) : []),
+                indicatorPanel: indicatorPanel || null,
+                indicatorEngine: indicatorEngine || null,
+                analysisEngine: analysisEngine || null,
+                theme: state.getTheme(),
+                onSelectSymbol: (symbol) => {
+                    // Đổi mã NGAY TRONG TRANG (giữ fullscreen): ưu tiên callback từ
+                    // StockDetail (cập nhật header/quote/panels), fallback load() của chart.
+                    if (onSelectSymbol) onSelectSymbol(symbol);
+                    else load(symbol);
+                },
+                onOpenAi: (symbol) => {
+                    // Thoát fullscreen để người dùng dùng được chat TuniAI (panel chat nằm ở parent,
+                    // sẽ bị khuất sau iframe fullscreen). Exit fullscreen rồi mới mở chat.
+                    if (fsManager && fsManager.isFullscreen()) {
+                        try { fsManager.toggle(); } catch (e) { /* ignore */ }
+                    }
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'tunix-ai-open', symbol: symbol || '' }, '*');
+                    }
+                },
+            });
+            workspace.create();
+        }
+        workspace.setTheme(state.getTheme());
+    }
+
+    function destroyWorkspace() {
+        if (workspace) { try { workspace.destroy(); } catch (e) { /* ignore */ } workspace = null; }
     }
 
     async function load(symbolOverride, restoreRange) {
@@ -930,6 +980,10 @@ export function createStockDetailChart(options) {
             recalcChartHeight();
             if (drawingManager) drawingManager.setContext(symbol, timeframe);
             if (drawingEngine) drawingEngine.render();
+            // Fullscreen workspace: đồng bộ theo mã + dữ liệu mới (sidebar/dashboard).
+            ensureWorkspace();
+            if (workspace) workspace.onDataChange(candles);
+            if (workspace) workspace.onSymbolChange(symbol);
         } catch (e) {
             state.set({ loading: false, error: String(e && e.message ? e.message : '') });
             showMessage('Không tải được dữ liệu biểu đồ. Vui lòng thử lại.');
@@ -953,6 +1007,7 @@ export function createStockDetailChart(options) {
         state.set({ theme: mode === 'dark' ? 'dark' : 'light' });
         if (engine) engine.setTheme(state.getTheme());
         if (crosshairSync) crosshairSync.refresh();
+        if (workspace) workspace.setTheme(state.getTheme());
     }
 
     function destroy() {
@@ -970,6 +1025,7 @@ export function createStockDetailChart(options) {
         destroyAnalysis();
         destroyIndicators();
         destroyDrawings();
+        destroyWorkspace();
         if (engine) {
             engine.destroy();
             engine = null;

@@ -3062,3 +3062,107 @@ def filter_stocks(
 
     result.sort(key=lambda item: item["symbol"])
     return result
+
+
+def get_stock_fundamentals(symbol: str) -> dict[str, Any]:
+    """Cơ bản / Định giá / Rủi ro của MỘT cổ phiếu (từ screener dataset đã cache).
+
+    Trả về các điểm 0-5: growthPoint / performancePoint / financialHealthPoint /
+    dividendPoint, qualityScore (0-20), valuationPoint, overallRiskLevel + pe/pb.
+    """
+    symbol_upper = symbol.upper().strip()
+    empty = {"symbol": symbol_upper, "valid": False, "source": "simplize-screener"}
+    cache_key = f"fundamentals:{symbol_upper}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    dataset = _get_screener_dataset()
+    for row in dataset:
+        if str(row.get("ticker") or "").upper() == symbol_upper:
+            result = _build_screener_stock_row(row)
+            result["valid"] = True
+            cache.set(cache_key, result, ttl_seconds=1800)
+            return result
+
+    cache.set(cache_key, empty, ttl_seconds=300)
+    return empty
+
+
+# ---------------------------------------------------------------------------
+# Danh sách cổ phiếu cho sidebar fullscreen (VN30 / HNX30 / HOSE / HNX / UPCOM / Ngành)
+# ---------------------------------------------------------------------------
+def get_stock_lists() -> dict[str, Any]:
+    """Trả về toàn bộ vũ trụ cổ phiếu (HOSE/HNX/UPCoM) kèm nhóm sẵn cho sidebar:
+    - stocks : mọi mã (symbol, name, exchange, price, percent_change, sector, sectorName, market_cap)
+    - vn30   : ticker trong _VN30_TICKERS
+    - hnx30  : TOP 30 vốn hóa sàn HNX (proxy HNX30 — screener có marketCapVnd)
+    - hose/hnx/upcom : theo sàn
+    - sectors: [{slug, name, stocks[]}] (nhóm ngành economicSector)
+
+    KHÔNG hard-code danh sách ngoài _VN30_TICKERS đã có — HNX30 dùng top-30 vốn hóa
+    thay vì danh sách thành viên chính thức (nguồn hiện không cung cấp index membership).
+    """
+    key = "stock-lists"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+
+    dataset = _get_screener_dataset()
+    known_symbols = {item["symbol"] for item in _load_symbol_directory()}
+    vn30_set = set(_VN30_TICKERS)
+
+    stocks: list[dict[str, Any]] = []
+    hnx_by_cap: list[tuple[float, dict[str, Any]]] = []
+    sectors_map: dict[str, dict[str, Any]] = {}
+
+    for row in dataset:
+        symbol = str(row.get("ticker") or "").upper()
+        if symbol not in known_symbols:
+            continue
+        exchange = str(row.get("stockExchange") or "").upper()
+        if exchange not in ("HOSE", "HNX", "UPCOM"):
+            continue
+        price = _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
+        pct = _to_float(row.get("pricePctChgIntraDay"))
+        cap = _to_float(row.get("marketCapVnd"))
+        sector = str(row.get("economicSectorSlug") or "").lower()
+        sector_name = str(row.get("economicSectorName") or "Khác")
+        item = {
+            "symbol": symbol,
+            "name": str(row.get("companyNameVi") or symbol),
+            "exchange": exchange,
+            "price": round(price, 2),
+            "percent_change": round(pct, 2),
+            "sector": sector,
+            "sectorName": sector_name,
+            "market_cap": cap,
+        }
+        stocks.append(item)
+        if exchange == "HNX":
+            hnx_by_cap.append((cap, item))
+        if sector not in sectors_map:
+            sectors_map[sector] = {"slug": sector, "name": sector_name, "stocks": []}
+        sectors_map[sector]["stocks"].append(symbol)
+
+    stocks.sort(key=lambda s: s["symbol"])
+    hnx_by_cap.sort(key=lambda x: x[0] or 0, reverse=True)
+    hnx30 = [item["symbol"] for _, item in hnx_by_cap[:30]]
+    vn30 = [s["symbol"] for s in stocks if s["symbol"] in vn30_set]
+
+    sectors = sorted(sectors_map.values(), key=lambda x: x["name"])
+    for sec in sectors:
+        if not sec["name"]:
+            sec["name"] = "Khác"
+
+    payload = {
+        "stocks": stocks,
+        "vn30": vn30,
+        "hnx30": hnx30,
+        "hose": [s["symbol"] for s in stocks if s["exchange"] == "HOSE"],
+        "hnx": [s["symbol"] for s in stocks if s["exchange"] == "HNX"],
+        "upcom": [s["symbol"] for s in stocks if s["exchange"] == "UPCOM"],
+        "sectors": sectors,
+    }
+    cache.set(key, payload, ttl_seconds=60)
+    return payload

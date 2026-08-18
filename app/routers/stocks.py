@@ -21,6 +21,8 @@ from app.services.vnstock_service import (
     get_realtime_exchange_board,
     get_quote,
     get_shareholder_structure,
+    get_stock_fundamentals,
+    get_stock_lists,
     get_top_stocks,
     get_watchlist,
     search_stocks,
@@ -67,6 +69,11 @@ def reports(symbol: str, category: str = "financial"):
 @router.get("/{symbol}/dividends")
 def dividends(symbol: str):
     return get_dividends(symbol)
+
+
+@router.get("/{symbol}/fundamentals")
+def fundamentals(symbol: str):
+    return get_stock_fundamentals(symbol)
 
 
 @router.get("/{symbol}/company-summary")
@@ -138,6 +145,12 @@ def foreign_trading(type: str = "foreign", period: str = "1D"):
 @router.get("/exchange-chart")
 def exchange_chart(exchange: str = "HOSE", period: str = "5d"):
     return get_exchange_chart(exchange, period=period)
+
+
+@router.get("/stock-lists")
+def stock_lists():
+    """Toàn bộ vũ trụ cổ phiếu kèm nhóm (VN30/HNX30/HOSE/HNX/UPCOM/Ngành) cho sidebar fullscreen."""
+    return get_stock_lists()
 
 
 @router.get("/filter")

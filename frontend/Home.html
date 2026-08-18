@@ -574,6 +574,14 @@
             border-bottom-color: #2a3648;
         }
 
+        body.dark-mode .watchlist-section .table-wrapper thead th {
+            background: #161b22;
+        }
+
+        body.dark-mode .top-table-wrapper thead th {
+            background: #161b22;
+        }
+
         body.dark-mode .watchlist-section .table-wrapper td,
         body.dark-mode .top-table-wrapper td {
             color: #e6edf3;
@@ -991,6 +999,14 @@
             overflow-y: auto;
         }
 
+        /* Cố định dòng tên cột (thead) khi cuộn dọc trong bảng */
+        .watchlist-section .table-wrapper thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #ffffff;
+        }
+
         /* Ẩn thanh scroll của các block nhưng vẫn cuộn được */
         .watchlist-section .table-wrapper,
         .table-wrapper,
@@ -1235,6 +1251,14 @@
             overflow-x: auto;
             overflow-y: auto;
             max-height: 320px;
+        }
+
+        /* Cố định dòng tên cột (thead) khi cuộn dọc trong bảng */
+        .top-table-wrapper thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #ffffff;
         }
 
         .top-table-wrapper table {

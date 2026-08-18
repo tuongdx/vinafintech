@@ -1033,6 +1033,495 @@
         }
         body.chart-fullscreen .market-breadth-wrap { flex: 0 0 auto; }
 
+        /* ============================================================
+           CHART FULLSCREEN WORKSPACE — Right Sidebar + Bottom Dashboard
+           Chỉ áp dụng khi body.chart-fullscreen; normal mode giữ nguyên.
+           LƯU Ý: KHÔNG dùng `display: contents` cho .chart-main — Firefox có
+           lỗi re-layout con khi đổi display contents → flex trên cùng element
+           (sidebar/dashboard không hiển thị). Dùng block thường: layout normal
+           không đổi vì .chart-main không có style riêng, fullscreen override flex.
+           ============================================================ */
+        .chart-main { display: block; min-width: 0; }
+        .chart-sidebar { display: none; }
+        .chart-bottom { display: none; }
+
+        body.chart-fullscreen .chart-main {
+            display: flex;
+            flex-direction: row;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        body.chart-fullscreen .chart-main .chart-placeholder { min-width: 0; }
+
+        /* ---- RIGHT SIDEBAR ---- */
+        body.chart-fullscreen .chart-sidebar {
+            display: flex;
+            flex: 0 0 300px;
+            width: 300px;
+            min-height: 0;
+            margin-left: 12px;
+            flex-direction: column;
+            background: #ffffff;
+            border: 1px solid #e5e9f0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: flex-basis 0.25s ease, width 0.25s ease, margin 0.25s ease;
+        }
+        body.dark-mode.chart-fullscreen .chart-sidebar {
+            background: #161b22;
+            border-color: #2a3648;
+        }
+        body.chart-fullscreen .chart-sidebar.collapsed {
+            flex: 0 0 30px;
+            width: 30px;
+        }
+        body.chart-fullscreen .chart-sidebar.collapsed .fss-scroll { display: none; }
+        body.chart-fullscreen .chart-sidebar.collapsed .fss-head { flex-direction: column; border-bottom: none; padding: 8px 0; }
+        body.chart-fullscreen .chart-sidebar.collapsed .fss-head-label,
+        body.chart-fullscreen .chart-sidebar.collapsed .fss-modes { display: none; }
+
+        .fss-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid #eef2f6;
+            flex: 0 0 auto;
+        }
+        body.dark-mode .fss-head { border-bottom-color: #2a3648; }
+        .fss-head-label { color: #8a99b1; font-size: 12px; }
+        .fss-collapse {
+            background: none; border: none; cursor: pointer;
+            color: #3c4b5f; font-size: 12px; padding: 4px 8px; border-radius: 6px;
+            line-height: 1;
+        }
+        body.dark-mode .fss-collapse { color: #9fb0c7; }
+        .fss-collapse:hover { background: rgba(0, 128, 128, 0.1); color: #008080; }
+
+        /* Nút chuyển chế độ sidebar: Chi tiết CP ↔ Danh sách CP */
+        .fss-modes { display: flex; align-items: center; gap: 2px; min-width: 0; }
+        .fss-mode-btn {
+            background: none; border: 1px solid transparent; cursor: pointer;
+            color: #8a99b1; font-size: 13px; line-height: 1;
+            padding: 4px 8px; border-radius: 7px;
+            display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+            transition: all 0.15s;
+        }
+        .fss-mode-label { font-size: 11px; font-weight: 600; }
+        .fss-mode-btn:hover { background: rgba(0, 128, 128, 0.1); color: #008080; }
+        .fss-mode-btn.active {
+            color: #008080; background: rgba(0, 128, 128, 0.12); border-color: rgba(0, 128, 128, 0.25);
+        }
+        body.dark-mode .fss-mode-btn.active { color: #4fb3b3; }
+
+        /* Chế độ danh sách cổ phiếu */
+        .fss-list { display: none; }
+        .chart-sidebar.mode-list .fss-detail { display: none; }
+        /* Khi ở tab Danh sách CP: chỉ danh sách mã cuộn — tabs + ô tìm kiếm đứng yên. */
+        .chart-sidebar.mode-list .fss-scroll {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chart-sidebar.mode-list .fss-list {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        .fss-list-nav { flex: 0 0 auto; }
+        .fss-list-search { flex: 0 0 auto; }
+        .fss-list-hint { flex: 0 0 auto; }
+
+        .fss-list-search {
+            display: flex; align-items: center; gap: 8px;
+            background: #f2f4f8; border: 1px solid #e0e4eb; border-radius: 8px;
+            padding: 6px 10px; margin-bottom: 8px; color: #8a99b1;
+        }
+        body.dark-mode .fss-list-search { background: #0d1117; border-color: #30363d; color: #6b7a8f; }
+        .fss-list-search input {
+            flex: 1 1 auto; min-width: 0; border: none; outline: none; background: transparent;
+            font: inherit; font-size: 12px; color: #1a1f36;
+        }
+        body.dark-mode .fss-list-search input { color: #e6edf3; }
+        .fss-list-search input::placeholder { color: #8a99b1; }
+
+        .fss-list-hint { font-size: 10px; color: #8a99b1; margin: 2px 2px 6px; }
+        body.dark-mode .fss-list-hint { color: #6b7a8f; }
+
+        /* Tabs nhóm cổ phiếu (VN30 / HNX30 / HOSE / HNX / UPCOM / Ngành) + nút chuyển tab */
+        .fss-list-nav {
+            display: flex; align-items: center; gap: 4px;
+            padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #eef2f6;
+        }
+        body.dark-mode .fss-list-nav { border-bottom-color: #2a3648; }
+        .fss-nav-btn {
+            flex: 0 0 auto; width: 22px; height: 22px; line-height: 1; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: none; border: 1px solid transparent; border-radius: 6px;
+            color: #8a99b1; font-size: 11px; transition: all 0.15s;
+        }
+        body.dark-mode .fss-nav-btn { color: #6b7a8f; }
+        .fss-nav-btn:hover { background: rgba(0, 128, 128, 0.1); color: #008080; border-color: rgba(0, 128, 128, 0.3); }
+        .fss-list-tabs {
+            display: flex; gap: 4px; overflow-x: auto; flex: 1 1 auto; min-width: 0;
+            scrollbar-width: none; -ms-overflow-style: none;
+        }
+        .fss-list-tabs::-webkit-scrollbar { display: none; }
+        .fss-tab {
+            flex: 0 0 auto; background: none; border: 1px solid transparent; cursor: pointer;
+            font-size: 11px; font-weight: 600; color: #6b7a8f;
+            padding: 4px 10px; border-radius: 20px; transition: all 0.15s;
+        }
+        body.dark-mode .fss-tab { color: #8b949e; }
+        .fss-tab:hover { background: rgba(0, 128, 128, 0.1); color: #008080; }
+        .fss-tab.active {
+            color: #008080; background: rgba(0, 128, 128, 0.12); border-color: rgba(0, 128, 128, 0.3);
+        }
+        body.dark-mode .fss-tab.active { color: #4fb3b3; }
+
+        .fss-list-stocks {
+            display: flex; flex-direction: column; gap: 2px;
+            flex: 1 1 auto; min-height: 0; overflow-y: auto;
+            padding-right: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: #c5cdd9 transparent;
+        }
+        body.dark-mode .fss-list-stocks { scrollbar-color: #3a4353 transparent; }
+        .fsl-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            width: 100%; text-align: left; cursor: pointer;
+            background: none; border: 1px solid transparent; border-radius: 8px; padding: 7px 8px;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .fsl-row:hover { background: rgba(0, 128, 128, 0.07); border-color: rgba(0, 128, 128, 0.2); }
+        .fsl-main { display: flex; flex-direction: column; min-width: 0; }
+        .fsl-symbol { font-size: 13px; font-weight: 700; color: #1a1f36; letter-spacing: 0.3px; }
+        body.dark-mode .fsl-symbol { color: #e6edf3; }
+        .fsl-name {
+            font-size: 10px; color: #8a99b1; max-width: 150px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        body.dark-mode .fsl-name { color: #6b7a8f; }
+        .fsl-right { display: flex; flex-direction: column; align-items: flex-end; flex: 0 0 auto; }
+        .fsl-price { font-size: 12px; font-weight: 600; color: #3c4b5f; }
+        body.dark-mode .fsl-price { color: #9fb0c7; }
+        .fsl-pct { font-size: 11px; font-weight: 600; }
+        .fsl-pct.up { color: #0f7b3a; } .fsl-pct.down { color: #d0314e; }
+        body.dark-mode .fsl-pct.up { color: #4ade80; } body.dark-mode .fsl-pct.down { color: #f87171; }
+
+        .fsl-open {
+            display: flex; align-items: center; gap: 8px; width: 100%; cursor: pointer;
+            background: rgba(0, 128, 128, 0.08); border: 1px dashed rgba(0, 128, 128, 0.4);
+            border-radius: 8px; padding: 9px 10px; margin-bottom: 8px;
+            color: #008080; font-size: 12px; font-weight: 600; text-align: left;
+        }
+        .fsl-open:hover { background: rgba(0, 128, 128, 0.14); }
+        body.dark-mode .fsl-open { color: #4fb3b3; }
+
+        .fss-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: #c5cdd9 transparent;
+        }
+        body.dark-mode .fss-scroll { scrollbar-color: #3a4353 transparent; }
+
+        /* Thông tin cổ phiếu */
+        .fss-stock { padding-bottom: 12px; border-bottom: 1px solid #eef2f6; margin-bottom: 12px; }
+        body.dark-mode .fss-stock { border-bottom-color: #2a3648; }
+        .fss-stock-top { display: flex; align-items: center; gap: 8px; }
+        .fss-stock-sym { font-size: 20px; font-weight: 700; color: #1a1f36; letter-spacing: 0.5px; }
+        body.dark-mode .fss-stock-sym { color: #e6edf3; }
+        .fss-stock-tf {
+            font-size: 11px; color: #8a99b1; background: #eef2f6;
+            padding: 2px 8px; border-radius: 20px;
+        }
+        body.dark-mode .fss-stock-tf { background: #21262d; color: #9fb0c7; }
+        .fss-stock-name { font-size: 12px; color: #6b7a8f; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        body.dark-mode .fss-stock-name { color: #8b949e; }
+        .fss-stock-price { font-size: 24px; font-weight: 700; margin-top: 6px; color: #1a1f36; }
+        .fss-stock-price.up, .fss-stock-chg.up { color: #0f7b3a; }
+        .fss-stock-price.down, .fss-stock-chg.down { color: #d0314e; }
+        body.dark-mode .fss-stock-price.up, body.dark-mode .fss-stock-chg.up { color: #4ade80; }
+        body.dark-mode .fss-stock-price.down, body.dark-mode .fss-stock-chg.down { color: #f87171; }
+        .fss-stock-chg { font-size: 12px; font-weight: 600; margin-top: 2px; color: #3c4b5f; }
+
+        /* Section */
+        .fss-section { margin-bottom: 14px; }
+        .fss-sec-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+            color: #6b7a8f; margin-bottom: 8px;
+        }
+        body.dark-mode .fss-sec-title { color: #8b949e; }
+        .fss-sec-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .fss-add-btn {
+            background: rgba(0, 128, 128, 0.1); color: #008080; border: 1px solid rgba(0, 128, 128, 0.25);
+            font-size: 11px; font-weight: 600; border-radius: 20px; padding: 3px 10px; cursor: pointer;
+            text-transform: none; letter-spacing: 0;
+        }
+        .fss-add-btn:hover { background: #008080; color: #ffffff; }
+
+        /* Tổng quan */
+        .fss-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 12px; }
+        .fss-row-label { color: #6b7a8f; }
+        body.dark-mode .fss-row-label { color: #8b949e; }
+        .fss-row-val { color: #1a1f36; font-weight: 600; }
+        body.dark-mode .fss-row-val { color: #e6edf3; }
+
+        /* Cơ bản / Định giá / Rủi ro */
+        .fs-pt-high { color: #0f7b3a; font-weight: 700; }
+        body.dark-mode .fs-pt-high { color: #4ade80; }
+        .fs-pt-mid { color: #b26a00; font-weight: 700; }
+        body.dark-mode .fs-pt-mid { color: #f5a623; }
+        .fs-pt-low { color: #d0314e; font-weight: 700; }
+        body.dark-mode .fs-pt-low { color: #f87171; }
+        .fs-val-note { font-size: 10px; font-weight: 600; color: #b26a00; }
+        body.dark-mode .fs-val-note { color: #f5a623; }
+        .fs-val-note.ok { color: #0f7b3a; }
+        body.dark-mode .fs-val-note.ok { color: #4ade80; }
+        .fs-risk-badge {
+            display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px;
+        }
+        .fs-risk-low { color: #0f7b3a; background: rgba(15, 123, 58, 0.12); }
+        body.dark-mode .fs-risk-low { color: #4ade80; background: rgba(74, 222, 128, 0.12); }
+        .fs-risk-med { color: #b26a00; background: rgba(178, 106, 0, 0.12); }
+        body.dark-mode .fs-risk-med { color: #f5a623; background: rgba(245, 166, 35, 0.12); }
+        .fs-risk-high { color: #d0314e; background: rgba(208, 49, 78, 0.12); }
+        body.dark-mode .fs-risk-high { color: #f87171; background: rgba(248, 113, 113, 0.12); }
+        .fs-risk-ext { color: #b91c1c; background: rgba(185, 28, 28, 0.14); }
+        body.dark-mode .fs-risk-ext { color: #ef4444; background: rgba(239, 68, 68, 0.16); }
+        .fs-basic-rat-tot { color: #0f7b3a; background: rgba(15, 123, 58, 0.14); }
+        body.dark-mode .fs-basic-rat-tot { color: #4ade80; background: rgba(74, 222, 128, 0.14); }
+        .fs-basic-tot { color: #008080; background: rgba(0, 128, 128, 0.12); }
+        body.dark-mode .fs-basic-tot { color: #2dd4bf; background: rgba(45, 212, 191, 0.12); }
+        .fs-basic-tb { color: #b26a00; background: rgba(178, 106, 0, 0.12); }
+        body.dark-mode .fs-basic-tb { color: #f5a623; background: rgba(245, 166, 35, 0.12); }
+        .fs-basic-chua-dat { color: #d0314e; background: rgba(208, 49, 78, 0.12); }
+        body.dark-mode .fs-basic-chua-dat { color: #f87171; background: rgba(248, 113, 113, 0.12); }
+
+        /* Chỉ báo */
+        .fss-ind-row {
+            display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-radius: 8px; font-size: 12px;
+        }
+        .fss-ind-row:hover { background: rgba(0, 128, 128, 0.06); }
+        .fss-ind-eye { font-size: 11px; color: #6b7a8f; flex: 0 0 auto; }
+        .fss-ind-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+        .fss-ind-name {
+            flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1a1f36;
+        }
+        body.dark-mode .fss-ind-name { color: #e6edf3; }
+        .fss-ind-val { font-weight: 600; color: #3c4b5f; }
+        body.dark-mode .fss-ind-val { color: #9fb0c7; }
+        .fss-ind-btn {
+            background: none; border: none; cursor: pointer; color: #8a99b1;
+            font-size: 13px; padding: 2px 4px; border-radius: 4px; line-height: 1;
+        }
+        .fss-ind-btn:hover { background: rgba(0, 128, 128, 0.12); color: #008080; }
+        .fss-ind-x:hover { color: #e74c3c; background: rgba(231, 76, 60, 0.12); }
+        body.dark-mode .fss-ind-btn { color: #6b7a8f; }
+
+        /* Hỗ trợ / Kháng cự */
+        .fss-sr-toggle {
+            display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #6b7a8f;
+            cursor: pointer; font-weight: 500; text-transform: none; letter-spacing: 0;
+        }
+        body.dark-mode .fss-sr-toggle { color: #8b949e; }
+        .fs-sr-h { font-size: 11px; font-weight: 600; margin: 8px 0 4px; }
+        .fs-sr-h.res { color: #d0314e; } body.dark-mode .fs-sr-h.res { color: #f87171; }
+        .fs-sr-h.sup { color: #0f7b3a; } body.dark-mode .fs-sr-h.sup { color: #4ade80; }
+        .fs-sr-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
+        .fs-sr-price { width: 62px; font-weight: 600; }
+        .fs-sr-price.res, .fs-sr-type.res { color: #d0314e; }
+        body.dark-mode .fs-sr-price.res, body.dark-mode .fs-sr-type.res { color: #f87171; }
+        .fs-sr-price.sup, .fs-sr-type.sup { color: #0f7b3a; }
+        body.dark-mode .fs-sr-price.sup, body.dark-mode .fs-sr-type.sup { color: #4ade80; }
+        .fs-sr-type { width: 20px; font-size: 11px; font-weight: 700; }
+        .fs-sr-str { flex: 1 1 auto; display: flex; align-items: center; gap: 6px; }
+        .fs-sr-bar {
+            flex: 1 1 auto; height: 4px; background: rgba(0, 0, 0, 0.08); border-radius: 4px;
+            overflow: hidden; min-width: 30px;
+        }
+        body.dark-mode .fs-sr-bar { background: rgba(255, 255, 255, 0.08); }
+        .fs-sr-bar i { display: block; height: 100%; background: #008080; border-radius: 4px; }
+        .fs-sr-str-num { font-size: 10px; color: #6b7a8f; width: 46px; text-align: right; }
+        .fs-sr-zone {
+            display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 6px 8px;
+            background: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.3);
+            border-radius: 8px; font-size: 12px;
+        }
+        .fs-sr-zone-price.strong { color: #0f7b3a; font-weight: 700; }
+        body.dark-mode .fs-sr-zone-price.strong { color: #2ecc71; }
+        .fs-sr-zone-label.strong {
+            font-size: 10px; font-weight: 700; color: #0f7b3a; text-transform: uppercase; letter-spacing: 0.4px;
+        }
+        body.dark-mode .fs-sr-zone-label.strong { color: #2ecc71; }
+
+        .fss-muted { color: #8a99b1; font-size: 12px; padding: 4px 0; }
+        body.dark-mode .fss-muted { color: #6b7a8f; }
+
+        /* ---- BOTTOM DASHBOARD ---- */
+        body.chart-fullscreen .chart-bottom {
+            display: flex;
+            flex-direction: column;
+            flex: 0 0 auto;
+            height: 200px;
+            margin-top: 12px;
+            background: #ffffff;
+            border: 1px solid #e5e9f0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: height 0.25s ease;
+        }
+        body.dark-mode.chart-fullscreen .chart-bottom {
+            background: #161b22;
+            border-color: #2a3648;
+        }
+        body.chart-fullscreen .chart-bottom.collapsed { height: 32px; }
+        body.chart-fullscreen .chart-bottom.collapsed .fsb-body { display: none; }
+        body.chart-fullscreen .chart-bottom.collapsed .fsb-head { height: 100%; border-bottom: none; }
+
+        .fsb-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 12px; border-bottom: 1px solid #eef2f6; flex: 0 0 auto;
+        }
+        body.dark-mode .fsb-head { border-bottom-color: #2a3648; }
+        .fsb-head-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #6b7a8f;
+        }
+        body.dark-mode .fsb-head-label { color: #8b949e; }
+        .fsb-collapse {
+            background: none; border: none; cursor: pointer; color: #3c4b5f;
+            font-size: 12px; padding: 2px 8px; border-radius: 6px; line-height: 1;
+        }
+        body.dark-mode .fsb-collapse { color: #9fb0c7; }
+        .fsb-collapse:hover { background: rgba(0, 128, 128, 0.1); color: #008080; }
+
+        .fsb-body {
+            flex: 1 1 auto; min-height: 0;
+            display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 12px;
+            padding: 10px 12px 12px;
+        }
+        .fsb-panel { min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+        .fsb-panel-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            color: #6b7a8f; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+        }
+        body.dark-mode .fsb-panel-title { color: #8b949e; }
+        .fsb-panel-body {
+            flex: 1 1 auto; min-height: 0; overflow-y: auto; font-size: 12px;
+            scrollbar-width: thin; scrollbar-color: #c5cdd9 transparent;
+        }
+        body.dark-mode .fsb-panel-body { scrollbar-color: #3a4353 transparent; }
+
+        /* Giả định tích sản (thay cho Market Breadth) */
+        .fsa-sym { color: #008080; font-weight: 600; text-transform: none; }
+        .fsa-controls {
+            display: flex; align-items: center; gap: 6px; margin-bottom: 2px; font-size: 11px;
+            color: #6b7a8f;
+        }
+        body.dark-mode .fsa-controls { color: #8b949e; }
+        .fsa-controls label { flex: 0 0 auto; }
+        .fsa-controls input {
+            width: 52px; font: inherit; font-size: 11px; font-weight: 600; color: #1a1f36;
+            background: #f2f4f8; border: 1px solid #e0e4eb; border-radius: 6px; padding: 2px 6px;
+            outline: none;
+        }
+        body.dark-mode .fsa-controls input { background: #0d1117; border-color: #30363d; color: #e6edf3; }
+        .fsa-controls input:focus { border-color: #008080; }
+        .fsa-controls input::-webkit-outer-spin-button,
+        .fsa-controls input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .fsa-controls input { -moz-appearance: textfield; appearance: textfield; }
+        .fsa-controls span { flex: 0 0 auto; }
+        .fsa-main { display: flex; flex-direction: row; align-items: center; gap: 8px; min-height: 0; min-width: 0; }
+        .fsa-chart { flex: 1 1 auto; min-width: 0; }
+        .fsa-plot { position: relative; height: 88px; min-width: 0; }
+        .fsa-svg { width: 100%; height: 100%; display: block; }
+        .fsa-grid { stroke: rgba(15, 23, 42, 0.1); stroke-width: 1; stroke-dasharray: 2 3; }
+        body.dark-mode .fsa-grid { stroke: rgba(255, 255, 255, 0.1); }
+        .fsa-yaxis { position: absolute; top: 0; bottom: 0; left: 0; width: 30px; pointer-events: none; }
+        .fsa-ytick {
+            position: absolute; right: 2px; transform: translateY(-50%);
+            font-size: 8.5px; font-weight: 600; color: #8a99b1; line-height: 1;
+        }
+        body.dark-mode .fsa-ytick { color: #6e7d92; }
+        .fsa-xaxis { position: absolute; left: 0; right: 0; bottom: 0; height: 14px; pointer-events: none; }
+        .fsa-xtick {
+            position: absolute; top: 0; transform: translateX(-50%);
+            font-size: 8.5px; font-weight: 600; color: #8a99b1; line-height: 1;
+        }
+        body.dark-mode .fsa-xtick { color: #6e7d92; }
+        .fsa-summary { flex: 0 0 148px; display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; }
+        .fsa-row {
+            display: flex; flex-direction: column; gap: 0; font-size: 10.5px; line-height: 1.3;
+            border-bottom: 1px dashed #eef2f6;
+        }
+        body.dark-mode .fsa-row { border-bottom-color: #21262d; }
+        .fsa-row:last-child { border-bottom: none; }
+        .fsa-row-top { display: flex; align-items: center; gap: 5px; min-width: 0; line-height: 1.25; }
+        .fsa-label { display: inline-flex; align-items: center; gap: 5px; color: #6b7a8f; white-space: nowrap; }
+        body.dark-mode .fsa-label { color: #8b949e; }
+        .fsa-dot { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto; }
+        .fsa-row-bottom { display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; line-height: 1.25; }
+        .fsa-val { font-weight: 700; color: #1a1f36; }
+        body.dark-mode .fsa-val { color: #e6edf3; }
+        .fsa-diff { font-size: 9.5px; font-weight: 600; }
+        .fsa-diff.pos { color: #0f7b3a; } .fsa-diff.neg { color: #d0314e; }
+        body.dark-mode .fsa-diff.pos { color: #4ade80; } body.dark-mode .fsa-diff.neg { color: #f87171; }
+
+        /* Tin tức nổi bật */
+        .fsb-news-item {
+            display: flex; flex-direction: column; gap: 3px; padding: 6px 8px;
+            border-radius: 8px; text-decoration: none;
+        }
+        .fsb-news-item:hover { background: rgba(0, 128, 128, 0.06); }
+        .fsb-news-title {
+            color: #1a1f36; font-size: 12px; font-weight: 600; line-height: 1.4;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        body.dark-mode .fsb-news-title { color: #e6edf3; }
+        .fsb-news-meta { display: flex; align-items: center; gap: 8px; font-size: 10px; color: #8a99b1; }
+        .fsb-news-tag { color: #008080; font-weight: 600; }
+        .fsb-news-time { color: #8a99b1; }
+        .fsb-news-more {
+            display: inline-block; margin-top: 4px; font-size: 11px; font-weight: 600;
+            color: #008080; text-decoration: none; padding: 4px 8px;
+        }
+        .fsb-news-more:hover { text-decoration: underline; }
+
+        /* AI / TuniX AI */
+        .fsb-ai-body { line-height: 1.6; color: #1a1f36; }
+        body.dark-mode .fsb-ai-body { color: #d5dce6; }
+        .fsb-ai-line { margin-bottom: 4px; }
+        .fsb-ai-loading { color: #8a99b1; }
+        .fsb-ai-error { color: #d0314e; font-size: 12px; }
+        body.dark-mode .fsb-ai-error { color: #f87171; }
+        .fsb-ai-btn {
+            margin-top: 8px; background: rgba(0, 128, 128, 0.1); color: #008080;
+            border: 1px solid rgba(0, 128, 128, 0.3); font-size: 12px; font-weight: 600;
+            border-radius: 8px; padding: 6px 12px; cursor: pointer;
+        }
+        .fsb-ai-btn:hover { background: #008080; color: #ffffff; }
+
+        /* Responsive fullscreen workspace */
+        @media (max-width: 1366px) {
+            body.chart-fullscreen .chart-sidebar { flex-basis: 270px; width: 270px; }
+            body.chart-fullscreen .chart-bottom { height: 190px; }
+        }
+        @media (max-width: 1180px) {
+            body.chart-fullscreen .chart-sidebar { flex-basis: 250px; width: 250px; }
+            body.chart-fullscreen .chart-bottom { height: 185px; }
+            .fsb-body { grid-template-columns: 1fr 1fr; }
+            .fsb-panel.fsb-ai { grid-column: 1 / -1; }
+        }
+        @media (max-width: 900px) {
+            body.chart-fullscreen .chart-sidebar { flex-basis: 220px; width: 220px; }
+            .fsb-body { display: flex; overflow-x: auto; gap: 10px; }
+            .fsb-panel { flex: 1 0 300px; }
+        }
+
         /* ----- CÀI ĐẶT BIỂU ĐỒ (PHASE 23) ----- */
         .chart-set-wrap { position: relative; display: flex; align-items: center; }
         .set-pop {
@@ -2676,14 +3165,20 @@
                         <div class="chart-set-wrap" id="settingsEl"></div>
                     </div>
                 </div>
-                <div class="chart-placeholder" id="chartPlaceholder">
-                    <div class="chart-toolbar-wrap" id="chartToolbar"></div>
-                    <div class="chart-canvas-wrap">
-                        <div id="lwcChartContainer" style="height:100%;width:100%;"></div>
-                        <div class="chart-status" id="chartStatus" style="display:none"></div>
-                        <div class="chart-legend" id="chartLegend"></div>
+                <div class="chart-main" id="chartMain">
+                    <div class="chart-placeholder" id="chartPlaceholder">
+                        <div class="chart-toolbar-wrap" id="chartToolbar"></div>
+                        <div class="chart-canvas-wrap">
+                            <div id="lwcChartContainer" style="height:100%;width:100%;"></div>
+                            <div class="chart-status" id="chartStatus" style="display:none"></div>
+                            <div class="chart-legend" id="chartLegend"></div>
+                        </div>
                     </div>
+                    <!-- RIGHT SIDEBAR (chỉ hiển thị khi fullscreen) — FullscreenWorkspace render nội dung -->
+                    <div class="chart-sidebar" id="chartSidebar"></div>
                 </div>
+                <!-- BOTTOM DASHBOARD (chỉ hiển thị khi fullscreen) — FullscreenWorkspace render nội dung -->
+                <div class="chart-bottom" id="chartBottom"></div>
                 <div class="market-breadth-wrap" id="marketBreadth"></div>
 
                 <!-- BẢNG PHÍM TẮT BIỂU ĐỒ (PHASE 21) — hiển thị TRONG khung chart-block -->
@@ -3070,6 +3565,9 @@
                         fsEl: document.getElementById('fsEl'),
                         settingsEl: document.getElementById('settingsEl'),
                         legendEl: document.getElementById('chartLegend'),
+                        sidebarEl: document.getElementById('chartSidebar'),
+                        bottomEl: document.getElementById('chartBottom'),
+                        onSelectSymbol: function (symbol) { switchSymbol(symbol); },
                         symbol: symbol,
                         timeframe: currentTimeframe,
                         theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light',
