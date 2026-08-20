@@ -3501,12 +3501,40 @@
             }, 200);
         }
 
-        async function api(path) {
-            const res = await fetch(`/api${path}`, { cache: 'no-store' });
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}`);
+        // Cache GET dữ liệu (TTL theo loại) + dedup request đang chạy (chống gọi trùng
+        // / chờ nhau). Giảm mạnh số request khi chuyển mã, mở lại tab/modal.
+        const apiCache = new Map(); // path -> { expires, value }
+        const apiInflight = new Map(); // path -> Promise
+        function apiTtl(path) {
+            if (/\/quote(\?|$)/.test(path)) return 8000; // giá realtime: TTL ngắn
+            if (/\/order-book|\/trades|\/foreign/.test(path)) return 25000;
+            if (/\/company-summary|\/dividends|\/reports|\/profit-analysis|\/shareholders|\/peers|\/history/.test(path)) return 300000;
+            return 60000;
+        }
+        async function api(path, opts) {
+            opts = opts || {};
+            const now = Date.now();
+            const cached = apiCache.get(path);
+            if (!opts.force && cached && cached.expires > now) return cached.value;
+            if (apiInflight.has(path)) return apiInflight.get(path); // dedup
+            const p = (async () => {
+                const res = await fetch(`/api${path}`, { cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                apiCache.set(path, { expires: Date.now() + apiTtl(path), value: data });
+                // Giới hạn kích thước cache (chống rò rỉ trong phiên dài): giữ tối đa 400 entry.
+                if (apiCache.size > 400) {
+                    const oldest = apiCache.keys().next().value;
+                    if (oldest) apiCache.delete(oldest);
+                }
+                return data;
+            })();
+            apiInflight.set(path, p);
+            try {
+                return await p;
+            } finally {
+                apiInflight.delete(path);
             }
-            return res.json();
         }
 
         function renderMetrics(quote) {

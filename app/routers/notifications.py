@@ -135,18 +135,24 @@ def _sync_notifications(db: Session, user: User) -> None:
     notify_news = user.notify_news if user.notify_news is not None else True
     today = date.today().isoformat()
 
+    # Tối ưu hiệu năng: nạp TẤT CẢ tin hợp lệ MỘT lần (trước đây lặp lại query này
+    # theo từng mã trong watchlist → N+1). Lọc ngưỡng created_at theo từng fav sau đó
+    # bằng in-memory, giữ nguyên kết quả.
+    _all_eligible_news = (
+        db.query(News)
+        .filter(News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published]))
+        .order_by(News.created_at.desc())
+        .all()
+    )
+
     for fav in favs:
         sym = fav.symbol.upper().strip()
         if not sym:
             continue
-        rows = (
-            db.query(News)
-            .filter(News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published]))
-            .filter(News.created_at >= fav.created_at)
-            .order_by(News.created_at.desc())
-            .all()
-        )
-        for n in rows:
+        for n in _all_eligible_news:
+            # Giữ nguyên ngưỡng thời gian theo từng fav (như query cũ) nhưng lọc in-memory.
+            if fav.created_at is None or n.created_at < fav.created_at:
+                continue
             if not _news_matches_symbol(n, sym):
                 continue
             is_report = (n.category or "tin-tuc") == "bao-cao"

@@ -3,14 +3,17 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
+import functools
 import json
 import math
 import re
 from pathlib import Path
+import threading
 import time
 from typing import Any
 from urllib.parse import quote, urlencode
-from urllib.request import Request, urlopen
+
+import httpx
 
 
 _SIMPLIZE_BASE_URL = "https://api2.simplize.vn"
@@ -33,6 +36,8 @@ _EXCHANGE_CHART_SYMBOLS = {
 class SimpleTTLCache:
     def __init__(self) -> None:
         self._store: dict[str, tuple[float, Any]] = {}
+        self._locks: dict[str, threading.Lock] = {}
+        self._locks_guard = threading.Lock()
 
     def get(self, key: str) -> Any | None:
         item = self._store.get(key)
@@ -40,9 +45,17 @@ class SimpleTTLCache:
             return None
         expires_at, value = item
         if time.time() > expires_at:
-            self._store.pop(key, None)
+            # Giữ entry lại làm "stale" (xem get_stale) — phục vụ stale-while-revalidate.
             return None
         return value
+
+    def get_stale(self, key: str) -> Any | None:
+        """Trả dữ liệu cũ đã HẾT HẠN (nếu còn giữ) — dùng cho stale-while-revalidate."""
+        item = self._store.get(key)
+        if not item:
+            return None
+        expires_at, value = item
+        return value if time.time() > expires_at else None
 
     def set(self, key: str, value: Any, ttl_seconds: int = 60) -> None:
         self._store[key] = (time.time() + ttl_seconds, value)
@@ -54,8 +67,113 @@ class SimpleTTLCache:
         for key in [k for k in self._store if k.startswith(prefix)]:
             self._store.pop(key, None)
 
+    def _lock_for(self, key: str) -> threading.Lock:
+        """Lock riêng theo key — dùng cho single-flight (chống cache stampede)."""
+        with self._locks_guard:
+            lock = self._locks.get(key)
+            if lock is None:
+                lock = self._locks.setdefault(key, threading.Lock())
+            return lock
+
+    def compute(self, key: str, ttl_seconds: int, fn) -> Any:
+        """Single-flight: trả cache nếu còn hạn; nếu không chỉ gọi fn() ĐÚNG MỘT lần
+        (các request trùng key khác chờ kết quả đó) rồi lưu lại."""
+        cached = self.get(key)
+        if cached is not None:
+            return cached
+        with self._lock_for(key):
+            cached = self.get(key)
+            if cached is not None:
+                return cached
+            value = fn()
+            self.set(key, value, ttl_seconds)
+            return value
+
 
 cache = SimpleTTLCache()
+
+
+# ---------------------------------------------------------------------------
+# HTTP client dùng chung (keep-alive / connection pool)
+# ---------------------------------------------------------------------------
+# Trước đây mọi request dùng urllib.urlopen → MỞ KẾT NỐI MỚI mỗi lần (tốn TLS
+# handshake ~50-150ms). Dùng chung 1 httpx.Client để TÁI SỬ DỤNG kết nối giữa
+# các request / lần load → giảm latency rõ rệt cho trang gọi nhiều API.
+# httpx đã là dependency (dùng trong ai_service).
+_HTTP_DEFAULT_TIMEOUT = httpx.Timeout(_SIMPLIZE_TIMEOUT_SECONDS, connect=10.0)
+
+_http_client: httpx.Client | None = None
+_http_client_lock = threading.Lock()
+
+
+def _get_http_client() -> httpx.Client:
+    """Trả về client dùng chung (lazy singleton, thread-safe khi tạo)."""
+    global _http_client
+    if _http_client is None:
+        with _http_client_lock:
+            if _http_client is None:
+                _http_client = httpx.Client(
+                    timeout=_HTTP_DEFAULT_TIMEOUT,
+                    limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
+                    headers={"user-agent": "TuniX/1.0", "accept": "application/json"},
+                    follow_redirects=True,
+                    trust_env=False,
+                )
+    return _http_client
+
+
+def _singleflight(key_fn, ttl_seconds: int = 30, stale_while_revalidate: bool = True):
+    """Decorator chống cache stampede + stale-while-revalidate (SWR).
+
+    - Cache còn hạn → trả ngay.
+    - Cache hết hạn nhưng có stale → trả stale NGAY + refresh nền (không chặn user).
+    - Không có cache/stale → build đồng bộ (single-flight) rồi cache.
+    """
+    def deco(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            key = key_fn(*args, **kwargs)
+            cached = cache.get(key)
+            if cached is not None:
+                return cached
+            stale = cache.get_stale(key)
+            with cache._lock_for(key):
+                cached = cache.get(key)
+                if cached is not None:
+                    return cached
+                if stale is not None and stale_while_revalidate:
+                    _start_background_refresh(key, fn, args, kwargs)
+                    return stale
+                value = fn(*args, **kwargs)
+                if cache.get(key) is None and value:
+                    cache.set(key, value, ttl_seconds)
+                return value
+        return wrapper
+    return deco
+
+
+_refreshing: set[str] = set()
+_refreshing_guard = threading.Lock()
+
+
+def _start_background_refresh(key: str, fn, args, kwargs) -> bool:
+    """Refresh nền cho key — chỉ 1 luồng/key cùng lúc (chống thread stampede)."""
+    with _refreshing_guard:
+        if key in _refreshing:
+            return False
+        _refreshing.add(key)
+
+    def _run() -> None:
+        try:
+            fn(*args, **kwargs)
+        except Exception:
+            pass
+        finally:
+            with _refreshing_guard:
+                _refreshing.discard(key)
+
+    threading.Thread(target=_run, daemon=True).start()
+    return True
 
 
 def _load_base_symbol_directory() -> list[dict[str, str]]:
@@ -231,10 +349,8 @@ def _encode_ticker_for_api(ticker: str) -> str:
 def _http_get_json(path: str, params: dict[str, str] | None = None) -> dict[str, Any]:
     query = f"?{urlencode(params)}" if params else ""
     url = f"{_SIMPLIZE_BASE_URL}{path}{query}"
-    req = Request(url, headers={"accept": "application/json", "user-agent": "TuniX/1.0"})
-    with urlopen(req, timeout=_SIMPLIZE_TIMEOUT_SECONDS) as response:  # nosec B310
-        payload = response.read().decode("utf-8")
-    data = json.loads(payload)
+    response = _get_http_client().get(url)
+    data = response.json()
     if not isinstance(data, dict):
         return {"status": 500, "message": "Invalid payload", "data": []}
     return data
@@ -242,15 +358,8 @@ def _http_get_json(path: str, params: dict[str, str] | None = None) -> dict[str,
 
 def _http_post_json(path: str, body: dict[str, Any]) -> dict[str, Any]:
     url = f"{_SIMPLIZE_BASE_URL}{path}"
-    req = Request(
-        url,
-        method="POST",
-        data=json.dumps(body).encode("utf-8"),
-        headers={"content-type": "application/json", "accept": "application/json", "user-agent": "TuniX/1.0"},
-    )
-    with urlopen(req, timeout=_SIMPLIZE_TIMEOUT_SECONDS) as response:  # nosec B310
-        payload = response.read().decode("utf-8")
-    data = json.loads(payload)
+    response = _get_http_client().post(url, json=body)
+    data = response.json()
     if not isinstance(data, dict):
         return {"status": 500, "message": "Invalid payload", "data": []}
     return data
@@ -338,7 +447,7 @@ def _kbs_chart(symbol: str, interval: str, from_ts: int = 0, to_ts: int = 0) -> 
         return cached
 
     url = f"{_KBS_BASE_URL}/stocks/{symbol}/data_{suffix}?sdate={sdate}&edate={edate}"
-    req = Request(
+    response = _get_http_client().get(
         url,
         headers={
             "user-agent": (
@@ -348,9 +457,9 @@ def _kbs_chart(symbol: str, interval: str, from_ts: int = 0, to_ts: int = 0) -> 
             "referer": "https://kbbuddywts.kbsec.com.vn/",
             "accept": "application/json, text/plain, */*",
         },
+        timeout=httpx.Timeout(_KBS_TIMEOUT_SECONDS, connect=10.0),
     )
-    with urlopen(req, timeout=_KBS_TIMEOUT_SECONDS) as response:  # nosec B310
-        payload = json.loads(response.read().decode("utf-8"))
+    payload = response.json()
 
     rows = payload.get("data_" + suffix) if isinstance(payload, dict) else None
     if not isinstance(rows, list):
@@ -498,9 +607,11 @@ def _fetch_simplize_page_props(symbol: str) -> dict[str, Any]:
 
     try:
         url = f"{_SIMPLIZE_WEB_BASE_URL}/co-phieu/{quote(symbol_upper)}"
-        req = Request(url, headers={"accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "user-agent": "TuniX/1.0"})
-        with urlopen(req, timeout=_SIMPLIZE_TIMEOUT_SECONDS) as response:  # nosec B310
-            html = response.read().decode("utf-8", errors="replace")
+        response = _get_http_client().get(
+            url,
+            headers={"accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"},
+        )
+        html = response.text
 
         match = re.search(r"<script[^>]+id=['\"]__NEXT_DATA__['\"][^>]*>(.*?)</script>", html, re.DOTALL | re.IGNORECASE)
         if not match:
@@ -877,6 +988,7 @@ def _write_screener_cache_file(rows: list[dict[str, Any]]) -> None:
         pass
 
 
+@_singleflight(lambda: "screener-dataset", _SCREENER_CACHE_TTL_SECONDS)
 def _get_screener_dataset() -> list[dict[str, Any]]:
     """Trả về toàn bộ dữ liệu screener (memory cache -> file cache -> fetch từ Simplize)."""
     cached = cache.get("screener-dataset")
@@ -1083,6 +1195,7 @@ def _get_simplize_market_liquidity(exchange: str) -> dict[str, Any]:
     return data
 
 
+@_singleflight(lambda exchange, period="5d": f"exchange-chart:{exchange}", 30)
 def get_exchange_chart(exchange: str, period: str = "5d") -> dict[str, Any]:
     """Thanh khoản thị trường (GTGD) theo sàn HOSE/HNX/UPCOM.
 
@@ -1258,6 +1371,7 @@ def _get_watchlist_sparklines() -> dict[str, list[dict[str, Any]]]:
     return sparklines
 
 
+@_singleflight(lambda: "watchlist", 30)
 def get_watchlist() -> list[dict[str, Any]]:
     """Danh sách cổ phiếu trong VN30: 30 mã VN30 với dữ liệu thực tế từ Simplize.
 
@@ -1340,6 +1454,7 @@ def _compute_ceiling_floor(exchange: str, reference: float) -> tuple[float, floa
     return ceiling, floor
 
 
+@_singleflight(lambda: "market-map", 60)
 def get_market_map() -> dict[str, Any]:
     """Bản đồ thị trường (treemap): toàn bộ cổ phiếu có giao dịch phiên gần nhất.
 
@@ -1854,6 +1969,7 @@ def _get_quote_fundamentals(symbol: str) -> dict[str, Any]:
     return out
 
 
+@_singleflight(lambda symbol: f"quote:{symbol.upper()}", 15)
 def get_quote(symbol: str) -> dict[str, Any]:
     key = f"quote:{symbol.upper()}"
     cached = cache.get(key)
@@ -1953,6 +2069,7 @@ def get_quote(symbol: str) -> dict[str, Any]:
         return result
 
 
+@_singleflight(lambda: "market-overview", 10)
 def get_market_overview() -> list[dict[str, Any]]:
     key = "market-overview"
     cached = cache.get(key)
@@ -1969,10 +2086,16 @@ def get_market_overview() -> list[dict[str, Any]]:
     ]
 
     try:
-        indices = _simplize_last("index", ["VNINDEX", "VN30", "^DJI"])
-        crypto = _simplize_last("crypto", ["BTCUSDT"])
-        futures = _simplize_last("futures", ["GC=F"])
-        local_gold = _simplize_last("index", ["GOLD:VN:SELL"])
+        # Nạp 4 nhóm chỉ số SONG SONG (trước đây tuần tự → 4 round-trip liên tiếp).
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            f_indices = pool.submit(_simplize_last, "index", ["VNINDEX", "VN30", "^DJI"])
+            f_crypto = pool.submit(_simplize_last, "crypto", ["BTCUSDT"])
+            f_futures = pool.submit(_simplize_last, "futures", ["GC=F"])
+            f_gold = pool.submit(_simplize_last, "index", ["GOLD:VN:SELL"])
+            indices = f_indices.result()
+            crypto = f_crypto.result()
+            futures = f_futures.result()
+            local_gold = f_gold.result()
 
         vnindex = indices.get("VNINDEX", {})
         vn30 = indices.get("VN30", {})
@@ -2065,9 +2188,12 @@ def _yahoo_index(symbol: str, period: str = "1y") -> dict[str, Any] | None:
     rng = period_map.get(period, "1y")
     url = f"{_YAHOO_BASE}/v8/finance/chart/{_encode_ticker_for_api(symbol)}?range={rng}&interval=1d"
     try:
-        req = Request(url, headers={"User-Agent": "Mozilla/5.0", "accept": "application/json"})
-        with urlopen(req, timeout=15) as resp:  # nosec B310
-            data = json.loads(resp.read().decode("utf-8"))
+        response = _get_http_client().get(
+            url,
+            headers={"User-Agent": "Mozilla/5.0", "accept": "application/json"},
+            timeout=httpx.Timeout(15, connect=10.0),
+        )
+        data = response.json()
         result = (data.get("chart") or {}).get("result")
         if not result:
             return None
@@ -2173,6 +2299,7 @@ _INDEX_DEFS: dict[str, dict[str, Any]] = {
 }
 
 
+@_singleflight(lambda key, period="1y": f"index-detail:{key}:{period}", 60)
 def get_index_detail(key: str, period: str = "1y") -> dict[str, Any]:
     """Chi tiết một chỉ số: giá hiện tại + lịch sử OHLCV để vẽ biểu đồ / xu hướng.
 
@@ -2292,13 +2419,8 @@ def _vci_get_json(path: str, params: dict[str, Any] | None = None) -> dict[str, 
     """
     query = f"?{urlencode(params)}" if params else ""
     url = f"{_VCIQ_URL}{path}{query}"
-    req = Request(
-        url,
-        headers={"accept": "application/json", "user-agent": "Mozilla/5.0"},
-    )
-    with urlopen(req, timeout=_SIMPLIZE_TIMEOUT_SECONDS) as response:  # nosec B310
-        payload = response.read().decode("utf-8")
-    data = json.loads(payload)
+    response = _get_http_client().get(url, headers={"accept": "application/json", "user-agent": "Mozilla/5.0"})
+    data = response.json()
     if not isinstance(data, dict):
         return {}
     return data
@@ -2664,25 +2786,22 @@ _CAFEF_FILTER = {
 
 
 def _cafef_get_json(path: str) -> dict[str, Any]:
-    req = Request(f"{_CAFEF_AJAX_URL}/{path}", headers=_CAFEF_HEADERS)
-    with urlopen(req, timeout=_SIMPLIZE_TIMEOUT_SECONDS) as response:  # nosec B310
-        payload = response.read().decode("utf-8", errors="replace")
-    data = json.loads(payload)
+    response = _get_http_client().get(f"{_CAFEF_AJAX_URL}/{path}", headers=_CAFEF_HEADERS)
+    data = response.json()
     if not isinstance(data, dict):
         return {}
     return data
 
 
 def _cafef_get_text(url: str) -> str:
-    req = Request(
+    response = _get_http_client().get(
         url,
         headers={
             "accept": "text/html,*/*",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         },
     )
-    with urlopen(req, timeout=_SIMPLIZE_TIMEOUT_SECONDS) as response:  # nosec B310
-        return response.read().decode("utf-8", errors="replace")
+    return response.text
 
 
 def _normalize_report_date(value: Any) -> str:

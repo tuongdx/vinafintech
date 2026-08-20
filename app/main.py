@@ -1,8 +1,11 @@
+import logging
 import re
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -77,6 +80,62 @@ async def protect_admin_pages(request: Request, call_next):
         return JSONResponse(status_code=404, content={"detail": "Not Found"})
     return await call_next(request)
 
+
+# ============================================================
+# Hiệu năng: Cache-Control cho asset tĩnh + API công khai ổn định,
+# và log thời gian phản hồi mỗi request (phục vụ performance monitoring).
+# ============================================================
+_perf_logger = logging.getLogger("tunix.perf")
+
+
+def _stable_api_max_age(path: str) -> int | None:
+    """max-age (giây) cho API công khai ổn định (dữ liệu đã cache server-side).
+    Trả None nếu không nên cache ở trình duyệt (tránh stale cho dữ liệu realtime)."""
+    if any(
+        seg in path
+        for seg in ("/company-summary", "/dividends", "/reports", "/profit-analysis", "/shareholders", "/business")
+    ):
+        return 600
+    if "/stock-lists" in path or path.startswith("/api/chart/config"):
+        return 300
+    if path.startswith("/api/faqs") or path.startswith("/api/plans") or path.startswith("/api/features"):
+        return 600
+    if path.startswith("/api/stocks/search"):
+        return 120
+    if path.startswith("/api/stocks/filter"):
+        return 60
+    if path.startswith("/api/news/popular"):
+        return 120
+    if path.startswith("/api/news"):
+        return 60
+    return None
+
+
+@app.middleware("http")
+async def cache_and_timing(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start) * 1000
+
+    # Log request chậm để xác định bottleneck.
+    if duration_ms > 500:
+        _perf_logger.warning("SLOW %s %s -> %d %.0fms", request.method, request.url.path, response.status_code, duration_ms)
+
+    if request.method == "GET" and response.status_code == 200:
+        path = request.url.path
+        # Asset tĩnh (JS/CSS/ảnh) — không phải HTML — cache trình duyệt 1 giờ
+        # (StaticFiles vẫn gửi ETag nên sau 1h chỉ cần revalidate 304, rẻ).
+        if (path.startswith("/static/") or path.startswith("/frontend/assets/")) and not path.endswith(".html"):
+            response.headers.setdefault("Cache-Control", "public, max-age=3600")
+        # API công khai ổn định: cache trình duyệt ngắn.
+        elif path.startswith("/api/") and not request.headers.get("authorization"):
+            max_age = _stable_api_max_age(path)
+            if max_age is not None:
+                response.headers.setdefault("Cache-Control", f"public, max-age={max_age}")
+
+    return response
+
+
 api = settings.api_prefix
 app.include_router(ai.router, prefix=api)
 app.include_router(auth.router, prefix=api)
@@ -106,6 +165,31 @@ if frontend_path.exists():
 @app.on_event("startup")
 def on_startup() -> None:
     ensure_schema()
+    _warm_home_caches()
+
+
+def _warm_home_caches() -> None:
+    """Warm cache các block trang chủ ở nền (không chặn startup) để người dùng
+    không phải chờ lần đầu — kết hợp stale-while-revalidate ở cache service."""
+    import threading
+    from app.services import vnstock_service as vs
+
+    def _warm() -> None:
+        jobs = [
+            ("index-detail", lambda: vs.get_index_detail("vnindex", "1y")),
+            ("market-overview", vs.get_market_overview),
+            ("watchlist", vs.get_watchlist),
+            ("market-map", vs.get_market_map),
+            ("exchange-chart", lambda: vs.get_exchange_chart("HOSE")),
+            ("top-stocks", lambda: vs.get_top_stocks("breakout", "1w")),
+        ]
+        for name, job in jobs:
+            try:
+                job()
+            except Exception:  # noqa: BLE001
+                _perf_logger.debug("warm %s failed", name)
+
+    threading.Thread(target=_warm, daemon=True).start()
 
 
 @app.get("/")
@@ -224,3 +308,11 @@ def frontend_page(page_name: str):
         raise HTTPException(status_code=404, detail="Page file not found")
 
     return FileResponse(str(page_file), headers={"Cache-Control": "no-store"})
+
+
+# ============================================================
+# Nén GZip — đặt CUỐI để là middleware ngoài cùng → nén mọi response
+# JSON/JS/CSS/HTML ≥500B. SSE (text/event-stream của AI chat) được
+# GZipMiddleware bỏ qua tự động (DEFAULT_EXCLUDED_CONTENT_TYPES).
+# ============================================================
+app.add_middleware(GZipMiddleware, minimum_size=500)

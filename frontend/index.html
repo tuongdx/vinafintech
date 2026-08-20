@@ -3767,7 +3767,7 @@
             if (!faqList && !faqSection) return;
 
             try {
-                const res = await fetch('/api/faqs', { cache: 'no-store' });
+                const res = await fetch('/api/faqs'); // cache trình duyệt 600s (server đã set Cache-Control)
                 if (!res.ok) return;
                 const data = await res.json();
                 const list = Array.isArray(data) ? data : [];
@@ -4597,7 +4597,8 @@
                 // Tin xem nhiều: 8 bài có lượt xem cao nhất
                 await loadNewsInto('newsListMostViewed', '/api/news/popular?limit=8');
             }
-            window.addEventListener('load', loadPublishedNews);
+            // Gọi ĐÚNG MỘT lần (trước đây vừa addEventListener('load') vừa gọi trực tiếp
+            // → request news/popular bị gọi trùng 2 lần mỗi lần mở trang).
             loadPublishedNews();
         })();
     </script>
