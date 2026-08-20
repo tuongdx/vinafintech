@@ -20,6 +20,24 @@ _SIMPLIZE_BASE_URL = "https://api2.simplize.vn"
 _SIMPLIZE_WEB_BASE_URL = "https://simplize.vn"
 _SIMPLIZE_TIMEOUT_SECONDS = 12
 _VCIQ_URL = "https://iq.vietcap.com.vn/api/iq-insight-service"
+# VCI trading REST (price board + intraday) — dùng TRỰC TIẾP để bỏ phí import/khởi tạo thư viện vnstock.
+_VCI_TRADING_URL = "https://trading.vietcap.com.vn/api"
+_VCI_TRADING_TIMEOUT = 15
+_VCI_TRADING_HEADERS = {
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9,vi-VN;q=0.8,vi;q=0.7",
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-site",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Referer": "https://trading.vietcap.com.vn/",
+    "Origin": "https://trading.vietcap.com.vn/",
+}
 _SYMBOL_DIRECTORY_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "symbol_directory.json"
 _SYMBOL_SUMMARY_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "symbol_summaries.json"
 _SYMBOL_SCREENER_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "symbol_screener.json"
@@ -2977,9 +2995,11 @@ def _format_vci_time(raw: Any) -> str:
 
 
 def get_order_book(symbol: str) -> dict[str, Any]:
-    """Sổ lệnh thực tế (bên mua/bên bán, khối lượng, giá, thời gian) từ VCI price_board.
+    """Sổ lệnh thực tế (bên mua/bên bán, khối lượng, giá, thời gian) từ VCI.
 
     Trả về tối đa 3 mức giá bên mua + 3 mức giá bên bán kèm khối lượng.
+    Gọi TRỰC TIẾP REST API VCI (~0.5s) thay vì thư viện vnstock (~5s do import
+    + khởi tạo object); fallback về vnstock nếu direct API lỗi.
     """
     symbol_upper = symbol.upper().strip()
     empty = {"symbol": symbol_upper, "time": "", "bids": [], "asks": [], "source": "empty"}
@@ -2990,16 +3010,63 @@ def get_order_book(symbol: str) -> dict[str, Any]:
         return cached
 
     try:
+        response = _get_http_client().post(
+            f"{_VCI_TRADING_URL}/price/symbols/getList",
+            json={"symbols": [symbol_upper]},
+            headers=_VCI_TRADING_HEADERS,
+            timeout=httpx.Timeout(_VCI_TRADING_TIMEOUT, connect=10.0),
+        )
+        data = response.json()
+        rows = data if isinstance(data, list) else []
+        if rows and isinstance(rows[0], dict):
+            item = rows[0]
+            bid_ask = item.get("bidAsk") or {}
+            listing = item.get("listingInfo") or {}
+            match = item.get("matchPrice") or {}
+            bids: list[dict[str, Any]] = []
+            asks: list[dict[str, Any]] = []
+            for bp in (bid_ask.get("bidPrices") or [])[:3]:
+                price = _to_float(bp.get("price"))
+                if price > 0:
+                    bids.append({"price": price, "volume": int(_to_float(bp.get("volume")))})
+            for ap in (bid_ask.get("askPrices") or [])[:3]:
+                price = _to_float(ap.get("price"))
+                if price > 0:
+                    asks.append({"price": price, "volume": int(_to_float(ap.get("volume")))})
+            result = {
+                "symbol": symbol_upper,
+                "time": _format_vci_time(bid_ask.get("transactionTime")),
+                "reference_price": _to_float(listing.get("refPrice") or match.get("referencePrice")),
+                "ceiling": _to_float(listing.get("ceiling") or match.get("ceilingPrice")),
+                "floor": _to_float(listing.get("floor") or match.get("floorPrice")),
+                "bids": bids,
+                "asks": asks,
+                "source": "vci-price-board",
+            }
+            cache.set(cache_key, result, ttl_seconds=15)
+            return result
+    except Exception:
+        pass
+
+    fallback = _order_book_vnstock(symbol_upper)
+    if fallback:
+        cache.set(cache_key, fallback, ttl_seconds=15)
+        return fallback
+    return empty
+
+
+def _order_book_vnstock(symbol_upper: str) -> dict[str, Any] | None:
+    """Fallback Sổ lệnh qua thư viện vnstock (VCI) — chậm nhưng an toàn nếu direct API lỗi."""
+    try:
         from vnstock import Trading  # lazy import
 
         trading = Trading(source="VCI", show_log=False)
         df = trading.price_board([symbol_upper], flatten_columns=True)
         if df is None or df.empty:
-            return empty
-
+            return None
         row = df.iloc[0]
-        bids = []
-        asks = []
+        bids: list[dict[str, Any]] = []
+        asks: list[dict[str, Any]] = []
         for i in range(1, 4):
             bid_price = _to_float(row.get(f"bid_ask_bid_{i}_price"))
             bid_volume = int(_to_float(row.get(f"bid_ask_bid_{i}_volume")))
@@ -3009,8 +3076,7 @@ def get_order_book(symbol: str) -> dict[str, Any]:
             ask_volume = int(_to_float(row.get(f"bid_ask_ask_{i}_volume")))
             if ask_price > 0:
                 asks.append({"price": ask_price, "volume": ask_volume})
-
-        result = {
+        return {
             "symbol": symbol_upper,
             "time": _format_vci_time(row.get("bid_ask_transaction_time")),
             "reference_price": _to_float(row.get("listing_ref_price") or row.get("match_reference_price")),
@@ -3020,16 +3086,15 @@ def get_order_book(symbol: str) -> dict[str, Any]:
             "asks": asks,
             "source": "vci-price-board",
         }
-        cache.set(cache_key, result, ttl_seconds=15)
-        return result
     except Exception:
-        return empty
+        return None
 
 
 def get_recent_trades(symbol: str, limit: int = 50) -> list[dict[str, Any]]:
     """Các giao dịch khớp lệnh gần nhất của phiên (VCI intraday).
 
     Dữ liệu từng lệnh khớp: thời gian, giá, khối lượng, chiều mua/bán.
+    Gọi TRỰC TIẾP REST API VCI (~0.1s) thay vì thư viện vnstock; fallback nếu lỗi.
     """
     symbol_upper = symbol.upper().strip()
     safe_limit = max(1, min(int(limit or 50), 200))
@@ -3041,13 +3106,72 @@ def get_recent_trades(symbol: str, limit: int = 50) -> list[dict[str, Any]]:
         return cached
 
     try:
+        response = _get_http_client().post(
+            f"{_VCI_TRADING_URL}/market-watch/LEData/getAll",
+            json={"symbol": symbol_upper, "limit": safe_limit, "truncTime": None},
+            headers=_VCI_TRADING_HEADERS,
+            timeout=httpx.Timeout(_VCI_TRADING_TIMEOUT, connect=10.0),
+        )
+        data = response.json()
+        rows = data if isinstance(data, list) else []
+        trades = _parse_vci_intraday(symbol_upper, rows)
+        if trades:
+            cache.set(cache_key, trades, ttl_seconds=15)
+            return trades
+    except Exception:
+        pass
+
+    fallback = _recent_trades_vnstock(symbol_upper, safe_limit)
+    if fallback:
+        cache.set(cache_key, fallback, ttl_seconds=15)
+        return fallback
+    return empty
+
+
+def _parse_vci_intraday(symbol_upper: str, rows: list[Any]) -> list[dict[str, Any]]:
+    """Parse rows VCI LEData/getAll -> [{symbol, time, price, volume, match_type, side}]."""
+    trades: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        price = _to_float(row.get("matchPrice"))
+        if price <= 0:
+            continue
+        try:
+            ts = int(row.get("truncTime") or 0)
+        except (TypeError, ValueError):
+            ts = 0
+        match_type = str(row.get("matchType") or "")
+        trades.append(
+            {
+                "symbol": symbol_upper,
+                "_ts": ts,
+                "time": (
+                    datetime.fromtimestamp(ts, _VN_TZ).strftime("%H:%M:%S")
+                    if ts
+                    else str(row.get("truncTime") or "")
+                ),
+                "price": price,
+                "volume": int(_to_float(row.get("matchVol"))),
+                "match_type": match_type,
+                "side": "B" if match_type.lower().startswith("b") else "S",
+            }
+        )
+    trades.sort(key=lambda t: t["_ts"], reverse=True)
+    for t in trades:
+        t.pop("_ts", None)
+    return trades
+
+
+def _recent_trades_vnstock(symbol_upper: str, safe_limit: int) -> list[dict[str, Any]]:
+    """Fallback Giao dịch gần nhất qua thư viện vnstock (VCI)."""
+    try:
         from vnstock import Quote  # lazy import
 
         quote = Quote(source="VCI", symbol=symbol_upper, show_log=False)
         df = quote.intraday(page_size=safe_limit)
         if df is None or df.empty:
-            return empty
-
+            return []
         trades: list[dict[str, Any]] = []
         for _, row in df.iterrows():
             # VCI price từ intraday_to_df đã chia 1000 -> nhân lại về VND.
@@ -3072,14 +3196,10 @@ def get_recent_trades(symbol: str, limit: int = 50) -> list[dict[str, Any]]:
                     "side": "B" if match_type.lower().startswith("b") else "S",
                 }
             )
-
-        # Sắp theo thời gian giảm dần (mới nhất trước), giới hạn số dòng.
         trades.sort(key=lambda t: t["time"], reverse=True)
-        trades = trades[:safe_limit]
-        cache.set(cache_key, trades, ttl_seconds=15)
-        return trades
+        return trades[:safe_limit]
     except Exception:
-        return empty
+        return []
 
 
 def get_peer_comparison(symbol: str, limit: int = 10) -> dict[str, Any]:
