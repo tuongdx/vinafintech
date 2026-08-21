@@ -1175,8 +1175,10 @@ def _fetch_simplize_market_liquidity(exchange: str) -> dict[str, Any]:
     """GTGD (giá trị giao dịch) nội phiên theo sàn từ Simplize.
 
     Endpoint /api/historical/widget/market-liquidity là nguồn dữ liệu cho widget
-    "Thanh khoản thị trường" trên trang Simplize. Mỗi bar là [timestamp_ms, GTGD_hôm_nay, GTGD_hôm_qua, ...].
-    API đã tự chọn phiên giao dịch gần nhất làm "hôm nay" và phiên trước đó làm "hôm qua".
+    "Thanh khoản thị trường" trên trang Simplize. Mỗi bar là
+    [timestamp_ms, GTGD_hôm_qua, GTGD_hôm_nay, ...] (cột 1 = phiên trước, cột 2 =
+    phiên gần nhất). Đã kiểm chứng ngày 21/08/2026: GTGD HOSE hôm nay 18.356 tỷ VND
+    nằm ở cột index 2, GTGD HNX hôm nay 1.119 tỷ VND cũng ở cột index 2.
     """
     payload = _http_get_json(
         "/api/historical/widget/market-liquidity",
@@ -1194,8 +1196,8 @@ def _fetch_simplize_market_liquidity(exchange: str) -> dict[str, Any]:
         ts_ms = _to_float(row[0], 0)
         if ts_ms <= 0:
             continue
-        today_vnd = _to_float(row[1])
-        yesterday_vnd = _to_float(row[2])
+        yesterday_vnd = _to_float(row[1])
+        today_vnd = _to_float(row[2])
         iso = datetime.fromtimestamp(ts_ms / 1000.0, _VN_TZ).isoformat()
         today.append({"time": iso, "close": round(today_vnd / 1e9, 2), "timestamp": ts_ms})
         yesterday.append({"time": iso, "close": round(yesterday_vnd / 1e9, 2), "timestamp": ts_ms})
