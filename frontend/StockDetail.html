@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>TuniX - Phân tích cổ phiếu toàn diện cho nhà đầu tư thực</title>
+    <title>TuniX - Phân tích cổ phiếu toàn diện và quản lý đầu tư hiệu quả</title>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B528QFKRN9"></script>
     <script>
@@ -3798,11 +3798,23 @@
         // Đổi sang mã cổ phiếu khác NGAY TRONG TRANG — dùng chung khi click mã ở "So sánh tương quan".
         // Logic giống ô nhập mã chart: fullscreen → đổi tại chart giữ fullscreen; nhúng trong index
         // → báo parent (đổi trong trang, không reload); mở thẳng → điều hướng /cophieu-{MÃ}.
+        function isFullscreenActive() {
+            // Toàn màn hình do CHÍNH iframe này (Fullscreen API) HOẶC do parent fullscreen iframe này
+            // (icon nến ở header) — trường hợp parent-driven thì document.fullscreenElement trả null
+            // nên phải kiểm tra thêm class chart-fullscreen + fullscreenElement của parent.
+            if (document.fullscreenElement || document.webkitFullscreenElement) return true;
+            if (document.body && document.body.classList.contains('chart-fullscreen')) return true;
+            try {
+                const pd = window.parent && window.parent.document;
+                if (pd && (pd.fullscreenElement || pd.webkitFullscreenElement) === window.frameElement) return true;
+            } catch (e) { /* ignore */ }
+            return false;
+        }
         function goToStock(sym) {
             sym = String(sym || '').trim().toUpperCase();
             if (!sym) return;
             if (sym === getSymbolFromQuery()) return; // đang xem mã này rồi
-            const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            const isFs = isFullscreenActive();
             if (isFs) {
                 switchSymbolInFullscreen(sym);
                 return;
@@ -4511,8 +4523,8 @@
             });
         });
 
-        // Theme toggle (cho phép dark mode)
-        const savedTheme = localStorage.getItem('left-col-theme');
+        // Theme toggle (cho phép dark mode) — ưu tiên left-col-theme, fallback theme chung (đồng bộ shell/CoPhieu)
+        const savedTheme = localStorage.getItem('left-col-theme') || localStorage.getItem('theme');
         if (savedTheme === 'dark') {
             document.body.classList.add('dark-mode');
         }
@@ -4548,7 +4560,7 @@
                 const sym = chartSymbolInput.value.trim().toUpperCase();
                 const cur = getSymbolFromQuery();
                 if (!sym) { chartSymbolInput.value = cur; return; }
-                const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+                const isFs = isFullscreenActive();
                 if (isFs) {
                     await switchSymbolInFullscreen(sym);
                     return;

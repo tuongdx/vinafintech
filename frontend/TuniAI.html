@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
+    <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
+    <title>TuniAI - Trợ lý tài chính thông minh</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: transparent;
+            color: #12203a;
+            line-height: 1.45;
+        }
+        body.embedded { overflow: hidden; }
+        .ta-page { max-width: none; width: 100%; margin: 0 auto; padding: 20px; }
+        .embedded .ta-page { padding: 0 0 40px; }
+
+        /* ===== Hero ===== */
+        .ta-hero {
+            position: relative;
+            background: linear-gradient(135deg, #0b2f3a 0%, #005a5a 55%, #008080 100%);
+            border-radius: 20px;
+            padding: 34px 30px;
+            color: #fff;
+            overflow: hidden;
+            box-shadow: 0 14px 40px rgba(0, 90, 90, 0.30);
+        }
+        .ta-hero::before {
+            content: '';
+            position: absolute; right: -80px; top: -80px;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(0,160,138,0.5), transparent 70%);
+            border-radius: 50%;
+        }
+        .ta-hero::after {
+            content: '';
+            position: absolute; right: 120px; bottom: -120px;
+            width: 220px; height: 220px;
+            background: radial-gradient(circle, rgba(255,255,255,0.10), transparent 70%);
+            border-radius: 50%;
+        }
+        .ta-hero .ta-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.22); padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+        .ta-hero h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-top: 14px; }
+        .ta-hero .ta-headline { font-size: 19px; font-weight: 700; margin-top: 6px; opacity: 0.98; }
+        .ta-hero .ta-sub { font-size: 14px; margin-top: 8px; opacity: 0.85; max-width: 620px; }
+        .ta-hero .ta-hero-tags { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+        .ta-hero .ta-hero-tags span { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+        /* ===== Input ===== */
+        .ta-input-card {
+            margin-top: -22px;
+            position: relative; z-index: 2;
+            background: #fff; border: 1px solid #e5eaf0; border-radius: 18px;
+            box-shadow: 0 12px 34px rgba(15,23,42,0.10);
+            padding: 18px;
+            margin-left: 8px; margin-right: 8px;
+        }
+        .ta-input-row { display: flex; align-items: center; gap: 10px; background: #f6f8fb; border: 1px solid #e5eaf0; border-radius: 14px; padding: 6px 8px 6px 18px; transition: border-color 0.2s; }
+        .ta-input-row:focus-within { border-color: #008080; background: #fff; }
+        .ta-input-row i { color: #008080; font-size: 18px; }
+        .ta-input-row input { flex: 1; border: none; outline: none; background: transparent; font-size: 15.5px; font-family: inherit; color: #12203a; padding: 12px 6px; }
+        .ta-input-row button { border: none; background: linear-gradient(135deg, #008080, #00a08a); color: #fff; font-weight: 700; font-size: 14.5px; padding: 12px 22px; border-radius: 11px; cursor: pointer; font-family: inherit; white-space: nowrap; transition: transform 0.15s; }
+        .ta-input-row button:hover { transform: translateY(-1px); }
+        .ta-suggests { margin-top: 14px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .ta-sugg {
+            border: 1px solid #e9edf2; border-radius: 12px; padding: 11px 12px; cursor: pointer;
+            font-size: 12.5px; color: #4a5a72; transition: all 0.2s; background: #fff; text-align: left;
+            display: flex; flex-direction: column; gap: 5px;
+        }
+        .ta-sugg:hover { border-color: #008080; color: #008080; background: #f0fbf9; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,128,128,0.10); }
+        .ta-sugg small { color: #8a99b1; font-weight: 600; }
+
+        /* ===== Tools ===== */
+        .ta-sec-title { font-size: 16px; font-weight: 800; margin: 26px 0 14px; display: flex; align-items: center; gap: 8px; }
+        .ta-tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .ta-tool {
+            background: linear-gradient(180deg, #fff, #f7fbfa); border: 1px solid #e9edf2; border-radius: 16px;
+            padding: 18px 16px; transition: all 0.2s ease; cursor: pointer;
+        }
+        .ta-tool:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,128,128,0.14); border-color: rgba(0,128,128,0.4); }
+        .ta-tool .tt-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 19px; color: #fff; background: linear-gradient(135deg, #008080, #00a08a); box-shadow: 0 6px 16px rgba(0,128,128,0.28); }
+        .ta-tool .tt-title { font-size: 14.5px; font-weight: 800; margin-top: 12px; }
+        .ta-tool .tt-desc { font-size: 12.5px; color: #8a99b1; margin-top: 4px; line-height: 1.45; }
+        .ta-tool .tt-tag { display: inline-block; margin-top: 10px; font-size: 11px; font-weight: 700; color: #008080; background: rgba(0,128,128,0.08); padding: 4px 10px; border-radius: 20px; }
+
+        /* ===== Demo conversation ===== */
+        .ta-demo {
+            background: #fff; border: 1px solid #e9edf2; border-radius: 18px;
+            padding: 20px; box-shadow: 0 1px 3px rgba(15,23,42,0.05); margin-top: 6px;
+        }
+        .ta-demo-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .ta-demo-head h3 { font-size: 15px; font-weight: 800; }
+        .ta-demo-head .td-live { font-size: 11.5px; color: #008080; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+        .ta-demo-head .td-live .pulse { width: 8px; height: 8px; background: #008080; border-radius: 50%; animation: pulse 1.6s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .ta-msg-user {
+            background: linear-gradient(135deg, #008080, #00a08a); color: #fff;
+            border-radius: 14px 14px 4px 14px; padding: 12px 16px; max-width: 70%; margin-left: auto;
+            font-size: 14px; font-weight: 600;
+        }
+        .ta-msg-ai { display: flex; gap: 12px; margin-top: 14px; }
+        .ta-ai-avatar { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #008080, #00a08a); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 17px; box-shadow: 0 4px 12px rgba(0,128,128,0.25); }
+        .ta-ai-body { flex: 1; min-width: 0; }
+        .ta-ai-name { font-size: 12px; font-weight: 800; color: #6b7a8f; margin-bottom: 6px; }
+
+        .ta-card {
+            background: #f8fafc; border: 1px solid #e9edf2; border-radius: 14px; padding: 14px 16px;
+        }
+        .ta-ai-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .ta-ai-head .tah-sym { font-size: 17px; font-weight: 800; cursor: pointer; }
+        .ta-ai-head .tah-sym:hover { color: #008080; }
+        .ta-ai-head .tah-name { font-size: 12px; color: #8a99b1; }
+        .score-big { display: inline-flex; align-items: center; gap: 10px; }
+        .score-big .sb-num { font-size: 22px; font-weight: 800; }
+        .score-big .sb-label { font-size: 11.5px; color: #8a99b1; }
+
+        .ta-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
+        .ta-pill { background: #fff; border: 1px solid #e9edf2; border-radius: 12px; padding: 12px 14px; }
+        .ta-pill .tp-title { font-size: 12px; font-weight: 800; color: #6b7a8f; margin-top: 6px; }
+        .ta-pill .tp-text { font-size: 12px; color: #12203a; margin-top: 4px; line-height: 1.45; }
+        .ta-pill .pos { color: #008080; }
+        .ta-pill .neg { color: #d0314e; }
+
+        .ta-chart { margin-top: 14px; background: #fff; border: 1px solid #e9edf2; border-radius: 12px; padding: 12px; }
+        .ta-chart svg { width: 100%; height: auto; display: block; }
+
+        .ta-scenarios { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+        .ta-scen { border-radius: 12px; padding: 12px 14px; border: 1px solid #e9edf2; background: #fff; }
+        .ta-scen .ts-tag { font-size: 11px; font-weight: 800; letter-spacing: 0.3px; padding: 3px 10px; border-radius: 20px; display: inline-block; }
+        .ta-scen.bull .ts-tag { background: rgba(0,128,128,0.12); color: #008080; }
+        .ta-scen.base .ts-tag { background: rgba(245,166,35,0.15); color: #c98a16; }
+        .ta-scen.bear .ts-tag { background: rgba(208,49,78,0.12); color: #d0314e; }
+        .ta-scen .ts-title { font-size: 12.5px; font-weight: 800; margin-top: 8px; }
+        .ta-scen .ts-text { font-size: 12px; color: #6b7a8f; margin-top: 4px; line-height: 1.45; }
+
+        .ta-data-cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 14px; }
+        .ta-data { background: #fff; border: 1px solid #e9edf2; border-radius: 11px; padding: 10px 12px; }
+        .ta-data .td-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: #8a99b1; font-weight: 700; }
+        .ta-data .td-value { font-size: 14px; font-weight: 800; margin-top: 3px; }
+        .ta-data .pos { color: #008080; }
+        .ta-data .neg { color: #d0314e; }
+
+        .ta-demo-foot { margin-top: 14px; font-size: 11.5px; color: #8a99b1; display: flex; align-items: center; gap: 8px; }
+
+        /* ===== Dark ===== */
+        body.dark-mode { background: transparent; color: #e6edf3; }
+        body.dark-mode .ta-input-card { background: #161b22; border-color: #21262d; }
+        body.dark-mode .ta-input-row { background: #0d1117; border-color: #30363d; }
+        body.dark-mode .ta-input-row:focus-within { background: #10151c; border-color: #008080; }
+        body.dark-mode .ta-input-row input { color: #e6edf3; }
+        body.dark-mode .ta-sugg { background: #161b22; border-color: #21262d; color: #adbac7; }
+        body.dark-mode .ta-sugg small { color: #8b949e; }
+        body.dark-mode .ta-sugg:hover { border-color: #4db6b6; color: #4db6b6; background: #10151c; }
+        body.dark-mode .ta-tool { background: #161b22; border-color: #21262d; }
+        body.dark-mode .ta-tool .tt-desc { color: #8b949e; }
+        body.dark-mode .ta-demo { background: #161b22; border-color: #21262d; }
+        body.dark-mode .ta-card { background: #10151c; border-color: #21262d; }
+        body.dark-mode .ta-pill { background: #161b22; border-color: #21262d; }
+        body.dark-mode .ta-pill .tp-text { color: #e6edf3; }
+        body.dark-mode .ta-chart { background: #161b22; border-color: #21262d; }
+        body.dark-mode .ta-scen { background: #161b22; border-color: #21262d; }
+        body.dark-mode .ta-scen .ts-text { color: #8b949e; }
+        body.dark-mode .ta-data { background: #161b22; border-color: #21262d; }
+        body.dark-mode .ta-data .td-label { color: #8b949e; }
+        body.dark-mode .ta-ai-name { color: #8b949e; }
+
+        @media (max-width: 1180px) { .ta-suggests { grid-template-columns: repeat(3, 1fr); } .ta-tools { grid-template-columns: repeat(2, 1fr); } .ta-grid4 { grid-template-columns: repeat(2, 1fr); } .ta-data-cards { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 640px) { .ta-suggests { grid-template-columns: 1fr 1fr; } .ta-tools { grid-template-columns: 1fr; } .ta-grid4 { grid-template-columns: 1fr; } .ta-scenarios { grid-template-columns: 1fr; } .ta-data-cards { grid-template-columns: 1fr 1fr; } .ta-msg-user { max-width: 100%; } .ta-input-row { flex-wrap: wrap; } .ta-input-row button { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="ta-page">
+        <!-- HERO -->
+        <header class="ta-hero">
+            <span class="ta-badge"><i class="fas fa-robot"></i> TuniAI · Trợ lý tài chính thông minh</span>
+            <h1>TuniAI</h1>
+            <div class="ta-headline">Phân tích thị trường bằng ngôn ngữ tự nhiên</div>
+            <p class="ta-sub">Hỏi bất cứ điều gì về cổ phiếu, doanh nghiệp, thị trường hoặc danh mục của bạn.</p>
+            <div class="ta-hero-tags">
+                <span>⚡ Dữ liệu thời gian thực</span>
+                <span>🎯 Phân tích chuyên sâu</span>
+                <span>🔐 An toàn &amp; bảo mật</span>
+            </div>
+        </header>
+
+        <!-- INPUT -->
+        <div class="ta-input-card">
+            <div class="ta-input-row">
+                <i class="fas fa-magnifying-glass"></i>
+                <input id="taInput" type="text" placeholder="Bạn muốn phân tích điều gì?" />
+                <button id="taBtn"><i class="fas fa-paper-plane"></i> Phân tích</button>
+            </div>
+            <div class="ta-suggests" id="taSuggests"></div>
+        </div>
+
+        <!-- TOOLS -->
+        <div class="ta-sec-title">TuniAI Tools</div>
+        <div class="ta-tools">
+            <div class="ta-tool" data-p="Phân tích chuyên sâu cổ phiếu">
+                <div class="tt-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="tt-title">AI Stock Analysis</div>
+                <div class="tt-desc">Phân tích chuyên sâu một cổ phiếu</div>
+                <span class="tt-tag">Phân tích</span>
+            </div>
+            <div class="ta-tool" data-p="So sánh doanh nghiệp">
+                <div class="tt-icon"><i class="fas fa-scale-balanced"></i></div>
+                <div class="tt-title">AI Compare</div>
+                <div class="tt-desc">So sánh doanh nghiệp</div>
+                <span class="tt-tag">So sánh</span>
+            </div>
+            <div class="ta-tool" data-p="Tìm cổ phiếu bằng ngôn ngữ tự nhiên">
+                <div class="tt-icon"><i class="fas fa-sliders-h"></i></div>
+                <div class="tt-title">AI Screener</div>
+                <div class="tt-desc">Tìm cổ phiếu bằng ngôn ngữ tự nhiên</div>
+                <span class="tt-tag">Bộ lọc</span>
+            </div>
+            <div class="ta-tool" data-p="Phân tích danh mục của tôi">
+                <div class="tt-icon"><i class="fas fa-briefcase"></i></div>
+                <div class="tt-title">AI Portfolio</div>
+                <div class="tt-desc">Phân tích danh mục</div>
+                <span class="tt-tag">Danh mục</span>
+            </div>
+        </div>
+
+        <!-- DEMO CONVERSATION -->
+        <div class="ta-sec-title">💬 Ví dụ phân tích <span style="font-size:12px;color:#8a99b1;font-weight:600;">(minh họa giao diện)</span></div>
+        <div class="ta-demo">
+            <div class="ta-demo-head">
+                <h3><i class="fas fa-robot" style="color:#008080;"></i> Hội thoại mẫu</h3>
+                <span class="td-live"><span class="pulse"></span> Dữ liệu thực từ thị trường</span>
+            </div>
+
+            <div class="ta-msg-user">Phân tích VCI</div>
+
+            <div class="ta-msg-ai">
+                <div class="ta-ai-avatar"><i class="fas fa-robot"></i></div>
+                <div class="ta-ai-body">
+                    <div class="ta-ai-name">TuniAI</div>
+                    <div class="ta-card">
+                        <div class="ta-ai-head">
+                            <div>
+                                <div class="tah-sym" id="demoSym">VCI</div>
+                                <div class="tah-name" id="demoName">CTCP Chứng khoán Vietcap</div>
+                            </div>
+                            <div class="score-big">
+                                <div class="sb-num" id="demoScore" style="color:#008080;">--</div>
+                                <div class="sb-label">/ 100<br />TuniX Score</div>
+                            </div>
+                        </div>
+
+                        <div class="ta-grid4" id="demoQuad"></div>
+
+                        <div class="ta-chart" id="demoChart"><span style="color:#8a99b1;font-size:12px;">Đang tải biểu đồ…</span></div>
+
+                        <div class="ta-scenarios" id="demoScen"></div>
+
+                        <div class="ta-data-cards" id="demoData"></div>
+                    </div>
+                    <div class="ta-demo-foot">
+                        <i class="fas fa-circle-info" style="color:#008080;"></i>
+                        Đây là mẫu minh họa giao diện trả lời của TuniAI. Nhập câu hỏi ở trên để nhận câu trả lời thực từ trợ lý.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const sugg = [
+                { text: 'Phân tích VCI trong 6 tháng tới', q: 'Phân tích VCI trong 6 tháng tới' },
+                { text: 'So sánh ACB và MBB', q: 'So sánh ACB và MBB' },
+                { text: 'Tìm cổ phiếu có ROE cao và định giá thấp', q: 'Tìm cổ phiếu có ROE cao và định giá thấp' },
+                { text: 'Thị trường hôm nay đang mạnh hay yếu?', q: 'Thị trường hôm nay đang mạnh hay yếu?' },
+                { text: 'Phân tích danh mục của tôi', q: 'Phân tích danh mục của tôi' }
+            ];
+            const suggEl = document.getElementById('taSuggests');
+            suggEl.innerHTML = sugg.map(function(s) {
+                return '<div class="ta-sugg" data-q="' + s.q.replace(/"/g, '&quot;') + '">' + s.text + '</div>';
+            }).join('');
+            suggEl.querySelectorAll('.ta-sugg').forEach(function(el) {
+                el.addEventListener('click', function() { sendAi(el.getAttribute('data-q')); });
+            });
+            document.querySelectorAll('.ta-tool').forEach(function(el) {
+                el.addEventListener('click', function() { sendAi(el.getAttribute('data-p')); });
+            });
+
+            function sendAi(prompt) {
+                if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-ai-open', prompt: prompt }, '*');
+            }
+            document.getElementById('taBtn').addEventListener('click', function() {
+                const txt = document.getElementById('taInput').value.trim();
+                sendAi(txt || 'Tìm cổ phiếu có ROE trên 15%, P/E dưới 12 và lợi nhuận tăng trên 20%');
+            });
+            document.getElementById('taInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('taBtn').click();
+            });
+
+            // ---------- Mở chi tiết cổ phiếu ----------
+            function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*'); }
+            const demoSymEl = document.getElementById('demoSym');
+            if (demoSymEl) demoSymEl.addEventListener('click', function() { openStock(demoSymEl.textContent.trim()); });
+
+            // ---------- Demo analysis (real VCI data) ----------
+            function fmt(v, d) { const n = Number(v); if (!isFinite(n) || n === 0) return '--'; return n.toLocaleString('vi-VN', { maximumFractionDigits: d == null ? 2 : d }); }
+            function pct(v) { const n = Number(v) || 0; if (!n) return '0%'; return (n >= 0 ? '+' : '') + n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%'; }
+            function fmtCap(cap) { const n = Number(cap) || 0; if (!n) return '--'; return fmt(n / 1e9, 0) + ' tỷ'; }
+
+            function buildDemo(s) {
+                document.getElementById('demoSym').textContent = s.symbol;
+                document.getElementById('demoName').textContent = s.name || '';
+                const score = Number(s.score) || 0;
+                const sc = document.getElementById('demoScore');
+                sc.textContent = score;
+                sc.style.color = score >= 70 ? '#008080' : score >= 50 ? '#f5a623' : '#d0314e';
+
+                const opp = [], risk = [];
+                if (s.valuation_score >= 3) opp.push('Định giá hấp dẫn (P/E ' + fmt(s.pe_ratio, 1) + ', P/B ' + fmt(s.pb_ratio, 1) + ') so với trung bình ngành');
+                if (s.growth_score >= 3) opp.push('Lợi nhuận có tín hiệu cải thiện trong chu kỳ gần');
+                if (Number(s.volume_ratio) >= 1.2) opp.push('Thanh khoản vượt trội, volume đạt ' + fmt(s.volume_ratio, 1) + 'x trung bình 10 phiên');
+                if (Number(s.percent_change) > 0) opp.push('Đà tăng ngắn hạn tích cực (' + pct(s.percent_change) + ' trong phiên)');
+                if (opp.length === 0) opp.push('Nền tảng cơ bản tương đối ổn định, chưa có tín hiệu đột biến');
+                if (s.risk === 'high' || s.risk === 'extreme') risk.push('Mức rủi ro tổng thể ' + (s.risk === 'extreme' ? 'cao nhất' : 'cao') + ' — cần thận trọng');
+                if (Number(s.net_profit_growth) < 0) risk.push('Tăng trưởng lợi nhuận âm (' + pct(s.net_profit_growth) + ') có thể kéo dài');
+                if (s.growth_score < 2) risk.push('Điểm tăng trưởng thấp, động lực lợi nhuận chưa rõ ràng');
+                if (risk.length === 0) risk.push('Chưa phát hiện rủi ro đáng chú ý ở ngưỡng dữ liệu hiện tại');
+
+                document.getElementById('demoQuad').innerHTML =
+                    '<div class="ta-pill"><div class="tp-title">Cơ hội</div><div class="tp-text pos">' + opp[0] + '</div></div>' +
+                    '<div class="ta-pill"><div class="tp-title">Rủi ro</div><div class="tp-text neg">' + risk[0] + '</div></div>' +
+                    '<div class="ta-pill"><div class="tp-title">Định giá</div><div class="tp-text">P/E ' + (s.pe_ratio > 0 ? fmt(s.pe_ratio, 1) : '--') + ' · P/B ' + (s.pb_ratio > 0 ? fmt(s.pb_ratio, 1) : '--') + ' · Vốn hóa ' + fmtCap(s.market_cap) + '</div></div>' +
+                    '<div class="ta-pill"><div class="tp-title">Xu hướng kỹ thuật</div><div class="tp-text">' + (Number(s.percent_change) >= 0 ? 'Đà tăng ngắn hạn · volume ' + (s.volume_ratio > 0 ? fmt(s.volume_ratio, 1) + 'x TB' : '--') : 'Áp lực điều chỉnh · theo dõi vùng hỗ trợ') + '</div></div>';
+
+                document.getElementById('demoScen').innerHTML =
+                    '<div class="ta-scen bull"><span class="ts-tag">KỊCH BẢN BULL</span><div class="ts-title">' + (score >= 60 ? 'Tích cực' : 'Hồi phục') + '</div><div class="ts-text">' + (score >= 60 ? 'Điểm TuniX cao cùng thanh khoản cải thiện, giá có thể mở rộng đà tăng.' : 'Nếu thanh khoản duy trì và tăng trưởng cải thiện, giá có cơ hội bật lại từ vùng hỗ trợ.') + '</div></div>' +
+                    '<div class="ta-scen base"><span class="ts-tag">KỊCH BẢN BASE</span><div class="ts-title">Trung lập</div><div class="ts-text">Thị trường đi ngang trong biên độ, giá tích lũy và chờ tín hiệu rõ ràng hơn.</div></div>' +
+                    '<div class="ta-scen bear"><span class="ts-tag">KỊCH BẢN BEAR</span><div class="ts-title">Thận trọng</div><div class="ts-text">' + (s.risk === 'high' || s.risk === 'extreme' ? 'Rủi ro cao; nếu vùng hỗ trợ bị phá vỡ, giá có thể giảm sâu hơn.' : 'Nếu dòng tiền rút khỏi nhóm ngành, giá có thể kiểm định lại vùng hỗ trợ.') + '</div></div>';
+
+                document.getElementById('demoData').innerHTML =
+                    '<div class="ta-data"><div class="td-label">Giá hiện tại</div><div class="td-value">' + fmt(s.price, 0) + '</div></div>' +
+                    '<div class="ta-data"><div class="td-label">% hôm nay</div><div class="td-value ' + (Number(s.percent_change) >= 0 ? 'pos' : 'neg') + '">' + pct(s.percent_change) + '</div></div>' +
+                    '<div class="ta-data"><div class="td-label">Vốn hóa</div><div class="td-value">' + fmtCap(s.market_cap) + '</div></div>' +
+                    '<div class="ta-data"><div class="td-label">P/E</div><div class="td-value">' + (s.pe_ratio > 0 ? fmt(s.pe_ratio, 1) : '--') + '</div></div>' +
+                    '<div class="ta-data"><div class="td-label">Tăng trưởng LN</div><div class="td-value ' + (Number(s.net_profit_growth) >= 0 ? 'pos' : 'neg') + '">' + pct(s.net_profit_growth) + '</div></div>' +
+                    '<div class="ta-data"><div class="td-label">Volume ratio</div><div class="td-value">' + (s.volume_ratio > 0 ? fmt(s.volume_ratio, 1) + 'x' : '--') + '</div></div>';
+            }
+
+            function areaChart(points, w, h, up) {
+                if (!points || points.length < 2) return '<svg width="' + w + '" height="' + h + '"></svg>';
+                const min = Math.min.apply(null, points), max = Math.max.apply(null, points);
+                const range = (max - min) || 1, pad = 4, n = points.length;
+                const pts = points.map(function(v, i) {
+                    return [pad + (i / (n - 1)) * (w - 2 * pad), h - pad - ((v - min) / range) * (h - 2 * pad)];
+                });
+                const line = pts.map(function(p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+                const area = pad + ', ' + (h - pad) + ' ' + line + ' ' + (w - pad) + ', ' + (h - pad);
+                const col = up ? '#008080' : '#d0314e';
+                return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+                    '<defs><linearGradient id="taGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + col + '" stop-opacity="0.25"/><stop offset="100%" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs>' +
+                    '<polygon points="' + area + '" fill="url(#taGrad)"/>' +
+                    '<polyline points="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+                '</svg>';
+            }
+
+            async function loadDemo() {
+                try {
+                    const res = await fetch('/api/stocks/stock-screener');
+                    if (!res.ok) return;
+                    const d = await res.json();
+                    const s = (d.stocks || []).find(function(x) { return x.symbol === 'VCI'; });
+                    if (s) buildDemo(s);
+                    const hres = await fetch('/api/stocks/VCI/history?period=3m');
+                    if (hres.ok) {
+                        const bars = await hres.json();
+                        const closes = (Array.isArray(bars) ? bars : []).map(function(b) { return Number(b.close); }).filter(function(v) { return isFinite(v); });
+                        if (closes.length >= 2) {
+                            document.getElementById('demoChart').innerHTML = areaChart(closes, 720, 130, closes[closes.length - 1] >= closes[0]);
+                        }
+                    }
+                } catch (e) {}
+                notifyParentHeight();
+            }
+
+            // ===== Embed =====
+            if (window.self !== window.top) document.body.classList.add('embedded');
+            function applyEmbedTheme(mode) { document.body.classList.toggle('dark-mode', mode === 'dark'); }
+            function notifyParentHeight() {
+                try {
+                    const el = document.querySelector('.ta-page') || document.body;
+                    const height = Math.ceil(el.getBoundingClientRect().height);
+                    if (!height || height <= 0) return;
+                    if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
+                    window.__lastSentH = height;
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                    }
+                } catch (e) {}
+            }
+            window.addEventListener('message', function(event) {
+                const data = event.data;
+                if (!data || data.type !== 'tunix-theme') return;
+                const mode = data.mode === 'dark' ? 'dark' : 'light';
+                localStorage.setItem('theme', mode);
+                applyEmbedTheme(mode);
+                setTimeout(notifyParentHeight, 50);
+            });
+            window.addEventListener('load', function() {
+                applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+                setTimeout(notifyParentHeight, 60);
+                setTimeout(notifyParentHeight, 400);
+            });
+            window.addEventListener('resize', notifyParentHeight);
+            if (window.ResizeObserver) {
+                const obs = new ResizeObserver(notifyParentHeight);
+                obs.observe(document.querySelector('.ta-page') || document.body);
+            }
+            applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+            loadDemo();
+        })();
+    </script>
+</body>
+</html>

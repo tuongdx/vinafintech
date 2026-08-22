@@ -339,6 +339,35 @@ def _unix_to_iso(value: Any) -> str:
     return datetime.fromtimestamp(ts, UTC).isoformat()
 
 
+def _percentile_scores(values: list) -> dict:
+    """Chuyển list số (có thể chứa None) → điểm percentile 0..100.
+    Winsorize 2%–98% để giảm ảnh hưởng outlier; 50 ≈ trung vị (dùng cho
+    Growth/Valuation/Liquidity Score của bản đồ cơ hội thị trường)."""
+    valid: list[tuple[int, float]] = []
+    for i, v in enumerate(values):
+        if v is None:
+            continue
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            continue
+        if f != f:  # NaN
+            continue
+        valid.append((i, f))
+    if not valid:
+        return {}
+    arr = sorted(f for _, f in valid)
+    n = len(arr)
+    lo = arr[max(0, int(n * 0.02) - 1)]
+    hi = arr[min(n - 1, int(n * 0.98) - 1)]
+    span = hi - lo
+    out: dict[int, float] = {}
+    for i, f in valid:
+        ff = max(lo, min(hi, f))
+        out[i] = round(100.0 * (ff - lo) / span, 1) if span > 0 else 50.0
+    return out
+
+
 _VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 
 
@@ -610,7 +639,9 @@ def _read_symbol_summary_cache_file() -> dict[str, dict[str, Any]] | None:
 
 def _write_symbol_summary_cache_file() -> None:
     _ensure_cache_dir()
-    cache_data = _read_symbol_summary_cache_file() or {}
+    cache_data = _read_symbol_summary_cache_file()
+    if cache_data is None:
+        cache_data = {}
     try:
         _SYMBOL_SUMMARY_CACHE_PATH.write_text(json.dumps(cache_data, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception:
@@ -697,7 +728,9 @@ def _get_symbol_summary(symbol: str) -> dict[str, Any]:
     if cached is not None:
         return cached
 
-    file_cache = _read_symbol_summary_cache_file() or {}
+    file_cache = _read_symbol_summary_cache_file()
+    if file_cache is None:
+        file_cache = {}
     if symbol_upper in file_cache:
         cache.set(cache_key, file_cache[symbol_upper], ttl_seconds=86400)
         return file_cache[symbol_upper]
@@ -714,7 +747,9 @@ def _get_cached_symbol_summary(symbol: str) -> dict[str, Any]:
     symbol_upper = symbol.upper().strip()
     if not symbol_upper:
         return {}
-    file_cache = _read_symbol_summary_cache_file() or {}
+    file_cache = _read_symbol_summary_cache_file()
+    if file_cache is None:
+        file_cache = {}
     return file_cache.get(symbol_upper, {})
 
 
@@ -3406,4 +3441,587 @@ def get_stock_lists() -> dict[str, Any]:
         "sectors": sectors,
     }
     cache.set(key, payload, ttl_seconds=60)
+    return payload
+
+
+_INDEX_CARD_KEYS: list[tuple[str, str]] = [
+    ("vnindex", "VN-INDEX"),
+    ("vn30", "VN30"),
+    ("hnx", "HNX-INDEX"),
+    ("upcom", "UPCOM"),
+]
+
+
+def get_market_dashboard() -> dict[str, Any]:
+    """Toàn cảnh thị trường cho trang "Thị trường" (dashboard).
+
+    Gom: 4 chỉ số chính (VNINDEX/VN30/HNX/UPCOM + history để vẽ mini chart),
+    độ rộng thị trường (tăng/giảm/tham chiếu + trần/sàn), dòng tiền (GTGD, khối ngoại,
+    thanh khoản), hiệu suất ngành, radar (ngành hút tiền / breakout / volume lạ / nhóm
+    suy yếu / khối ngoại mua mạnh) và top cổ phiếu ảnh hưởng VN-INDEX.
+    Cache 60s.
+    """
+    key = "market-dashboard"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+
+    # 1) Bốn chỉ số chính
+    indices: list[dict[str, Any]] = []
+    for k, label in _INDEX_CARD_KEYS:
+        try:
+            d = get_index_detail(k, "1y")
+            hist = d.get("history") or []
+            indices.append(
+                {
+                    "key": k,
+                    "label": label,
+                    "value": d.get("value"),
+                    "change": d.get("change"),
+                    "percent_change": d.get("percent_change"),
+                    "as_of": d.get("as_of", ""),
+                    "history": [
+                        {"time": b.get("time"), "close": b.get("close")} for b in hist[-60:]
+                    ],
+                }
+            )
+        except Exception:
+            indices.append({"key": k, "label": label, "value": 0, "change": 0, "percent_change": 0, "history": []})
+
+    # 2) Độ rộng + trần/sàn + top tăng/giảm/volume từ market-map
+    breadth: dict[str, Any] = {"up": 0, "down": 0, "flat": 0, "ceiling": 0, "floor": 0, "total": 0}
+    cells: list[dict[str, Any]] = []
+    try:
+        cells = (get_market_map() or {}).get("cells") or []
+    except Exception:
+        cells = []
+    for c in cells:
+        st = c.get("status")
+        if st == "ceiling":
+            breadth["ceiling"] += 1
+            breadth["up"] += 1
+        elif st == "floor":
+            breadth["floor"] += 1
+            breadth["down"] += 1
+        elif st == "up":
+            breadth["up"] += 1
+        elif st == "down":
+            breadth["down"] += 1
+        else:
+            breadth["flat"] += 1
+    breadth["total"] = len(cells)
+
+    gainers = [c for c in cells if c.get("percent_change", 0) > 0]
+    losers = [c for c in cells if c.get("percent_change", 0) < 0]
+    breakout = sorted(gainers, key=lambda c: c["percent_change"], reverse=True)[:8]
+    weak = sorted(losers, key=lambda c: c["percent_change"])[:8]
+    volume_spike = sorted(cells, key=lambda c: c.get("volume", 0), reverse=True)[:8]
+
+    # 3) Dòng tiền
+    flow: dict[str, Any] = {
+        "gtgd_today": None,
+        "gtgd_yesterday": None,
+        "foreign_net": None,
+        "foreign_buy_top": [],
+        "foreign_sell_top": [],
+        "liquidity": {},
+        "ceiling_count": breadth["ceiling"],
+        "floor_count": breadth["floor"],
+        "self_trading": None,  # nguồn tự doanh chưa có
+        "trend": {},
+    }
+    try:
+        ec = get_exchange_chart("HOSE", "5d")
+        t = ec.get("today") or []
+        y = ec.get("yesterday") or []
+        if t:
+            flow["gtgd_today"] = t[-1].get("close")
+        if y:
+            flow["gtgd_yesterday"] = y[-1].get("close")
+    except Exception:
+        pass
+    try:
+        ft = get_foreign_trading("foreign", "1D")
+        flow["foreign_net"] = (ft.get("totals") or {}).get("net")
+        flow["foreign_buy_top"] = (ft.get("buy_list") or [])[:5]
+        flow["foreign_sell_top"] = (ft.get("sell_list") or [])[:5]
+    except Exception:
+        pass
+    try:
+        d = get_index_detail("vnindex", "1y")
+        hist = d.get("history") or []
+        closes = [float(b.get("close")) for b in hist if b.get("close") is not None]
+        vols = [float(b.get("volume") or 0) for b in hist if b.get("volume") is not None]
+
+        def _chg(back: int) -> float:
+            base = closes[-(back + 1)] if len(closes) > back else closes[0]
+            return ((closes[-1] / base) - 1.0) * 100.0 if base else 0.0
+
+        if len(closes) >= 2:
+            c1m, c3m = _chg(21), _chg(63)
+            flow["trend"] = {
+                "1m": round(c1m, 2),
+                "3m": round(c3m, 2),
+                "6m": round(_chg(126), 2),
+                "label": "tăng" if (c1m > 0 and c3m > 0) else ("giảm" if (c1m < 0 and c3m < 0) else "đi ngang"),
+            }
+        if len(vols) >= 2:
+            window = vols[-21:] or vols
+            avg = sum(window) / len(window)
+            flow["liquidity"] = {
+                "last_volume": int(vols[-1]),
+                "avg_volume_1m": int(round(avg)),
+                "volume_ratio": round(vols[-1] / avg, 2) if avg else 0,
+            }
+    except Exception:
+        pass
+
+    # 4) Hiệu suất ngành + top ảnh hưởng VN-INDEX từ stock-lists
+    sectors: list[dict[str, Any]] = []
+    impact: list[dict[str, Any]] = []
+    try:
+        sl = get_stock_lists()
+        stocks = sl.get("stocks") or []
+        sec_map: dict[str, dict[str, Any]] = {}
+        for s in stocks:
+            slug = str(s.get("sector") or "khac")
+            pct = float(s.get("percent_change") or 0)
+            cap = float(s.get("market_cap") or 0)
+            sec = sec_map.setdefault(
+                slug,
+                {"slug": slug, "name": s.get("sectorName") or "Khác", "sum": 0.0, "n": 0, "up": 0, "down": 0, "top_gainer": None, "top_pct": -999.0},
+            )
+            sec["sum"] += pct
+            sec["n"] += 1
+            if pct > 0:
+                sec["up"] += 1
+            elif pct < 0:
+                sec["down"] += 1
+            if pct > sec["top_pct"]:
+                sec["top_pct"] = pct
+                sec["top_gainer"] = s.get("symbol")
+            impact.append(
+                {"symbol": s.get("symbol"), "name": s.get("name"), "percent_change": pct, "market_cap": cap, "impact": abs(pct * cap)}
+            )
+        for slug, sec in sec_map.items():
+            sectors.append(
+                {
+                    "slug": slug,
+                    "name": sec["name"],
+                    "avg_pct": round(sec["sum"] / sec["n"], 2) if sec["n"] else 0.0,
+                    "up_count": sec["up"],
+                    "down_count": sec["down"],
+                    "total": sec["n"],
+                    "top_gainer": sec["top_gainer"],
+                }
+            )
+        sectors.sort(key=lambda x: x["avg_pct"], reverse=True)
+        impact.sort(key=lambda x: x["impact"], reverse=True)
+        impact = [
+            {**it, "impact": round(it["impact"] / 1e9, 2)} for it in impact[:10]
+        ]
+    except Exception:
+        pass
+
+    hot_sector = None
+    for sec in sectors:
+        if sec["total"] >= 5:
+            hot_sector = sec
+            break
+
+    payload: dict[str, Any] = {
+        "as_of": indices[0].get("as_of", "") if indices else "",
+        "indices": indices,
+        "breadth": breadth,
+        "flow": flow,
+        "sectors": sectors,
+        "radar": {
+            "hot_sector": hot_sector,
+            "breakout": breakout,
+            "volume_spike": volume_spike,
+            "weak": weak,
+            "foreign_buy": flow.get("foreign_buy_top", []),
+        },
+        "impact": impact,
+    }
+    cache.set(key, payload, ttl_seconds=60)
+    return payload
+
+
+# Trọng số điểm cho TuniX Score (0-5 mỗi nhóm, tổng tối đa 25 → 0-100).
+_SCORE_RISK_ADJUST = {"low": 0, "medium": -3, "high": -6, "extreme": -9}
+
+
+def _compute_tunix_score(row: dict[str, Any]) -> int:
+    growth = _to_float(row.get("growthPoint"))
+    perf = _to_float(row.get("passPerformancePoint"))
+    fh = _to_float(row.get("financialHealthPoint"))
+    div = _to_float(row.get("dividendPoint"))
+    val = _to_float(row.get("valuationPoint"))
+    base = (growth + perf + fh + div + val) / 25.0 * 100.0
+    risk_adj = _SCORE_RISK_ADJUST.get(str(row.get("overallRiskLevel") or "").lower(), 0)
+    return int(max(0, min(100, round(base + risk_adj))))
+
+
+def get_stock_screener_page() -> dict[str, Any]:
+    """Dữ liệu trang "Cổ phiếu": toàn bộ screener (định giá/tăng trưởng/điểm TuniX)
+    + các nhóm "Cổ phiếu nổi bật" (tăng trưởng / định giá hấp dẫn / dòng tiền mạnh /
+    breakout / TuniX Score cao). Không cache toàn trang (dataset đã cache riêng) để
+    ROE nạp nền hiển thị ngay.
+    """
+    dataset = _get_screener_dataset()
+    stocks: list[dict[str, Any]] = []
+    # ROE bổ sung từ symbol summary (cache file) — sẽ được nạp nền phía dưới cho top score
+    summary_map = _read_symbol_summary_cache_file()
+    if summary_map is None:
+        summary_map = {}
+    for row in dataset:
+        symbol = str(row.get("ticker") or "").upper()
+        exchange = str(row.get("stockExchange") or "").upper()
+        if exchange not in ("HOSE", "HNX", "UPCOM"):
+            continue
+        vol = _to_float(row.get("volume"))
+        vol10 = _to_float(row.get("volume10dAvg"))
+        item = {
+            "symbol": symbol,
+            "name": str(row.get("companyNameVi") or symbol),
+            "exchange": exchange,
+            "sector": str(row.get("economicSectorSlug") or "").lower(),
+            "sectorName": str(row.get("economicSectorName") or ""),
+            "industry": str(row.get("industrySlug") or "").lower(),
+            "industryName": str(row.get("industryName") or ""),
+            "price": round(_to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose")), 2),
+            "percent_change": round(_to_float(row.get("pricePctChgIntraDay")), 2),
+            "change_7d": round(_to_float(row.get("pricePctChg7d")), 2),
+            "change_1y": round(_to_float(row.get("pricePctChg1y")), 2),
+            "roe": round(_to_float((summary_map.get(symbol) or {}).get("roe")), 2),
+            "market_cap": _to_float(row.get("marketCapVnd")),
+            "pe_ratio": _to_float(row.get("peRatio")),
+            "pb_ratio": _to_float(row.get("pbRatio")),
+            "ev_ebitda": _to_float(row.get("evEbitdaRatio")),
+            "dividend_yield": _to_float(row.get("dividendYieldCurrent")),
+            "revenue_growth": _to_float(row.get("revenue5yGrowth")),
+            "net_profit_growth": _to_float(row.get("netIncome5yGrowth")),
+            "eps_growth": _to_float(row.get("netIncomeEstGrowth")),
+            "volume": int(vol),
+            "volume_ratio": round(vol / vol10, 2) if vol10 else 0,
+            "risk": str(row.get("overallRiskLevel") or "").lower(),
+            "points": {
+                "growth": _to_float(row.get("growthPoint")),
+                "performance": _to_float(row.get("passPerformancePoint")),
+                "financial_health": _to_float(row.get("financialHealthPoint")),
+                "dividend": _to_float(row.get("dividendPoint")),
+                "valuation": _to_float(row.get("valuationPoint")),
+                "quality": round(
+                    _to_float(row.get("growthPoint"))
+                    + _to_float(row.get("passPerformancePoint"))
+                    + _to_float(row.get("financialHealthPoint"))
+                    + _to_float(row.get("dividendPoint"))
+                    + _to_float(row.get("valuationPoint")),
+                    1,
+                ),
+            },
+        }
+        item["score"] = _compute_tunix_score(row)
+        stocks.append(item)
+
+    stocks.sort(key=lambda s: s["score"], reverse=True)
+
+    # Nạp nền ROE (symbol summary) cho top 80 theo TuniX Score — bảng mặc định hiện top score
+    try:
+        if len(summary_map) < 100 and cache.get("screener-summary-enrich") is None:
+            cache.set("screener-summary-enrich", 1, ttl_seconds=600)
+            top_syms = [s["symbol"] for s in stocks[:80]]
+
+            def _fill_summaries() -> None:
+                def _load(tk: str) -> None:
+                    try:
+                        _get_symbol_summary(tk)
+                    except Exception:
+                        pass
+
+                with ThreadPoolExecutor(max_workers=6) as pool:
+                    list(pool.map(_load, top_syms))
+
+            threading.Thread(target=_fill_summaries, daemon=True).start()
+    except Exception:
+        pass
+
+    def _pick(key: str, reverse: bool = True, n: int = 8, cond=None) -> list[dict[str, Any]]:
+        arr = stocks if cond is None else [s for s in stocks if cond(s)]
+        return sorted(arr, key=lambda s: s.get(key) if isinstance(s.get(key), (int, float)) else -999999.0, reverse=reverse)[:n]
+
+    categories: dict[str, list[dict[str, Any]]] = {
+        "growth": _pick("net_profit_growth", cond=lambda s: s["net_profit_growth"] > 0),
+        "value": sorted(
+            [s for s in stocks if s["pe_ratio"] > 0 and s["pb_ratio"] > 0],
+            key=lambda s: (s["pe_ratio"] + s["pb_ratio"]) + (s["ev_ebitda"] if s["ev_ebitda"] > 0 else 10),
+        )[:8],
+        "cash_flow": sorted(
+            stocks, key=lambda s: s["points"]["financial_health"] * 2 + s["points"]["dividend"] + (1 if s["dividend_yield"] > 0 else 0), reverse=True
+        )[:8],
+        "breakout": _pick("percent_change", cond=lambda s: s["percent_change"] > 0),
+        "score": stocks[:8],
+    }
+
+    payload: dict[str, Any] = {
+        "count": len(stocks),
+        "stocks": stocks,
+        "categories": categories,
+        "examples": ["ACB", "VCI", "FPT", "HPG", "MBB"],
+    }
+    return payload
+
+
+def get_stock_discover_page() -> dict[str, Any]:
+    """Dữ liệu trang "Khám phá": cơ hội nổi bật hôm nay, chiến lược, bản đồ cơ hội
+    thị trường (bubble chart) và các bảng xếp hạng TuniX. Tái sử dụng dữ liệu
+    screener (đã cache 120s). Cache 120s key "stock-discover-page".
+    """
+    key = "stock-discover-page"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+
+    screener = get_stock_screener_page()
+    stocks = screener["stocks"]
+    by_sym = {s["symbol"]: s for s in stocks}
+
+    def _pick(sort_key: str, reverse: bool = True, n: int = 5, cond=None) -> list[dict[str, Any]]:
+        arr = stocks if cond is None else [s for s in stocks if cond(s)]
+        return sorted(
+            arr,
+            key=lambda s: s.get(sort_key) if isinstance(s.get(sort_key), (int, float)) else -999999.0,
+            reverse=reverse,
+        )[:n]
+
+    # ---- 1. Cơ hội nổi bật hôm nay (4 mã) ----
+    featured_syms = ["VCI", "ACB", "HPG", "MBB"]
+    featured: list[dict[str, Any]] = []
+    for sym in featured_syms:
+        s = by_sym.get(sym)
+        if not s:
+            continue
+        notes: list[str] = []
+        if s["volume_ratio"] and s["volume_ratio"] >= 1.2:
+            notes.append("Volume tăng mạnh")
+        if s["percent_change"] > 0:
+            notes.append("giá đang tăng")
+        if s["points"]["growth"] >= 3:
+            notes.append("lợi nhuận cải thiện")
+        if s["points"]["valuation"] >= 3:
+            notes.append("định giá hấp dẫn")
+        if s["points"]["performance"] >= 3:
+            notes.append("xu hướng kỹ thuật tốt")
+        if not notes:
+            notes.append("chỉ số cơ bản ổn định")
+        featured.append(
+            {
+                "symbol": s["symbol"],
+                "name": s["name"],
+                "price": s["price"],
+                "percent_change": s["percent_change"],
+                "market_cap": s["market_cap"],
+                "score": s["score"],
+                "growth_score": s["points"]["growth"],
+                "valuation_score": s["points"]["valuation"],
+                "technical_score": s["points"]["performance"],
+                "highlight": "Điểm nổi bật: " + ", ".join(notes[:3]).lower() + ".",
+            }
+        )
+
+    # ---- 2. Khám phá theo chiến lược (6 nhóm × 5 mã) ----
+    value = sorted(
+        [s for s in stocks if s["pe_ratio"] and s["pe_ratio"] > 0 and s["pb_ratio"] and s["pb_ratio"] > 0],
+        key=lambda s: (s["pe_ratio"] + s["pb_ratio"]) + (s["ev_ebitda"] if s["ev_ebitda"] and s["ev_ebitda"] > 0 else 10),
+    )[:5]
+    growth = _pick("net_profit_growth", cond=lambda s: s["net_profit_growth"] and s["net_profit_growth"] > 0)
+    cash_flow = sorted(
+        stocks,
+        key=lambda s: s["points"]["financial_health"] * 2 + s["points"]["dividend"] + (1 if s["dividend_yield"] and s["dividend_yield"] > 0 else 0),
+        reverse=True,
+    )[:5]
+    breakout = _pick("percent_change", cond=lambda s: s["percent_change"] > 0)
+    defensive = sorted(
+        [s for s in stocks if s["dividend_yield"] and s["dividend_yield"] > 0],
+        key=lambda s: s["dividend_yield"] + s["points"]["financial_health"] * 0.5,
+        reverse=True,
+    )[:5]
+    hidden = sorted(
+        [s for s in stocks if s["market_cap"] and s["market_cap"] < 3e12 and s["score"] >= 40],
+        key=lambda s: s["score"],
+        reverse=True,
+    )[:5]
+    if len(hidden) < 5:
+        hidden = sorted(
+            [s for s in stocks if s["market_cap"] and s["market_cap"] < 5e12],
+            key=lambda s: s["score"],
+            reverse=True,
+        )[:5]
+
+    strategies: list[dict[str, Any]] = [
+        {"key": "value", "icon": "💎", "title": "Cổ phiếu giá trị", "desc": "P/E thấp, ROE cao", "stocks": value},
+        {"key": "growth", "icon": "🚀", "title": "Tăng trưởng", "desc": "Lợi nhuận tăng trưởng mạnh", "stocks": growth},
+        {"key": "cash_flow", "icon": "🔥", "title": "Dòng tiền mạnh", "desc": "Thanh khoản và volume tăng", "stocks": cash_flow},
+        {"key": "breakout", "icon": "📈", "title": "Breakout", "desc": "Vượt vùng kháng cự", "stocks": breakout},
+        {"key": "defensive", "icon": "🛡️", "title": "Phòng thủ", "desc": "Ổn định, cổ tức cao", "stocks": defensive},
+        {"key": "hidden", "icon": "⭐", "title": "Hidden Gems", "desc": "Doanh nghiệp chưa được thị trường chú ý", "stocks": hidden},
+    ]
+
+    # ---- 3. Bản đồ cơ hội thị trường (Quadrant Bubble Chart) ----
+    # Lọc cổ phiếu đủ điều kiện → tính Growth/Valuation/Liquidity/Opportunity Score
+    # (percentile 0..100) → xếp hạng & chọn theo từng quadrant (không hard-code mã).
+    def _blend_growth(s):
+        parts, w = [], []
+        for key, wt in (("net_profit_growth", 0.45), ("revenue_growth", 0.30), ("eps_growth", 0.25)):
+            v = s.get(key)
+            if v is not None:
+                parts.append(v)
+                w.append(wt)
+        return (sum(p * wi for p, wi in zip(parts, w)) / sum(w)) if parts else None
+
+    def _blend_valuation(s):
+        parts, w = [], []
+        pe = s.get("pe_ratio")
+        pb = s.get("pb_ratio")
+        if pe and pe > 0:
+            parts.append(math.log(pe))
+            w.append(0.6)
+        if pb and pb > 0:
+            parts.append(math.log(pb))
+            w.append(0.4)
+        return (sum(p * wi for p, wi in zip(parts, w)) / sum(w)) if parts else None
+
+    # Ngưỡng thanh khoản tối thiểu (tỷ VND/phiên) — cấu hình được.
+    _MAP_MIN_LIQUIDITY_TY = 5.0
+    eligible: list[dict[str, Any]] = []
+    for s in stocks:
+        growth_raw = _blend_growth(s)
+        val_raw = _blend_valuation(s)
+        if growth_raw is None or val_raw is None:
+            continue
+        if not (s.get("market_cap") and s["market_cap"] > 0):
+            continue
+        if not (s.get("score") and s["score"] > 0):
+            continue
+        liquidity = (s.get("volume") or 0) * (s.get("price") or 0) / 1e9
+        if liquidity < _MAP_MIN_LIQUIDITY_TY:
+            continue
+        eligible.append(
+            {
+                "symbol": s["symbol"],
+                "name": s["name"],
+                "exchange": s["exchange"],
+                "sector": s.get("sector") or "khac",
+                "sectorName": s.get("sectorName") or "Khác",
+                "industry": s.get("industry") or "khac",
+                "industryName": s.get("industryName") or "Khác",
+                "price": s["price"],
+                "percent_change": s["percent_change"],
+                "pe": round(s["pe_ratio"], 1) if s.get("pe_ratio") and s["pe_ratio"] > 0 else None,
+                "pb": round(s["pb_ratio"], 2) if s.get("pb_ratio") and s["pb_ratio"] > 0 else None,
+                "market_cap": s["market_cap"],
+                "liquidity": round(liquidity, 1),
+                "tuni_score": s["score"],
+                "_growth_raw": growth_raw,
+                "_val_raw": val_raw,
+            }
+        )
+
+    g_pct = _percentile_scores([e["_growth_raw"] for e in eligible])
+    v_pct = _percentile_scores([e["_val_raw"] for e in eligible])
+    l_pct = _percentile_scores([e["liquidity"] for e in eligible])
+
+    for i, e in enumerate(eligible):
+        e["growth_score"] = g_pct.get(i, 50.0)
+        e["valuation_score"] = v_pct.get(i, 50.0)
+        e["liquidity_score"] = l_pct.get(i, 50.0)
+        e["opportunity_score"] = round(
+            0.40 * e["growth_score"]
+            + 0.35 * (100 - e["valuation_score"])
+            + 0.15 * e["tuni_score"]
+            + 0.10 * e["liquidity_score"],
+            1,
+        )
+        e["quadrant"] = (
+            "opportunity" if e["growth_score"] >= 50 and e["valuation_score"] < 50
+            else "growth" if e["growth_score"] >= 50
+            else "value" if e["valuation_score"] < 50
+            else "caution"
+        )
+        e.pop("_growth_raw", None)
+        e.pop("_val_raw", None)
+
+    # Chọn Top theo từng quadrant (Opportunity Score giảm dần) — mặc định 50/35/35/20
+    _MAP_QUOTA = {"opportunity": 50, "growth": 35, "value": 35, "caution": 20}
+    by_q: dict[str, list] = {}
+    for e in eligible:
+        by_q.setdefault(e["quadrant"], []).append(e)
+    for q in by_q:
+        by_q[q].sort(key=lambda x: x["opportunity_score"], reverse=True)
+    _selected: list[dict[str, Any]] = []
+    for q, n in _MAP_QUOTA.items():
+        _selected.extend(by_q.get(q, [])[:n])
+
+    opportunity_map: dict[str, Any] = {
+        "eligible_total": len(eligible),
+        "selected_total": len(_selected),
+        "min_liquidity_ty": _MAP_MIN_LIQUIDITY_TY,
+        "quadrant_quota": _MAP_QUOTA,
+        "sectors": sorted({e["sectorName"] for e in eligible}),
+        "stocks": eligible,
+    }
+
+    # ---- 4. Xếp hạng TuniX (5 bảng × 8 dòng) ----
+    def _rows(pool, value_key, n=8) -> list[dict[str, Any]]:
+        out = []
+        for s in pool[:n]:
+            out.append(
+                {
+                    "symbol": s["symbol"],
+                    "name": s["name"],
+                    "price": s["price"],
+                    "percent_change": s["percent_change"],
+                    "score": s["score"],
+                    "value": s.get(value_key),
+                }
+            )
+        return out
+
+    rank_growth = sorted([s for s in stocks if s["net_profit_growth"] and s["net_profit_growth"] > 0], key=lambda s: s["net_profit_growth"], reverse=True)
+    rank_value = sorted(
+        [s for s in stocks if s["pe_ratio"] and s["pe_ratio"] > 0 and s["pb_ratio"] and s["pb_ratio"] > 0],
+        key=lambda s: (s["pe_ratio"] + s["pb_ratio"]) + (s["ev_ebitda"] if s["ev_ebitda"] and s["ev_ebitda"] > 0 else 10),
+    )
+    rank_cash = sorted(stocks, key=lambda s: s["points"]["financial_health"] * 2 + s["points"]["dividend"] + (1 if s["dividend_yield"] and s["dividend_yield"] > 0 else 0), reverse=True)
+    rank_score = sorted(stocks, key=lambda s: s["score"], reverse=True)
+    rank_improve = sorted([s for s in stocks if s["eps_growth"] and s["eps_growth"] > 0], key=lambda s: s["eps_growth"], reverse=True)
+
+    rankings: list[dict[str, Any]] = [
+        {"key": "growth", "title": "Top tăng trưởng", "metric": "Tăng trưởng LN", "rows": _rows(rank_growth, "net_profit_growth")},
+        {"key": "valuation", "title": "Top định giá", "metric": "P/E", "rows": _rows(rank_value, "pe_ratio")},
+        {"key": "cash_flow", "title": "Top dòng tiền", "metric": "Sức khỏe TC", "rows": _rows(rank_cash, "dividend_yield")},
+        {"key": "score", "title": "Top Score", "metric": "TuniX Score", "rows": _rows(rank_score, "score")},
+        {"key": "improve", "title": "Top cải thiện", "metric": "Tăng trưởng dự kiến", "rows": _rows(rank_improve, "eps_growth")},
+    ]
+
+    # Thời điểm cập nhật dữ liệu: lấy từ market dashboard (VNINDEX) — screener không có as_of.
+    try:
+        as_of = get_market_dashboard().get("as_of", "")
+    except Exception:
+        as_of = ""
+
+    payload: dict[str, Any] = {
+        "as_of": as_of,
+        "featured": featured,
+        "strategies": strategies,
+        "opportunity": opportunity_map,
+        "rankings": rankings,
+        "ai_prompts": [
+            "Tìm cổ phiếu ngân hàng định giá thấp",
+            "Tìm doanh nghiệp lợi nhuận tăng mạnh",
+            "Tìm cổ phiếu đang breakout",
+        ],
+    }
+    cache.set(key, payload, ttl_seconds=120)
     return payload

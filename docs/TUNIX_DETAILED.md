@@ -14,9 +14,9 @@
 4. [API chi tiết theo từng router](#4)
 5. [Nguồn dữ liệu & cache map](#5)
 6. [Frontend — luồng điều hướng & giao thức postMessage](#6)
-7. [TuniAI — chat, tools, market insight](#7)
+7. [TuniAI — chat & tools](#7)
 8. [Chart Engine chi tiết](#8)
-9. [Ticker TuniAI (dòng chữ chạy)](#9)
+9. [TuniAI market ticker — đã gỡ bỏ](#9)
 10. [Hiệu năng & tối ưu](#10)
 11. [Deploy & biến môi trường](#11)
 12. [Các tính năng lớn đã triển khai](#12)
@@ -29,7 +29,7 @@
 ```
                         ┌──────────────────────────────────────────────┐
   Trình duyệt  ───────▶ │  Frontend tĩnh (frontend/)                   │
-                        │  index.html = SHELL (header, ticker, chat)   │
+                        │  index.html = SHELL (header, chat)           │
                         │  ├─ iframe: Home / StockDetail / tin-tuc / caidat / taikhoan / doimatkhau │
                         │  └─ fetch + DOMParser cho trang nhỏ           │
                         └───────────────────┬──────────────────────────┘
@@ -163,7 +163,6 @@ mở /cophieu-{MÃ}
 | Path | Auth | Mô tả |
 |---|---|---|
 | `GET /ai/status` | public | `{configured, model, enabled, access_level}` |
-| `GET /ai/market-insight?force=` | public | `{text, source:"tuniai"|"template", generated_at, data}` |
 | `POST /ai/chat` | JWT + rate limit | body `{messages:[{role,content}], stream}` → `{reply, tool_calls}` hoặc SSE |
 
 ### 4.4 `auth` — xác thực
@@ -206,7 +205,6 @@ mở /cophieu-{MÃ}
 | `symbol-summary:{SYM}` | 86400s (24h) | chỉ số cơ bản + **file cache** `.cache/symbol_summaries.json` |
 | `kbs-chart:{sym}:{int}:{sdate}:{edate}` | 60s | chart KBS |
 | `kbs-earliest` | 3600s | mốc sớm nhất |
-| `market-insight` | 300s (5 phút) | nhận định ticker |
 
 ---
 
@@ -253,7 +251,7 @@ mở /cophieu-{MÃ}
   - **Thị trường**: `get_market_overview()`, `get_top_stocks(tab, period)`, `get_foreign_trading(type, period)`, `get_realtime_board()`, `filter_stocks(industry, basic, valuation, risk)`, **`get_market_flow()`** (mới).
   - **Tin tức**: `search_news(symbol?, limit)`, `get_news_detail(news_id)`.
 
-### 7.2 `get_market_flow` — dữ liệu (dùng chung cho ticker + chat)
+### 7.2 `get_market_flow` — dữ liệu dòng tiền (dùng cho chat)
 ```
 vnindex: { value, change, percent_change,
            trend: tăng|giảm|đi ngang (từ %1M & %3M),
@@ -262,11 +260,6 @@ foreign: { totals: {buy, sell, net}, buy_top[5], sell_top[5] }
 liquidity: { last_volume, avg_volume_1m, volume_ratio }
 breadth:  { up, down, flat }   (best-effort, tốn kém)
 ```
-
-### 7.3 Market insight (ticker)
-- **Prompt**: DeepSeek viết gọn 2–3 câu: ① dòng tiền ra/vào, ② VNINDEX xu hướng + đỉnh/đáy, ③ lời khuyên NĐT ngắn/trung/dài hạn. `max_tokens=260`, `temperature=0.4`, timeout 30s.
-- **Fallback template** khi DeepSeek lỗi; đảm bảo có lời khuyên (`_trend_note`).
-- Cache 5 phút; làm mới khi `?force=1`.
 
 ---
 
@@ -287,13 +280,11 @@ breadth:  { up, down, flat }   (best-effort, tốn kém)
 ---
 
 <a name="9"></a>
-## 9. Ticker TuniAI (dòng chữ chạy dưới header)
+## 9. TuniAI market ticker — đã gỡ bỏ
 
-- **Hiển thị**: chỉ ở **trang chủ** (ẩn khi sang trang khác — hàm `updateTickerVisibility()` gọi trong `loadContent`).
-- **Cấu trúc**: `.ticker-bar` (label "TuniAI" + `.ticker-track` > `.ticker-marquee`).
-- **Animation**: `@keyframes tunixTicker { 0 → -50% }`; JS tính `animationDuration` theo độ dài text để tốc độ **~55px/s** (chậm, dễ đọc). Content được nhân bản đủ ≥2× bề rộng (chẵn) để loop mượt.
-- **Refresh**: `setInterval(refresh, 5*60*1000)` — tự cập nhật trong phiên, không cần reload.
-- **Label**: hiển thị đúng chữ hoa/thường "TuniAI" (đã bỏ `text-transform: uppercase`).
+- **2026-08-21**: dòng chữ chạy nhận định thị trường (ticker) dưới header **đã bị gỡ bỏ**.
+  Endpoint `/api/ai/market-insight` + các hàm ticker trong `ai_service.py` và giao diện ticker trong `index.html` đã xoá.
+- **Giữ nguyên**: tool chat `get_market_flow` (dòng tiền + VNINDEX) vẫn hoạt động trong TuniAI chat.
 
 ---
 
@@ -332,4 +323,5 @@ breadth:  { up, down, flat }   (best-effort, tốn kém)
 | 2026-08-16 | Click mã trong "So sánh tương quan" → chuyển mã; ẩn spinner ô nhập tích sản; clamp tooltip mép block |
 | 2026-08-16 | Tối ưu tốc độ (quote song song, frontend tải song song) + dọn dẹp source |
 | 2026-08-16 | **TuniAI market ticker**: endpoint market-insight, tool `get_market_flow`, nhận định dòng tiền + VNINDEX + lời khuyên NĐT, chỉ hiện trang chủ, cập nhật 5 phút |
+| 2026-08-21 | **Gỡ bỏ TuniAI market ticker** (dòng chữ chạy dưới header): xoá endpoint `/api/ai/market-insight`, frontend ticker; giữ tool `get_market_flow` cho chat |
 | 2026-08-16 | Tài liệu: `docs/TUNIX_SPEC.md` (tổng quan) + `docs/TUNIX_DETAILED.md` (chi tiết — tài liệu này) |

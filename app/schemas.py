@@ -97,6 +97,38 @@ class AuthResponse(TokenPair):
     user: UserOut
 
 
+class PortfolioHoldingCreate(BaseModel):
+    symbol: str
+    quantity: float = 0.0
+    avg_price: float = 0.0
+
+
+class PortfolioHoldingUpdate(BaseModel):
+    quantity: float | None = None
+    avg_price: float | None = None
+
+
+class PortfolioHoldingOut(BaseModel):
+    id: int
+    symbol: str
+    name: str = ""
+    exchange: str = ""
+    quantity: float
+    avg_price: float
+    price: float = 0.0
+    change: float = 0.0
+    percent_change: float = 0.0
+    market_value: float = 0.0
+    cost: float = 0.0
+    pnl: float = 0.0
+    pnl_pct: float = 0.0
+    created_at: datetime
+    updated_at: datetime | None = None
+
+    class Config:
+        from_attributes = True
+
+
 class NewsCreate(BaseModel):
     title: str
     summary: str = ""

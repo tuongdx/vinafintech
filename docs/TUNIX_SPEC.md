@@ -10,7 +10,7 @@
 
 - **Trang chủ / Thị trường**: tổng quan chỉ số (VNINDEX, VN30, HNX, HNX30, UPCOM, Dow Jones, Bitcoin, vàng thế giới, vàng trong nước), bộ lọc cổ phiếu, tin tức.
 - **Trang chi tiết cổ phiếu** (`/cophieu-{MÃ}`): biểu đồ nến chuyên sâu, sổ lệnh, giao dịch gần nhất, so sánh tương quan, phân tích lợi nhuận, cơ cấu cổ đông, báo cáo, giả định tích sản.
-- **TuniAI**: trợ lý AI chat (DeepSeek + Tool Calling), nhận định thị trường dạng **ticker chạy dưới header**.
+- **TuniAI**: trợ lý AI chat (DeepSeek + Tool Calling) với các tool lấy dữ liệu thị trường, cổ phiếu, tin tức.
 - **Tin tức**, hỗ trợ (ticket, FAQ, góp ý), tài khoản/đăng nhập (JWT + OAuth Google), quản trị (admin).
 - **Watchlist** theo dõi cổ phiếu, thông báo.
 
@@ -29,7 +29,7 @@ flowchart LR
     S --> S1[Simplize API<br/>giá, screener, khối ngoại]
     S --> S2[VCI iQ Insight<br/>BCTC / lợi nhuận]
     S --> S3[KBS<br/>OHLCV sâu + 1H]
-    S --> S4[DeepSeek<br/>TuniAI chat + nhận định]
+    S --> S4[DeepSeek<br/>TuniAI chat]
     S --> DB[(PostgreSQL / SQLite<br/>SQLAlchemy)]
     F --> T[TuniAI Chat Widget<br/>SSE streaming]
 ```
@@ -132,7 +132,7 @@ Các bảng chính trong `app/models.py`:
 |---|---|
 | `stocks` | `/stocks/search`, `/{sym}/quote`, `/history`, `/financials`, `/insider-trades`, `/shareholders`, `/reports`, `/dividends`, `/company-summary`, `/order-book`, `/trades`, `/peers`, `/profit-analysis`, `/indices`, `/market-overview`, `/index-detail`, `/market-map`, `/realtime-board`, `/foreign-trading`, `/watchlist` |
 | `chart` | `/chart/history`, `/chart/config`, `/chart/search`, `/chart/quote`, `/chart/server-time` |
-| `ai` | `/ai/status`, `/ai/chat` (SSE), `/ai/market-insight` (public) |
+| `ai` | `/ai/status`, `/ai/chat` (SSE) |
 | `auth` | đăng nhập/đăng ký/refresh/oauth/reset mật khẩu |
 | `users` | hồ sơ, đổi mật khẩu, xoá tài khoản |
 | `news` / `tickets` / `contact` / `feedback` / `faqs` / `plans` / `features` | nội dung & hỗ trợ |
@@ -152,7 +152,7 @@ Các bảng chính trong `app/models.py`:
 | **Simplize** (`api2.simplize.vn`) | giá realtime, lịch sử, screener, khối ngoại, độ rộng, directory | `SimpleTTLCache` theo key; quote 15s, foreign 90s, board 10s |
 | **VCI iQ** (`iq.vietcap.com.vn`) | BCTC / lợi nhuận quý (phân tích lợi nhuận) | cache 6h |
 | **KBS** (`kbbuddywts.kbsec.com.vn`) | OHLCV sâu ~10 năm + intraday **1H** | data TTL 60s, earliest 1h |
-| **DeepSeek** | TuniAI chat + nhận định ticker | cần `DEEPSEEK_API_KEY` |
+| **DeepSeek** | TuniAI chat (tool calling) | cần `DEEPSEEK_API_KEY` |
 | **File cache** (`.cache/*.json`) | symbol_directory, symbol_summaries (24h), screener, dividends, business | tồn tại trên đĩa |
 
 **Cache**: `SimpleTTLCache` (in-memory, dict) + file cache JSON cho dữ liệu nặng.
@@ -161,7 +161,7 @@ Các bảng chính trong `app/models.py`:
 
 ## 8. Frontend — shell & điều hướng
 
-- `index.html` là shell: header (logo, tìm kiếm, icon nến fullscreen, thông báo, theme, tài khoản), **ticker TuniAI** (chỉ hiện ở trang chủ), nav tin tức, **TuniAI chat widget** (SSE), footer.
+- `index.html` là shell: header (logo, tìm kiếm, icon nến fullscreen, thông báo, theme, tài khoản), nav tin tức, **TuniAI chat widget** (SSE), footer.
 - `loadContent(page)`:
   - Trang **embedded** (Home.html, StockDetail.html, tin-tuc.html, tintuc.html, caidat.html, taikhoan.html, doimatkhau.html) → dựng `<iframe id="contentEmbedFrame">` (cache-bust `?v=Date.now()`), điều chỉnh chiều cao qua `postMessage` (`tunix-embed-height`).
   - Trang khác (TrungTamTroGiup, HuongDanSuDung, CauHoiThuongGap, LienHe, GopY, DieuKhoanSuDung, ChinhSachBaoMat, MienTruTrachNhiem) → `fetch` + `DOMParser` nhúng nội dung.
@@ -198,12 +198,6 @@ Các block (tải song song, chart render sớm không chờ quote):
   - Thị trường: `get_market_overview`, `get_top_stocks`, `get_foreign_trading`, `get_realtime_board`, `filter_stocks`, **`get_market_flow`** (mới).
   - Tin tức: `search_news`, `get_news_detail`.
 - System prompt bắt buộc: dùng tool lấy dữ liệu thật, không bịa số liệu, trả lời tiếng Việt, không khuyến nghị mua/bán cụ thể.
-
-### 10.2 Market Insight (ticker)
-- `GET /api/ai/market-insight` (public, cache 5 phút, cập nhật trong phiên).
-- Dữ liệu: VNINDEX (giá, xu hướng 1W/1M/3M/6M, đỉnh/đáy 1 năm), khối ngoại (tổng + top mã), thanh khoản, độ rộng.
-- DeepSeek viết: **dòng tiền ra/vào + VNINDEX + lời khuyên NĐT ngắn/trung/dài hạn** (fallback template).
-- Frontend: ticker chạy dưới header **chỉ ở trang chủ**, tự refresh 5 phút, tốc độ chậm ~55px/s.
 
 ---
 

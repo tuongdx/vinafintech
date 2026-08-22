@@ -22,7 +22,7 @@ body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: var(--text);
-  background: radial-gradient(circle at top right, #d8f0ec, var(--bg));
+  background: var(--bg);
 }
 
 header {

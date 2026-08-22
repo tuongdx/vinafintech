@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>TuniX - Phân tích cổ phiếu toàn diện cho nhà đầu tư thực</title>
+    <title>TuniX - Phân tích cổ phiếu toàn diện và quản lý đầu tư hiệu quả</title>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B528QFKRN9"></script>
     <script>
@@ -18,6 +18,9 @@
 
         gtag('config', 'G-B528QFKRN9');
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     <style>
@@ -29,7 +32,7 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f4f6f9;
+            background: transparent;
             color: #1a1f36;
             padding: 20px;
             transition: background 0.3s ease, color 0.3s ease;
@@ -513,7 +516,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: #f4f6f9;
+            background: #ffffff;
             margin-bottom: 24px;
             transition: background 0.3s ease;
         }
@@ -522,56 +525,53 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
-        /* TICKER nhận định TuniAI dưới header (dòng chữ chạy) */
-        .ticker-bar {
+        /* ===== MAIN MENU — thanh điều hướng chính (dưới header, trên thanh danh mục tin tức) ===== */
+        .main-menu {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 2px;
             padding: 6px 16px;
-            background: linear-gradient(90deg, #0b5d5d 0%, #008080 100%);
-            color: #fff;
-            font-size: 12px;
-            overflow: hidden;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e9f0;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
-        body.dark-mode .ticker-bar {
-            background: linear-gradient(90deg, #083f3f 0%, #005f5f 100%);
-        }
-        .ticker-label {
-            flex: 0 0 auto;
+        .main-menu::-webkit-scrollbar { display: none; }
+        .main-menu .mm-item {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            font-weight: 700;
-            font-size: 11px;
-            letter-spacing: 0.4px;
-            background: rgba(255, 255, 255, 0.16);
-            padding: 3px 9px;
-            border-radius: 999px;
-        }
-        .ticker-track {
-            flex: 1 1 auto;
-            min-width: 0;
-            overflow: hidden;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #4a5a72;
+            text-decoration: none;
             white-space: nowrap;
-            position: relative;
-            height: 20px;
+            transition: all 0.2s ease;
         }
-        .ticker-marquee {
-            display: inline-flex;
-            white-space: nowrap;
-            will-change: transform;
-            animation: tunixTicker 45s linear infinite;
+        .main-menu .mm-item:hover { color: #008080; background: rgba(0, 128, 128, 0.08); }
+        .main-menu .mm-item.active { color: #008080; background: rgba(0, 128, 128, 0.1); }
+        .main-menu .mm-home { font-size: 15px; padding: 6px 10px; }
+        .main-menu .mm-ai { color: #008080; }
+        .main-menu .mm-ai:hover { background: rgba(0, 128, 128, 0.1); }
+        .mm-sep {
+            flex: 0 0 auto;
+            width: 1px;
+            height: 16px;
+            background: #e0e5ec;
+            margin: 0 4px;
         }
-        .ticker-marquee:hover { animation-play-state: paused; }
-        .ticker-text {
-            display: inline-block;
-            padding-right: 48px;
-            line-height: 20px;
+        body.dark-mode .main-menu {
+            background: #0d1117;
+            border-bottom-color: #30363d;
         }
-        @keyframes tunixTicker {
-            from { transform: translateX(0); }
-            to   { transform: translateX(-50%); }
-        }
+        body.dark-mode .main-menu .mm-item { color: #c9d1d9; }
+        body.dark-mode .main-menu .mm-item:hover,
+        body.dark-mode .main-menu .mm-item.active { color: #4fb3b3; background: rgba(0, 128, 128, 0.15); }
+        body.dark-mode .main-menu .mm-ai { color: #4fb3b3; }
+        body.dark-mode .mm-sep { background: #21262d; }
 
         .header {
             display: flex;
@@ -579,7 +579,7 @@
             align-items: center;
             padding: 16px 0;
             border-bottom: 1px solid transparent;
-            background: #f4f6f9;
+            background: #ffffff;
             box-shadow: none;
             transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
         }
@@ -641,17 +641,18 @@
 
         /* ===== HEADER NAV — thanh danh mục tin tức (nằm dưới header) ===== */
         .header-nav {
-            background: #f4f6f9;
+            background: #ffffff;
             border-bottom: 1px solid #e5e9f0;
             margin: 0;
             transition: background 0.3s ease, border-color 0.3s ease;
         }
         .header-nav-inner {
             display: flex;
-            gap: 8px;
+            align-items: center;
+            gap: 2px;
             flex-wrap: nowrap;
             overflow-x: auto;
-            padding: 4px 2px 12px;
+            padding: 6px 16px;
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
@@ -662,53 +663,40 @@
             flex-shrink: 0;
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            padding: 8px 15px;
-            border-radius: 24px;
-            background: #ffffff;
-            border: 1px solid #e5e9f0;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
             color: #4a5a72;
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             user-select: none;
             white-space: nowrap;
         }
+        /* Icon thừa kế kích thước + màu chữ (giống menu thị trường) */
         .header-nav .cat-tab i {
-            font-size: 13px;
-            color: #8a99b1;
-            transition: color 0.2s ease;
+            font-size: inherit;
         }
         .header-nav .cat-tab:hover {
-            border-color: #008080;
             color: #008080;
-        }
-        .header-nav .cat-tab:hover i {
-            color: #008080;
+            background: rgba(0, 128, 128, 0.08);
         }
         .header-nav .cat-tab.active {
-            background: #008080;
-            border-color: #008080;
-            color: #ffffff;
-        }
-        .header-nav .cat-tab.active i {
-            color: #ffffff;
+            color: #008080;
+            background: rgba(0, 128, 128, 0.1);
         }
         body.dark-mode .header-nav {
             background: #0d1117;
             border-bottom-color: #30363d;
         }
         body.dark-mode .header-nav .cat-tab {
-            background: #21262d;
-            border-color: #30363d;
             color: #c9d1d9;
         }
         body.dark-mode .header-nav .cat-tab:hover,
         body.dark-mode .header-nav .cat-tab.active {
-            background: #008080;
-            border-color: #008080;
-            color: #ffffff;
+            color: #4fb3b3;
+            background: rgba(0, 128, 128, 0.15);
         }
 
         .header-search {
@@ -1097,10 +1085,10 @@
             color: #008080;
         }
 
-        /* MAIN GRID: 2 cột */
+        /* MAIN GRID: 1 cột (right-col tạm ẩn — sẽ dùng lại sau) */
         .main-grid {
             display: grid;
-            grid-template-columns: 1fr 300px;
+            grid-template-columns: 1fr;
             gap: 20px;
             align-items: start;
         }
@@ -1142,9 +1130,9 @@
             padding-top: 0;
         }
 
-        /* RIGHT COLUMN */
+        /* RIGHT COLUMN — TẠM ẨN (sẽ dùng lại sau), giữ nguyên HTML để dễ khôi phục */
         .right-col {
-            display: flex;
+            display: none;
             flex-direction: column;
             gap: 20px;
             margin-top: 0;
@@ -2112,8 +2100,9 @@
         .footer-description {
             font-size: 13px;
             color: #6b7a8f;
-            line-height: 1.6;
+            line-height: 1.7;
             max-width: 300px;
+            text-align: justify;
             transition: color 0.3s ease;
         }
 
@@ -2269,9 +2258,7 @@
                 grid-template-columns: 1fr;
             }
             .right-col {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 20px;
+                display: none; /* tạm ẩn — sẽ dùng lại sau */
             }
         }
 
@@ -2604,15 +2591,20 @@
                 </div>
             </header>
 
-            <!-- TICKER: nhận định thị trường TuniAI (dòng chữ chạy dưới header) -->
-            <div class="ticker-bar" id="tuniAiTicker">
-                <span class="ticker-label"><i class="fas fa-robot"></i> TuniAI</span>
-                <div class="ticker-track">
-                    <div class="ticker-marquee" id="tuniAiTickerMarquee">
-                        <span class="ticker-text">Đang tải nhận định thị trường...</span>
-                    </div>
-                </div>
-            </div>
+            <!-- MAIN MENU: thanh điều hướng chính (dưới header) -->
+            <nav class="main-menu" id="mainMenu">
+                <a href="/" class="mm-item mm-home" data-action="home" title="Trang chủ"><i class="fas fa-home"></i></a>
+                <span class="mm-sep"></span>
+                <a href="/thi-truong" class="mm-item" data-action="thi-truong">Thị trường</a>
+                <span class="mm-sep"></span>
+                <a href="/co-phieu" class="mm-item" data-action="co-phieu">Cổ phiếu</a>
+                <span class="mm-sep"></span>
+                <a href="/kham-pha" class="mm-item" data-action="kham-pha">Khám phá</a>
+                <span class="mm-sep"></span>
+                <a href="/danh-muc" class="mm-item" data-action="danh-muc">Danh mục</a>
+                <span class="mm-sep"></span>
+                <a href="/tuniai" class="mm-item mm-ai" data-action="tuniai"><i class="fas fa-robot"></i> TuniAI</a>
+            </nav>
 
             <!-- HEADER NAV: thanh danh mục tin tức (chỉ hiện khi ở trang tin tức) -->
             <div class="header-nav" id="newsCatNav" style="display:none;">
@@ -2883,7 +2875,11 @@
                 <div>
                     <a href="/" class="logo"><span style="color:#008080;font-weight:800;">Tuni</span><span style="color:#8A95A5;font-weight:800;">X</span></a>
                     <p class="footer-description">
-                        TuniX là nền tảng phân tích cổ phiếu toàn diện, dữ liệu thực tế giúp các nhà đầu tư và tư vấn đầu tư có nhận định chuyên sâu về thị trường chứng khoán Việt Nam. TuniX không khuyến nghị mua, bán, nắm giữ bất kỳ mã chứng khoán nào. Người dùng tự đánh giá và tự chịu trách nhiệm với quyết định đầu tư của mình. Xin cảm ơn!
+                        TuniX là nền tảng phân tích cổ phiếu toàn diện và quản trị tài sản.<br>
+                        TuniX lấy dữ liệu thực tế từ thị trường giúp các nhà đầu tư và tư vấn đầu tư có nhận định chuyên sâu về thị trường chứng khoán Việt Nam.<br>
+                        TuniX không khuyến nghị mua, bán, nắm giữ bất kỳ mã chứng khoán nào.<br>
+                        Người dùng tự đánh giá và tự chịu trách nhiệm với quyết định đầu tư của mình.<br>
+                        Xin cảm ơn!
                     </p>
                     <div class="footer-social">
                         <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-facebook"></i></a>
@@ -3093,7 +3089,7 @@
         <div class="ai-disclaimer">TuniAI cung cấp thông tin tham khảo, không phải khuyến nghị đầu tư.</div>
     </div>
 
-    <script src="/static/header-search.js?v=20260813"></script>
+    <script src="/static/header-search.js?v=20260822"></script>
     <script>
         const PAGE_FILE_MAP = {
             TrungTamTroGiup: '/frontend/TrungTamTroGiup.html',
@@ -3259,54 +3255,6 @@
         window.addEventListener('scroll', updateHeaderScrolled, { passive: true });
         updateHeaderScrolled();
 
-        // ===== TICKER: nhận định thị trường TuniAI (dòng chữ chạy dưới header) =====
-        function loadTuniAiTicker() {
-            const marquee = document.getElementById('tuniAiTickerMarquee');
-            if (!marquee) return;
-            function setText(txt) {
-                const track = marquee.parentElement;
-                const text = (txt && txt.trim()) ? txt.trim() : 'TuniAI chưa có nhận định thị trường mới.';
-                marquee.innerHTML = '';
-                const span = document.createElement('span');
-                span.className = 'ticker-text';
-                span.textContent = text;
-                marquee.appendChild(span);
-                const trackW = track ? (track.clientWidth || 1200) : 1200;
-                let copies = 2;
-                while ((span.offsetWidth || 400) * copies < trackW * 2 && copies < 16) copies++;
-                if (copies % 2 !== 0) copies++; // chẵn để loop translateX(-50%) mượt
-                for (let i = 1; i < copies; i++) {
-                    const c = span.cloneNode(true);
-                    marquee.appendChild(c);
-                }
-                // Tốc độ cuộn tự thích ứng theo độ dài text (~55px/giây hiệu dụng — chạy chậm, dễ đọc):
-                // animation translateX 0 → -50% chỉ di chuyển NỬA bề rộng marquee,
-                // nên scrollDist = totalW/2.
-                const totalW = marquee.scrollWidth || (span.offsetWidth * copies);
-                const scrollDist = totalW / 2;
-                marquee.style.animationDuration = Math.max(20, Math.round(scrollDist / 55)) + 's';
-            }
-            function refresh() {
-                fetch('/api/ai/market-insight', { cache: 'no-store' })
-                    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                    .then(function (data) { if (data && data.text) setText(data.text); })
-                    .catch(function () { /* giữ text hiện tại */ });
-            }
-            setText('Đang tải nhận định thị trường...');
-            refresh();
-            // Cập nhật nhận định trong phiên: mỗi 5 phút lấy bản mới (không cần reload trang).
-            setInterval(refresh, 5 * 60 * 1000);
-        }
-        loadTuniAiTicker();
-
-        // Chỉ hiển thị ticker TuniAI trên TRANG CHỦ; sang trang khác (cổ phiếu, tin tức, cài đặt…) thì ẩn.
-        function updateTickerVisibility() {
-            const ticker = document.getElementById('tuniAiTicker');
-            if (!ticker) return;
-            const isHome = !!(lastLoadedPage && /^\/Home(?:\?|#|$)/i.test(lastLoadedPage));
-            ticker.style.display = isHome ? '' : 'none';
-        }
-
         // Mã cổ phiếu đang xem ở trang chi tiết — để icon nến fullscreen ĐÚNG mã hiện tại
         // (không phải lúc nào cũng mặc định VNINDEX). Cập nhật mỗi khi mở/đổi mã.
         let currentChartSymbol = 'VNINDEX';
@@ -3314,6 +3262,25 @@
         // sau khi thoát fullscreen mở từ trang KHÔNG phải chi tiết cổ phiếu (icon nến).
         let lastLoadedPage = null;
         let fsReturnState = null;
+        // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
+        // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
+        const CACHE_VERSION = '20260823';
+
+        // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+
+        // Cuộn toàn bộ trang (shell + iframe đang nhúng) lên đầu.
+        function scrollPageToTop() {
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+            const f = document.getElementById('contentEmbedFrame');
+            if (f && f.contentWindow) {
+                try { f.contentWindow.scrollTo(0, 0); } catch (e) {}
+            }
+        }
 
         function isStockDetailEmbedded() {
             const frame = document.getElementById('contentEmbedFrame');
@@ -3323,7 +3290,7 @@
             } catch (e) { return false; }
         }
 
-        function openStockDetailInIndex(symbol, fs) {
+        function openStockDetailInIndex(symbol, fs, url) {
             const normalized = String(symbol || '').trim().toUpperCase();
             if (!normalized) return;
             currentChartSymbol = normalized;
@@ -3331,6 +3298,8 @@
             if (searchInput) {
                 searchInput.value = normalized;
             }
+            // URL ưu tiên (vd bối cảnh ngành) nếu có; nếu không dùng /cophieu-{SYM}
+            const prettyUrl = url || `/cophieu-${encodeURIComponent(normalized)}` + (fs ? '?fs=1' : '');
             // Đang ở trang chi tiết cổ phiếu → chỉ ĐỔI MÃ NGAY TRONG TRANG (postMessage tới iframe),
             // không tải lại cả trang / không recreate iframe.
             if (!fs && isStockDetailEmbedded()) {
@@ -3338,7 +3307,7 @@
                 if (frame && frame.contentWindow) {
                     frame.contentWindow.postMessage({ type: 'tunix-switch-stock', symbol: normalized }, '*');
                 }
-                window.history.replaceState({}, '', `/cophieu-${encodeURIComponent(normalized)}`);
+                window.history.replaceState({}, '', prettyUrl);
                 if (typeof updateRightColumnForStock === 'function') {
                     updateRightColumnForStock(normalized);
                 }
@@ -3347,7 +3316,7 @@
             const params = new URLSearchParams({ symbol: normalized });
             if (fs) params.set('fs', '1');
             loadContent(`/StockDetail?${params.toString()}`);
-            window.history.replaceState({}, '', `/cophieu-${encodeURIComponent(normalized)}` + (fs ? '?fs=1' : ''));
+            window.history.replaceState({}, '', prettyUrl);
         }
 
         window.openStockDetailInIndex = openStockDetailInIndex;
@@ -3415,8 +3384,13 @@
             const sub = document.getElementById('logoSub');
             const link = document.getElementById('newsPageLink');
             const nav = document.getElementById('newsCatNav');
-            if (wrap) wrap.classList.toggle('has-sub', isNews);
-            if (sub) sub.textContent = isNews ? 'Tin tức' : '';
+            const menu = document.getElementById('mainMenu');
+            const logo = document.querySelector('.logo-wrap .logo');
+            // Chữ nhỏ dưới logo luôn hiện: "Thị trường" (trang chủ) / "Tin tức" (trang tin tức).
+            if (wrap) wrap.classList.add('has-sub');
+            if (sub) sub.textContent = isNews ? 'Tin tức' : 'Thị trường';
+            // Logo TuniX: ở tin tức → về trang chủ tin tức; ở thị trường → về trang chủ thị trường.
+            if (logo) logo.href = isNews ? '/tin-tuc' : '/';
             if (link) {
                 const iconName = isNews ? 'fa-chart-line' : 'fa-newspaper';
                 const label = isNews ? 'Thị trường' : 'Tin tức';
@@ -3424,7 +3398,8 @@
                 link.title = label;
                 link.href = isNews ? '/' : '/tin-tuc';
             }
-            // Thanh danh mục tin tức chỉ hiện khi ở khu vực tin tức
+            // Menu thị trường chỉ hiện ở thị trường; menu tin tức (danh mục) chỉ hiện ở tin tức.
+            if (menu) menu.style.display = isNews ? 'none' : '';
             if (nav) nav.style.display = isNews ? '' : 'none';
             // Cập nhật placeholder ô tìm kiếm header theo chế độ (tìm tin / tìm cổ phiếu)
             if (typeof window.onHeaderModeChange === 'function') {
@@ -3438,6 +3413,56 @@
             window.history.replaceState({}, '', '/tin-tuc');
             setHeaderContext(true);
         }
+        function openThiTruongPage() {
+            // Mở trang "Thị trường" (dashboard) trong shell — URL đẹp /thi-truong.
+            if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
+            if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
+            loadContent('/frontend/ThiTruong.html');
+            window.history.replaceState({}, '', '/thi-truong');
+            setHeaderContext(false);
+        }
+        function openCoPhieuPage() {
+            // Mở trang "Cổ phiếu" (screener) trong shell — URL đẹp /co-phieu.
+            if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
+            if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
+            loadContent('/frontend/CoPhieu.html');
+            window.history.replaceState({}, '', '/co-phieu');
+            setHeaderContext(false);
+        }
+        function openCoPhieuStock(symbol) {
+            // Mở chi tiết cổ phiếu NHÚNG trong trang Cổ phiếu (breadcrumb ngành ... > MÃ) — dùng cho mọi trang list.
+            const normalized = String(symbol || '').trim().toUpperCase();
+            if (!normalized) return;
+            currentChartSymbol = normalized;
+            // Clear ô tìm kiếm header sau khi điều hướng đến chi tiết cổ phiếu
+            if (typeof window.clearHeaderSearch === 'function') {
+                window.clearHeaderSearch();
+            } else {
+                const searchInput = document.querySelector('.header-search input');
+                if (searchInput) searchInput.value = '';
+            }
+            loadContent('/frontend/CoPhieu.html?stock=' + encodeURIComponent(normalized));
+            window.history.replaceState({}, '', '/co-phieu/' + encodeURIComponent(normalized));
+            setHeaderContext(false);
+            if (typeof updateRightColumnForStock === 'function') updateRightColumnForStock(normalized);
+        }
+        window.openCoPhieuStock = openCoPhieuStock;
+        function openKhamPhaPage() {
+            // Mở trang "Khám phá" (discovery) trong shell — URL đẹp /kham-pha.
+            if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
+            if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
+            loadContent('/frontend/KhamPha.html');
+            window.history.replaceState({}, '', '/kham-pha');
+            setHeaderContext(false);
+        }
+        function openTuniAiPage() {
+            // Mở trang "TuniAI" (dedicated) trong shell — URL đẹp /tuniai.
+            if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
+            if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
+            loadContent('/frontend/TuniAI.html');
+            window.history.replaceState({}, '', '/tuniai');
+            setHeaderContext(false);
+        }
         const newsPageLink = document.getElementById('newsPageLink');
         if (newsPageLink) {
             newsPageLink.addEventListener('click', function(e) {
@@ -3450,6 +3475,116 @@
                     setHeaderContext(false);
                 } else {
                     openNewsPage();
+                }
+            });
+        }
+
+        // ===== MAIN MENU — thanh điều hướng chính dưới header =====
+        function mmToast(msg) {
+            let t = document.getElementById('mmToast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'mmToast';
+                t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e2b41;color:#fff;padding:9px 16px;border-radius:30px;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.2);opacity:0;transition:opacity 0.25s;pointer-events:none;';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            clearTimeout(t._t);
+            t._t = setTimeout(function() { t.style.opacity = '0'; }, 2000);
+        }
+        function goHome(cb) {
+            if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
+            if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
+            loadContent('/Home');
+            window.history.replaceState({}, '', '/');
+            setHeaderContext(false);
+            if (typeof cb === 'function') setTimeout(cb, 260);
+        }
+        function scrollToStockFilter() {
+            const el = document.querySelector('.filter-block');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        // Cập nhật mục active theo trang đang xem.
+        function updateMainMenuActive(page) {
+            const items = document.querySelectorAll('#mainMenu .mm-item');
+            if (!items.length) return;
+            const pg = String(page || '');
+            let active = '';
+            if (pg === '/Home' || /^\/Home(?:[?#].*)?$/.test(pg)) active = 'home';
+            else if (/^\/thi-truong/.test(pg) || /ThiTruong\.html/.test(pg)) active = 'thi-truong';
+            else if (/^\/co-phieu/.test(pg) || /CoPhieu\.html/.test(pg)) active = 'co-phieu';
+            else if (/^\/kham-pha/.test(pg) || /KhamPha\.html/.test(pg)) active = 'kham-pha';
+            else if (/^\/tuniai/.test(pg) || /TuniAI\.html/.test(pg)) active = 'tuniai';
+            else if (/^\/danh-muc(?:[?#].*)?$/.test(pg)) active = 'danh-muc';
+            else if (/tintuc|tin-tuc/.test(pg)) active = '';
+            items.forEach(function(it) {
+                it.classList.toggle('active', it.getAttribute('data-action') === active);
+            });
+        }
+        const mainMenu = document.getElementById('mainMenu');
+        if (mainMenu) {
+            mainMenu.addEventListener('click', function(e) {
+                const item = e.target.closest('.mm-item');
+                if (!item) return;
+                // Chuột phải / Ctrl+click → dùng href thật (mở tab/URL thật).
+                if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                e.preventDefault();
+                const action = item.getAttribute('data-action');
+                if (action === 'home') {
+                    goHome();
+                } else if (action === 'thi-truong') {
+                    openThiTruongPage();
+                } else if (action === 'co-phieu') {
+                    openCoPhieuPage();
+                } else if (action === 'kham-pha') {
+                    openKhamPhaPage();
+                } else if (action === 'danh-muc') {
+                    loadContent('/danh-muc');
+                    window.history.replaceState({}, '', '/danh-muc');
+                } else if (action === 'tuniai') {
+                    openTuniAiPage();
+                }
+            });
+            // Prefetch nội dung khi hover menu → làm ấm cache, chuyển trang tức thì hơn.
+            const MENU_PREFETCH_URLS = {
+                'home': '/Home',
+                'thi-truong': '/frontend/ThiTruong.html',
+                'co-phieu': '/frontend/CoPhieu.html',
+                'kham-pha': '/frontend/KhamPha.html',
+                'tuniai': '/frontend/TuniAI.html',
+                'danh-muc': '/danh-muc'
+            };
+            function prefetchPage(url) {
+                if (!url) return;
+                try {
+                    const sep = url.includes('?') ? '&' : '?';
+                    fetch(url + sep + 'v=' + CACHE_VERSION, { cache: 'force-cache', credentials: 'same-origin' }).catch(function() {});
+                } catch (e) {}
+            }
+            mainMenu.querySelectorAll('.mm-item').forEach(function(it) {
+                const url = MENU_PREFETCH_URLS[it.getAttribute('data-action')];
+                if (!url) return;
+                let t = null;
+                it.addEventListener('mouseenter', function() {
+                    clearTimeout(t);
+                    t = setTimeout(function() { prefetchPage(url); }, 180);
+                });
+                it.addEventListener('mouseleave', function() { clearTimeout(t); });
+            });
+        }
+
+        // Logo TuniX — bấm về trang chủ tương ứng: tin tức → /tin-tuc, thị trường → /.
+        const logoLink = document.querySelector('.logo-wrap .logo');
+        if (logoLink) {
+            logoLink.addEventListener('click', function(e) {
+                // Chuột phải / Ctrl+click → dùng href thật (đã cập nhật theo ngữ cảnh).
+                if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                e.preventDefault();
+                if (isNewsPage) {
+                    openNewsPage();
+                } else {
+                    goHome();
                 }
             });
         }
@@ -3523,9 +3658,11 @@
             if (!bar) return;
             bar.innerHTML = NEWS_CATEGORIES.map(function (c) {
                 return '<div class="cat-tab' + (headerCat === c.slug ? ' active' : '') + '" data-slug="' + c.slug + '">' +
-                    '<i class="fas ' + c.icon + '"></i>' + c.label +
+                    // Tab "Tất cả" (slug rỗng) hiển thị icon home; các tab còn lại chỉ text.
+                    (c.slug === '' ? '<i class="fas ' + c.icon + '"></i>' : '') +
+                    c.label +
                     '</div>';
-            }).join('');
+            }).join('<span class="mm-sep"></span>');
             bar.querySelectorAll('.cat-tab').forEach(function (tab) {
                 tab.addEventListener('click', function () {
                     if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
@@ -3634,16 +3771,13 @@
             if (!container) return;
             // Lưu trang đang hiển thị — dùng để quay lại trang trước đó sau khi thoát fullscreen icon nến.
             lastLoadedPage = page;
-            // Ticker TuniAI chỉ hiện ở trang chủ → cập nhật ẩn/hiện mỗi lần chuyển trang.
-            if (typeof updateTickerVisibility === 'function') updateTickerVisibility();
 
             // Cập nhật header theo trang đang xem: trang tin tức / bài viết tin tức → logo thêm chữ "Tin tức", nút đổi thành "Thị trường".
             setHeaderContext(page.includes('tintuc') || page.includes('tin-tuc'));
+            if (typeof updateMainMenuActive === 'function') updateMainMenuActive(page);
 
             // Mỗi lần chuyển trang, cuộn ngay lên đầu trang.
-            window.scrollTo(0, 0);
-            document.documentElement.scrollTop = 0;
-            document.body.scrollTop = 0;
+            scrollPageToTop();
 
             // Cột phải: nếu đang mở trang chi tiết cổ phiếu → hiện "Tin liên quan - MÃ", ẩn "Tin được xem nhiều nhất"
             let relatedSymbol = '';
@@ -3655,14 +3789,15 @@
             updateRightColumnForStock(relatedSymbol);
 
             // Home va StockDetail duoc nhung bang iframe de giu nguyen HTML/CSS/JS.
-            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page);
+            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/danh-muc(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/tuniai(?:[?#].*)?$/.test(page) || /^\/frontend\/TuniAI\.html(?:[?#].*)?$/.test(page);
             // Ẩn thanh cuộn trang khi đang xem chi tiết bài viết
             const isArticlePage = /^\/tintuc(?:[?#].*)?$/.test(page);
             document.body.classList.toggle('article-mode', isArticlePage);
             document.documentElement.classList.toggle('article-mode', isArticlePage);
             if (isEmbeddedPage) {
-                // Chống cache: thêm tham số version để trình duyệt luôn tải bản HTML mới nhất.
-                const cacheBust = Date.now();
+                // Tham số version ổn định (CACHE_VERSION) → trình duyệt cache lại được giữa các lần
+                // chuyển trang, chỉ bump khi deploy bản mới.
+                const cacheBust = CACHE_VERSION;
                 const sep = page.includes('?') ? '&' : '?';
                 const frameSrc = `${page}${sep}v=${cacheBust}`;
                 container.innerHTML = `
@@ -3670,8 +3805,7 @@
                         id="contentEmbedFrame"
                         src="${frameSrc}"
                         title="TuniX Embedded Content"
-                        style="display:block;width:100%;height:560px;min-height:560px;border:none;border-radius:16px;background:transparent;"
-                        loading="lazy"
+                        style="display:block;width:100%;height:560px;min-height:560px;border:none;background:transparent;transition:height .18s ease;"
                         allow="fullscreen"
                     ></iframe>
                 `;
@@ -3683,6 +3817,7 @@
                         if (frame.contentWindow) {
                             frame.contentWindow.scrollTo(0, 0);
                         }
+                        scrollPageToTop();
                     });
                 }
                 return;
@@ -3691,8 +3826,8 @@
             // Hiển thị loading
             container.innerHTML = '<div style="padding:40px;text-align:center;color:#8a99b1;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
 
-            // Sử dụng fetch để lấy nội dung (thêm cache-bust để luôn lấy bản HTML mới nhất)
-            const cacheBust = Date.now();
+            // Sử dụng fetch để lấy nội dung (version ổn định để cache lại được)
+            const cacheBust = CACHE_VERSION;
             const sep = page.includes('?') ? '&' : '?';
             fetch(page + sep + 'v=' + cacheBust)
                 .then(response => {
@@ -3722,6 +3857,7 @@
                     }
                     // Gọi lại các hàm khởi tạo cho nội dung mới
                     reinitializeContent();
+                    scrollPageToTop();
                 })
                 .catch(error => {
                     console.error('Lỗi:', error);
@@ -4177,20 +4313,26 @@
                 return;
             }
             if (data.type === 'tunix-ai-open') {
-                // Chart fullscreen workspace: mở TuniX AI + điền sẵn câu hỏi về mã đang xem.
+                // Chart fullscreen workspace / trang Cổ phiếu: mở TuniX AI + điền sẵn câu hỏi.
                 if (typeof window.openTuniAi === 'function') window.openTuniAi();
                 const aiInput = document.getElementById('aiInput');
                 if (aiInput) {
+                    const prompt = String(data.prompt || '').trim();
                     const sym = String(data.symbol || '').trim().toUpperCase();
-                    aiInput.value = sym
+                    aiInput.value = prompt || (sym
                         ? ('Phân tích cổ phiếu ' + sym + ' (xu hướng, hỗ trợ/kháng cự, chỉ báo RSI/MACD).')
-                        : '';
+                        : '');
                     aiInput.style.height = 'auto';
                 }
                 return;
             }
             if (data.type === 'tunix-open-stock' && data.symbol) {
-                openStockDetailInIndex(data.symbol);
+                // Click cổ phiếu từ bất kỳ trang list → hiển thị nhúng + breadcrumb ngành trong trang Cổ phiếu
+                if (typeof window.openCoPhieuStock === 'function') {
+                    window.openCoPhieuStock(data.symbol);
+                } else {
+                    openStockDetailInIndex(data.symbol);
+                }
                 return;
             }
             if (data.type === 'tunix-symbol-changed' && data.symbol) {
@@ -4202,6 +4344,19 @@
             if (data.type === 'tunix-open-url' && data.url) {
                 // Mở link ngoài (VD: Nguồn bài viết) từ parent — tránh popup blocker chặn _blank trong iframe
                 window.open(data.url, '_blank', 'noopener');
+                return;
+            }
+            if (data.type === 'tunix-open-page' && data.url) {
+                // Link nội bộ từ trang nhúng (VD: Home → /danh-muc): điều hướng qua shell như menu chính.
+                const u = String(data.url).split('#')[0];
+                if (!u) return;
+                if (u === '/danh-muc') {
+                    loadContent('/danh-muc');
+                    window.history.replaceState({}, '', '/danh-muc');
+                } else {
+                    loadContent(u);
+                    window.history.replaceState({}, '', u);
+                }
                 return;
             }
             if (data.type === 'tunix-go-login') {
@@ -4226,6 +4381,12 @@
                 if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
                 return;
             }
+            if (data.type === 'tunix-co-phieu-nav' && data.url) {
+                // Trang Cổ phiếu báo điều hướng phân cấp ngành → cập nhật URL (không reload iframe) + cuộn lên đầu
+                window.history.replaceState({}, '', data.url);
+                scrollPageToTop();
+                return;
+            }
             if (data.type !== 'tunix-home-height' && data.type !== 'tunix-embed-height') return;
             const frame = document.getElementById('contentEmbedFrame');
             if (!frame) return;
@@ -4243,11 +4404,24 @@
         const initialNewsId = initialParams.get('id');
         const prettyMatch = window.location.pathname.match(/^\/.+-(\d+)\.html$/);
         const cophieuMatch = window.location.pathname.match(/^\/cophieu-([A-Za-z0-9.]+)$/i);
+        const coPhieuIndStockMatch = window.location.pathname.match(/^\/co-phieu\/nganh\/([^/]+)\/([^/]+)\/([A-Za-z0-9.]+)$/i);
+        const coPhieuStockMatch = window.location.pathname.match(/^\/co-phieu\/(?!nganh(?:\/|$))([A-Za-z0-9.]+)$/i);
         const pathPage = window.location.pathname.replace(/^\//, '');
         if (initialSymbol) {
             openStockDetailInIndex(initialSymbol, initialParams.get('fs') === '1');
+        } else if (coPhieuIndStockMatch) {
+            // Chi tiết cổ phiếu theo bối cảnh ngành: /co-phieu/nganh/{l1}/{l2}/{SYM}
+            // → nạp CoPhieu với ind + stock (nhúng toàn bộ nội dung chi tiết trong trang)
+            const ind = 'nganh/' + coPhieuIndStockMatch[1] + '/' + coPhieuIndStockMatch[2];
+            const stock = coPhieuIndStockMatch[3];
+            loadContent('/frontend/CoPhieu.html?ind=' + ind + '&stock=' + encodeURIComponent(stock));
+            setHeaderContext(false);
         } else if (cophieuMatch) {
             openStockDetailInIndex(cophieuMatch[1], initialParams.get('fs') === '1');
+        } else if (coPhieuStockMatch) {
+            // Chi tiết cổ phiếu tại trang cổ phiếu: /co-phieu/{SYM} → nhúng chi tiết trong trang
+            loadContent('/frontend/CoPhieu.html?stock=' + encodeURIComponent(coPhieuStockMatch[1]));
+            setHeaderContext(false);
         } else if (prettyMatch) {
             loadContent('/tintuc?id=' + prettyMatch[1]);
         } else if (initialPage === 'tintuc' && initialNewsId) {
@@ -4261,12 +4435,36 @@
             // Deep-link trang tin tức: /tin-tuc hoặc /?page=tin-tuc&cat=... → giữ shell, nạp nội dung vào left-col.
             const catParam = initialParams.get('cat');
             loadContent('/frontend/tin-tuc.html' + (catParam ? '?cat=' + encodeURIComponent(catParam) : ''));
+        } else if (pathPage === 'thi-truong' || initialPage === 'thi-truong') {
+            // Trang thị trường: /thi-truong → nạp dashboard vào left-col.
+            loadContent('/frontend/ThiTruong.html');
+            setHeaderContext(false);
+        } else if (/^co-phieu\/nganh(?:\/|$)/.test(pathPage)) {
+            // URL đẹp phân cấp ngành: /co-phieu/nganh/... → nạp screener với tham số ind (giữ slash)
+            const ind = pathPage.replace(/^co-phieu\//, '');
+            loadContent('/frontend/CoPhieu.html?ind=' + ind);
+            setHeaderContext(false);
+        } else if (pathPage === 'co-phieu' || initialPage === 'co-phieu') {
+            // Trang cổ phiếu: /co-phieu → nạp screener vào left-col.
+            loadContent('/frontend/CoPhieu.html');
+            setHeaderContext(false);
+        } else if (pathPage === 'kham-pha' || initialPage === 'kham-pha') {
+            // Trang khám phá: /kham-pha → nạp discovery vào left-col.
+            loadContent('/frontend/KhamPha.html');
+            setHeaderContext(false);
+        } else if (pathPage === 'tuniai' || initialPage === 'tuniai') {
+            // Trang TuniAI: /tuniai → nạp dedicated AI page vào left-col.
+            loadContent('/frontend/TuniAI.html');
+            setHeaderContext(false);
         } else if (initialPage === 'caidat') {
             loadContent('/caidat');
         } else if (initialPage === 'taikhoan') {
             loadContent('/taikhoan');
         } else if (initialPage === 'doimatkhau') {
             loadContent('/doimatkhau');
+        } else if (initialPage === 'danh-muc') {
+            loadContent('/danh-muc');
+            window.history.replaceState({}, '', '/danh-muc');
         } else if (PAGE_FILE_MAP[pathPage]) {
             // URL đẹp /Trang
             loadContent(PAGE_FILE_MAP[pathPage]);

@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
+    <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
+    <title>Thị trường Việt Nam - TuniX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { scrollbar-width: none; -ms-overflow-style: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: transparent;
+            color: #12203a;
+            line-height: 1.45;
+        }
+        .tt-page { max-width: none; width: 100%; margin: 0 auto; padding: 20px; }
+        .embedded .tt-page { padding: 0 0 40px; }
+
+        /* ===== Layout ===== */
+        .tt-top { display: flex; flex-direction: column; gap: 18px; margin-bottom: 18px; }
+        .tt-body { display: grid; grid-template-columns: 1fr 320px; gap: 18px; align-items: start; }
+        .tt-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+        .tt-side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+        /* ===== Card ===== */
+        .tt-card {
+            background: #fff;
+            border: 1px solid #e9edf2;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+        }
+        .tt-card h2 { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .tt-card h2 .tt-h2-ico { color: #008080; }
+
+        /* ===== 4 index cards ===== */
+        .tt-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .tt-idx {
+            background: #fff; border: 1px solid #e9edf2; border-radius: 14px; padding: 14px;
+            cursor: pointer; transition: box-shadow 0.2s, transform 0.2s; box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        }
+        .tt-idx:hover { box-shadow: 0 6px 18px rgba(15,23,42,0.10); transform: translateY(-2px); }
+        .tt-idx.active { border-color: #008080; box-shadow: 0 6px 18px rgba(0,128,128,0.16); }
+        .tt-idx .ti-name { font-size: 12px; font-weight: 600; color: #6b7a8f; }
+        .tt-idx .ti-val { font-size: 21px; font-weight: 800; margin-top: 3px; letter-spacing: -0.3px; }
+        .tt-idx .ti-chg { font-size: 13px; font-weight: 700; margin-top: 2px; }
+        .tt-idx .ti-spark { margin-top: 10px; height: 42px; }
+        .tt-idx .ti-spark svg { width: 100%; height: 42px; display: block; }
+        .ti-up { color: #0f7b3a; }
+        .ti-down { color: #d0314e; }
+
+        /* ===== Main chart ===== */
+        .tt-chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+        .tt-chart-title { font-size: 17px; font-weight: 800; }
+        .tt-chart-quote { font-size: 13px; color: #6b7a8f; margin-top: 2px; }
+        .tt-chart-quote b { font-size: 15px; color: #12203a; }
+        .tt-chart-select {
+            font-family: inherit; font-size: 17px; font-weight: 800; color: #12203a;
+            background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 5px 10px; cursor: pointer;
+            outline: none;
+        }
+        .tt-chart-select:hover { border-color: #d8dee8; }
+        .tt-periods { display: flex; gap: 4px; background: #f1f4f8; border-radius: 10px; padding: 3px; }
+        .tt-periods button {
+            border: none; background: transparent; color: #4a5a72; font-weight: 600; font-size: 12px;
+            padding: 6px 12px; border-radius: 8px; cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .tt-periods button:hover { color: #008080; }
+        .tt-periods button.active { background: #fff; color: #008080; box-shadow: 0 1px 3px rgba(15,23,42,0.12); }
+        .tt-chart-svg svg { width: 100%; height: 300px; display: block; }
+        .tt-chart-svg { position: relative; }
+        .tt-chart-ylab, .tt-chart-xlab { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+        .tt-chart-ylab .yl { position: absolute; left: 4px; font-size: 10.5px; color: #8a99b1; font-weight: 600; transform: translateY(-50%); }
+        .tt-chart-xlab .xl { position: absolute; font-size: 10.5px; color: #8a99b1; white-space: nowrap; }
+        .tt-chart-tip {
+            position: absolute; z-index: 30; pointer-events: none; min-width: 150px;
+            background: #12203a; color: #fff; border-radius: 10px; padding: 8px 12px;
+            font-size: 12px; line-height: 1.5; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            opacity: 0; visibility: hidden; transition: opacity 0.1s;
+        }
+        .tt-chart-tip.show { opacity: 1; visibility: visible; }
+        .tt-chart-tip .tip-v { font-size: 14px; font-weight: 800; }
+        .tt-chart-tip .tip-r { color: #c9d3e0; font-size: 11.5px; margin-top: 2px; }
+        .tt-chart-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: #8a99b1; margin-top: 6px; flex-wrap: wrap; gap: 6px; }
+
+        /* ===== Breadth ===== */
+        .tt-breadth-stack { display: flex; height: 26px; border-radius: 8px; overflow: hidden; margin: 10px 0 14px; }
+        .tt-breadth-stack .seg { display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; color: #fff; min-width: 0; }
+        .tt-breadth-meta { display: flex; gap: 18px; flex-wrap: wrap; }
+        .tt-breadth-meta .bm { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+        .tt-breadth-meta .dot { width: 10px; height: 10px; border-radius: 3px; }
+        .tt-breadth-meta .bm b { font-size: 15px; }
+        .tt-breadth-chips { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .tt-chip { font-size: 11.5px; padding: 4px 10px; border-radius: 20px; background: #f1f4f8; color: #4a5a72; }
+        .tt-chip b { margin-left: 4px; }
+
+        /* ===== Flow cards ===== */
+        .tt-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .tt-flow-card {
+            border: 1px solid #eef1f5; border-radius: 12px; padding: 13px 14px; background: #fafbfd;
+        }
+        .tt-flow-card .fc-ico { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; background: rgba(0,128,128,0.10); color: #008080; margin-bottom: 10px; }
+        .tt-flow-card .fc-label { font-size: 11.5px; color: #6b7a8f; }
+        .tt-flow-card .fc-val { font-size: 18px; font-weight: 800; margin-top: 2px; }
+        .tt-flow-card .fc-sub { font-size: 11.5px; color: #8a99b1; margin-top: 2px; }
+        .fc-up { color: #0f7b3a; } .fc-down { color: #d0314e; }
+
+        /* ===== Sectors ===== */
+        .tt-sector-row { display: grid; grid-template-columns: 150px 1fr 90px 90px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid #f2f4f8; }
+        .tt-sector-row:last-child { border-bottom: none; }
+        .tt-sector-name { font-weight: 600; font-size: 13px; }
+        .tt-sector-name .ts-count { color: #8a99b1; font-weight: 500; font-size: 11.5px; }
+        .tt-sector-bar-wrap { background: #f1f4f8; height: 10px; border-radius: 6px; overflow: hidden; position: relative; }
+        .tt-sector-bar { height: 100%; border-radius: 6px; }
+        .ts-up { background: linear-gradient(90deg, #00a08a, #008080); }
+        .ts-down { background: linear-gradient(90deg, #e06a6a, #d0314e); }
+        .tt-sector-pct { text-align: right; font-weight: 700; font-size: 13px; }
+        .tt-sector-count { text-align: right; font-size: 11.5px; color: #8a99b1; }
+
+        /* ===== VN30 ===== */
+        .tt-vn30-wrap .tt-vn30-empty { color: #8a99b1; font-size: 12px; padding: 10px 0; }
+        .tt-vn30-scroll { max-height: 384px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #c3ccd8 transparent; }
+        .tt-vn30-scroll::-webkit-scrollbar { width: 6px; }
+        .tt-vn30-scroll::-webkit-scrollbar-thumb { background: #c3ccd8; border-radius: 3px; }
+        .tt-vn30-table { width: 100%; border-collapse: collapse; }
+        .tt-vn30-table thead th { position: sticky; top: 0; background: #fff; z-index: 2; font-size: 11px; color: #8a99b1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; text-align: left; padding: 8px 10px; border-bottom: 1px solid #eef1f5; }
+        .tt-vn30-table tbody td { padding: 8px 10px; border-bottom: 1px solid #f2f4f8; font-size: 12.5px; white-space: nowrap; }
+        .tt-vn30-row { cursor: pointer; }
+        .tt-vn30-row:hover td { background: #f0fbf9; }
+        .tt-vn30-sym { font-weight: 700; }
+        .tt-vn30-name { font-size: 11px; color: #8a99b1; font-weight: 500; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tt-vn30-price { font-weight: 700; }
+        .tt-vn30-spark svg { display: block; width: 84px; height: 30px; }
+        .tt-vn30-num { color: #4a5a72; }
+
+        /* ===== Radar ===== */
+        .tt-radar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+        .tt-radar-col { border: 1px solid #eef1f5; border-radius: 12px; padding: 12px; background: #fafbfd; }
+        .tt-radar-col h3 { font-size: 12px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .tt-radar-col h3 i { color: #008080; }
+        .tt-radar-item { font-size: 12.5px; padding: 5px 4px; border-bottom: 1px dashed #eef1f5; cursor: pointer; border-radius: 6px; }
+        .tt-radar-item:hover { background: #f0fbf9; }
+        .tt-radar-item:last-child { border-bottom: none; }
+        .tt-radar-item .rr-sym { font-weight: 700; }
+        .tt-radar-item .rr-pct { float: right; font-weight: 700; }
+        .tt-radar-hot { text-align: center; padding: 8px 0 4px; }
+        .tt-radar-hot .rh-name { font-weight: 800; font-size: 14px; }
+        .tt-radar-hot .rh-pct { font-weight: 700; font-size: 15px; margin-top: 2px; }
+        .tt-radar-hot .rh-sub { font-size: 11px; color: #8a99b1; margin-top: 4px; }
+        .tt-radar-hot .rh-sym { font-weight: 700; color: inherit; cursor: pointer; }
+        .tt-radar-hot .rh-sym:hover { color: #008080; }
+        .tt-radar-empty { color: #8a99b1; font-size: 12px; }
+
+        /* ===== AI ===== */
+        .tt-ai { border-color: rgba(0,128,128,0.35); background: linear-gradient(180deg, #ffffff, #f2fbfa); }
+        .tt-ai-body { font-size: 13.5px; color: #33415e; }
+        .tt-ai-body .ai-sym { font-weight: 700; cursor: pointer; }
+        .tt-ai-body .ai-sym:hover { color: #008080; }
+        .tt-ai-body p { margin-bottom: 8px; }
+        .tt-ai-body .ai-tag { display: inline-block; background: rgba(0,128,128,0.10); color: #008080; font-weight: 700; border-radius: 6px; padding: 1px 7px; margin-right: 5px; font-size: 12px; }
+
+        /* ===== Sidebar lists ===== */
+        .tt-ev { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f2f4f8; cursor: pointer; }
+        .tt-ev:last-child { border-bottom: none; }
+        .tt-n-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f2f4f8; cursor: pointer; }
+        .tt-n-item:last-child { border-bottom: none; }
+        .tt-news-img { flex: 0 0 auto; width: 60px; height: 48px; object-fit: cover; border-radius: 8px; background: #eef1f5; }
+        .tt-news-ph { flex: 0 0 auto; width: 60px; height: 48px; border-radius: 8px; background: #f1f4f8; color: #8a99b1; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .tt-news-body { min-width: 0; display: flex; flex-direction: column; }
+        .tt-ev .te-title, .tt-n-item .ni-title { font-size: 12.5px; font-weight: 600; line-height: 1.35; }
+        .tt-ev .te-date, .tt-n-item .ni-date { font-size: 11px; color: #8a99b1; margin-top: 3px; }
+        .tt-news-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .tt-n-tag { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; background: rgba(0,128,128,0.09); color: #008080; border: 1px solid rgba(0,128,128,0.18); cursor: pointer; }
+        .tt-n-tag:hover { border-color: #008080; }
+        .tt-n-tag.neg { background: #fdeaea; color: #d0314e; border-color: rgba(208,49,78,0.2); }
+        .tt-n-tag .pct { font-weight: 800; margin-left: 2px; }
+        .tt-impact-row { display: grid; grid-template-columns: 46px 1fr 70px; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid #f2f4f8; cursor: pointer; }
+        .tt-impact-row:hover { background: #f0fbf9; border-radius: 6px; }
+        .tt-impact-row:last-child { border-bottom: none; }
+        .tt-impact-sym { font-weight: 700; font-size: 12.5px; }
+        .tt-impact-bar { background: #f1f4f8; height: 6px; border-radius: 4px; overflow: hidden; }
+        .tt-impact-bar i { display: block; height: 100%; border-radius: 4px; }
+        .tt-impact-val { text-align: right; font-size: 11.5px; color: #6b7a8f; }
+
+        .tt-loading { text-align: center; color: #8a99b1; padding: 60px 20px; font-size: 14px; }
+        .tt-loading i { color: #008080; }
+
+        /* ===== Bản đồ thị trường (treemap 1 khung: diện tích = khối lượng) ===== */
+        .tt-map-svg { width: 100%; height: auto; display: block; background: #eef1f5; border-radius: 10px; }
+        g.tt-map-tile { cursor: pointer; }
+        g.tt-map-tile:hover rect { stroke: #fff; stroke-width: 1.6; }
+        g.tt-map-sector .sector-bg { fill: #fff; stroke: #e9edf2; }
+        g.tt-map-sector .tg-label { fill: #6b7a8f; font-size: 9px; font-weight: 700; }
+        .tt-map-legend { display: flex; gap: 14px; flex-wrap: wrap; justify-content: flex-end; margin-bottom: 10px; }
+        .tt-map-legend .ml-item { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #6b7a8f; font-weight: 600; }
+        .tt-map-legend .ml-item i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+        .tt-map-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            border: 1px solid #e5eaf0; background: #fff; color: #4a5a72;
+            font-weight: 700; font-size: 11.5px; padding: 6px 9px; border-radius: 20px;
+            cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap;
+        }
+        .tt-map-btn:hover { border-color: #008080; color: #008080; }
+        .tt-map-btn.fb { color: #1877f2; }
+        .tt-map-btn.fb:hover { border-color: #1877f2; }
+        #ttMapSlot { position: relative; }
+        .tt-map-tip {
+            position: absolute; z-index: 30; pointer-events: none; min-width: 200px;
+            background: #12203a; color: #fff; border-radius: 10px; padding: 10px 13px;
+            font-size: 12px; line-height: 1.5; box-shadow: 0 10px 28px rgba(0,0,0,0.28);
+            opacity: 0; visibility: hidden; transition: opacity 0.12s;
+        }
+        .tt-map-tip.show { opacity: 1; visibility: visible; }
+        .tt-map-tip .tip-top { font-weight: 800; font-size: 13px; display: flex; justify-content: space-between; gap: 10px; }
+        .tt-map-tip .tip-pct.pos { color: #7be0c0; }
+        .tt-map-tip .tip-pct.neg { color: #ff9d9d; }
+        .tt-map-tip .tip-name { color: #c9d3e0; font-size: 11.5px; margin-top: 2px; }
+        .tt-map-tip .tip-row { display: flex; justify-content: space-between; gap: 14px; margin-top: 5px; color: #c9d3e0; }
+        .tt-map-tip .tip-row b { color: #fff; font-weight: 700; }
+
+        /* ===== Dark ===== */
+        body.dark-mode { background: transparent; color: #e6edf3; }
+        body.dark-mode .tt-card,
+        body.dark-mode .tt-idx { background: #161b22; border-color: #30363d; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        body.dark-mode .tt-idx.active { border-color: #4db6b6; }
+        body.dark-mode .tt-card h2 { color: #e6edf3; }
+        body.dark-mode .tt-idx .ti-name { color: #adbac7; }
+        body.dark-mode .tt-periods { background: #21262d; }
+        body.dark-mode .tt-periods button { color: #c9d1d9; }
+        body.dark-mode .tt-periods button.active { background: #0d1117; color: #4fb3b3; }
+        body.dark-mode .tt-chart-quote b { color: #e6edf3; }
+        body.dark-mode .tt-chart-select { background: #161b22; border-color: transparent; color: #e6edf3; }
+        body.dark-mode .tt-chart-select option { background: #161b22; color: #e6edf3; }
+        body.dark-mode .tt-chart-select:hover { border-color: #30363d; }
+        body.dark-mode .tt-flow-card,
+        body.dark-mode .tt-radar-col { background: #1c2128; border-color: #30363d; }
+        body.dark-mode .tt-radar-item:hover { background: #10151c; }
+        body.dark-mode .tt-sector-row { border-bottom-color: #21262d; }
+        body.dark-mode .tt-sector-bar-wrap { background: #21262d; }
+        body.dark-mode .tt-chip { background: #21262d; color: #adbac7; }
+        body.dark-mode .tt-vn30-table thead th { background: #161b22; color: #9fb0c7; border-bottom-color: #21262d; }
+        body.dark-mode .tt-vn30-table tbody td { border-bottom-color: #21262d; }
+        body.dark-mode .tt-vn30-row:hover td { background: #10151c; }
+        body.dark-mode .tt-vn30-name, body.dark-mode .tt-vn30-num { color: #9fb0c7; }
+        body.dark-mode .tt-vn30-scroll::-webkit-scrollbar-thumb { background: #39414d; }
+        body.dark-mode .tt-ai { background: linear-gradient(180deg, #161b22, #0e2322); border-color: rgba(0,128,128,0.4); }
+        body.dark-mode .tt-ai-body { color: #d7dee8; }
+        body.dark-mode .tt-ev,
+        body.dark-mode .tt-n-item,
+        body.dark-mode .tt-impact-row { border-bottom-color: #21262d; }
+        body.dark-mode .tt-impact-bar { background: #21262d; }
+        body.dark-mode .tt-impact-row:hover { background: #10151c; }
+        body.dark-mode .tt-news-ph { background: #1c2128; color: #adbac7; }
+        body.dark-mode .tt-n-tag { background: rgba(0,128,128,0.15); color: #4db6b6; border-color: rgba(0,128,128,0.3); }
+        body.dark-mode .tt-n-tag:hover { border-color: #4db6b6; }
+        body.dark-mode .tt-n-tag.neg { background: rgba(208,49,78,0.15); color: #ff8b8b; border-color: rgba(208,49,78,0.3); }
+        body.dark-mode .tt-loading { color: #adbac7; }
+        body.dark-mode .tt-map-btn { background: #161b22; border-color: #30363d; color: #adbac7; }
+        body.dark-mode .tt-map-btn:hover { border-color: #4db6b6; color: #4db6b6; }
+        body.dark-mode .tt-map-btn.fb { color: #6ea9f2; }
+        body.dark-mode .tt-map-svg { background: #0d1117; }
+        body.dark-mode g.tt-map-sector .sector-bg { fill: #161b22; stroke: #21262d; }
+        body.dark-mode g.tt-map-sector .tg-label { fill: #adbac7; }
+
+        @media (max-width: 1080px) {
+            .tt-body { grid-template-columns: 1fr; }
+            .tt-side { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+        }
+        @media (max-width: 760px) {
+            .tt-cards { grid-template-columns: repeat(2, 1fr); }
+            .tt-flow { grid-template-columns: repeat(2, 1fr); }
+            .tt-radar-grid { grid-template-columns: repeat(2, 1fr); }
+            .tt-side { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 460px) {
+            .tt-cards, .tt-flow { grid-template-columns: 1fr; }
+            .tt-radar-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="tt-page">
+        <div class="tt-top" id="ttTop"></div>
+        <div class="tt-body">
+            <div class="tt-main" id="ttMain">
+                <div class="tt-loading" id="ttLoading"><i class="fas fa-spinner fa-spin"></i> Đang tải toàn cảnh thị trường...</div>
+            </div>
+            <aside class="tt-side" id="ttSide"></aside>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const main = document.getElementById('ttMain');
+            const side = document.getElementById('ttSide');
+            const asofEl = document.getElementById('ttAsof');
+            let dash = null;
+
+            function esc(s) {
+                return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+            function fmt(v, d) {
+                const n = Number(v);
+                if (!isFinite(n)) return '--';
+                return n.toLocaleString('vi-VN', { maximumFractionDigits: d == null ? 2 : d });
+            }
+            function fmtBig(v) { // tỷ vnd
+                const n = Number(v) || 0;
+                return fmt(Math.abs(n), 2);
+            }
+            function pct(v) {
+                const n = Number(v) || 0;
+                return (n >= 0 ? '+' : '') + n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%';
+            }
+            function signed(v, unit) {
+                const n = Number(v) || 0;
+                return (n >= 0 ? '+' : '−') + ' ' + fmt(Math.abs(n), 0) + (unit ? ' ' + unit : '');
+            }
+            function cls(v) { return Number(v) >= 0 ? 'ti-up' : 'ti-down'; }
+            function cls2(v) { return Number(v) >= 0 ? 'fc-up' : 'fc-down'; }
+            function fmtDate(iso) {
+                if (!iso) return '';
+                const d = new Date(iso);
+                if (isNaN(d.getTime())) return '';
+                return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+            }
+
+            // ---------- SVG helpers ----------
+            function sparkline(points, w, h, up) {
+                if (!points || points.length < 2) return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '"></svg>';
+                const min = Math.min.apply(null, points), max = Math.max.apply(null, points);
+                const range = (max - min) || 1;
+                const pad = 2;
+                const n = points.length;
+                const pts = points.map(function(v, i) {
+                    const x = pad + (i / (n - 1)) * (w - 2 * pad);
+                    const y = h - pad - ((v - min) / range) * (h - 2 * pad);
+                    return [x, y];
+                });
+                const line = pts.map(function(p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+                const area = pad + ',' + (h - pad) + ' ' + line + ' ' + (w - pad) + ',' + (h - pad);
+                const col = up ? '#008080' : '#d0314e';
+                return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+                    '<polygon points="' + area + '" fill="' + col + '" opacity="0.14"/>' +
+                    '<polyline points="' + line + '" fill="none" stroke="' + col + '" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>' +
+                    '</svg>';
+            }
+
+            // ---------- Index cards ----------
+            function renderIndexCards(indices) {
+                const html = (indices || []).map(function(ix) {
+                    const up = Number(ix.percent_change) >= 0;
+                    const closes = (ix.history || []).map(function(b) { return Number(b.close); }).filter(function(v) { return isFinite(v); });
+                    return '<div class="tt-idx' + (ix.key === chartKey ? ' active' : '') + '" data-key="' + esc(ix.key) + '" data-symbol="' + esc(ix.key === 'vnindex' ? 'VNINDEX' : ix.key === 'hnx' ? 'HNXINDEX' : ix.key === 'upcom' ? 'UPINDEX' : 'VN30') + '">' +
+                        '<div class="ti-name">' + esc(ix.label) + '</div>' +
+                        '<div class="ti-val">' + fmt(ix.value) + '</div>' +
+                        '<div class="ti-chg ' + cls(ix.percent_change) + '">' + pct(ix.percent_change) + '</div>' +
+                        '<div class="ti-spark">' + sparkline(closes, 120, 42, up) + '</div>' +
+                        '</div>';
+                }).join('');
+                return '<div class="tt-cards">' + html + '</div>';
+            }
+
+            // ---------- Main chart ----------
+            const PERIODS = [
+                { label: '1D', p: '1m', slice: 5 },
+                { label: '1W', p: '1m', slice: 10 },
+                { label: '1M', p: '1m', slice: 0 },
+                { label: '3M', p: '3m', slice: 0 },
+                { label: '1Y', p: '1y', slice: 0 },
+                { label: '5Y', p: '5y', slice: 0 }
+            ];
+            const INDEX_KEYS = [
+                { key: 'vnindex', label: 'VN-INDEX' },
+                { key: 'vn30', label: 'VN30' },
+                { key: 'hnx', label: 'HNX-INDEX' },
+                { key: 'upcom', label: 'UPCOM' }
+            ];
+            let chartKey = 'vnindex';
+            let chartPeriod = '1y';
+            let chartQuote = null;
+
+            function mainChartHtml() {
+                return '<section class="tt-card tt-chart">' +
+                    '<div class="tt-chart-head">' +
+                        '<div><select id="ttChartSelect" class="tt-chart-select">' + INDEX_KEYS.map(function(k) {
+                            return '<option value="' + k.key + '"' + (k.key === chartKey ? ' selected' : '') + '>' + k.label + '</option>';
+                        }).join('') + '</select>' +
+                        '<div class="tt-chart-quote" id="ttChartQuote"></div></div>' +
+                        '<div class="tt-periods" id="ttPeriods">' + PERIODS.map(function(x) {
+                            return '<button data-p="' + x.p + '" data-slice="' + x.slice + '" class="' + (x.p === chartPeriod && x.slice === 0 ? 'active' : '') + '">' + x.label + '</button>';
+                        }).join('') + '</div>' +
+                    '</div>' +
+                    '<div class="tt-chart-svg" id="ttChartWrap">' +
+                        '<svg id="ttMainChart" viewBox="0 0 640 300" preserveAspectRatio="none"></svg>' +
+                        '<div class="tt-chart-ylab" id="ttChartYlab"></div>' +
+                        '<div class="tt-chart-xlab" id="ttChartXlab"></div>' +
+                        '<div class="tt-chart-tip" id="ttChartTip"></div>' +
+                    '</div>' +
+                    '<div class="tt-chart-foot" id="ttChartFoot"></div>' +
+                    '</section>';
+            }
+
+            async function loadMainChart(p, slice) {
+                try {
+                    const r = await fetch('/api/stocks/index-detail?key=' + chartKey + '&period=' + encodeURIComponent(p), { cache: 'no-store' });
+                    const d = await r.json();
+                    let hist = (d.history || []).map(function(b) { return { t: b.time, c: Number(b.close), v: Number(b.volume) || 0 }; }).filter(function(b) { return isFinite(b.c); });
+                    if (slice > 0) hist = hist.slice(-slice);
+                    chartQuote = d;
+                    renderMainChart(hist, d);
+                } catch (e) {
+                    const svg = document.getElementById('ttMainChart');
+                    if (svg) svg.innerHTML = '';
+                    const q = document.getElementById('ttChartQuote');
+                    if (q) q.textContent = 'Không tải được dữ liệu biểu đồ.';
+                }
+            }
+
+            function niceTicks(min, max, count) {
+                const span = (max - min) || 1;
+                const step0 = span / (count - 1);
+                const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+                const norm = step0 / mag;
+                const step = (norm >= 5 ? 5 : norm >= 2.5 ? 2.5 : norm >= 2 ? 2 : norm >= 1 ? 1 : 0.5) * mag;
+                const start = Math.ceil(min / step) * step;
+                const ticks = [];
+                for (let v = start; v <= max + step * 1e-9; v += step) ticks.push(v);
+                return ticks;
+            }
+            function fmtPts(v) {
+                const n = Number(v) || 0;
+                return n.toLocaleString('vi-VN', { maximumFractionDigits: Math.abs(n) >= 100 ? 1 : 2 });
+            }
+            function fmtVol(v) {
+                const n = Number(v) || 0;
+                if (n >= 1e9) return (n / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' tỷ';
+                if (n >= 1e6) return (n / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' triệu';
+                if (n >= 1e3) return (n / 1e3).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' nghìn';
+                return String(Math.round(n));
+            }
+            function renderMainChart(hist, d) {
+                const svg = document.getElementById('ttMainChart');
+                const q = document.getElementById('ttChartQuote');
+                const foot = document.getElementById('ttChartFoot');
+                if (!svg) return;
+                if (q) {
+                    const up = Number(d.percent_change) >= 0;
+                    q.innerHTML = '<b>' + fmt(d.value) + '</b> điểm · <span class="' + cls(d.percent_change) + '">' + pct(d.percent_change) + '</span>';
+                }
+                if (foot) {
+                    const first = hist[0], last = hist[hist.length - 1];
+                    foot.innerHTML = '<span>Phiên đầu: ' + fmtDate(first ? first.t : '') + ' · ' + (first ? fmt(first.c) : '--') + '</span>' +
+                        '<span>Phiên cuối: ' + fmtDate(last ? last.t : '') + ' · ' + (last ? fmt(last.c) : '--') + '</span>';
+                }
+                if (hist.length < 2) { svg.innerHTML = ''; return; }
+                const W = 640, H = 300, padL = 52, padR = 12, padT = 12, padB = 26;
+                const closes = hist.map(function(b) { return b.c; });
+                const min = Math.min.apply(null, closes), max = Math.max.apply(null, closes);
+                const range = (max - min) || 1;
+                const n = hist.length;
+                const px = function(i) { return padL + (i / (n - 1)) * (W - padL - padR); };
+                const py = function(v) { return padT + (1 - (v - min) / range) * (H - padT - padB); };
+                const pts = closes.map(function(v, i) { return [px(i), py(v)]; });
+                const line = pts.map(function(p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+                const area = padL + ',' + (H - padB) + ' ' + line + ' ' + (W - padR) + ',' + (H - padB);
+                const up = closes[closes.length - 1] >= closes[0];
+                const col = up ? '#008080' : '#d0314e';
+
+                // horizontal gridlines + Y point labels (HTML để chữ không méo)
+                const ticks = niceTicks(min, max, 6);
+                let grid = '';
+                let ylab = '';
+                ticks.forEach(function(v) {
+                    const y = py(v);
+                    grid += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '" stroke="rgba(15,23,42,0.07)" stroke-width="1"/>';
+                    ylab += '<div class="yl" style="top:' + (y / H * 100) + '%;">' + fmtPts(v) + '</div>';
+                });
+                // vertical gridlines
+                for (let i = 0; i <= 6; i++) {
+                    const x = padL + (i / 6) * (W - padL - padR);
+                    grid += '<line x1="' + x.toFixed(1) + '" y1="' + padT + '" x2="' + x.toFixed(1) + '" y2="' + (H - padB) + '" stroke="rgba(15,23,42,0.05)" stroke-width="1"/>';
+                }
+                // X date labels (HTML)
+                const idxs = [0, Math.floor((n - 1) / 2), n - 1];
+                const xlab = idxs.map(function(i) {
+                    const left = px(i) / W * 100;
+                    const tr = i === 0 ? 'translateX(0)' : (i === n - 1 ? 'translateX(-100%)' : 'translateX(-50%)');
+                    return '<div class="xl" style="left:' + left + '%;transform:' + tr + ';top:calc(100% - 24px);">' + fmtDate(hist[i].t) + '</div>';
+                }).join('');
+
+                svg.innerHTML = grid +
+                    '<polygon points="' + area + '" fill="' + col + '" opacity="0.12"/>' +
+                    '<polyline points="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+                    '<circle cx="' + pts[n - 1][0] + '" cy="' + pts[n - 1][1] + '" r="4" fill="' + col + '"/>' +
+                    '<line id="ttChartCross" x1="0" y1="' + padT + '" x2="0" y2="' + (H - padB) + '" stroke="' + col + '" stroke-width="1" stroke-dasharray="4 3" opacity="0.55" visibility="hidden"/>';
+
+                const ylabEl = document.getElementById('ttChartYlab');
+                if (ylabEl) ylabEl.innerHTML = ylab;
+                const xlabEl = document.getElementById('ttChartXlab');
+                if (xlabEl) xlabEl.innerHTML = xlab;
+
+                // crosshair + tooltip (điểm, ngày, thanh khoản)
+                const wrap = document.getElementById('ttChartWrap');
+                const tip = document.getElementById('ttChartTip');
+                const cross = document.getElementById('ttChartCross');
+                if (wrap && tip) {
+                    wrap.onmousemove = function(e) {
+                        const r = svg.getBoundingClientRect();
+                        const mx = (e.clientX - r.left) / r.width * W;
+                        const step = (W - padL - padR) / (n - 1);
+                        let i = Math.round((mx - padL) / step);
+                        i = Math.max(0, Math.min(n - 1, i));
+                        const b = hist[i];
+                        const bx = px(i);
+                        if (cross) { cross.setAttribute('x1', bx); cross.setAttribute('x2', bx); cross.setAttribute('visibility', 'visible'); }
+                        tip.innerHTML =
+                            '<div class="tip-v">' + fmtPts(b.c) + ' điểm</div>' +
+                            '<div class="tip-r">Ngày: ' + fmtDate(b.t) + '</div>' +
+                            '<div class="tip-r">Thanh khoản: ' + fmtVol(b.v) + ' cp</div>';
+                        tip.classList.add('show');
+                        let t = e.clientX - r.left + 16;
+                        let ty = e.clientY - r.top + 16;
+                        const tw = tip.offsetWidth || 160;
+                        const th = tip.offsetHeight || 70;
+                        if (t + tw > r.width) t = e.clientX - r.left - tw - 12;
+                        if (ty + th > r.height) ty = e.clientY - r.top - th - 12;
+                        tip.style.left = Math.max(4, t) + 'px';
+                        tip.style.top = Math.max(4, ty) + 'px';
+                    };
+                    wrap.onmouseleave = function() {
+                        tip.classList.remove('show');
+                        if (cross) cross.setAttribute('visibility', 'hidden');
+                    };
+                }
+            }
+
+            // ---------- Breadth ----------
+            function renderBreadth(b) {
+                const up = Number(b.up) || 0, down = Number(b.down) || 0, flat = Number(b.flat) || 0;
+                const total = (Number(b.total) || (up + down + flat)) || 1;
+                const pUp = (up / total * 100).toFixed(1), pDown = (down / total * 100).toFixed(1), pFlat = (flat / total * 100).toFixed(1);
+                return '<section class="tt-card">' +
+                    '<h2>Market Breadth</h2>' +
+                    '<div class="tt-breadth-stack">' +
+                        '<div class="seg" style="flex:' + up + ';background:#00A745;min-width:' + (up ? '28px' : '0') + '">' + (up ? (pUp + '%') : '') + '</div>' +
+                        '<div class="seg" style="flex:' + down + ';background:#d0314e;min-width:' + (down ? '28px' : '0') + '">' + (down ? (pDown + '%') : '') + '</div>' +
+                        '<div class="seg" style="flex:' + flat + ';background:#FFC107;color:#6b5b00;min-width:' + (flat ? '28px' : '0') + '">' + (flat ? (pFlat + '%') : '') + '</div>' +
+                    '</div>' +
+                    '<div class="tt-breadth-meta">' +
+                        '<div class="bm"><span class="dot" style="background:#00A745;"></span><div>Tăng <b class="ti-up">' + up + '</b></div></div>' +
+                        '<div class="bm"><span class="dot" style="background:#d0314e;"></span><div>Giảm <b class="ti-down">' + down + '</b></div></div>' +
+                        '<div class="bm"><span class="dot" style="background:#FFC107;"></span><div>Đứng <b>' + flat + '</b></div></div>' +
+                    '</div>' +
+                    '<div class="tt-breadth-chips">' +
+                        '<span class="tt-chip"><i class="fas fa-arrow-trend-up" style="color:#0f7b3a;"></i> Tăng trần <b class="ti-up">' + (b.ceiling || 0) + '</b></span>' +
+                        '<span class="tt-chip"><i class="fas fa-arrow-trend-down" style="color:#d0314e;"></i> Giảm sàn <b class="ti-down">' + (b.floor || 0) + '</b></span>' +
+                        '<span class="tt-chip"><i class="fas fa-chart-simple" style="color:#6b7a8f;"></i> Tổng mã giao dịch <b>' + total + '</b></span>' +
+                    '</div>' +
+                    '</section>';
+            }
+
+            // ---------- Flow ----------
+            function renderFlow(f) {
+                const liq = f.liquidity || {};
+                const net = Number(f.foreign_net) || 0;
+                const gtg = Number(f.gtgd_today) || 0;
+                const gtgY = Number(f.gtgd_yesterday) || 0;
+                const gtgDelta = gtgY ? ((gtg / gtgY - 1) * 100) : 0;
+                const cards = [
+                    { ico: 'fa-coins', label: 'Giá trị giao dịch', val: fmt(gtg, 0) + ' <span style="font-size:12px;font-weight:600;">tỷ</span>', sub: 'Hôm qua ' + fmt(gtgY, 0) + ' tỷ · ' + pct(gtgDelta), cls2: cls2(gtgDelta) },
+                    { ico: 'fa-flag', label: 'Khối ngoại', val: signed(net / 1e9, 'tỷ'), sub: 'Mua ròng theo giá trị giao dịch', cls2: cls2(net) },
+                    { ico: 'fa-building-columns', label: 'Tự doanh', val: '—', sub: 'Chưa có dữ liệu', cls2: '' },
+                    { ico: 'fa-water', label: 'Thanh khoản', val: (liq.volume_ratio ? fmt(liq.volume_ratio, 2) : '--') + '<span style="font-size:12px;font-weight:600;"> lần TB 1 tháng</span>', sub: 'KL phiên: ' + fmt(liq.last_volume / 1e6, 1) + ' tr cp · TB 1T: ' + fmt(liq.avg_volume_1m / 1e6, 1) + ' tr cp', cls2: '' },
+                    { ico: 'fa-arrow-trend-up', label: 'Số mã tăng trần', val: (f.ceiling_count || 0), sub: 'Trong tổng mã tăng', cls2: 'fc-up' },
+                    { ico: 'fa-arrow-trend-down', label: 'Số mã giảm sàn', val: (f.floor_count || 0), sub: 'Trong tổng mã giảm', cls2: 'fc-down' }
+                ];
+                return '<section class="tt-card">' +
+                    '<h2>Dòng tiền thị trường</h2>' +
+                    '<div class="tt-flow">' + cards.map(function(c) {
+                        return '<div class="tt-flow-card">' +
+                            '<div class="fc-ico"><i class="fas ' + c.ico + '"></i></div>' +
+                            '<div class="fc-label">' + c.label + '</div>' +
+                            '<div class="fc-val ' + c.cls2 + '">' + c.val + '</div>' +
+                            '<div class="fc-sub">' + c.sub + '</div>' +
+                            '</div>';
+                    }).join('') + '</div>' +
+                    '</section>';
+            }
+
+            // ---------- Sectors ----------
+            function renderSectors(secs) {
+                if (!secs || !secs.length) return '<section class="tt-card"><h2>Hiệu suất ngành</h2><div class="tt-radar-empty">Chưa có dữ liệu ngành.</div></section>';
+                const maxAbs = Math.max.apply(null, secs.map(function(s) { return Math.abs(s.avg_pct); })) || 1;
+                const rows = secs.map(function(s) {
+                    const up = s.avg_pct >= 0;
+                    const width = Math.max(4, Math.round(Math.abs(s.avg_pct) / maxAbs * 100));
+                    return '<div class="tt-sector-row">' +
+                        '<div class="tt-sector-name">' + esc(s.name) + ' <span class="ts-count">(' + s.total + ')</span></div>' +
+                        '<div class="tt-sector-bar-wrap"><div class="tt-sector-bar ' + (up ? 'ts-up' : 'ts-down') + '" style="width:' + width + '%;"></div></div>' +
+                        '<div class="tt-sector-pct ' + cls(s.avg_pct) + '">' + pct(s.avg_pct) + '</div>' +
+                        '<div class="tt-sector-count">▲' + s.up_count + ' ▼' + s.down_count + '</div>' +
+                        '</div>';
+                }).join('');
+                return '<section class="tt-card">' +
+                    '<h2>Hiệu suất ngành</h2>' + rows + '</section>';
+            }
+
+            // ---------- VN30 ----------
+            async function loadVn30() {
+                const wrap = document.getElementById('ttVn30Wrap');
+                if (!wrap) return;
+                try {
+                    const r = await fetch('/api/stocks/watchlist', { cache: 'no-store' });
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    const rows = await r.json();
+                    if (!rows || !rows.length) { wrap.innerHTML = '<div class="tt-vn30-empty">Chưa có dữ liệu.</div>'; return; }
+                    const body = rows.map(function(s) {
+                        const p = Number(s.percent_change) || 0;
+                        const up = p >= 0;
+                        const closes = (s.sparkline || []).map(function(pt) { return Number(pt && pt.close); }).filter(function(v) { return isFinite(v); });
+                        const spUp = closes.length >= 2 ? (closes[closes.length - 1] >= closes[0]) : up;
+                        return '<tr class="tt-vn30-row" data-symbol="' + esc(s.symbol) + '">' +
+                            '<td class="tt-vn30-sym">' + esc(s.symbol) + '<div class="tt-vn30-name">' + esc(s.name) + '</div></td>' +
+                            '<td class="tt-vn30-price">' + fmt(s.price) + '</td>' +
+                            '<td class="' + cls(p) + '">' + pct(p) + '</td>' +
+                            '<td class="tt-vn30-spark">' + sparkline(closes, 84, 30, spUp) + '</td>' +
+                            '<td class="tt-vn30-num">' + fmt(s.pe, 1) + '</td>' +
+                            '<td class="tt-vn30-num">' + fmt(s.pb, 1) + '</td>' +
+                            '</tr>';
+                    }).join('');
+                    wrap.innerHTML = '<div class="tt-vn30-scroll"><table class="tt-vn30-table"><thead><tr>' +
+                        '<th>Mã</th><th>Giá</th><th>% HN</th><th>30 ngày</th><th>P/E</th><th>P/B</th>' +
+                        '</tr></thead><tbody>' + body + '</tbody></table></div>';
+                    wrap.querySelectorAll('.tt-vn30-row').forEach(function(row) {
+                        row.addEventListener('click', function() {
+                            const sym = row.getAttribute('data-symbol');
+                            if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                        });
+                    });
+                } catch (e) {
+                    wrap.innerHTML = '<div class="tt-vn30-empty">Không tải được dữ liệu VN30.</div>';
+                }
+                notifyParentHeight();
+            }
+
+            // ---------- Radar ----------
+            function radarItem(st, pctv) {
+                return '<div class="tt-radar-item" data-symbol="' + esc(st) + '"><span class="rr-sym">' + esc(st) + '</span><span class="rr-pct ' + cls(pctv) + '">' + pct(pctv) + '</span></div>';
+            }
+            function radarList(items, symKey, pctKey, empty) {
+                if (!items || !items.length) return '<div class="tt-radar-empty">' + empty + '</div>';
+                return items.map(function(it) { return radarItem(it[symKey], it[pctKey]); }).join('');
+            }
+            function renderRadar(r) {
+                const hot = r.hot_sector;
+                const buy = r.foreign_buy || [];
+                return '<section class="tt-card tt-radar">' +
+                    '<h2>TuniX Market Radar</h2>' +
+                    '<div class="tt-radar-grid">' +
+                        '<div class="tt-radar-col"><h3><i class="fas fa-leaf"></i> Ngành hút tiền</h3>' +
+                            (hot ? '<div class="tt-radar-hot"><div class="rh-name">' + esc(hot.name) + '</div><div class="rh-pct ' + cls(hot.avg_pct) + '">' + pct(hot.avg_pct) + '</div><div class="rh-sub">Top: ' + (hot.top_gainer ? '<span class="rh-sym" data-symbol="' + esc(hot.top_gainer) + '">' + esc(hot.top_gainer) + '</span>' : '--') + ' · ' + hot.total + ' mã</div></div>'
+                                : '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</div>' +
+                        '<div class="tt-radar-col"><h3><i class="fas fa-rocket"></i> Cổ phiếu breakout</h3>' +
+                            radarList(r.breakout, 'symbol', 'percent_change', 'Không có mã breakout.') + '</div>' +
+                        '<div class="tt-radar-col"><h3><i class="fas fa-volcano"></i> Volume bất thường</h3>' +
+                            ((r.volume_spike || []).map(function(it) {
+                                return '<div class="tt-radar-item" data-symbol="' + esc(it.symbol) + '"><span class="rr-sym">' + esc(it.symbol) + '</span><span class="rr-pct">' + fmt(it.volume / 1e6, 1) + ' tr</span></div>';
+                            }).join('') || '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</div>' +
+                        '<div class="tt-radar-col"><h3><i class="fas fa-triangle-exclamation"></i> Nhóm suy yếu</h3>' +
+                            radarList(r.weak, 'symbol', 'percent_change', 'Không có mã giảm.') + '</div>' +
+                        '<div class="tt-radar-col"><h3><i class="fas fa-hand-holding-dollar"></i> Khối ngoại mua mạnh</h3>' +
+                            (buy.map(function(it) {
+                                return '<div class="tt-radar-item" data-symbol="' + esc(it.symbol) + '"><span class="rr-sym">' + esc(it.symbol) + '</span><span class="rr-pct fc-up">+' + fmt((Number(it.net_value) || 0) / 1e9, 0) + ' tỷ</span></div>';
+                            }).join('') || '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</div>' +
+                    '</div></section>';
+            }
+
+            // ---------- AI analysis ----------
+            function renderAi(f, b, secs, radar) {
+                const trend = f.trend || {};
+                const vni = dash && dash.indices ? dash.indices[0] : null;
+                const net = Number(f.foreign_net) || 0;
+                const liq = f.liquidity || {};
+                const gtg = Number(f.gtgd_today) || 0;
+                const hot = radar.hot_sector;
+                const topUp = (radar.breakout || [])[0];
+                const topDown = (radar.weak || [])[0];
+                const parts = [];
+                parts.push('<p><span class="ai-tag">Chỉ số</span>VN-INDEX ' +
+                    (vni ? fmt(vni.value) + ' điểm (' + pct(vni.percent_change) + ')' : 'chưa có dữ liệu') +
+                    (trend.label ? ', xu hướng <b>' + trend.label + '</b> (' + pct(trend['1m']) + ' 1T / ' + pct(trend['3m']) + ' 3T)' : '') + '.</p>');
+                parts.push('<p><span class="ai-tag">Độ rộng</span>Thị trường phân hóa ' + (b.up >= b.down ? 'tích cực' : 'tiêu cực') + ': ' +
+                    b.up + ' mã tăng (trong đó ' + b.ceiling + ' trần) / ' + b.down + ' mã giảm (' + b.floor + ' sàn), ' + b.flat + ' mã đứng giá.</p>');
+                parts.push('<p><span class="ai-tag">Dòng tiền</span>Khối ngoại ' + (net >= 0 ? 'mua ròng' : 'bán ròng') + ' <b>' + fmt(Math.abs(net) / 1e9, 0) + ' tỷ</b> đồng; ' +
+                    'giá trị giao dịch HOSE đạt ' + fmt(gtg, 0) + ' tỷ' +
+                    (liq.volume_ratio ? ' (gấp ' + fmt(liq.volume_ratio, 2) + ' lần trung bình 1 tháng)' : '') + '.</p>');
+                if (hot) parts.push('<p><span class="ai-tag">Điểm sáng</span>Ngành <b>' + esc(hot.name) + '</b> hút tiền nhất (' + pct(hot.avg_pct) + '), dẫn dắt bởi ' + (hot.top_gainer ? '<span class="ai-sym" data-symbol="' + esc(hot.top_gainer) + '">' + esc(hot.top_gainer) + '</span>' : '--') + '.</p>');
+                if (topUp) parts.push('<p><span class="ai-tag">Đà tăng</span>Cổ phiếu breakout mạnh nhất: <span class="ai-sym" data-symbol="' + esc(topUp.symbol) + '">' + esc(topUp.symbol) + '</span> (' + pct(topUp.percent_change) + ').</p>');
+                if (topDown) parts.push('<p><span class="ai-tag">Rủi ro</span>Nhóm suy yếu đáng chú ý: <span class="ai-sym" data-symbol="' + esc(topDown.symbol) + '">' + esc(topDown.symbol) + '</span> (' + pct(topDown.percent_change) + ').</p>');
+                parts.push('<p style="color:#8a99b1;font-size:12px;">⚠️ Phân tích tự động từ dữ liệu thị trường thời gian thực của TuniX, chỉ mang tính tham khảo, không phải khuyến nghị đầu tư.</p>');
+                return '<section class="tt-card tt-ai">' +
+                    '<h2><i class="fas fa-robot tt-h2-ico" style="color:#008080;"></i> TuniAI Market Analysis</h2>' +
+                    '<div class="tt-ai-body">' + parts.join('') + '</div></section>';
+            }
+
+            // ---------- Bản đồ thị trường (treemap: diện tích = khối lượng) ----------
+            // Màu: Trần = tím, Tăng = xanh lá, Đứng = vàng, Giảm = đỏ, Sàn = xanh lơ
+            const MAP_COLORS = { ceiling: '#9A26F3', up: '#00A745', flat: '#FFC107', down: '#DC3545', floor: '#33b1e3' };
+            function mapState(s) {
+                const p = Number(s.percent_change) || 0;
+                const ex = String(s.exchange || '').toUpperCase();
+                const ceil = ex === 'HNX' ? 9.5 : ex === 'UPCOM' ? 14.5 : 6.8;
+                if (p >= ceil) return MAP_COLORS.ceiling;
+                if (p <= -ceil) return MAP_COLORS.floor;
+                if (p === 0) return MAP_COLORS.flat;
+                return p > 0 ? MAP_COLORS.up : MAP_COLORS.down;
+            }
+            function treemapSquarify(data, width, height) {
+                const total = data.reduce(function(s, d) { return s + Math.max(d.value, 0); }, 0);
+                if (total <= 0 || !data.length) return [];
+                const scaled = data.map(function(d) { return { d: d, v: Math.max(d.value, 0) * (width * height) / total }; });
+                scaled.sort(function(a, b) { return b.v - a.v; });
+                const rects = [];
+                let x = 0, y = 0, w = width, h = height, i = 0;
+                const row = [];
+                function worst(rowArr, side) {
+                    const s = rowArr.reduce(function(a, r) { return a + r.v; }, 0);
+                    let max = 0, min = Infinity;
+                    rowArr.forEach(function(r) { if (r.v > max) max = r.v; if (r.v < min) min = r.v; });
+                    const s2 = s * s, l2 = side * side;
+                    return Math.max((l2 * max) / s2, s2 / (l2 * min));
+                }
+                function layoutRow(rowArr, rx, ry, rw, rh) {
+                    const s = rowArr.reduce(function(a, r) { return a + r.v; }, 0);
+                    if (rw >= rh) {
+                        const tw = s / rh;
+                        let yy = ry;
+                        rowArr.forEach(function(r) { const th = r.v / tw; rects.push({ d: r.d, x: rx, y: yy, w: tw, h: th }); yy += th; });
+                        return { x: rx + tw, y: ry, w: rw - tw, h: rh };
+                    } else {
+                        const th = s / rw;
+                        let xx = rx;
+                        rowArr.forEach(function(r) { const tw = r.v / th; rects.push({ d: r.d, x: xx, y: ry, w: tw, h: th }); xx += tw; });
+                        return { x: rx, y: ry + th, w: rw, h: rh - th };
+                    }
+                }
+                while (i < scaled.length) {
+                    const side = Math.min(w, h);
+                    const candidate = row.concat([scaled[i]]);
+                    if (row.length === 0 || worst(candidate, side) <= worst(row, side)) {
+                        row.push(scaled[i]);
+                        i++;
+                        if (i >= scaled.length) { const r = layoutRow(row, x, y, w, h); x = r.x; y = r.y; w = r.w; h = r.h; row.length = 0; }
+                    } else {
+                        const r = layoutRow(row, x, y, w, h); x = r.x; y = r.y; w = r.w; h = r.h; row.length = 0;
+                    }
+                }
+                return rects;
+            }
+            function exportMapPng() {
+                const svgEl = document.querySelector('#ttMapSlot .tt-map-svg');
+                if (!svgEl) return;
+                const isDark = document.body.classList.contains('dark-mode');
+                const clone = svgEl.cloneNode(true);
+                clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                // Lấy màu computed từ phần tử GỐC (trong DOM) — clone đã tách khỏi DOM nên CSS không áp dụng
+                const srcBg = svgEl.querySelectorAll('.sector-bg');
+                const clnBg = clone.querySelectorAll('.sector-bg');
+                for (let i = 0; i < srcBg.length; i++) clnBg[i].setAttribute('fill', getComputedStyle(srcBg[i]).fill);
+                const srcLb = svgEl.querySelectorAll('.tg-label');
+                const clnLb = clone.querySelectorAll('.tg-label');
+                for (let i = 0; i < srcLb.length; i++) clnLb[i].setAttribute('fill', getComputedStyle(srcLb[i]).fill);
+                const vb = (svgEl.getAttribute('viewBox') || '0 0 820 640').trim().split(/\s+/);
+                const W = Number(vb[2]) || 820, H = Number(vb[3]) || 640;
+                clone.setAttribute('width', W);
+                clone.setAttribute('height', H);
+                const xml = new XMLSerializer().serializeToString(clone);
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = W; canvas.height = H;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = isDark ? '#0d1117' : '#eef1f5';
+                    ctx.fillRect(0, 0, W, H);
+                    ctx.drawImage(img, 0, 0);
+                    const a = document.createElement('a');
+                    a.href = canvas.toDataURL('image/png');
+                    a.download = 'ban-do-thi-truong.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                };
+                img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+            }
+            async function loadMarketMap() {
+                const slot = document.getElementById('ttMapSlot');
+                if (!slot) return;
+                try {
+                    const r = await fetch('/api/stocks/stock-screener');
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    const d = await r.json();
+                    const stocks = (d.stocks || [])
+                        .filter(function(s) { return (Number(s.volume) || 0) > 0 && (Number(s.price) || 0) > 0; });
+                    if (!stocks.length) { slot.innerHTML = '<div class="tt-radar-empty">Chưa có dữ liệu bản đồ.</div>'; return; }
+                    // Gộp theo nhóm ngành — tất cả trong 1 khung (nested treemap)
+                    const groups = {};
+                    stocks.forEach(function(s) {
+                        const key = String(s.sectorName || s.sector || 'Khác').trim() || 'Khác';
+                        (groups[key] = groups[key] || []).push(s);
+                    });
+                    const groupList = Object.keys(groups).map(function(k) { return { name: k, items: groups[k] }; });
+                    groupList.sort(function(a, b) {
+                        const va = a.items.reduce(function(s, x) { return s + (Number(x.volume) || 0); }, 0);
+                        const vb = b.items.reduce(function(s, x) { return s + (Number(x.volume) || 0); }, 0);
+                        return vb - va;
+                    });
+                    const W = 820, H = 640, GAP_S = 1.5, GAP_T = 1.6, LABEL_H = 13;
+                    const outerRects = treemapSquarify(groupList.map(function(g) {
+                        return { g: g, value: g.items.reduce(function(s, x) { return s + (Number(x.volume) || 0); }, 0) };
+                    }), W, H);
+                    const svg = outerRects.map(function(or) {
+                        const g = or.d.g;
+                        const bx = or.x + GAP_S, by = or.y + GAP_S;
+                        const bw = Math.max(8, or.w - 2 * GAP_S), bh = Math.max(8, or.h - 2 * GAP_S);
+                        const hasLabel = bh >= 22 && bw >= (g.name.length * 5.5 + 14);
+                        const areaH = Math.max(8, bh - (hasLabel ? LABEL_H : 0));
+                        const tileRects = treemapSquarify(g.items.map(function(s) { return { s: s, value: Number(s.volume) || 0 }; }), bw, areaH);
+                        const tiles = tileRects.map(function(rr) {
+                            const s = rr.d.s;
+                            const p = Number(s.percent_change) || 0;
+                            const color = mapState(s);
+                            const txt = color === MAP_COLORS.flat ? '#6b5b00' : '#fff';
+                            const tw = Math.max(0.6, rr.w - GAP_T), th = Math.max(0.6, rr.h - GAP_T);
+                            const tx = rr.x + (GAP_T / 2), ty = rr.y + (GAP_T / 2);
+                            const show = tw >= 30 && th >= 18;
+                            return '<g class="tt-map-tile" data-symbol="' + esc(s.symbol) + '" data-name="' + esc(s.name) + '" data-ex="' + esc(s.exchange) + '" data-price="' + (Number(s.price) || 0) + '" data-chg="' + (Number(s.percent_change) || 0) + '" data-vol="' + (Number(s.volume) || 0) + '" transform="translate(' + tx + ',' + ty + ')">' +
+                                '<rect width="' + tw + '" height="' + th + '" fill="' + color + '" rx="2"/>' +
+                                (show ? '<text x="' + (tw / 2) + '" y="' + (th / 2 - 1) + '" text-anchor="middle" fill="' + txt + '" font-size="11" font-weight="700">' + esc(s.symbol) + '</text>' : '') +
+                                (show ? '<text x="' + (tw / 2) + '" y="' + (th / 2 + 11) + '" text-anchor="middle" fill="' + txt + '" font-size="9.5" opacity="0.95">' + (p >= 0 ? '+' : '') + p.toFixed(1) + '%</text>' : '') +
+                                '</g>';
+                        }).join('');
+                        return '<g class="tt-map-sector" transform="translate(' + bx + ',' + by + ')">' +
+                            '<rect class="sector-bg" width="' + bw + '" height="' + bh + '" rx="7"/>' +
+                            (hasLabel ? '<text class="tg-label" x="8" y="' + (LABEL_H - 3) + '">' + esc(g.name) + '</text>' : '') +
+                            '<g transform="translate(0,' + (hasLabel ? LABEL_H : 0) + ')">' + tiles + '</g>' +
+                            '</g>';
+                    }).join('');
+                    slot.innerHTML = '<svg class="tt-map-svg" viewBox="0 0 ' + W + ' ' + H + '">' + svg + '</svg>';
+                    const lg = document.getElementById('ttMapLegend');
+                    if (lg) lg.innerHTML =
+                        '<span class="ml-item"><i style="background:' + MAP_COLORS.ceiling + ';"></i> Trần</span>' +
+                        '<span class="ml-item"><i style="background:' + MAP_COLORS.up + ';"></i> Tăng</span>' +
+                        '<span class="ml-item"><i style="background:' + MAP_COLORS.flat + ';"></i> Đứng</span>' +
+                        '<span class="ml-item"><i style="background:' + MAP_COLORS.down + ';"></i> Giảm</span>' +
+                        '<span class="ml-item"><i style="background:' + MAP_COLORS.floor + ';"></i> Sàn</span>';
+                    // Tooltip khi hover vào ô cổ phiếu
+                    function positionTip(ev, tip, slot) {
+                        const r = slot.getBoundingClientRect();
+                        let x = ev.clientX - r.left + 14;
+                        let y = ev.clientY - r.top + 14;
+                        const tw = tip.offsetWidth || 200;
+                        const th = tip.offsetHeight || 130;
+                        if (x + tw > r.width - 6) x = ev.clientX - r.left - tw - 10;
+                        if (y + th > r.height - 6) y = ev.clientY - r.top - th - 10;
+                        tip.style.left = Math.max(4, x) + 'px';
+                        tip.style.top = Math.max(4, y) + 'px';
+                    }
+                    function bindMapTips(slot) {
+                        const tip = document.createElement('div');
+                        tip.className = 'tt-map-tip';
+                        slot.appendChild(tip);
+                        slot.querySelectorAll('g.tt-map-tile').forEach(function(g) {
+                            g.addEventListener('mouseenter', function(ev) {
+                                const chg = Number(g.getAttribute('data-chg')) || 0;
+                                const price = Number(g.getAttribute('data-price')) || 0;
+                                const vol = Number(g.getAttribute('data-vol')) || 0;
+                                const up = chg >= 0;
+                                tip.innerHTML =
+                                    '<div class="tip-top"><span>' + esc(g.getAttribute('data-symbol')) + '</span><span class="tip-pct ' + (up ? 'pos' : 'neg') + '">' + (up ? '+' : '') + chg.toFixed(2) + '%</span></div>' +
+                                    '<div class="tip-name">' + esc(g.getAttribute('data-name')) + '</div>' +
+                                    '<div class="tip-row"><span>Sàn</span><b>' + esc(g.getAttribute('data-ex')) + '</b></div>' +
+                                    '<div class="tip-row"><span>Giá</span><b>' + price.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '</b></div>' +
+                                    '<div class="tip-row"><span>Khối lượng</span><b>' + vol.toLocaleString('vi-VN') + '</b></div>';
+                                tip.classList.add('show');
+                                positionTip(ev, tip, slot);
+                            });
+                            g.addEventListener('mousemove', function(ev) { positionTip(ev, tip, slot); });
+                            g.addEventListener('mouseleave', function() { tip.classList.remove('show'); });
+                        });
+                    }
+                    slot.querySelectorAll('.tt-map-tile').forEach(function(el) {
+                        el.addEventListener('click', function() {
+                            const sym = el.getAttribute('data-symbol');
+                            if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                        });
+                    });
+                    bindMapTips(slot);
+                } catch (e) {
+                    slot.innerHTML = '<div class="tt-radar-empty">Không tải được bản đồ thị trường.</div>';
+                }
+                notifyParentHeight();
+            }
+
+            // ---------- Sidebar ----------
+            // Mã cổ phiếu hợp lệ để trích từ nội dung tin
+            let NEWS_SYMS = {};
+            function setNewsSyms(symMap) { NEWS_SYMS = symMap || {}; }
+            function extractNewsTickers(n) {
+                const cands = [];
+                const push = function(t) {
+                    t = String(t || '').trim().toUpperCase();
+                    if (/^[A-Z]{2,4}$/.test(t) && NEWS_SYMS[t]) cands.push(t);
+                };
+                String(n.tags || '').split(',').forEach(push);
+                const body = String(n.title || '') + ' ' + String(n.summary || '') + ' ' + String(n.content || '');
+                const m = body.match(/\b[A-Z]{3}\b/g) || [];
+                m.forEach(push);
+                const uniq = [];
+                cands.forEach(function(t) { if (uniq.indexOf(t) < 0) uniq.push(t); });
+                return uniq.slice(0, 3);
+            }
+            function newsImg(n) {
+                return n.image_url
+                    ? '<img class="tt-news-img" src="' + esc(n.image_url) + '" alt="" loading="lazy">'
+                    : '<div class="tt-news-ph"><i class="fas fa-newspaper"></i></div>';
+            }
+            function newsTags(n) {
+                return extractNewsTickers(n).map(function(t) {
+                    const s = NEWS_SYMS[t];
+                    const p = Number(s && s.percent_change) || 0;
+                    const cls = p >= 0 ? '' : 'neg';
+                    return '<span class="tt-n-tag ' + cls + '" data-symbol="' + esc(t) + '">' + t + (s ? '<span class="pct">' + (p >= 0 ? '+' : '') + p.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%</span>' : '') + '</span>';
+                }).join('');
+            }
+            function renderSide(events, news, impact) {
+                const ev = (events || []).map(function(n) {
+                    return '<div class="tt-ev" data-news="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+                        newsImg(n) +
+                        '<div class="tt-news-body"><div class="te-title">' + esc(n.title) + '</div>' +
+                        '<div class="tt-news-tags">' + newsTags(n) + '</div>' +
+                        '<div class="te-date">' + fmtDate(n.created_at) + '</div></div></div>';
+                }).join('');
+                const ns = (news || []).map(function(n) {
+                    return '<div class="tt-n-item" data-news="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+                        newsImg(n) +
+                        '<div class="tt-news-body"><div class="ni-title">' + esc(n.title) + '</div>' +
+                        '<div class="tt-news-tags">' + newsTags(n) + '</div>' +
+                        '<div class="ni-date">' + fmtDate(n.created_at) + '</div></div></div>';
+                }).join('');
+                const maxImp = Math.max.apply(null, (impact || []).map(function(i) { return i.impact; }).concat([1]));
+                const imp = (impact || []).map(function(i) {
+                    const w = Math.round(Math.min(100, Math.max(4, i.impact / maxImp * 100)));
+                    return '<div class="tt-impact-row" data-symbol="' + esc(i.symbol) + '">' +
+                        '<div class="tt-impact-sym">' + esc(i.symbol) + '</div>' +
+                        '<div class="tt-impact-bar"><i style="width:' + w + '%;background:' + (i.percent_change >= 0 ? '#008080' : '#d0314e') + ';"></i></div>' +
+                        '<div class="tt-impact-val">' + fmt(i.impact, 0) + ' tỷ</div></div>';
+                }).join('');
+                side.innerHTML =
+                    '<section class="tt-card"><h2>Lịch sự kiện thị trường</h2>' +
+                        (ev || '<div class="tt-radar-empty">Chưa có sự kiện.</div>') + '</section>' +
+                    '<section class="tt-card"><h2>Tin tức nổi bật</h2>' +
+                        (ns || '<div class="tt-radar-empty">Chưa có tin nổi bật.</div>') + '</section>' +
+                    '<section class="tt-card"><h2>Top cổ phiếu ảnh hưởng VN-INDEX</h2>' +
+                        (imp || '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</section>';
+                // Ảnh lỗi -> thay bằng placeholder
+                side.querySelectorAll('.tt-news-img').forEach(function(im) {
+                    im.addEventListener('error', function() {
+                        const ph = document.createElement('div');
+                        ph.className = 'tt-news-ph';
+                        ph.innerHTML = '<i class="fas fa-newspaper"></i>';
+                        im.parentNode.replaceChild(ph, im);
+                    });
+                });
+            }
+
+            function bindClicks() {
+                document.querySelectorAll('.tt-idx').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        const key = el.getAttribute('data-key');
+                        const sel = document.getElementById('ttChartSelect');
+                        if (key && sel && INDEX_KEYS.some(function(k) { return k.key === key; })) {
+                            chartKey = key;
+                            sel.value = key;
+                            document.querySelectorAll('.tt-idx').forEach(function(c) { c.classList.remove('active'); });
+                            el.classList.add('active');
+                            loadMainChart(chartPeriod, 0);
+                            return;
+                        }
+                        const sym = el.getAttribute('data-symbol');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                    });
+                });
+                main.querySelectorAll('.tt-radar-item[data-symbol]').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        const sym = el.getAttribute('data-symbol');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                    });
+                });
+                main.querySelectorAll('.ai-sym[data-symbol]').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        const sym = el.getAttribute('data-symbol');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                    });
+                });
+                main.querySelectorAll('.rh-sym[data-symbol]').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        const sym = el.getAttribute('data-symbol');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                    });
+                });
+                side.querySelectorAll('[data-symbol]').forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const sym = el.getAttribute('data-symbol');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                    });
+                });
+                side.querySelectorAll('[data-news]').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        const id = el.getAttribute('data-news');
+                        const slug = el.getAttribute('data-slug') || '';
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug }, '*');
+                    });
+                });
+                const periods = document.getElementById('ttPeriods');
+                if (periods) periods.addEventListener('click', function(e) {
+                    const btn = e.target.closest('button');
+                    if (!btn) return;
+                    periods.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    chartPeriod = btn.getAttribute('data-p');
+                    loadMainChart(chartPeriod, Number(btn.getAttribute('data-slice') || 0));
+                });
+                const sel = document.getElementById('ttChartSelect');
+                if (sel) sel.addEventListener('change', function() {
+                    chartKey = sel.value;
+                    document.querySelectorAll('.tt-idx').forEach(function(c) {
+                        c.classList.toggle('active', c.getAttribute('data-key') === chartKey);
+                    });
+                    loadMainChart(chartPeriod, 0);
+                });
+                const shotBtn = document.getElementById('ttMapShot');
+                if (shotBtn) shotBtn.addEventListener('click', exportMapPng);
+                const shareBtn = document.getElementById('ttMapShare');
+                if (shareBtn) shareBtn.addEventListener('click', function() {
+                    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), '_blank', 'width=640,height=520,noopener=yes');
+                });
+            }
+
+            async function load() {
+                try {
+                    const res = await fetch('/api/stocks/market-dashboard', { cache: 'no-store' });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    dash = await res.json();
+                } catch (e) {
+                    main.innerHTML = '<div class="tt-loading">Không tải được dữ liệu thị trường. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
+                    notifyParentHeight();
+                    return;
+                }
+                const b = dash.breadth || {}, f = dash.flow || {}, secs = dash.sectors || [], radar = dash.radar || {}, imp = dash.impact || [];
+                if (asofEl) asofEl.textContent = 'Cập nhật: ' + fmtDate(dash.as_of);
+
+                const top = document.getElementById('ttTop');
+                if (top) top.innerHTML = mainChartHtml() +
+                    '<section class="tt-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><h2 style="margin-bottom:0;">Bản đồ thị trường</h2><div style="margin-left:auto;display:flex;align-items:center;gap:10px;"><div class="tt-map-legend" id="ttMapLegend" style="margin-bottom:0;flex-shrink:0;"></div><button id="ttMapShot" class="tt-map-btn" title="Tải ảnh bản đồ thị trường"><i class="fas fa-camera"></i></button><button id="ttMapShare" class="tt-map-btn fb" title="Chia sẻ lên Facebook"><i class="fab fa-facebook"></i></button></div></div><div id="ttMapSlot"><div class="tt-loading" style="padding:16px;"><i class="fas fa-spinner fa-spin"></i> Đang tải bản đồ...</div></div></section>';
+                main.innerHTML = renderBreadth(b) +
+                    renderFlow(f) +
+                    renderSectors(secs) +
+                    '<section class="tt-card"><h2>Danh sách cổ phiếu trong VN30</h2><div class="tt-vn30-wrap" id="ttVn30Wrap"><div class="tt-vn30-empty"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div></div></section>' +
+                    renderRadar(radar) +
+                    renderAi(f, b, secs, radar);
+
+                loadMainChart('1y', 0);
+                loadMarketMap();
+                loadVn30();
+
+                // Sidebar: sự kiện + tin nổi bật + ảnh hưởng
+                side.innerHTML = '<div class="tt-loading" style="padding:20px;"><i class="fas fa-spinner fa-spin"></i></div>';
+                Promise.all([
+                    fetch('/api/news?limit=6').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+                    fetch('/api/news/popular?limit=6').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+                    fetch('/api/stocks/stock-screener').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+                ]).then(function(arrs) {
+                    const evts = Array.isArray(arrs[0]) ? arrs[0] : ((arrs[0] && arrs[0].items) || []);
+                    const pops = Array.isArray(arrs[1]) ? arrs[1] : ((arrs[1] && arrs[1].items) || []);
+                    const sd = arrs[2];
+                    const symMap = {};
+                    (sd && sd.stocks || []).forEach(function(s) { symMap[s.symbol] = s; });
+                    setNewsSyms(symMap);
+                    renderSide(evts, pops, imp);
+                    bindClicks();
+                    notifyParentHeight();
+                });
+                setTimeout(notifyParentHeight, 500);
+            }
+
+            // ===== Embed =====
+            if (window.self !== window.top) document.body.classList.add('embedded');
+            function applyEmbedTheme(mode) { document.body.classList.toggle('dark-mode', mode === 'dark'); }
+            function notifyParentHeight() {
+                try {
+                    const el = document.querySelector('.tt-page') || document.body;
+                    const height = Math.ceil(el.getBoundingClientRect().height);
+                    if (!height || height <= 0) return;
+                    if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
+                    window.__lastSentH = height;
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                    }
+                } catch (e) {}
+            }
+            window.addEventListener('message', function(event) {
+                const data = event.data;
+                if (!data || data.type !== 'tunix-theme') return;
+                const mode = data.mode === 'dark' ? 'dark' : 'light';
+                localStorage.setItem('theme', mode);
+                applyEmbedTheme(mode);
+                setTimeout(notifyParentHeight, 50);
+            });
+            window.addEventListener('load', function() {
+                applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+                setTimeout(notifyParentHeight, 60);
+                setTimeout(notifyParentHeight, 400);
+            });
+            window.addEventListener('resize', notifyParentHeight);
+            if (window.ResizeObserver) {
+                const obs = new ResizeObserver(notifyParentHeight);
+                obs.observe(document.querySelector('.tt-page') || document.body);
+            }
+            applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+            load();
+        })();
+    </script>
+</body>
+</html>

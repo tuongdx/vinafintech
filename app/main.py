@@ -14,7 +14,7 @@ from app.core.security import decode_token
 from app.db import Base, SessionLocal, engine
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, auth, chart, contact, dashboard, faqs, features, feedback, logs, news, notifications, plans, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, auth, chart, contact, dashboard, faqs, features, feedback, logs, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -96,6 +96,13 @@ def _stable_api_max_age(path: str) -> int | None:
         for seg in ("/company-summary", "/dividends", "/reports", "/profit-analysis", "/shareholders", "/business")
     ):
         return 600
+    # Bộ dữ liệu screener/discover vốn đã cache server 30 phút → cache trình duyệt 60s
+    # giúp các trang (cổ phiếu/khám phá/danh mục/TuniAI/trang chủ) load lại gần như tức thì.
+    if path.startswith("/api/stocks/stock-screener") or path.startswith("/api/stocks/stock-discover"):
+        return 60
+    # Lịch sử giá (daily bars) là dữ liệu ổn định → cache trình duyệt 5 phút.
+    if path.startswith("/api/stocks/") and "/history" in path:
+        return 300
     if "/stock-lists" in path or path.startswith("/api/chart/config"):
         return 300
     if path.startswith("/api/faqs") or path.startswith("/api/plans") or path.startswith("/api/features"):
@@ -132,6 +139,11 @@ async def cache_and_timing(request: Request, call_next):
             max_age = _stable_api_max_age(path)
             if max_age is not None:
                 response.headers.setdefault("Cache-Control", f"public, max-age={max_age}")
+        else:
+            # Trang HTML (shell + trang con): cache ngắn 60s → chuyển trang/load lại nhanh,
+            # không phải tải lại toàn bộ HTML mỗi lần. Khi deploy bản mới, bump version
+            # cache-bust phía frontend (index.html) để toàn bộ làm mới.
+            response.headers["Cache-Control"] = "public, max-age=60"
 
     return response
 
@@ -155,6 +167,7 @@ app.include_router(dashboard.router, prefix=api)
 app.include_router(logs.router, prefix=api)
 app.include_router(watchlist.router, prefix=api)
 app.include_router(notifications.router, prefix=api)
+app.include_router(portfolio.router, prefix=api)
 
 frontend_path = Path(settings.frontend_dir)
 if frontend_path.exists():
@@ -210,9 +223,14 @@ PAGE_MAP: dict[str, str] = {
     "reset-password": "reset-password.html",
     "tintuc": "tintuc.html",
     "tin-tuc": "tin-tuc.html",
+    "thi-truong": "ThiTruong.html",
+    "co-phieu": "CoPhieu.html",
+    "kham-pha": "KhamPha.html",
+    "tuniai": "TuniAI.html",
     "caidat": "caidat.html",
     "taikhoan": "taikhoan.html",
     "doimatkhau": "doimatkhau.html",
+    "danh-muc": "danhmuc.html",
     "QuanTri": "QuanTri.html",
     "AdminLogin": "AdminLogin.html",
     "TrungTamTroGiup": "TrungTamTroGiup.html",
@@ -244,6 +262,14 @@ INDEX_SHELL_PAGES = {
     "MienTruTrachNhiem",
     # Trang tin tức: /tin-tuc giữ nguyên shell (header + right-col), nội dung nạp vào left-col.
     "tin-tuc",
+    # Trang thị trường: /thi-truong giữ nguyên shell, nội dung nạp vào left-col.
+    "thi-truong",
+    # Trang cổ phiếu: /co-phieu giữ nguyên shell, nội dung nạp vào left-col.
+    "co-phieu",
+    # Trang khám phá: /kham-pha giữ nguyên shell, nội dung nạp vào left-col.
+    "kham-pha",
+    # Trang TuniAI: /tuniai giữ nguyên shell, nội dung nạp vào left-col.
+    "tuniai",
     # URL đẹp danh mục tin tức
     "chung-khoan",
     "ngan-hang",
@@ -271,6 +297,51 @@ def favicon_ico():
     if icon_file.exists():
         return FileResponse(str(icon_file), media_type="image/x-icon")
     raise HTTPException(status_code=404, detail="Favicon not found")
+
+
+@app.get("/co-phieu/{symbol}")
+def co_phieu_stock(symbol: str):
+    """URL đẹp chi tiết cổ phiếu tại trang cổ phiếu: /co-phieu/ACB (giữ shell)."""
+    index_file = frontend_path / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
+    raise HTTPException(status_code=404, detail="Index file not found")
+
+
+@app.get("/co-phieu/nganh/{sub1}/{sub2}/{symbol}")
+def co_phieu_nganh_stock(sub1: str, sub2: str, symbol: str):
+    """URL đẹp chi tiết cổ phiếu theo ngành: /co-phieu/nganh/tai-chinh/tai-chinh-ngan-hang/ACB (giữ shell)."""
+    index_file = frontend_path / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
+    raise HTTPException(status_code=404, detail="Index file not found")
+
+
+@app.get("/co-phieu/nganh/{sub1}/{sub2}")
+def co_phieu_nganh_sub2(sub1: str, sub2: str):
+    """URL đẹp phân cấp ngành cấp 2: /co-phieu/nganh/tai-chinh/tai-chinh-ngan-hang (giữ shell)."""
+    index_file = frontend_path / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
+    raise HTTPException(status_code=404, detail="Index file not found")
+
+
+@app.get("/co-phieu/nganh/{sub1}")
+def co_phieu_nganh_sub1(sub1: str):
+    """URL đẹp phân cấp ngành cấp 1: /co-phieu/nganh/tai-chinh (giữ shell)."""
+    index_file = frontend_path / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
+    raise HTTPException(status_code=404, detail="Index file not found")
+
+
+@app.get("/co-phieu/nganh")
+def co_phieu_nganh():
+    """URL đẹp danh sách nhóm ngành: /co-phieu/nganh (giữ shell)."""
+    index_file = frontend_path / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
+    raise HTTPException(status_code=404, detail="Index file not found")
 
 
 @app.get("/cophieu-{symbol}")

@@ -12,6 +12,7 @@ from app.services.vnstock_service import (
     get_index_detail,
     get_indices,
     get_insider_trades,
+    get_market_dashboard,
     get_market_map,
     get_market_overview,
     get_order_book,
@@ -21,8 +22,10 @@ from app.services.vnstock_service import (
     get_realtime_exchange_board,
     get_quote,
     get_shareholder_structure,
+    get_stock_discover_page,
     get_stock_fundamentals,
     get_stock_lists,
+    get_stock_screener_page,
     get_top_stocks,
     get_watchlist,
     search_stocks,
@@ -121,6 +124,12 @@ def market_map():
     return get_market_map()
 
 
+@router.get("/market-dashboard")
+def market_dashboard():
+    """Toàn cảnh thị trường (dashboard trang 'Thị trường'): chỉ số, độ rộng, dòng tiền, ngành, radar."""
+    return get_market_dashboard()
+
+
 @router.get("/realtime-board")
 def realtime_board(exchanges: str = "HOSE,HNX,UPCOM"):
     parsed = [item.strip() for item in exchanges.split(",") if item.strip()]
@@ -151,6 +160,18 @@ def exchange_chart(exchange: str = "HOSE", period: str = "5d"):
 def stock_lists():
     """Toàn bộ vũ trụ cổ phiếu kèm nhóm (VN30/HNX30/HOSE/HNX/UPCOM/Ngành) cho sidebar fullscreen."""
     return get_stock_lists()
+
+
+@router.get("/stock-screener")
+def stock_screener():
+    """Toàn bộ screener kèm điểm TuniX + nhóm 'Cổ phiếu nổi bật' cho trang Cổ phiếu."""
+    return get_stock_screener_page()
+
+
+@router.get("/stock-discover")
+def stock_discover():
+    """Trang 'Khám phá': cơ hội nổi bật, chiến lược, bản đồ cơ hội, xếp hạng TuniX."""
+    return get_stock_discover_page()
 
 
 @router.get("/filter")

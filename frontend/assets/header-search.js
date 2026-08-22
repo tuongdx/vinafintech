@@ -13,6 +13,11 @@
         if (!normalized) {
             return;
         }
+        // Ưu tiên mở chi tiết cổ phiếu NHÚNG trong trang Cổ phiếu (menu Cổ phiếu)
+        if (typeof window.openCoPhieuStock === 'function') {
+            window.openCoPhieuStock(normalized);
+            return;
+        }
         if (typeof window.openStockDetailInIndex === 'function') {
             window.openStockDetailInIndex(normalized);
             return;
@@ -88,7 +93,7 @@
                     }
                     dd.innerHTML = items.map(function (it) {
                         const sym = String(it.symbol || '').trim().toUpperCase();
-                        return '<a class="hsd-item" data-symbol="' + escapeHtml(sym) + '" href="/cophieu-' + encodeURIComponent(sym) + '">' +
+                        return '<a class="hsd-item" data-symbol="' + escapeHtml(sym) + '" href="/co-phieu/' + encodeURIComponent(sym) + '">' +
                             '<span class="hsd-title">' + escapeHtml(sym) + '</span>' +
                             (it.name ? '<span class="hsd-meta">' + escapeHtml(it.name) + '</span>' : '') +
                             '</a>';
