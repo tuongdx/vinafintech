@@ -10,16 +10,17 @@ from sqlalchemy import inspect, text
 from app.core.config import settings
 from app.db import Base, engine
 
-# (table, column, ddl) — ddl là định nghĩa cột đơn giản cho SQLite
+# (table, column, ddl) — ddl tương thích CẢ SQLite lẫn PostgreSQL
+# Lưu ý: PostgreSQL yêu cầu DEFAULT FALSE/TRUE cho cột BOOLEAN (không dùng 0/1).
 _USER_COLUMNS: list[tuple[str, str, str]] = [
     ("users", "phone", "VARCHAR(20)"),
     ("users", "avatar", "VARCHAR(500)"),
     ("users", "plan_expires_at", "DATETIME"),
     ("users", "last_login", "DATETIME"),
-    ("users", "terms_accepted", "BOOLEAN DEFAULT 0"),
-    ("users", "email_verified", "BOOLEAN DEFAULT 0"),
-    ("users", "notify_reports", "BOOLEAN DEFAULT 1"),
-    ("users", "notify_news", "BOOLEAN DEFAULT 1"),
+    ("users", "terms_accepted", "BOOLEAN DEFAULT FALSE"),
+    ("users", "email_verified", "BOOLEAN DEFAULT FALSE"),
+    ("users", "notify_reports", "BOOLEAN DEFAULT TRUE"),
+    ("users", "notify_news", "BOOLEAN DEFAULT TRUE"),
     ("users", "pref_theme", "VARCHAR(10) DEFAULT 'light'"),
 ]
 
