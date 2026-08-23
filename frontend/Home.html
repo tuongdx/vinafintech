@@ -150,6 +150,7 @@
         .ov-port .op-donut-row { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
         .ov-port .op-donut { width: 120px; height: 120px; flex: 0 0 auto; position: relative; }
         .ov-port .op-donut svg { width: 100%; height: 100%; }
+        .ov-port .op-donut .op-hole { fill: #fff; }
         .ov-port .op-donut .op-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .ov-port .op-donut .op-center .n { font-size: 16px; font-weight: 800; }
         .ov-port .op-donut .op-center .l { font-size: 9.5px; color: #8a99b1; }
@@ -190,6 +191,9 @@
         body.dark-mode .ov-opp { background: #161b22; border-color: #21262d; }
         body.dark-mode .ov-opp .oo-chip { background: rgba(0,128,128,0.15); border-color: rgba(0,128,128,0.3); }
         body.dark-mode .ov-port .op-legend .ol-name { color: #8b949e; }
+        body.dark-mode .ov-port .op-donut .op-hole { fill: #161b22; }
+        body.dark-mode .ov-port .op-donut .op-center .n { color: #e6edf3; }
+        body.dark-mode .ov-port .op-donut .op-center .l { color: #8b949e; }
         body.dark-mode .ov-port .opel-title { color: #e6edf3; }
         body.dark-mode .ov-port .opel-ico { color: #6e7d92; }
         body.dark-mode .ov-port .op-link { background: #10151c; border-color: rgba(0,128,128,0.4); }
@@ -541,7 +545,7 @@
                     arcs += '<path d="M ' + x1 + ' ' + y1 + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x2 + ' ' + y2 +
                         ' L ' + xi1 + ' ' + yi1 + ' A ' + ir + ' ' + ir + ' 0 ' + large + ' 0 ' + xi2 + ' ' + yi2 + ' Z" fill="' + PALETTE[i % PALETTE.length] + '"/>';
                 });
-                return '<svg viewBox="0 0 ' + w + ' ' + h + '">' + arcs + '<circle cx="' + cx + '" cy="' + cy + '" r="' + ir + '" fill="#fff"/></svg>';
+                return '<svg viewBox="0 0 ' + w + ' ' + h + '">' + arcs + '<circle cx="' + cx + '" cy="' + cy + '" r="' + ir + '" class="op-hole" fill="#fff"/></svg>';
             }
 
             // ---------- Indices hero (VNINDEX/VN30/HNX/HNX30/UPCOM/VN100 + Tùy chọn) ----------

@@ -441,50 +441,6 @@
             color: #6b7a8f;
         }
 
-        /* Social buttons */
-        .social-buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .social-buttons button {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: #f8faff;
-            border: 1px solid #e5e9f0;
-            border-radius: 30px;
-            padding: 10px 0;
-            font-family: 'Inter', sans-serif;
-            font-size: 13px;
-            font-weight: 500;
-            color: #1a1f36;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        body.dark-mode .social-buttons button {
-            background: #0d1117;
-            border-color: #30363d;
-            color: #e6edf3;
-        }
-
-        .social-buttons button i {
-            font-size: 16px;
-        }
-
-        .social-buttons button:hover {
-            background: #eef2ff;
-            border-color: #b0b8c4;
-        }
-
-        body.dark-mode .social-buttons button:hover {
-            background: #21262d;
-            border-color: #008080;
-        }
-
         /* Chuyển đổi form */
         .auth-switch {
             text-align: center;
@@ -573,10 +529,51 @@
             .auth-card {
                 padding: 32px 20px 28px;
             }
-            .social-buttons {
-                flex-direction: column;
-            }
         }
+
+        /* Màn hình "Kiểm tra email của bạn" */
+        .verify-screen {
+            text-align: center;
+            padding: 10px 0;
+        }
+        .verify-screen .vs-ico {
+            font-size: 46px;
+            color: #008080;
+            margin-bottom: 14px;
+        }
+        .verify-screen h2 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1a1f36;
+            margin-bottom: 10px;
+        }
+        body.dark-mode .verify-screen h2 { color: #e6edf3; }
+        .verify-screen p {
+            font-size: 13.5px;
+            color: #4a5a72;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        body.dark-mode .verify-screen p { color: #adbac7; }
+        .verify-screen p strong { color: #1a1f36; word-break: break-all; }
+        body.dark-mode .verify-screen p strong { color: #e6edf3; }
+        .verify-screen button {
+            border: none;
+            background: linear-gradient(135deg, #008080, #00a08a);
+            color: #fff;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 10px 26px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+        .verify-screen button:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,128,128,0.28); }
+        .verify-screen button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+        .verify-screen .vs-timer { display: block; margin-top: 10px; font-size: 12.5px; color: #8a99b1; }
+        .verify-screen .vs-login { margin-top: 18px; font-size: 13px; }
+        .verify-screen .vs-login a { color: #008080; font-weight: 600; text-decoration: none; }
     </style>
     <link rel="stylesheet" href="/static/typography.css" />
 </head>
@@ -672,13 +669,18 @@
             </button>
         </form>
 
-        <div class="divider">hoặc</div>
-        <div class="social-buttons">
-            <button type="button"><i class="fab fa-google"></i> Google</button>
-        </div>
-
         <div class="auth-switch">
             Đã có tài khoản? <a href="/Login">Đăng nhập ngay</a>
+        </div>
+
+        <!-- Màn hình "Kiểm tra email của bạn" (hiện sau khi đăng ký) -->
+        <div class="verify-screen" id="verifyScreen" style="display:none;">
+            <div class="vs-ico"><i class="fas fa-envelope-open-text"></i></div>
+            <h2>Kiểm tra email của bạn</h2>
+            <p>Chúng tôi đã gửi liên kết xác thực tới địa chỉ email <strong id="vsEmail"></strong>.<br/>Vui lòng kiểm tra hộp thư và nhấn vào liên kết để kích hoạt tài khoản.</p>
+            <button type="button" id="vsResendBtn">Gửi lại email xác thực</button>
+            <span class="vs-timer" id="vsTimer"></span>
+            <p class="vs-login"><a href="/Login">← Quay lại đăng nhập</a></p>
         </div>
     </div>
 
@@ -868,14 +870,14 @@
                             }
                             throw new Error(detail);
                         }
-                        showMessage('🎉 Đăng ký thành công! Chào mừng ' + name + ' đến với TuniX.', 'success');
+                        // Hiển thị màn hình "Kiểm tra email của bạn"
                         registerForm.reset();
                         strengthBars.forEach(bar => bar.className = 'strength-bar');
                         strengthText.textContent = 'Yếu';
                         strengthText.style.color = '';
                         matchIndicator.textContent = '';
                         matchIndicator.className = 'password-match';
-                        setTimeout(() => { window.location.href = '/Login'; }, 1500);
+                        showVerifyScreen(email);
                     })
                     .catch(function() {
                         registerBtn.classList.remove('loading');
@@ -883,12 +885,75 @@
                     });
             });
 
-            // ---- Social buttons: chuyển hướng tới OAuth backend ----
-            document.querySelectorAll('.social-buttons button').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    window.location.href = '/api/auth/oauth/google/authorize?next=/register';
+            // ---- Màn hình "Kiểm tra email của bạn" + gửi lại email xác thực ----
+            const verifyScreen = document.getElementById('verifyScreen');
+            const vsEmail = document.getElementById('vsEmail');
+            const vsResendBtn = document.getElementById('vsResendBtn');
+            const vsTimer = document.getElementById('vsTimer');
+            let vsEmailRaw = '';
+            let vsCountdown = null;
+
+            function maskEmail(email) {
+                const at = String(email).indexOf('@');
+                if (at <= 1) return String(email);
+                const local = String(email).slice(0, at);
+                const domain = String(email).slice(at);
+                return local[0] + '***' + local.slice(-1) + domain;
+            }
+
+            function showVerifyScreen(email) {
+                vsEmailRaw = email;
+                if (vsEmail) vsEmail.textContent = maskEmail(email);
+                [document.getElementById('registerForm'), document.querySelector('.divider'),
+                 document.querySelector('.auth-switch')]
+                    .forEach(function(el) { if (el) el.style.display = 'none'; });
+                if (verifyScreen) verifyScreen.style.display = 'block';
+                if (messageBox) messageBox.style.display = 'none';
+            }
+
+            function startVsTimer() {
+                let left = 60;
+                if (vsResendBtn) { vsResendBtn.disabled = true; vsResendBtn.textContent = 'Gửi lại sau ' + left + 's'; }
+                if (vsTimer) vsTimer.textContent = 'Vui lòng chờ ' + left + 's';
+                clearInterval(vsCountdown);
+                vsCountdown = setInterval(function() {
+                    left--;
+                    if (left <= 0) {
+                        clearInterval(vsCountdown);
+                        if (vsResendBtn) { vsResendBtn.disabled = false; vsResendBtn.textContent = 'Gửi lại email xác thực'; }
+                        if (vsTimer) vsTimer.textContent = '';
+                    } else {
+                        if (vsResendBtn) vsResendBtn.textContent = 'Gửi lại sau ' + left + 's';
+                        if (vsTimer) vsTimer.textContent = 'Vui lòng chờ ' + left + 's';
+                    }
+                }, 1000);
+            }
+
+            if (vsResendBtn) {
+                vsResendBtn.addEventListener('click', function() {
+                    if (!vsEmailRaw) return;
+                    fetch('/api/auth/resend-verification', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: vsEmailRaw })
+                    })
+                        .then(res => res.json().then(data => ({ ok: res.ok, status: res.status, data })))
+                        .then(function({ ok, status, data }) {
+                            if (!ok) {
+                                showMessage('❌ ' + (data.detail || 'Không gửi được email xác thực.'), 'error');
+                                if (status === 429) startVsTimer();
+                                else vsResendBtn.disabled = false;
+                                return;
+                            }
+                            showMessage('✅ Đã gửi lại email xác thực. Vui lòng kiểm tra hộp thư.', 'success');
+                            startVsTimer();
+                        })
+                        .catch(function() {
+                            vsResendBtn.disabled = false;
+                            showMessage('❌ Không gửi được email. Vui lòng thử lại.', 'error');
+                        });
                 });
-            });
+            }
 
             // ---- Enter key navigation ----
             document.getElementById('regName').addEventListener('keypress', function(e) {

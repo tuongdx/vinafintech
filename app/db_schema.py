@@ -17,6 +17,7 @@ _USER_COLUMNS: list[tuple[str, str, str]] = [
     ("users", "plan_expires_at", "DATETIME"),
     ("users", "last_login", "DATETIME"),
     ("users", "terms_accepted", "BOOLEAN DEFAULT 0"),
+    ("users", "email_verified", "BOOLEAN DEFAULT 0"),
     ("users", "notify_reports", "BOOLEAN DEFAULT 1"),
     ("users", "notify_news", "BOOLEAN DEFAULT 1"),
     ("users", "pref_theme", "VARCHAR(10) DEFAULT 'light'"),

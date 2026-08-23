@@ -61,6 +61,7 @@ class UserOut(UserBase):
     role: RoleEnum
     plan: PlanTierEnum
     is_active: bool
+    email_verified: bool = False
     phone: str | None = None
     avatar: str | None = None
     plan_expires_at: datetime | None = None
@@ -69,6 +70,19 @@ class UserOut(UserBase):
 
     class Config:
         from_attributes = True
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+class GoogleLoginRequest(BaseModel):
+    id_token: str
+    remember: bool = False
 
 
 class UserDeleteRequestCreate(BaseModel):

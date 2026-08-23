@@ -3353,7 +3353,6 @@
                 <div class="report-tabs">
                     <span class="active" data-category="financial">Báo cáo tài chính</span>
                     <span data-category="annual">Báo cáo thường niên</span>
-                    <span data-category="analysis">Báo cáo phân tích</span>
                     <span data-category="agm">Nghị quyết ĐHĐCĐ</span>
                     <span data-category="prospectus">Bản cáo bạch</span>
                 </div>
@@ -4026,7 +4025,6 @@
         const REPORT_CATEGORIES = {
             'Báo cáo tài chính': 'financial',
             'Báo cáo thường niên': 'annual',
-            'Báo cáo phân tích': 'analysis',
             'Nghị quyết ĐHĐCĐ': 'agm',
             'Bản cáo bạch': 'prospectus',
         };
@@ -4256,61 +4254,131 @@
             }
         }
 
+        // Dựng HTML bảng Lịch sử trả cổ tức — dùng chung cho click lẫn preload nền
+        function buildDividendHtml(rows) {
+            const tableRows = rows.map(r => {
+                const content = String(r.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                return `<tr><td class="info-date">${escapeHtml(r.date || '--')}</td><td>${escapeHtml(content || '--')}</td></tr>`;
+            }).join('');
+            return `
+                <table>
+                    <thead><tr><th style="width:110px;">Ngày</th><th>Nội dung</th></tr></thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            `;
+        }
+
         async function loadDividendHistory() {
             const symbol = getSymbolFromQuery();
             const title = `Lịch sử trả cổ tức · ${symbol}`;
+            // Hiển thị NGAY khi click: mở modal kèm spinner (không chờ API trả về)
+            showInfoModal(title, '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>');
+            // Cache nhanh theo mã: click lại lần sau hiển thị tức thì
+            const cacheKey = 'tunix.dividends.v1.' + symbol;
+            let cachedHtml = null;
+            try { cachedHtml = sessionStorage.getItem(cacheKey); } catch (e) { /* ignore */ }
+            if (cachedHtml) {
+                showInfoModal(title, cachedHtml);
+                return;
+            }
             try {
                 const rows = await api(`/stocks/${encodeURIComponent(symbol)}/dividends`);
                 if (!Array.isArray(rows) || rows.length === 0) {
                     showInfoModal(title, '<div class="info-empty">Chưa có dữ liệu hiển thị cho mã này.</div>');
                     return;
                 }
-                const tableRows = rows.map(r => {
-                    const content = String(r.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-                    return `<tr><td class="info-date">${escapeHtml(r.date || '--')}</td><td>${escapeHtml(content || '--')}</td></tr>`;
-                }).join('');
-                showInfoModal(title, `
-                    <table>
-                        <thead><tr><th style="width:110px;">Ngày</th><th>Nội dung</th></tr></thead>
-                        <tbody>${tableRows}</tbody>
-                    </table>
-                `);
+                const bodyHtml = buildDividendHtml(rows);
+                try { sessionStorage.setItem(cacheKey, bodyHtml); } catch (e) { /* ignore quota */ }
+                showInfoModal(title, bodyHtml);
             } catch (error) {
                 console.error('Failed to load dividends:', error);
                 showInfoModal(title, '<div class="info-error"><i class="fas fa-exclamation-triangle"></i> Không thể tải dữ liệu. Vui lòng thử lại.</div>');
             }
         }
 
+        // Dựng HTML Tóm tắt doanh nghiệp — dùng chung cho click lẫn preload nền
+        function buildCompanySummaryHtml(s) {
+            const section = (secTitle, text) => {
+                const t = String(text || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                if (!t) return '';
+                // Ngành nghề kinh doanh: hiển thị từng ngành nghề trên một dòng (gạch đầu dòng)
+                if (secTitle === 'Ngành nghề kinh doanh') {
+                    const items = t.split(/\s*-\s+/).map(s => s.trim()).filter(Boolean);
+                    if (items.length > 1) {
+                        return `<h4>${secTitle}</h4>${items.map(i => `<div class="info-line">${escapeHtml(i)}</div>`).join('')}`;
+                    }
+                }
+                return `<h4>${secTitle}</h4><p>${escapeHtml(t)}</p>`;
+            };
+            return `
+                <div class="info-company-name">${escapeHtml(s.name_vi)}</div>
+                <div class="info-company-en">${escapeHtml(s.name_en || '')}</div>
+                ${section('Giới thiệu chung', s.business_overall)}
+                ${section('Ngành nghề kinh doanh', s.business_line)}
+                ${section('Sản phẩm & Dịch vụ', s.main_service)}
+                ${section('Chiến lược kinh doanh', s.business_strategy)}
+                ${section('Rủi ro kinh doanh', s.business_risk)}
+            `;
+        }
+
+        // Preload nền: tải SẴN Lịch sử cổ tức + Tóm tắt doanh nghiệp ngay khi mở trang
+        // (chạy song song với quote, KHÔNG chặn UI) → user bấm popup hiển thị TỨC THÌ từ cache.
+        // Mã chỉ số (VNINDEX...) không có 2 loại dữ liệu này nên bỏ qua.
+        async function preloadInfoPanels(symbol) {
+            const sym = String(symbol || '').trim().toUpperCase();
+            if (!sym || isIndexSymbol(sym)) return;
+            const jobs = [];
+            const divKey = 'tunix.dividends.v1.' + sym;
+            let cached = null;
+            try { cached = sessionStorage.getItem(divKey); } catch (e) { /* ignore */ }
+            if (!cached) {
+                jobs.push(
+                    api(`/stocks/${encodeURIComponent(sym)}/dividends`)
+                        .then((rows) => {
+                            if (Array.isArray(rows) && rows.length) {
+                                try { sessionStorage.setItem(divKey, buildDividendHtml(rows)); } catch (e) { /* ignore */ }
+                            }
+                        })
+                        .catch(() => { /* bỏ qua: click vẫn có loading/error bình thường */ })
+                );
+            }
+            const sumKey = 'tunix.company-summary.v1.' + sym;
+            try { cached = sessionStorage.getItem(sumKey); } catch (e) { /* ignore */ }
+            if (!cached) {
+                jobs.push(
+                    api(`/stocks/${encodeURIComponent(sym)}/company-summary`)
+                        .then((s) => {
+                            if (s && s.name_vi) {
+                                try { sessionStorage.setItem(sumKey, buildCompanySummaryHtml(s)); } catch (e) { /* ignore */ }
+                            }
+                        })
+                        .catch(() => { /* bỏ qua */ })
+                );
+            }
+            await Promise.all(jobs);
+        }
+
         async function loadCompanySummary() {
             const symbol = getSymbolFromQuery();
             const title = `Tóm tắt doanh nghiệp · ${symbol}`;
+            // Hiển thị NGAY khi click: mở modal kèm spinner (không chờ API trả về)
+            showInfoModal(title, '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>');
+            // Cache nhanh theo mã: click lại lần sau hiển thị tức thì
+            const cacheKey = 'tunix.company-summary.v1.' + symbol;
+            let cachedHtml = null;
+            try { cachedHtml = sessionStorage.getItem(cacheKey); } catch (e) { /* ignore */ }
+            if (cachedHtml) {
+                showInfoModal(title, cachedHtml);
+                return;
+            }
             try {
                 const s = await api(`/stocks/${encodeURIComponent(symbol)}/company-summary`);
                 if (!s || !s.name_vi) {
                     showInfoModal(title, '<div class="info-empty">Chưa có dữ liệu hiển thị cho mã này.</div>');
                     return;
                 }
-                const section = (secTitle, text) => {
-                    const t = String(text || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-                    if (!t) return '';
-                    // Ngành nghề kinh doanh: hiển thị từng ngành nghề trên một dòng (gạch đầu dòng)
-                    if (secTitle === 'Ngành nghề kinh doanh') {
-                        const items = t.split(/\s*-\s+/).map(s => s.trim()).filter(Boolean);
-                        if (items.length > 1) {
-                            return `<h4>${secTitle}</h4>${items.map(i => `<div class="info-line">${escapeHtml(i)}</div>`).join('')}`;
-                        }
-                    }
-                    return `<h4>${secTitle}</h4><p>${escapeHtml(t)}</p>`;
-                };
-                const bodyHtml = `
-                    <div class="info-company-name">${escapeHtml(s.name_vi)}</div>
-                    <div class="info-company-en">${escapeHtml(s.name_en || '')}</div>
-                    ${section('Giới thiệu chung', s.business_overall)}
-                    ${section('Ngành nghề kinh doanh', s.business_line)}
-                    ${section('Sản phẩm & Dịch vụ', s.main_service)}
-                    ${section('Chiến lược kinh doanh', s.business_strategy)}
-                    ${section('Rủi ro kinh doanh', s.business_risk)}
-                `;
+                const bodyHtml = buildCompanySummaryHtml(s);
+                try { sessionStorage.setItem(cacheKey, bodyHtml); } catch (e) { /* ignore quota */ }
                 showInfoModal(title, bodyHtml);
             } catch (error) {
                 console.error('Failed to load company summary:', error);
@@ -4438,6 +4506,9 @@
                 loadOrderBook(symbol);
                 loadRecentTrades(symbol);
                 loadPeerComparison(symbol);
+                // Preload nền Lịch sử cổ tức + Tóm tắt doanh nghiệp (không chặn UI) →
+                // bấm 2 nút popup hiển thị tức thì từ cache.
+                preloadInfoPanels(symbol);
             }
             try {
                 const quote = await api(`/stocks/${encodeURIComponent(symbol)}/quote`);
@@ -4512,7 +4583,7 @@
                     this.classList.add('active');
 
                     if (parent.classList.contains('report-tabs')) {
-                        const category = this.dataset.category || REPORT_CATEGORIES[this.textContent] || 'analysis';
+                        const category = this.dataset.category || REPORT_CATEGORIES[this.textContent] || 'financial';
                         if (reportsData[category]) {
                             renderReports(category, reportsData[category]);
                         } else {

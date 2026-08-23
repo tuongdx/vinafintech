@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
 import secrets
 from typing import Any
 from uuid import uuid4
@@ -59,6 +60,11 @@ def decode_token(token: str) -> dict[str, Any] | None:
 def generate_reset_token() -> str:
     """Token reset mật khẩu — ngẫu nhiên, dùng 1 lần, có thời hạn."""
     return secrets.token_urlsafe(32)
+
+
+def hash_token(token: str) -> str:
+    """Băm token (sha256) trước khi lưu vào DB — tránh lộ token nếu DB bị đọc."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def token_exp_from_payload(payload: dict[str, Any]) -> datetime:

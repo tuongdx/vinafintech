@@ -117,3 +117,58 @@ def exchange_code(provider: str, code: str) -> dict[str, Any]:
     if provider == "google":
         return _google_exchange_code(code)
     raise ValueError(f"Unsupported provider: {provider}")
+
+
+# ---------------------------------------------------------------------------
+# Google Identity Services — xác thực ID Token từ popup (POST /api/auth/google)
+# ---------------------------------------------------------------------------
+def verify_google_id_token(id_token: str) -> dict[str, Any]:
+    """Xác thực ĐẦY ĐỦ Google ID Token ở backend.
+
+    - Token hợp lệ (Google tokeninfo endpoint).
+    - ``aud`` == GOOGLE_CLIENT_ID của TuniX.
+    - ``iss`` hợp lệ (accounts.google.com).
+    - Token chưa hết hạn.
+    - Dùng ``sub`` làm định danh duy nhất của Google Account.
+
+    Không tin bất kỳ dữ liệu nào từ frontend ngoài chính ``id_token``.
+    """
+    import httpx
+
+    resp = httpx.get(
+        "https://oauth2.googleapis.com/tokeninfo",
+        params={"id_token": str(id_token)},
+        timeout=15,
+    )
+    if resp.status_code != 200:
+        raise RuntimeError("Google token invalid")
+
+    info = resp.json()
+    if not isinstance(info, dict):
+        raise RuntimeError("Google token invalid")
+
+    # 1) Audience phải đúng GOOGLE_CLIENT_ID của TuniX
+    if str(info.get("aud", "")) != settings.google_client_id:
+        raise RuntimeError("Google token audience mismatch")
+
+    # 2) Issuer hợp lệ
+    if str(info.get("iss", "")) not in ("accounts.google.com", "https://accounts.google.com"):
+        raise RuntimeError("Google token issuer mismatch")
+
+    # 3) Chưa hết hạn
+    exp = info.get("exp")
+    if not exp or int(exp) < time.time():
+        raise RuntimeError("Google token expired")
+
+    # 4) Phải có sub (định danh duy nhất Google Account)
+    sub = str(info.get("sub", "") or "")
+    if not sub:
+        raise RuntimeError("Google token missing sub")
+
+    return {
+        "provider_user_id": sub,
+        "email": (info.get("email") or "").lower(),
+        "full_name": info.get("name") or "",
+        "avatar": info.get("picture") or "",
+        "email_verified": bool(info.get("email_verified")),
+    }

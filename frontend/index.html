@@ -4680,6 +4680,28 @@
                 const user = cachedUser();
                 const hasToken = !!localStorage.getItem('tunix_access_token');
                 updateBanner();
+                // Có token nhưng chưa có user cache (vd vừa đăng nhập bằng Google) →
+                // tự nạp /me để menu account hiển thị đúng như đăng nhập bình thường
+                if (!user && hasToken) {
+                    fetch('/api/auth/me', {
+                        headers: { Authorization: 'Bearer ' + localStorage.getItem('tunix_access_token') }
+                    })
+                        .then(function(r) { return r.ok ? r.json() : null; })
+                        .then(function(u) {
+                            if (u) {
+                                localStorage.setItem('tunix_user', JSON.stringify(u));
+                                renderMenu();
+                            } else {
+                                // Token không còn hiệu lực → xoá và render trạng thái chưa đăng nhập
+                                localStorage.removeItem('tunix_access_token');
+                                localStorage.removeItem('tunix_refresh_token');
+                                localStorage.removeItem('tunix_user');
+                                renderMenu();
+                            }
+                        })
+                        .catch(function() { /* giữ nguyên — lần render sau sẽ thử lại */ });
+                    return;
+                }
                 if (!user || !hasToken) {
                     // Chưa đăng nhập: hiện icon account, bấm vào -> trang đăng nhập
                     userMenu.className = '';

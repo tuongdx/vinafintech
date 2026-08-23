@@ -683,11 +683,34 @@ def _fetch_simplize_page_props(symbol: str) -> dict[str, Any]:
         return {}
 
 
+def _get_simplize_page_props_cached(symbol: str) -> dict[str, Any]:
+    """Fetch __NEXT_DATA__ pageProps từ Simplize 1 lần DUY NHẤT rồi cache 24h
+    (single-flight, không cache kết quả rỗng). Dividends / Tóm tắt doanh nghiệp
+    / Quote fundamentals đều dùng chung bản này — khi bấm cả 2 nút popup chỉ tốn
+    1 request mạng, không fetch lại toàn bộ trang HTML Simplize cho từng endpoint.
+    """
+    symbol_upper = symbol.upper().strip()
+    if not symbol_upper:
+        return {}
+    key = f"simplize-page-props:{symbol_upper}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    with cache._lock_for(key):
+        cached = cache.get(key)
+        if cached is not None:
+            return cached
+        props = _fetch_simplize_page_props(symbol_upper)
+        if props:
+            cache.set(key, props, ttl_seconds=86400)
+        return props
+
+
 def _fetch_simplize_symbol_summary(symbol: str) -> dict[str, Any]:
     symbol_upper = symbol.upper().strip()
     if not symbol_upper:
         return {}
-    page_props = _fetch_simplize_page_props(symbol_upper)
+    page_props = _get_simplize_page_props_cached(symbol_upper)
     summary = page_props.get("summary")
     if not isinstance(summary, dict):
         return {}
@@ -699,7 +722,7 @@ def _fetch_simplize_dividends(symbol: str) -> list[dict[str, Any]]:
     symbol_upper = symbol.upper().strip()
     if not symbol_upper:
         return []
-    page_props = _fetch_simplize_page_props(symbol_upper)
+    page_props = _get_simplize_page_props_cached(symbol_upper)
     rows = page_props.get("dividendPayment")
     if not isinstance(rows, list):
         return []
@@ -804,14 +827,18 @@ def get_dividends(symbol: str) -> list[dict[str, Any]]:
     if cached is not None:
         return cached
 
-    file_cache = _read_dividend_cache_file() or {}
+    file_cache = _read_dividend_cache_file()
+    if file_cache is None:
+        file_cache = {}
     if symbol_upper in file_cache:
         cache.set(cache_key, file_cache[symbol_upper], ttl_seconds=86400)
         return file_cache[symbol_upper]
 
     rows = _fetch_simplize_dividends(symbol_upper)
     if rows:
-        file_cache[symbol_upper] = rows
+        # Ghi thẳng vào global cache để _write_dividend_cache_file() thấy dữ liệu
+        # (trước đây dùng `or {}` tạo dict mới → file cache không bao giờ được lưu)
+        _read_dividend_cache_file()[symbol_upper] = rows
         cache.set(cache_key, rows, ttl_seconds=86400)
         _write_dividend_cache_file()
     return rows
@@ -893,15 +920,17 @@ def get_business_line(symbol: str) -> str:
 
 
 def _safe_business_line(symbol: str, summary: dict[str, Any]) -> str:
-    """Ngành nghề kinh doanh cho mọi mã: ưu tiên vnstock; nếu không có thì chỉ
-    dùng businessLine của Simplize khi nó KHÁC businessOverall (tránh trùng nội dung)."""
-    line = get_business_line(symbol)
-    if line:
-        return line
+    """Ngành nghề kinh doanh cho mọi mã: ưu tiên businessLine có sẵn trong
+    summary Simplize (đã fetch cùng page_props nên KHÔNG tốn thêm request);
+    chỉ gọi vnstock khi Simplize chưa có — tránh làm chậm popup tóm tắt
+    doanh nghiệp (lazy import vnstock + gọi API rất lâu)."""
     simplize_line = _strip_html(summary.get("businessLine"))
     simplize_overall = _strip_html(summary.get("businessOverall"))
     if simplize_line and simplize_line != simplize_overall:
         return simplize_line
+    line = get_business_line(symbol)
+    if line:
+        return line
     return ""
 
 

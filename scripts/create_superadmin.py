@@ -37,6 +37,7 @@ def main() -> None:
             if existing.role != RoleEnum.super_admin:
                 existing.role = RoleEnum.super_admin
                 existing.is_active = True
+                existing.email_verified = True
                 db.commit()
                 print(f"✅ Đã nâng quyền {args.email} thành Super Admin.")
             else:
@@ -52,6 +53,7 @@ def main() -> None:
             plan=PlanTierEnum.pro,
             is_active=True,
             terms_accepted=True,
+            email_verified=True,  # Super Admin không cần xác thực email
         )
         db.add(user)
         db.commit()

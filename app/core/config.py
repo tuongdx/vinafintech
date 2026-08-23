@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     login_rate_limit_minutes: int = 15
     login_rate_limit_max: int = 10
 
+    # Xác thực email
+    email_verification_expire_minutes: int = 60 * 24  # 24 giờ
+    resend_verification_cooldown_seconds: int = 60  # cooldown gửi lại email xác thực
+    # APP_URL — link xác thực/đặt lại mật khẩu; nếu trống sẽ dùng FRONTEND_URL
+    app_url: str = ""
+
     # TuniAI (DeepSeek) — Phase 1 AI Chat
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com"

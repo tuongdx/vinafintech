@@ -60,3 +60,23 @@ def build_reset_email_html(reset_url: str) -> str:
     <p style="color:#8a99b1;font-size:12px;">Nếu bạn không yêu cầu đặt lại mật khẩu, bạn có thể bỏ qua email này.</p>
   </div>
 </div>"""
+
+
+def build_verify_email_html(verify_url: str, full_name: str = "") -> str:
+    """Email xác thực tài khoản sau khi đăng ký."""
+    greeting = f"Xin chào <strong>{full_name}</strong>," if full_name else "Xin chào,"
+    return f"""\
+<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #e5e9f0;border-radius:16px;overflow:hidden;">
+  <div style="background:#008080;padding:20px 24px;">
+    <span style="color:#fff;font-size:22px;font-weight:800;">Tuni<span style="opacity:.7">X</span></span>
+  </div>
+  <div style="padding:24px;">
+    <h2 style="color:#1a1f36;margin:0 0 12px;">Xác thực địa chỉ email</h2>
+    <p style="color:#4a5a72;line-height:1.6;">{greeting}</p>
+    <p style="color:#4a5a72;line-height:1.6;">Cảm ơn bạn đã đăng ký tài khoản TuniX. Vui lòng nhấn nút bên dưới để xác thực địa chỉ email và kích hoạt tài khoản.</p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="{verify_url}" style="background:#008080;color:#fff;padding:12px 28px;border-radius:30px;text-decoration:none;font-weight:600;">Xác thực email</a>
+    </p>
+    <p style="color:#8a99b1;font-size:12px;">Liên kết có hiệu lực trong 24 giờ. Nếu bạn không đăng ký tài khoản TuniX, bạn có thể bỏ qua email này.</p>
+  </div>
+</div>"""

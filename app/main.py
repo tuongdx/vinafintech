@@ -219,6 +219,7 @@ PAGE_MAP: dict[str, str] = {
     "StockDetail": "StockDetail.html",
     "Login": "Login.html",
     "register": "register.html",
+    "verify-email": "VerifyEmail.html",
     "forgot-password": "forgot-password.html",
     "reset-password": "reset-password.html",
     "tintuc": "tintuc.html",

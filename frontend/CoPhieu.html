@@ -748,6 +748,14 @@
                         }, 40);
                         return;
                     }
+                    if (data.type === 'tunix-stock-modal') {
+                        // StockDetail con yêu cầu mở modal (Lịch sử cổ tức / Tóm tắt doanh nghiệp)
+                        // → FORWARD lên shell index.html để hiển thị modal toàn màn hình.
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({ type: 'tunix-stock-modal', title: data.title, bodyHtml: data.bodyHtml }, '*');
+                        }
+                        return;
+                    }
                     if (data.type === 'tunix-open-stock' && data.symbol) {
                         currentStock = String(data.symbol).trim().toUpperCase();
                         const url = stockUrl(currentStock);

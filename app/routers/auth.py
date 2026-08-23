@@ -16,14 +16,33 @@ from app.core.security import (
     decode_token,
     generate_reset_token,
     get_password_hash,
+    hash_token,
     token_exp_from_payload,
     verify_password,
 )
 from app.db import get_db
-from app.models import PasswordResetToken, PlanTierEnum, RevokedToken, RoleEnum, SocialAccount, User
-from app.schemas import AuthResponse, ChangePasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest, UserOut
+from app.models import (
+    EmailVerificationToken,
+    PasswordResetToken,
+    PlanTierEnum,
+    RevokedToken,
+    RoleEnum,
+    SocialAccount,
+    User,
+)
+from app.schemas import (
+    AuthResponse,
+    ChangePasswordRequest,
+    GoogleLoginRequest,
+    LoginRequest,
+    RegisterRequest,
+    ResendVerificationRequest,
+    ResetPasswordRequest,
+    UserOut,
+    VerifyEmailRequest,
+)
 from app.services import oauth_service
-from app.services.email_service import build_reset_email_html, send_email
+from app.services.email_service import build_reset_email_html, build_verify_email_html, send_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -88,10 +107,36 @@ def _safe_user_lookup(email: str, db: Session) -> User | None:
     return db.query(User).filter(User.email == email.lower()).first()
 
 
+# Cooldown gửi lại email xác thực (in-memory, theo email) — chống spam
+_VERIFY_SENT: dict[str, float] = {}
+
+
+def _create_and_send_verification(db: Session, user: User) -> str:
+    """Tạo token xác thực email (hash lưu DB, dùng 1 lần, có hạn) + gửi email."""
+    # Vô hiệu hoá mọi token cũ chưa dùng của user (chỉ token mới nhất có hiệu lực)
+    db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.user_id == user.id,
+        EmailVerificationToken.used_at.is_(None),
+    ).update({EmailVerificationToken.used_at: datetime.utcnow()})
+    token = generate_reset_token()
+    db.add(
+        EmailVerificationToken(
+            user_id=user.id,
+            token_hash=hash_token(token),
+            expires_at=datetime.utcnow() + timedelta(minutes=settings.email_verification_expire_minutes),
+        )
+    )
+    db.commit()
+    base_url = settings.app_url or settings.frontend_url
+    verify_url = f"{base_url}/verify-email?token={token}"
+    send_email(user.email, "TuniX - Xác thực email", build_verify_email_html(verify_url, user.full_name))
+    return verify_url
+
+
 # ---------------------------------------------------------------------------
 # Đăng ký
 # ---------------------------------------------------------------------------
-@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     if not payload.terms_accepted:
         raise HTTPException(status_code=400, detail="Bạn phải đồng ý với Điều khoản sử dụng và Chính sách bảo mật.")
@@ -110,11 +155,22 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         role=RoleEnum.member,
         plan=PlanTierEnum.free,
         terms_accepted=True,
+        email_verified=False,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+
+    # Gửi email xác thực (dev mode: link in ra console)
+    try:
+        _create_and_send_verification(db, user)
+    except Exception:  # noqa: BLE001 — không làm hỏng đăng ký nếu email lỗi
+        pass
+
+    return {
+        "message": "Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.",
+        "email": user.email,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -129,12 +185,142 @@ def login(payload: LoginRequest, db: Session = Depends(get_db), request: Request
     user = _safe_user_lookup(payload.email, db)
     # Message chung — không lộ email có tồn tại hay không
     if not user or not verify_password(payload.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email hoặc mật khẩu không đúng.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email hoặc mật khẩu không chính xác.")
 
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tài khoản của bạn đã bị khóa.")
 
+    # Bỏ qua yêu cầu xác thực email cho SUPER ADMIN (tài khoản nội bộ cấp cao)
+    if not user.email_verified and user.role != RoleEnum.super_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn chưa xác thực địa chỉ email.",
+            headers={"X-Email-Verified": "false"},
+        )
+
     _clear_rate_limit(key)
+    user.last_login = datetime.utcnow()
+    db.commit()
+    return _issue_tokens(user, payload.remember)
+
+
+# ---------------------------------------------------------------------------
+# Xác thực email
+# ---------------------------------------------------------------------------
+@router.post("/verify-email")
+def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
+    """Xác thực email qua token (hash lưu DB, dùng 1 lần, có thời hạn)."""
+    record = (
+        db.query(EmailVerificationToken)
+        .filter(EmailVerificationToken.token_hash == hash_token(payload.token))
+        .first()
+    )
+    if not record or record.used_at is not None:
+        raise HTTPException(status_code=400, detail="Liên kết xác thực không hợp lệ.")
+    if record.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Liên kết xác thực đã hết hạn.")
+
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Tài khoản không tồn tại.")
+
+    user.email_verified = True
+    record.used_at = datetime.utcnow()
+    db.commit()
+    return {"message": "Email đã được xác thực thành công."}
+
+
+@router.post("/resend-verification")
+def resend_verification(payload: ResendVerificationRequest, db: Session = Depends(get_db)):
+    """Gửi lại email xác thực — cooldown 60s, không lộ email có tồn tại hay không."""
+    generic = "Nếu email tồn tại và chưa được xác thực, chúng tôi đã gửi lại email xác thực."
+    user = _safe_user_lookup(payload.email, db)
+    if not user or user.email_verified:
+        return {"message": generic}
+
+    now = time.time()
+    last = _VERIFY_SENT.get(user.email)
+    if last and now - last < settings.resend_verification_cooldown_seconds:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Vui lòng chờ 60 giây trước khi gửi lại email xác thực.",
+        )
+    _VERIFY_SENT[user.email] = now
+
+    try:
+        _create_and_send_verification(db, user)
+    except Exception:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail="Không gửi được email xác thực. Vui lòng thử lại sau.")
+    return {"message": generic}
+
+
+# ---------------------------------------------------------------------------
+# Đăng nhập bằng Google (Google Identity Services — ID Token từ popup)
+# ---------------------------------------------------------------------------
+@router.post("/google", response_model=AuthResponse)
+def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
+    if not oauth_service.is_configured("google"):
+        raise HTTPException(status_code=400, detail="Đăng nhập Google chưa được cấu hình.")
+
+    try:
+        profile = oauth_service.verify_google_id_token(payload.id_token)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail="Token Google không hợp lệ hoặc đã hết hạn.") from exc
+
+    provider_user_id = profile.get("provider_user_id")
+    if not provider_user_id:
+        raise HTTPException(status_code=400, detail="Không xác định được tài khoản Google.")
+
+    # Case 1: Google Account đã liên kết với TuniX
+    account = (
+        db.query(SocialAccount)
+        .filter(SocialAccount.provider == "google", SocialAccount.provider_user_id == provider_user_id)
+        .first()
+    )
+    if account:
+        user = account.user
+        # Google luôn xác thực email — cập nhật nếu thiếu
+        if not user.email_verified:
+            user.email_verified = True
+    else:
+        email = profile.get("email")
+        # Case 3: Email Google trùng với tài khoản Email/Password đã tồn tại
+        user = _safe_user_lookup(email, db) if email else None
+        if user:
+            if user.email_verified and not profile.get("email_verified"):
+                # An toàn: yêu cầu đăng nhập bằng mật khẩu trước khi liên kết
+                raise HTTPException(
+                    status_code=409,
+                    detail="Email này đã thuộc tài khoản khác. Vui lòng đăng nhập bằng mật khẩu để liên kết Google.",
+                )
+            # Google đã xác thực email này → đánh dấu verified + liên kết
+            user.email_verified = True
+        else:
+            # Case 2: Chưa tồn tại → tạo tài khoản mới
+            user = User(
+                email=email or "",
+                full_name=profile.get("full_name") or "",
+                avatar=profile.get("avatar") or "",
+                hashed_password=get_password_hash(secrets.token_urlsafe(32)),
+                role=RoleEnum.member,
+                plan=PlanTierEnum.free,
+                terms_accepted=True,
+                email_verified=bool(profile.get("email_verified")),
+            )
+            db.add(user)
+            db.flush()
+        db.add(
+            SocialAccount(
+                user_id=user.id,
+                provider="google",
+                provider_user_id=provider_user_id,
+                provider_email=email,
+            )
+        )
+
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tài khoản của bạn đã bị khóa.")
+
     user.last_login = datetime.utcnow()
     db.commit()
     return _issue_tokens(user, payload.remember)
@@ -198,7 +384,7 @@ def me(current_user: User = Depends(get_current_user)):
 def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = _safe_user_lookup(payload.email, db)
     # Luôn trả cùng message (chống enum email)
-    generic = "Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu."
+    generic = "Nếu địa chỉ email tồn tại trong hệ thống, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu."
     if not user:
         return {"message": generic}
 
@@ -212,7 +398,8 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
     )
     db.commit()
 
-    reset_url = f"{settings.frontend_url}/reset-password?token={token}"
+    base_url = settings.app_url or settings.frontend_url
+    reset_url = f"{base_url}/reset-password?token={token}"
     send_email(user.email, "TuniX - Đặt lại mật khẩu", build_reset_email_html(reset_url))
     return {"message": generic}
 
@@ -233,6 +420,17 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     record.used_at = datetime.utcnow()
     db.commit()
     return {"message": "Mật khẩu đã được cập nhật. Bạn có thể đăng nhập."}
+
+
+@router.get("/reset-password/validate")
+def validate_reset_token(token: str, db: Session = Depends(get_db)):
+    """Kiểm tra token đặt lại mật khẩu (dùng 1 lần, có hạn) trước khi hiển thị form."""
+    record = db.query(PasswordResetToken).filter(PasswordResetToken.token == token).first()
+    if not record or record.used_at is not None:
+        return {"valid": False, "expired": False, "reason": "invalid"}
+    if record.expires_at < datetime.utcnow():
+        return {"valid": False, "expired": True, "reason": "expired"}
+    return {"valid": True, "expired": False, "reason": "ok"}
 
 
 # ---------------------------------------------------------------------------
@@ -256,6 +454,16 @@ def change_password(
 # ---------------------------------------------------------------------------
 # OAuth Google
 # ---------------------------------------------------------------------------
+@router.get("/google-config")
+def google_config():
+    """Trả client_id để frontend dựng nút Google Sign-In (Google Identity Services).
+    Không expose secret — chỉ client_id (public)."""
+    return {
+        "client_id": settings.google_client_id,
+        "configured": bool(settings.google_client_id),
+    }
+
+
 @router.get("/oauth/{provider}/authorize")
 def oauth_authorize(provider: str, next: str | None = Query(default=None), db: Session = Depends(get_db)):
     if provider not in oauth_service._PROVIDERS:
@@ -293,6 +501,9 @@ def _oauth_callback(db: Session, provider: str, code: str | None, state: str | N
 
     if account:
         user = account.user
+        # Google đã xác thực email → đảm bảo trạng thái verified (tránh chặn login sau)
+        if not user.email_verified:
+            user.email_verified = True
     else:
         email = profile.get("email")
         if not email:
@@ -301,7 +512,8 @@ def _oauth_callback(db: Session, provider: str, code: str | None, state: str | N
 
         user = _safe_user_lookup(email, db)
         if user:
-            # Liên kết provider với tài khoản email đã tồn tại
+            # Liên kết provider với tài khoản email đã tồn tại — Google đã xác thực email
+            user.email_verified = True
             db.add(
                 SocialAccount(
                     user_id=user.id,
@@ -311,6 +523,7 @@ def _oauth_callback(db: Session, provider: str, code: str | None, state: str | N
                 )
             )
         else:
+            # Tài khoản mới: kích hoạt ngay (email_verified=True) — KHÔNG cần gửi mail xác thực
             user = User(
                 email=email,
                 full_name=profile.get("full_name") or "",
@@ -319,6 +532,7 @@ def _oauth_callback(db: Session, provider: str, code: str | None, state: str | N
                 role=RoleEnum.member,
                 plan=PlanTierEnum.free,
                 terms_accepted=True,
+                email_verified=True,
             )
             db.add(user)
             db.flush()
