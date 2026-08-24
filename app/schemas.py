@@ -115,11 +115,17 @@ class PortfolioHoldingCreate(BaseModel):
     symbol: str
     quantity: float = 0.0
     avg_price: float = 0.0
+    fee: float = 0.0
 
 
 class PortfolioHoldingUpdate(BaseModel):
     quantity: float | None = None
     avg_price: float | None = None
+
+
+class PortfolioSell(BaseModel):
+    quantity: float = 0.0
+    fee: float = 0.0
 
 
 class PortfolioHoldingOut(BaseModel):

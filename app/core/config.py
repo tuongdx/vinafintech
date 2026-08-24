@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     google_redirect_uri: str = ""
 
+    # OAuth Facebook (Meta) — sắp ra mắt, để trống = vô hiệu hoá
+    facebook_client_id: str = ""
+    facebook_client_secret: str = ""
+    facebook_redirect_uri: str = ""
+
     # Rate limit đăng nhập (chống brute-force) — in-memory
     login_rate_limit_minutes: int = 15
     login_rate_limit_max: int = 10
@@ -54,6 +59,16 @@ class Settings(BaseSettings):
     ai_chat_max_tokens: int = 4096
     ai_rate_limit_minutes: int = 5
     ai_rate_limit_max: int = 30
+
+    # Trung tâm cảnh báo (Alert Center) — Support/Resistance + phát hiện tín hiệu
+    alert_near_support_threshold: float = 0.03    # % gần vùng hỗ trợ để cảnh báo (3%)
+    alert_near_resistance_threshold: float = 0.03  # % gần vùng kháng cự để cảnh báo (3%)
+    alert_cooldown_hours: int = 24                # chống spam: không gửi lặp cùng vùng trong N giờ
+    alert_unusual_move_pct: float = 3.0           # biến động giá % coi là bất thường (asset events)
+    alert_rsi_overbought: float = 70.0
+    alert_rsi_oversold: float = 30.0
+    alert_history_period: str = "1y"              # khung dữ liệu để tính vùng S/R
+    asset_event_window_days: int = 183            # chỉ lấy sự kiện tài sản sắp tới / trong ~6 tháng gần
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
 

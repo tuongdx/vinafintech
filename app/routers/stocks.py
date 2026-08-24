@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.services.support_resistance import sr_service
 from app.services.vnstock_service import (
     filter_stocks,
     get_company_summary,
@@ -72,6 +73,20 @@ def reports(symbol: str, category: str = "financial"):
 @router.get("/{symbol}/dividends")
 def dividends(symbol: str):
     return get_dividends(symbol)
+
+
+@router.get("/{symbol}/sr-zones")
+def sr_zones(symbol: str, period: str = "1y"):
+    """Các vùng Hỗ trợ/Kháng cự (dải giá + độ mạnh) tính bằng SupportResistanceService."""
+    candles = get_history(symbol, interval="1d", period=period)
+    quote = get_quote(symbol)
+    price = None
+    if quote and quote.get("valid"):
+        try:
+            price = float(quote.get("price") or 0) or None
+        except (TypeError, ValueError):
+            price = None
+    return sr_service.detect_zones((symbol or "").upper().strip(), candles, current_price=price, timeframe="1D")
 
 
 @router.get("/{symbol}/fundamentals")

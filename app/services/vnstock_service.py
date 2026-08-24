@@ -2382,6 +2382,38 @@ _INDEX_DEFS: dict[str, dict[str, Any]] = {
     "nasdaq": {"label": "NASDAQ", "unit": "điểm", "decimals": 1, "yahoo": "^IXIC"},
 }
 
+# 4 chỉ số cổ phiếu Việt Nam (có dữ liệu khối lượng thật → ước lượng được giá trị giao dịch)
+_VN_INDEX_KEYS: set[str] = {"vnindex", "vn30", "hnx", "upcom"}
+
+
+def _enrich_index_value(result: dict[str, Any], key: str) -> None:
+    """Gắn ``value`` (giá trị giao dịch ước tính, VND) cho từng phiên của chỉ số VN.
+
+    Nguồn dữ liệu chỉ số không có GTGD theo ngày → ước lượng:
+    GTGD(phiên) ≈ khối lượng(phiên) × giá bình quân thị trường.
+    Giá bình quân chuẩn hoá từ dữ liệu THẬT: GTGD phiên gần nhất (market-liquidity HOSE)
+    ÷ khối lượng phiên gần nhất. Chỉ áp dụng cho 4 chỉ số cổ phiếu VN.
+    """
+    if key not in _VN_INDEX_KEYS:
+        return
+    history = result.get("history") or []
+    if not history:
+        return
+    try:
+        ec = get_exchange_chart("HOSE", "5d")
+        today = ec.get("today") or []
+        gtg_vnd = float(today[-1].get("close") or 0) * 1e9 if today else 0.0  # tỷ → VND
+        vol_last = float(history[-1].get("volume") or 0)
+    except Exception:
+        return
+    if gtg_vnd <= 0 or vol_last <= 0:
+        return
+    avg_price = gtg_vnd / vol_last
+    for b in history:
+        vol = float(b.get("volume") or 0)
+        b["value"] = int(round(vol * avg_price))
+    result["avg_price_estimate"] = round(avg_price, 0)
+
 
 @_singleflight(lambda key, period="1y": f"index-detail:{key}:{period}", 60)
 def get_index_detail(key: str, period: str = "1y") -> dict[str, Any]:
@@ -2464,6 +2496,9 @@ def get_index_detail(key: str, period: str = "1y") -> dict[str, Any]:
                 result["percent_change"] = item.get("percent_change", 0)
                 result["as_of"] = item.get("as_of", "")
                 break
+
+    # Ước lượng GTGD (giá trị giao dịch) cho từng phiên của chỉ số VN → tooltip biểu đồ.
+    _enrich_index_value(result, key)
 
     cache.set(cache_key, result, ttl_seconds=30)
     return result
@@ -3598,7 +3633,8 @@ def get_market_dashboard() -> dict[str, Any]:
             window = vols[-21:] or vols
             avg = sum(window) / len(window)
             flow["liquidity"] = {
-                "last_volume": int(vols[-1]),
+                "last_volume": int(vols[-1]),       # thanh khoản phiên hôm nay (khối lượng)
+                "prev_volume": int(vols[-2]),       # thanh khoản phiên hôm qua (khối lượng)
                 "avg_volume_1m": int(round(avg)),
                 "volume_ratio": round(vols[-1] / avg, 2) if avg else 0,
             }

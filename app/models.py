@@ -363,3 +363,97 @@ class StockSymbol(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     added_by: Mapped[User | None] = relationship("User")
+
+
+# ---------- Trung tâm cảnh báo (Alert Center) ----------
+
+class AlertType(str, enum.Enum):
+    """Loại cảnh báo — mở rộng được (thêm giá trị enum + handler trong AlertDetectionService)."""
+    support_near = "SUPPORT_NEAR"
+    resistance_near = "RESISTANCE_NEAR"
+    breakout = "BREAKOUT"
+    breakdown = "BREAKDOWN"
+    price_target = "PRICE_TARGET"
+    ma_cross_up = "MA_CROSS_UP"
+    ma_cross_down = "MA_CROSS_DOWN"
+    ma50_break_up = "MA50_BREAK_UP"
+    ma50_break_down = "MA50_BREAK_DOWN"
+    ma200_break_up = "MA200_BREAK_UP"
+    ma200_break_down = "MA200_BREAK_DOWN"
+    rsi_overbought = "RSI_OVERBOUGHT"
+    rsi_oversold = "RSI_OVERSOLD"
+    macd_bullish = "MACD_BULLISH_CROSS"
+    macd_bearish = "MACD_BEARISH_CROSS"
+    trend_strengthening = "TREND_STRENGTHENING"
+    trend_weakening = "TREND_WEAKENING"
+
+
+class AlertImportance(str, enum.Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+    critical = "critical"
+
+
+class AlertCategory(str, enum.Enum):
+    """Nhóm để lọc trong Trung tâm cảnh báo."""
+    opportunity = "opportunity"   # Cơ hội
+    warning = "warning"           # Cảnh báo
+    trend = "trend"               # Xu hướng
+    event = "event"               # Sự kiện doanh nghiệp
+
+
+class Alert(Base):
+    """Cảnh báo kỹ thuật/tín hiệu cho từng user (có lịch sử + trạng thái đã đọc).
+
+    ``metadata`` lưu JSON WHY_THIS_ALERT (giải thích lý do tạo cảnh báo).
+    ``dedup_key`` = ``{symbol}:{alert_type}:{zone-or-giá trị}`` — dùng để chống spam
+    (chỉ tạo lại khi giá rời vùng rồi quay lại HOẶC sau cooldown).
+    """
+
+    __tablename__ = "alerts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    symbol: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
+    alert_type: Mapped[AlertType] = mapped_column(Enum(AlertType), nullable=False, index=True)
+    category: Mapped[AlertCategory] = mapped_column(Enum(AlertCategory), nullable=False, index=True)
+    importance: Mapped[AlertImportance] = mapped_column(Enum(AlertImportance), default=AlertImportance.medium, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+    # WHY_THIS_ALERT — JSON string: {current_price, zone, distance_percent, ...}
+    alert_metadata: Mapped[str] = mapped_column(Text, default="")
+    dedup_key: Mapped[str] = mapped_column(String(255), default="", index=True)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class AssetEventType(str, enum.Enum):
+    earnings = "EARNINGS"
+    dividend = "DIVIDEND"
+    ex_dividend_date = "EX_DIVIDEND_DATE"
+    stock_split = "STOCK_SPLIT"
+    rights_issue = "RIGHTS_ISSUE"
+    important_news = "IMPORTANT_NEWS"
+    unusual_price_movement = "UNUSUAL_PRICE_MOVEMENT"
+
+
+class AssetEvent(Base):
+    """Sự kiện liên quan đến tài sản (cổ phiếu đang nắm giữ / theo dõi của user):
+    cổ tức, ngày chốt quyền, tin quan trọng, biến động giá bất thường...
+    Dữ liệu lấy từ nguồn thật (vnstock/dividends + news DB) — không tạo dữ liệu giả.
+    """
+
+    __tablename__ = "asset_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    symbol: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
+    event_type: Mapped[AssetEventType] = mapped_column(Enum(AssetEventType), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+    event_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    # JSON: {source, dividend_amount, ex_date, ...}
+    event_metadata: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

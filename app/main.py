@@ -14,7 +14,7 @@ from app.core.security import decode_token
 from app.db import Base, SessionLocal, engine
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, auth, chart, contact, dashboard, faqs, features, feedback, logs, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, alerts, asset_events, auth, chart, contact, dashboard, faqs, features, feedback, logs, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -168,6 +168,8 @@ app.include_router(logs.router, prefix=api)
 app.include_router(watchlist.router, prefix=api)
 app.include_router(notifications.router, prefix=api)
 app.include_router(portfolio.router, prefix=api)
+app.include_router(alerts.router, prefix=api)
+app.include_router(asset_events.router, prefix=api)
 
 frontend_path = Path(settings.frontend_dir)
 if frontend_path.exists():
@@ -231,7 +233,7 @@ PAGE_MAP: dict[str, str] = {
     "caidat": "caidat.html",
     "taikhoan": "taikhoan.html",
     "doimatkhau": "doimatkhau.html",
-    "danh-muc": "danhmuc.html",
+    "quan-ly-tai-san": "quanlytaisan.html",
     "QuanTri": "QuanTri.html",
     "AdminLogin": "AdminLogin.html",
     "TrungTamTroGiup": "TrungTamTroGiup.html",
@@ -271,6 +273,8 @@ INDEX_SHELL_PAGES = {
     "kham-pha",
     # Trang TuniAI: /tuniai giữ nguyên shell, nội dung nạp vào left-col.
     "tuniai",
+    # Trang Quản lý tài sản: /quan-ly-tai-san giữ nguyên shell, nội dung nạp vào iframe left-col.
+    "quan-ly-tai-san",
     # URL đẹp danh mục tin tức
     "chung-khoan",
     "ngan-hang",

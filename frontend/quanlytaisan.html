@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>Danh mục của tôi - TuniX</title>
+    <title>Quản lý tài sản - TuniX</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
@@ -70,16 +70,33 @@
         .pf-alloc-legend .al-val { color: #8a99b1; font-size: 12px; width: 74px; text-align: right; }
         .pf-donut-center { fill: #fff; }
         .pf-donut-num { fill: #12203a; }
+        .pf-alloc-note { display: flex; gap: 8px; align-items: center; font-size: 12px; color: #8a99b1; margin-top: 10px; line-height: 1.5; }
+        .pf-alloc-note i { color: #008080; }
+        /* Biểu đồ thanh ngang */
+        .pf-hbar { display: flex; flex-direction: column; gap: 13px; }
+        .hb-row { display: flex; flex-direction: column; gap: 5px; }
+        .hb-top { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+        .hb-name { flex: 1; color: #4a5a72; font-weight: 600; min-width: 0; }
+        .hb-pct { font-weight: 800; color: #12203a; width: 46px; text-align: right; }
+        .hb-val { color: #8a99b1; font-size: 12px; width: 116px; text-align: right; }
+        .hb-track { height: 11px; background: #eef1f5; border-radius: 6px; overflow: hidden; }
+        .hb-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
 
         /* ===== Form ===== */
-        .pf-form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
-        .pf-field { flex: 1 1 150px; }
+        .pf-form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; align-items: end; }
+        .pf-field { min-width: 0; }
         .pf-field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #4a5a72; }
         .pf-field input { width: 100%; padding: 10px 12px; border: 1px solid #e5eaf0; border-radius: 10px; font-size: 14px; font-family: inherit; color: #12203a; background: #fff; }
         .pf-field input:focus { outline: none; border-color: #008080; }
-        .pf-price-hint { font-size: 12px; color: #6b7a8f; margin-top: 6px; min-height: 18px; }
+        /* Ẩn nút tăng/giảm của ô nhập số (spinner) */
+        .pf-field input[type="number"]::-webkit-inner-spin-button,
+        .pf-field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .pf-field input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+        .pf-price-hint { font-size: 12px; color: #6b7a8f; margin-top: 10px; min-height: 18px; }
         .pf-price-hint a { color: #008080; font-weight: 600; text-decoration: none; cursor: pointer; }
-        .pf-submit { flex: 0 0 auto; display: flex; flex-direction: column; justify-content: flex-end; }
+        .pf-submit { display: flex; align-items: flex-end; gap: 6px; }
+        .pf-submit .btn { width: 100%; }
+        .pf-submit .btn + .btn { flex: 0 0 auto; width: auto; }
         .pf-form-hint { font-size: 12px; color: #6b7a8f; }
         .btn { border: none; border-radius: 10px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.2s; white-space: nowrap; }
         .btn-primary { background: #008080; color: #fff; }
@@ -91,6 +108,7 @@
         /* ===== Table ===== */
         .pf-table-wrap { overflow-x: auto; border: 1px solid #e9edf2; border-radius: 14px; background: #fff; }
         table { width: 100%; border-collapse: collapse; min-width: 820px; }
+        .pf-wl-table { min-width: 680px; }
         thead th { text-align: left; font-size: 11.5px; font-weight: 700; color: #6b7a8f; text-transform: uppercase; letter-spacing: 0.4px; padding: 11px 13px; border-bottom: 1px solid #eef1f5; background: #fafbfd; white-space: nowrap; }
         tbody td { padding: 11px 13px; border-bottom: 1px solid #f2f4f8; font-size: 13.5px; white-space: nowrap; }
         tbody tr:last-child td { border-bottom: none; }
@@ -122,11 +140,38 @@
         .pf-list li { list-style: none; display: flex; gap: 8px; font-size: 12.5px; color: #12203a; line-height: 1.45; }
         .pf-list li .ic { flex: 0 0 auto; }
 
-        /* ===== Alerts ===== */
-        .pf-alert { display: flex; gap: 10px; align-items: flex-start; background: #f8fafc; border: 1px solid #e9edf2; border-radius: 11px; padding: 10px 12px; margin-bottom: 9px; }
-        .pf-alert .pa-ico { font-size: 15px; flex: 0 0 auto; }
-        .pf-alert .pa-text { font-size: 12.5px; color: #12203a; line-height: 1.45; }
-        .pf-alert .pa-sym { font-weight: 800; }
+        /* ===== Trung tâm cảnh báo ===== */
+        .pf-alerts { display: flex; flex-direction: column; gap: 12px; }
+        .pf-alerts-head { display: flex; justify-content: flex-end; }
+        .pf-scan-btn { border: 1px solid #008080; background: #fff; color: #008080; font-weight: 700; font-size: 12.5px; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+        .pf-scan-btn:hover { background: #008080; color: #fff; }
+        .pf-scan-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .pf-alert-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+        .pf-chip { border: 1px solid #e5eaf0; background: #fff; color: #4a5a72; font-size: 12.5px; font-weight: 600; padding: 7px 14px; border-radius: 20px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .pf-chip:hover { border-color: #008080; color: #008080; }
+        .pf-chip.active { background: #008080; border-color: #008080; color: #fff; }
+        .pf-alert-card { display: flex; gap: 12px; background: #f8fafc; border: 1px solid #e9edf2; border-left: 3px solid #008080; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; transition: all 0.15s; }
+        .pf-alert-card:hover { border-color: #c3d4d4; }
+        .pf-alert-card.unread { background: #f0fbf9; }
+        .pf-alert-card .pf-ac-left { flex: 0 0 auto; font-size: 17px; padding-top: 2px; width: 26px; text-align: center; }
+        .pf-alert-card .pf-ac-main { flex: 1; min-width: 0; }
+        .pf-alert-card .pf-ac-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+        .pf-ac-type { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 8px; border-radius: 6px; }
+        .pf-ac-sym { font-weight: 800; font-size: 12.5px; color: #12203a; }
+        .pf-ac-imp { font-size: 11px; font-weight: 700; }
+        .pf-ac-time { font-size: 11px; color: #8a99b1; margin-left: auto; }
+        .pf-ac-title { font-size: 13.5px; font-weight: 700; color: #12203a; line-height: 1.4; }
+        .pf-ac-desc { font-size: 12.5px; color: #4a5a72; line-height: 1.5; margin-top: 3px; }
+        .pf-ac-why { font-size: 11.5px; color: #6b7a8f; background: rgba(0,128,128,0.07); border: 1px dashed rgba(0,128,128,0.3); border-radius: 8px; padding: 6px 9px; margin-top: 8px; line-height: 1.5; }
+        .pf-ac-right { flex: 0 0 auto; display: flex; align-items: flex-start; }
+        .pf-ac-read { border: none; background: transparent; color: #008080; cursor: pointer; font-size: 15px; padding: 2px 4px; }
+        .pf-ac-read:hover { color: #005e5e; }
+        .pf-ac-readmark { color: #8a99b1; font-size: 14px; padding-top: 2px; }
+        .pf-alert-blocks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: start; }
+        .pf-alert-block { min-width: 0; }
+        .pf-alert-block-head { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; color: #12203a; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #e9edf2; }
+        .pf-alert-block-head .pf-alert-block-count { font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 20px; }
+        .pf-alert-block > .pf-empty { padding: 18px 12px; }
 
         /* ===== Watchlist ===== */
         .pf-wl-add { display: flex; gap: 8px; margin-bottom: 12px; }
@@ -148,8 +193,43 @@
         .pf-wl-item .wl-rm { border: none; background: transparent; color: #d0314e; cursor: pointer; font-size: 13px; padding: 3px 6px; border-radius: 6px; }
         .pf-wl-item .wl-rm:hover { background: #fde9e9; }
 
+        /* ===== Tabs ===== */
+        .pf-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; border-bottom: 2px solid #e9edf2; }
+        .pf-tab { border: 1px solid #e5eaf0; border-bottom: none; background: #fff; color: #4a5a72; font-weight: 700; font-size: 13px; padding: 9px 16px; border-radius: 10px 10px 0 0; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+        .pf-tab:hover { border-color: #008080; color: #008080; }
+        .pf-tab.active { background: #008080; border-color: #008080; color: #fff; }
+        .pf-tab-body { display: flex; flex-direction: column; gap: 18px; }
+        .pf-tab-body .pf-summary { margin-bottom: 0; }
+        .pf-tab-body .pf-perf { margin-bottom: 0; }
+
+        /* ===== Sự kiện liên quan ===== */
+        .pf-ev-note { font-size: 12px; color: #6b7a8f; margin-bottom: 12px; line-height: 1.5; }
+        .pf-ev-group { margin-bottom: 16px; }
+        .pf-ev-group:last-child { margin-bottom: 0; }
+        .pf-ev-sym { font-weight: 800; font-size: 14px; color: #008080; margin-bottom: 8px; }
+        .pf-ev-item { display: flex; gap: 11px; text-decoration: none; background: #f8fafc; border: 1px solid #e9edf2; border-radius: 11px; padding: 11px 13px; margin-bottom: 8px; transition: all 0.15s; }
+        .pf-ev-item:hover { border-color: #008080; }
+        .pf-ev-item .pf-ev-ico { flex: 0 0 auto; font-size: 16px; padding-top: 2px; width: 24px; text-align: center; }
+        .pf-ev-item .pf-ev-body { flex: 1; min-width: 0; }
+        .pf-ev-item .pf-ev-row { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; flex-wrap: wrap; }
+        .pf-ev-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; padding: 2px 7px; border-radius: 5px; }
+        .pf-ev-date { font-size: 11px; color: #8a99b1; }
+        .pf-ev-item .pf-ev-title { font-size: 13px; font-weight: 700; color: #12203a; line-height: 1.4; }
+        .pf-ev-item .pf-ev-desc { font-size: 12px; color: #4a5a72; line-height: 1.5; margin-top: 3px; }
+        .pf-ev-item .pf-ev-meta { font-size: 11.5px; color: #8a99b1; margin-top: 3px; }
+
+        /* ===== Portfolio Table ===== */
+        .pf-pt-table { min-width: 980px; }
+        .pf-st { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+
+        /* ===== Trade form (Mua/Bán) ===== */
+        .pf-trade-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
+        .pf-trade-toggle .pf-tt { border: 1px solid #e5eaf0; background: #fff; color: #4a5a72; font-weight: 700; font-size: 13px; padding: 7px 14px; border-radius: 9px; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .pf-trade-toggle .pf-tt:hover { border-color: #008080; color: #008080; }
+        .pf-trade-toggle .pf-tt.active { background: #008080; border-color: #008080; color: #fff; }
+
         /* ===== Performance hero (Tổng lãi/lỗ danh mục) ===== */
-        .pf-perf { position: relative; overflow: hidden; background: linear-gradient(135deg, #ffffff 0%, #f0fbf9 100%); border-color: rgba(0,128,128,0.22); }
+        .pf-perf { position: relative; overflow: hidden; background: linear-gradient(135deg, #ffffff 0%, #f0fbf9 100%); border-color: rgba(0,128,128,0.22); margin-bottom: 18px; }
         .pf-perf::before { content: ''; position: absolute; right: -70px; top: -70px; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, rgba(0,128,128,0.12), transparent 70%); pointer-events: none; }
         .pf-perf-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; position: relative; }
         .pf-perf-head h2 { margin-bottom: 0; }
@@ -195,6 +275,11 @@
         body.dark-mode .pf-alloc-legend .al-name { color: #adbac7; }
         body.dark-mode .pf-donut-center { fill: #161b22; }
         body.dark-mode .pf-donut-num { fill: #e6edf3; }
+        body.dark-mode .pf-alloc-note { color: #8b949e; }
+        body.dark-mode .hb-name { color: #adbac7; }
+        body.dark-mode .hb-pct { color: #e6edf3; }
+        body.dark-mode .hb-val { color: #8b949e; }
+        body.dark-mode .hb-track { background: #21262d; }
         body.dark-mode .pf-field label { color: #adbac7; }
         body.dark-mode .pf-field input, body.dark-mode .pf-wl-add input { background: #0d1117; border-color: #30363d; color: #e6edf3; }
         body.dark-mode thead th { background: #1c2128; border-bottom-color: #21262d; color: #adbac7; }
@@ -211,8 +296,28 @@
         body.dark-mode .pf-list li { color: #e6edf3; }
         body.dark-mode .pf-alert { background: #10151c; border-color: #21262d; }
         body.dark-mode .pf-alert .pa-text { color: #e6edf3; }
+        body.dark-mode .pf-scan-btn { background: #161b22; border-color: #008080; color: #5fd6cf; }
+        body.dark-mode .pf-scan-btn:hover { background: #008080; color: #fff; }
+        body.dark-mode .pf-chip { background: #161b22; border-color: #21262d; color: #e6edf3; }
+        body.dark-mode .pf-chip:hover { border-color: #008080; color: #5fd6cf; }
+        body.dark-mode .pf-chip.active { background: #008080; border-color: #008080; color: #fff; }
+        body.dark-mode .pf-alert-card { background: #10151c; border-color: #21262d; }
+        body.dark-mode .pf-alert-card.unread { background: #0e1a1a; }
+        body.dark-mode .pf-ac-title, body.dark-mode .pf-ac-sym { color: #e6edf3; }
+        body.dark-mode .pf-ac-desc { color: #adbac7; }
+        body.dark-mode .pf-ac-why { background: rgba(0,128,128,0.14); border-color: rgba(0,128,128,0.35); color: #adbac7; }
+        body.dark-mode .pf-alert-block-head { color: #e6edf3; border-bottom-color: #21262d; }
         body.dark-mode .pf-wl-item { background: #10151c; border-color: #21262d; }
         body.dark-mode .pf-wl-item .wl-name, body.dark-mode .pf-wl-item .wl-vol { color: #8b949e; }
+        body.dark-mode .pf-tabs { border-color: #21262d; }
+        body.dark-mode .pf-tab { background: #161b22; border-color: #21262d; color: #e6edf3; }
+        body.dark-mode .pf-tab.active { background: #008080; border-color: #008080; color: #fff; }
+        body.dark-mode .pf-ev-item { background: #10151c; border-color: #21262d; }
+        body.dark-mode .pf-ev-item .pf-ev-title { color: #e6edf3; }
+        body.dark-mode .pf-ev-item .pf-ev-desc { color: #adbac7; }
+        body.dark-mode .pf-ev-note { color: #8b949e; }
+        body.dark-mode .pf-trade-toggle .pf-tt { background: #161b22; border-color: #21262d; color: #e6edf3; }
+        body.dark-mode .pf-trade-toggle .pf-tt.active { background: #008080; border-color: #008080; color: #fff; }
         body.dark-mode .pf-perf { background: #161b22; border-color: rgba(0,128,128,0.4); }
         body.dark-mode .pf-perf-stat, body.dark-mode .pf-perf-chart { background: #0d1117; border-color: #21262d; }
         body.dark-mode .pf-perf-sub .pf-sub-item { background: #0d1117; border-color: #21262d; }
@@ -226,6 +331,7 @@
 
         @media (max-width: 1180px) { .pf-body { grid-template-columns: 1fr; } .pf-side { position: static; } .pf-summary { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 980px) { .pf-perf-main { grid-template-columns: 1fr 1fr; } .pf-perf-chart { grid-column: 1 / -1; } .pf-perf-sub { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) { .pf-alert-blocks { grid-template-columns: 1fr; } }
         @media (max-width: 640px) { .pf-summary { grid-template-columns: 1fr 1fr; } .pf-alloc { grid-template-columns: 1fr; } .pf-alloc-legend { flex-direction: row; flex-wrap: wrap; } .pf-perf-main { grid-template-columns: 1fr; } .pf-perf-sub { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
@@ -233,8 +339,8 @@
     <div class="app-wrapper">
         <div class="pf-head">
             <div>
-                <h1>Danh mục của tôi</h1>
-                <div class="pf-sub">Theo dõi hiệu suất, phân bổ và lãi/lỗ danh mục theo thời gian thực</div>
+                <h1>Quản lý tài sản</h1>
+                <div class="pf-sub">Theo dõi hiệu suất, phân bổ và lãi/lỗ tài sản theo thời gian thực</div>
             </div>
             <div id="pfHeadRight"></div>
         </div>
@@ -254,16 +360,11 @@
             let DEMO = false;
             let screenerMap = {};   // symbol -> {sectorName, volume_ratio, risk, ...}
             let chartPeriod = '1M';
-            let perfPeriod = 'ALL';
+            let currentTab = 'overview';
+            let watchlistSyms = [];
+            let tradeMode = 'buy';
+            let alertData = [];     // dữ liệu Trung tâm cảnh báo
             const chartCache = {};
-            const PERF_PERIODS = [
-                { k: '1W', hist: '1m', days: 7, label: '1W' },
-                { k: '1M', hist: '3m', days: 31, label: '1M' },
-                { k: '3M', hist: '6m', days: 92, label: '3M' },
-                { k: '6M', hist: '1y', days: 183, label: '6M' },
-                { k: '1Y', hist: '2y', days: 365, label: '1Y' },
-                { k: 'ALL', hist: '5y', days: 0, label: 'Tất cả' }
-            ];
             const TIP_PNL = 'Tổng lãi/lỗ = Giá trị hiện tại của danh mục − Tổng vốn đã đầu tư. TuniX tính theo giá thị trường realtime so với giá vốn các vị thế đang nắm giữ.';
             const TIP_INVESTED = 'Tổng vốn đã dùng để mua cổ phiếu đang nắm giữ (số lượng × giá vốn bình quân).';
             const TIP_RETURN = 'Tỷ suất lợi nhuận = Tổng lãi/lỗ ÷ Tổng vốn đã đầu tư × 100.';
@@ -311,7 +412,7 @@
             // ---------- Chart ----------
             function renderChartCard() {
                 return '<div class="pf-card">' +
-                    '<h2>Hiệu suất danh mục</h2>' +
+                    '<h2>Hiệu suất tài sản</h2>' +
                     '<div class="pf-chart-tabs">' + Object.keys(PERIODS).map(function(p) {
                         return '<button data-per="' + p + '" class="' + (p === chartPeriod ? 'active' : '') + '">' + p + '</button>';
                     }).join('') + '</div>' +
@@ -389,7 +490,7 @@
 
             // ---------- Allocation donut ----------
             function renderAlloc() {
-                if (!holdings.length) return '<div class="pf-card"><h2>Phân bổ danh mục</h2><div class="pf-empty">Chưa có dữ liệu.</div></div>';
+                if (!holdings.length) return '<div class="pf-card"><h2>Phân bổ tài sản</h2><div class="pf-empty">Chưa có dữ liệu.</div></div>';
                 const total = totals().totalValue || 1;
                 const sectors = {};
                 holdings.forEach(function(h) {
@@ -402,10 +503,10 @@
                 const legend = list.map(function(s, i) {
                     return '<div class="al-row"><span class="al-dot" style="background:' + PALETTE[i % PALETTE.length] + ';"></span><span class="al-name">' + esc(s.name) + '</span><span class="al-pct">' + s.pct.toFixed(0) + '%</span><span class="al-val">' + fmtMoney(s.value) + ' đ</span></div>';
                 }).join('');
-                return '<div class="pf-card"><h2>Phân bổ danh mục</h2><div class="pf-alloc">' +
+                return '<div class="pf-card"><h2>Phân bổ theo ngành</h2><div class="pf-alloc">' +
                     '<div>' + donut + '</div><div class="pf-alloc-legend">' + legend + '</div></div></div>';
             }
-            function donutSvg(list, w, h) {
+            function donutSvg(list, w, h, centerLabel) {
                 const cx = w / 2, cy = h / 2, r = w / 2 - 6, ir = r * 0.62;
                 const total = list.reduce(function(a, s) { return a + s.value; }, 0) || 1;
                 let angle = -90, arcs = '';
@@ -424,14 +525,14 @@
                 return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%">' + arcs +
                     '<circle cx="' + cx + '" cy="' + cy + '" r="' + ir + '" class="pf-donut-center"/>' +
                     '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="16" font-weight="800" class="pf-donut-num" font-family="Inter">' + list.length + '</text>' +
-                    '<text x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" font-size="10.5" fill="#8a99b1" font-family="Inter">ngành</text>' +
+                    '<text x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" font-size="10.5" fill="#8a99b1" font-family="Inter">' + esc(centerLabel || 'ngành') + '</text>' +
                 '</svg>';
             }
 
             // ---------- Table + form ----------
             function renderTable() {
                 if (!holdings.length) {
-                    return '<div class="pf-card"><h2>Danh sách cổ phiếu</h2><div class="pf-table-wrap"><div class="pf-empty"><i class="fas fa-briefcase" style="font-size:30px;color:#c3ccd8;"></i><br/>Danh mục của bạn đang trống.<br/>Hãy thêm cổ phiếu bạn đang nắm giữ ở phía trên.</div></div></div>';
+                    return '<div class="pf-card"><h2>Danh sách cổ phiếu</h2><div class="pf-table-wrap"><div class="pf-empty"><i class="fas fa-briefcase" style="font-size:30px;color:#c3ccd8;"></i><br/>Danh mục tài sản của bạn đang trống.<br/>Hãy thêm cổ phiếu bạn đang nắm giữ ở phía trên.</div></div></div>';
                 }
                 const total = totals().totalValue || 1;
                 const rows = holdings.map(function(h) {
@@ -461,15 +562,30 @@
                 const sym = editing ? editing.symbol : '';
                 const qty = editing ? editing.quantity : '';
                 const avg = editing ? editing.avg_price : '';
-                const disabled = DEMO ? ' disabled title="Đăng nhập để thêm vào danh mục thật"' : '';
-                return '<div class="pf-card" id="pfFormCard"><h2>' + (editing ? 'Cập nhật ' + esc(sym) : 'Thêm cổ phiếu vào danh mục') + '</h2>' +
+                const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý danh mục thật"' : '';
+                const title = editing ? 'Cập nhật ' + esc(sym) : 'Mua/Bán cổ phiếu';
+                const submitLabel = editing ? 'Lưu' : (tradeMode === 'sell' ? 'Bán' : 'Mua');
+                const toggle = (editing || DEMO) ? '' :
+                    '<div class="pf-trade-toggle">' +
+                        '<button type="button" class="pf-tt' + (tradeMode === 'buy' ? ' active' : '') + '" data-mode="buy"><i class="fas fa-cart-plus"></i> Mua</button>' +
+                        '<button type="button" class="pf-tt' + (tradeMode === 'sell' ? ' active' : '') + '" data-mode="sell"><i class="fas fa-cart-arrow-down"></i> Bán</button>' +
+                    '</div>';
+                const fields = editing
+                    ? '<div class="pf-field"><label>Giá vốn (đ)</label><input type="number" id="pfAvg" min="0" max="1000000" step="100" placeholder="VD: 26500" value="' + esc(avg) + '" ' + disabled + ' /></div>' +
+                      '<div class="pf-field"><label>Số lượng</label><input type="number" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1000" value="' + esc(qty) + '" ' + disabled + ' /></div>'
+                    : '<div class="pf-field"><label>Giá mua/bán (đ)</label><input type="number" id="pfAvg" min="0" max="1000000" step="100" placeholder="VD: 26500" ' + disabled + ' /></div>' +
+                      '<div class="pf-field"><label>Số lượng mua/bán</label><input type="number" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1000" ' + disabled + ' /></div>' +
+                      '<div class="pf-field"><label>Phí giao dịch (%)</label><input type="number" id="pfFee" min="0" max="10" step="0.01" placeholder="VD: 0.15" value="0.15" ' + disabled + ' /></div>';
+                const submitField = '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary" id="pfSubmit" ' + (DEMO ? 'disabled' : '') + '>' + submitLabel + '</button>' + (editing ? '<button type="button" class="btn" id="pfCancelEdit">Hủy</button>' : '') + '</div>';
+                return '<div class="pf-card" id="pfFormCard"><h2>' + title + '</h2>' +
+                    toggle +
                     '<div class="pf-form-row">' +
-                        '<div class="pf-field" style="flex:1.2 1 170px;"><label>Mã</label><input type="text" id="pfSymbol" placeholder="VD: HDB" value="' + esc(sym) + '" ' + (editing || DEMO ? 'disabled' : '') + ' autocomplete="off" spellcheck="false" /><div class="pf-price-hint" id="pfPriceHint"></div></div>' +
-                        '<div class="pf-field"><label>Giá vốn (đ)</label><input type="number" id="pfAvg" min="0" step="100" placeholder="VD: 26500" value="' + esc(avg) + '" ' + disabled + ' /><div class="pf-price-hint"></div></div>' +
-                        '<div class="pf-field"><label>Số lượng</label><input type="number" id="pfQty" min="0" step="1" placeholder="VD: 1000" value="' + esc(qty) + '" ' + disabled + ' /><div class="pf-price-hint"></div></div>' +
-                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary" id="pfSubmit" ' + (DEMO ? 'disabled' : '') + '>' + (editing ? 'Lưu' : 'Thêm vào danh mục') + '</button><div class="pf-price-hint"></div></div>' +
+                        '<div class="pf-field"><label>Mã</label><input type="text" id="pfSymbol" maxlength="3" placeholder="VD: HDB" value="' + esc(sym) + '" ' + (editing || DEMO ? 'disabled' : '') + ' autocomplete="off" spellcheck="false" /></div>' +
+                        fields +
+                        submitField +
                     '</div>' +
-                    (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý danh mục thật.</div>' : '') +
+                    (editing ? '' : '<div class="pf-price-hint" id="pfPriceHint"></div>') +
+                    (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                 '</div>';
             }
 
@@ -521,7 +637,7 @@
                 }
                 return '<div class="pf-card pf-review"><h3>TuniAI Portfolio Review</h3>' +
                     '<div class="pf-score-row">' + ring +
-                        '<div class="pf-score-meta"><div class="ps-label">Portfolio Score</div><div class="ps-label" style="color:#8a99b1;">/ 100</div><div class="ps-note">Đánh giá tự động từ dữ liệu danh mục</div></div>' +
+                        '<div class="pf-score-meta"><div class="ps-label">Portfolio Score</div><div class="ps-label" style="color:#8a99b1;">/ 100</div><div class="ps-note">Đánh giá tự động từ dữ liệu tài sản</div></div>' +
                     '</div>' +
                     '<div class="pf-lists">' +
                         '<div class="pf-list-title">Điểm mạnh</div><ul class="pf-list">' + listHtml(strengths) + '</ul>' +
@@ -529,31 +645,268 @@
                     '</div></div>';
             }
 
-            // ---------- Alerts ----------
-            function renderAlerts() {
-                if (!holdings.length) return '<div class="pf-card"><h3>Cảnh báo thông minh</h3><div class="pf-empty">Chưa có dữ liệu.</div></div>';
-                const alerts = [];
-                holdings.forEach(function(h) {
-                    const info = screenerMap[h.symbol];
-                    const vr = info ? Number(info.volume_ratio) || 0 : 0;
-                    const pc = Number(h.percent_change) || 0;
-                    if (vr >= 1.5) alerts.push({ sym: h.symbol, icon: '🔺', text: 'volume tăng ' + (vr * 100).toFixed(0) + '% so trung bình' });
-                    if (pc >= 3) alerts.push({ sym: h.symbol, icon: '📈', text: 'tăng ' + fmtPct(pc) + ' trong phiên' });
-                    if (pc <= -3) alerts.push({ sym: h.symbol, icon: '📉', text: 'giảm ' + fmtPct(pc) + ' — theo dõi vùng hỗ trợ' });
-                    if (info && (info.risk === 'high' || info.risk === 'extreme')) alerts.push({ sym: h.symbol, icon: '🛡️', text: 'mức rủi ro ' + info.risk });
-                    if (Number(h.pnl_pct) < -10) alerts.push({ sym: h.symbol, icon: '⚠️', text: 'đang lỗ sâu ' + fmtPct(h.pnl_pct) + ' so giá vốn' });
-                });
-                const html = alerts.slice(0, 5).map(function(a) {
-                    return '<div class="pf-alert"><span class="pa-ico">' + a.icon + '</span><span class="pa-text"><span class="pa-sym">' + esc(a.sym) + '</span> ' + esc(a.text) + '</span></div>';
+            // ---------- Phân bổ (dùng chung donut + legend) ----------
+            function allocCard(title, list, centerLabel) {
+                const total = list.reduce(function(a, s) { return a + s.value; }, 0) || 1;
+                const donut = donutSvg(list, 170, 170, centerLabel);
+                const legend = list.map(function(s, i) {
+                    return '<div class="al-row"><span class="al-dot" style="background:' + PALETTE[i % PALETTE.length] + ';"></span><span class="al-name">' + esc(s.name) + '</span><span class="al-pct">' + (s.value / total * 100).toFixed(0) + '%</span><span class="al-val">' + fmtMoney(s.value) + ' đ</span></div>';
                 }).join('');
-                return '<div class="pf-card"><h3>Cảnh báo thông minh</h3>' + (html || '<div class="pf-empty">Không có cảnh báo nào hôm nay.</div>') + '</div>';
+                return '<div class="pf-card"><h3>' + esc(title) + '</h3><div class="pf-alloc">' +
+                    '<div>' + donut + '</div><div class="pf-alloc-legend">' + legend + '</div></div></div>';
+            }
+
+            // ---------- Biểu đồ thanh ngang (dùng chung) ----------
+            function hbarCard(title, list, note) {
+                const total = list.reduce(function(a, s) { return a + s.value; }, 0) || 1;
+                const rows = list.map(function(s, i) {
+                    const pct = s.value / total * 100;
+                    return '<div class="hb-row">' +
+                        '<div class="hb-top"><span class="hb-name">' + esc(s.name) + '</span><span class="hb-pct">' + pct.toFixed(0) + '%</span><span class="hb-val">' + fmtMoney(s.value) + ' đ</span></div>' +
+                        '<div class="hb-track"><div class="hb-fill" style="width:' + pct.toFixed(1) + '%;background:' + PALETTE[i % PALETTE.length] + ';"></div></div>' +
+                    '</div>';
+                }).join('');
+                return '<div class="pf-card"><h3>' + esc(title) + '</h3><div class="pf-hbar">' + rows + '</div>' + (note || '') + '</div>';
+            }
+
+            // ---------- Phân bổ tài sản (theo loại tài sản — biểu đồ thanh ngang) ----------
+            const ASSET_CLASSES = [
+                { key: 'stock', label: 'Cổ phiếu' },
+                { key: 'cash', label: 'Tiền mặt' },
+                { key: 'etf', label: 'ETF' },
+                { key: 'fund', label: 'Quỹ' },
+                { key: 'bond', label: 'Trái phiếu' },
+                { key: 'other', label: 'Tài sản khác' }
+            ];
+            function assetAllocation() {
+                // TuniX hiện chỉ theo dõi cổ phiếu (PortfolioHolding); các hạng mục khác
+                // chưa có dữ liệu → hiển thị 0% một cách trung thực (không tạo dữ liệu ảo).
+                const stockValue = holdings.length ? totals().totalValue || 0 : 0;
+                return ASSET_CLASSES.map(function(c) {
+                    return { name: c.label, value: c.key === 'stock' ? stockValue : 0 };
+                });
+            }
+            function renderAssetAlloc() {
+                if (!holdings.length) return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-empty">Chưa có dữ liệu.</div></div>';
+                return hbarCard('Phân bổ tài sản', assetAllocation(),
+                    '<div class="pf-alloc-note"><i class="fas fa-info-circle"></i> TuniX hiện chỉ theo dõi cổ phiếu — các hạng mục Tiền mặt, ETF, Quỹ, Trái phiếu, Tài sản khác đang ở 0% cho tới khi được hỗ trợ.</div>');
+            }
+
+            // ---------- Phân bổ theo ngành (taxonomy ngành thống nhất của hệ thống) ----------
+            function sectorAllocation() {
+                // Dùng economicSectorName từ screener (hệ thống phân ngành hiện có) — không mapping rời rạc.
+                const sectors = {};
+                holdings.forEach(function(h) {
+                    const sec = (screenerMap[h.symbol] && screenerMap[h.symbol].sectorName) || 'Khác';
+                    sectors[sec] = (sectors[sec] || 0) + (Number(h.market_value) || 0);
+                });
+                return Object.keys(sectors).map(function(k) { return { name: k, value: sectors[k] }; })
+                    .sort(function(a, b) { return b.value - a.value; });
+            }
+            function renderSectorAlloc() {
+                const list = sectorAllocation();
+                if (!list.length) return '<div class="pf-card"><h3>Phân bổ theo ngành</h3><div class="pf-empty">Chưa có dữ liệu.</div></div>';
+                return allocCard('Phân bổ theo ngành', list, 'ngành');
+            }
+
+            // ---------- Trung tâm cảnh báo ----------
+            // Hiển thị 3 block: Cơ hội / Cảnh báo / Xu hướng (mỗi block = 1 category)
+            const ALERT_BLOCKS = [
+                { k: 'opportunity', label: 'Cơ hội', icon: 'fa-lightbulb', color: '#00a08a' },
+                { k: 'warning', label: 'Cảnh báo', icon: 'fa-triangle-exclamation', color: '#d0314e' },
+                { k: 'trend', label: 'Xu hướng', icon: 'fa-chart-line', color: '#4a7fc4' }
+            ];
+            const ALERT_TYPE_META = {
+                SUPPORT_NEAR:      { icon: 'fa-arrow-down-to-line', color: '#00a08a', label: 'Gần hỗ trợ' },
+                RESISTANCE_NEAR:   { icon: 'fa-arrow-up-from-line', color: '#d0314e', label: 'Gần kháng cự' },
+                BREAKOUT:          { icon: 'fa-arrow-trend-up', color: '#00a08a', label: 'Phá vỡ kháng cự' },
+                BREAKDOWN:         { icon: 'fa-arrow-trend-down', color: '#d0314e', label: 'Thủng hỗ trợ' },
+                PRICE_TARGET:      { icon: 'fa-bullseye', color: '#7b61c4', label: 'Mục tiêu giá' },
+                MA_CROSS_UP:       { icon: 'fa-arrows-up-to-line', color: '#00a08a', label: 'MA cắt lên' },
+                MA_CROSS_DOWN:     { icon: 'fa-arrows-down-to-line', color: '#d0314e', label: 'MA cắt xuống' },
+                MA50_BREAK_UP:     { icon: 'fa-arrow-up-from-bracket', color: '#00a08a', label: 'Phá vỡ MA50' },
+                MA50_BREAK_DOWN:   { icon: 'fa-arrow-down-to-bracket', color: '#d0314e', label: 'Rơi khỏi MA50' },
+                MA200_BREAK_UP:    { icon: 'fa-arrow-up-from-bracket', color: '#00a08a', label: 'Phá vỡ MA200' },
+                MA200_BREAK_DOWN:  { icon: 'fa-arrow-down-to-bracket', color: '#d0314e', label: 'Rơi khỏi MA200' },
+                RSI_OVERBOUGHT:    { icon: 'fa-temperature-high', color: '#d0314e', label: 'RSI quá mua' },
+                RSI_OVERSOLD:      { icon: 'fa-temperature-low', color: '#00a08a', label: 'RSI quá bán' },
+                MACD_BULLISH_CROSS:{ icon: 'fa-arrow-trend-up', color: '#00a08a', label: 'MACD vàng' },
+                MACD_BEARISH_CROSS:{ icon: 'fa-arrow-trend-down', color: '#d0314e', label: 'MACD tử' },
+                TREND_STRENGTHENING:{ icon: 'fa-arrow-up-wide-short', color: '#00a08a', label: 'Xu hướng mạnh lên' },
+                TREND_WEAKENING:   { icon: 'fa-arrow-down-wide-short', color: '#d0314e', label: 'Xu hướng yếu đi' }
+            };
+            const IMPORTANCE_META = {
+                low:      { label: 'Thấp', color: '#8a99b1' },
+                medium:   { label: 'Trung bình', color: '#f5a623' },
+                high:     { label: 'Cao', color: '#d0314e' },
+                critical: { label: 'Nghiêm trọng', color: '#8a2333' }
+            };
+            function alertMeta(t) { return ALERT_TYPE_META[t] || { icon: 'fa-bell', color: '#8a99b1', label: t }; }
+
+            // Ưu tiên tín hiệu khi 1 mã xung đột Cơ hội vs Cảnh báo (cao hơn = được giữ).
+            // Quy tắc: 1 mã chỉ có CƠ HỘI hoặc CẢNH BÁO (không cả hai); Xu hướng độc lập.
+            const ALERT_PRIORITY = {
+                BREAKOUT: 5, BREAKDOWN: 5,
+                SUPPORT_NEAR: 4, RESISTANCE_NEAR: 4,
+                RSI_OVERSOLD: 2, RSI_OVERBOUGHT: 2
+            };
+            function alertPrio(a) { return ALERT_PRIORITY[a.alert_type] || 1; }
+            function alertStrength(a) { return Number((a.metadata || {}).strength_score) || 0; }
+            function bestScore(list) {
+                let bp = -1, bs = -1;
+                list.forEach(function(a) {
+                    const p = alertPrio(a), s = alertStrength(a);
+                    if (p > bp || (p === bp && s > bs)) { bp = p; bs = s; }
+                });
+                return { p: bp, s: bs };
+            }
+            function resolveCategoryConflict(alerts) {
+                const bySym = {};
+                alerts.forEach(function(a) {
+                    if (a.category === 'opportunity' || a.category === 'warning') {
+                        (bySym[a.symbol] = bySym[a.symbol] || { opportunity: [], warning: [] })[a.category].push(a);
+                    }
+                });
+                const hide = {}; // symbol -> category bị ẩn (chỉ giữ 1 nhóm)
+                Object.keys(bySym).forEach(function(sym) {
+                    const g = bySym[sym];
+                    if (!g.opportunity.length || !g.warning.length) return;
+                    const o = bestScore(g.opportunity), w = bestScore(g.warning);
+                    const warnWins = w.p > o.p || (w.p === o.p && w.s >= o.s); // hoà → Cảnh báo thắng
+                    hide[sym] = warnWins ? 'opportunity' : 'warning';
+                });
+                return alerts.filter(function(a) {
+                    if (a.category !== 'opportunity' && a.category !== 'warning') return true;
+                    return hide[a.symbol] !== a.category;
+                });
+            }
+
+            function renderAlerts() {
+                return '<div class="pf-alerts">' +
+                    '<div class="pf-alerts-head">' +
+                        '<button type="button" id="pfAlertScan" class="pf-scan-btn"><i class="fas fa-sync-alt"></i> Quét cảnh báo</button>' +
+                    '</div>' +
+                    '<div id="pfAlertList"><div class="pf-loading">Đang tải cảnh báo…</div></div>' +
+                '</div>';
+            }
+
+            function loadAlerts() {
+                const list = document.getElementById('pfAlertList');
+                const scanBtn = document.getElementById('pfAlertScan');
+                if (scanBtn) {
+                    scanBtn.addEventListener('click', function() {
+                        if (DEMO) { toast('Vui lòng đăng nhập để quét cảnh báo.', true); return; }
+                        scanBtn.disabled = true; scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang quét…';
+                        fetch('/api/alerts/scan', { method: 'POST', headers: authHeaders() })
+                            .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+                            .then(function(res) {
+                                toast('Đã quét ' + (res.scanned || 0) + ' mã, tạo ' + (res.created || 0) + ' cảnh báo.');
+                                return loadAlerts();
+                            })
+                            .catch(function() { toast('Quét cảnh báo thất bại.', true); })
+                            .finally(function() {
+                                scanBtn.disabled = false; scanBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Quét cảnh báo';
+                            });
+                    });
+                }
+                if (DEMO) { list.innerHTML = '<div class="pf-empty">Đăng nhập để xem Trung tâm cảnh báo.</div>'; return; }
+                fetch('/api/alerts?limit=100', { headers: authHeaders(), cache: 'no-store' })
+                    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+                    .then(function(items) { alertData = items; renderAlertList(); })
+                    .catch(function() { list.innerHTML = '<div class="pf-empty">Không tải được cảnh báo.</div>'; notifyParentHeight(); });
+            }
+
+            function fmtAgo(iso) {
+                if (!iso) return '';
+                try {
+                    const d = new Date(iso);
+                    const s = Math.floor((Date.now() - d.getTime()) / 1000);
+                    if (s < 60) return 'vừa xong';
+                    if (s < 3600) return Math.floor(s / 60) + ' phút trước';
+                    if (s < 86400) return Math.floor(s / 3600) + ' giờ trước';
+                    return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                } catch (e) { return ''; }
+            }
+
+            function alertCardHtml(a) {
+                const m = alertMeta(a.alert_type);
+                const imp = IMPORTANCE_META[a.importance] || IMPORTANCE_META.medium;
+                const why = a.metadata || {};
+                const zone = why.zone || null;
+                const distPct = (typeof why.distance_percent !== 'undefined') ? Number(why.distance_percent).toFixed(2) : null;
+                return '<div class="pf-alert-card' + (a.is_read ? '' : ' unread') + '" data-id="' + a.id + '">' +
+                    '<div class="pf-ac-left"><i class="fas ' + m.icon + '" style="color:' + m.color + '"></i></div>' +
+                    '<div class="pf-ac-main">' +
+                        '<div class="pf-ac-top">' +
+                            '<span class="pf-ac-type" style="background:' + m.color + '1a;color:' + m.color + '">' + esc(m.label) + '</span>' +
+                            '<span class="pf-ac-sym">' + esc(a.symbol) + '</span>' +
+                            '<span class="pf-ac-imp" style="color:' + imp.color + '">' + esc(imp.label) + '</span>' +
+                            '<span class="pf-ac-time">' + fmtAgo(a.created_at) + '</span>' +
+                        '</div>' +
+                        '<div class="pf-ac-title">' + esc(a.title) + '</div>' +
+                        '<div class="pf-ac-desc">' + esc(a.description) + '</div>' +
+                        (zone ? '<div class="pf-ac-why">' +
+                            '<i class="fas fa-circle-question"></i> Vì sao có cảnh báo này: ' +
+                            'giá ' + fmtMoney(why.current_price) +
+                            ' cách vùng ' + fmtMoney(zone.lower) + '–' + fmtMoney(zone.upper) +
+                            (distPct !== null ? ' (' + distPct + '%)' : '') +
+                            ' · chạm ' + (why.touch_count || 0) + ' lần · độ mạnh ' + (why.strength_score || 0) + '/100' +
+                            ' · độ tin cậy ' + esc(why.confidence || '—') +
+                            ' · khung ' + esc(why.timeframe || '1D') +
+                        '</div>' : '') +
+                    '</div>' +
+                    '<div class="pf-ac-right">' +
+                        (a.is_read ? '<span class="pf-ac-readmark"><i class="fas fa-check-circle"></i></span>'
+                                   : '<button type="button" class="pf-ac-read" data-id="' + a.id + '" title="Đánh dấu đã đọc"><i class="fas fa-circle"></i></button>') +
+                    '</div>' +
+                '</div>';
+            }
+
+            function renderAlertList() {
+                const list = document.getElementById('pfAlertList');
+                if (!list) return;
+                if (!alertData.length) {
+                    list.innerHTML = '<div class="pf-empty">Chưa có cảnh báo nào. Hãy bấm "Quét cảnh báo" để phân tích cổ phiếu của bạn.</div>';
+                    notifyParentHeight(); return;
+                }
+                // Nhóm theo 3 block cố định: Cơ hội / Cảnh báo / Xu hướng (hiển thị ngang 3 cột).
+                // Lọc xung đột: 1 mã chỉ giữ Cơ hội HOẶC Cảnh báo (Xu hướng độc lập).
+                const shown = resolveCategoryConflict(alertData);
+                let html = '';
+                ALERT_BLOCKS.forEach(function(b) {
+                    const items = shown.filter(function(a) { return a.category === b.k; });
+                    html += '<div class="pf-alert-block" data-block="' + b.k + '">' +
+                        '<div class="pf-alert-block-head">' +
+                            '<i class="fas ' + b.icon + '" style="color:' + b.color + '"></i> ' + esc(b.label) +
+                            '<span class="pf-alert-block-count" style="background:' + b.color + '1a;color:' + b.color + '">' + items.length + '</span>' +
+                        '</div>' +
+                        (items.length ? items.map(alertCardHtml).join('')
+                                      : '<div class="pf-empty">Chưa có ' + b.label.toLowerCase() + ' nào.</div>') +
+                    '</div>';
+                });
+                list.innerHTML = '<div class="pf-alert-blocks">' + html + '</div>';
+                list.querySelectorAll('.pf-ac-read').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        const id = btn.getAttribute('data-id');
+                        fetch('/api/alerts/' + id + '/read', { method: 'POST', headers: authHeaders() })
+                            .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+                            .then(function() {
+                                alertData = alertData.map(function(x) { return x.id === Number(id) ? Object.assign({}, x, { is_read: true }) : x; });
+                                renderAlertList();
+                            })
+                            .catch(function() { toast('Không cập nhật được trạng thái.', true); });
+                    });
+                });
+                notifyParentHeight();
             }
 
             // ---------- Watchlist ----------
             function renderWatchlist() {
                 return '<div class="pf-card"><h3>Danh sách theo dõi</h3>' +
                     '<div class="pf-wl-add">' + (DEMO ? '' : '<input id="wlInput" placeholder="Thêm mã, VD: VNM" /><button id="wlAdd"><i class="fas fa-plus"></i></button>') + '</div>' +
-                    '<div class="pf-wl-list" id="wlList"><div class="pf-loading">Đang tải…</div></div>' +
+                    '<div class="pf-table-wrap"><table class="pf-wl-table"><thead><tr>' +
+                        '<th>Mã</th><th>Giá hiện tại</th><th>Giá Hôm Qua</th><th>Thay đổi</th><th>Khối lượng</th><th></th>' +
+                    '</tr></thead><tbody id="wlList"><tr><td colspan="5" class="pf-loading">Đang tải…</td></tr></tbody></table></div>' +
                 '</div>';
             }
             // Màu theo quy ước trang Thị trường: Trần = tím, Tăng = xanh lá, Đứng = vàng, Giảm = đỏ, Sàn = xanh lơ
@@ -576,13 +929,14 @@
                 return String(Math.round(n));
             }
             function wlItemHtml(sym, showRemove) {
-                return '<div class="pf-wl-item" data-symbol="' + esc(sym) + '">' +
-                    '<div class="wl-info">' +
-                        '<div class="wl-top"><span class="wl-sym">' + esc(sym) + '</span><span class="wl-name"></span></div>' +
-                        '<div class="wl-meta"><span class="wl-price">--</span><span class="wl-chg"></span><span class="wl-vol"></span></div>' +
-                    '</div>' +
-                    (showRemove ? '<button class="wl-rm" data-rm="' + esc(sym) + '" title="Bỏ theo dõi"><i class="fas fa-times"></i></button>' : '') +
-                '</div>';
+                return '<tr data-symbol="' + esc(sym) + '">' +
+                    '<td><div class="td-sym">' + esc(sym) + '<span class="name wl-name"></span></div></td>' +
+                    '<td class="wl-price" style="font-weight:800;">--</td>' +
+                    '<td class="wl-prev">--</td>' +
+                    '<td class="wl-chg" style="font-weight:700;">--</td>' +
+                    '<td class="wl-vol">--</td>' +
+                    (showRemove ? '<td style="text-align:right;"><div class="td-actions" style="justify-content:flex-end;"><button class="wl-rm" data-rm="' + esc(sym) + '" title="Bỏ theo dõi"><i class="fas fa-times"></i></button></div></td>' : '') +
+                '</tr>';
             }
             function fillWlQuotes(listEl, symbols) {
                 symbols.forEach(function(sym) {
@@ -600,6 +954,8 @@
                             if (nameEl) nameEl.textContent = q.company_name || q.name || '';
                             const priceEl = row.querySelector('.wl-price');
                             if (priceEl) { priceEl.textContent = price ? fmtMoney(price) : '--'; priceEl.style.color = color; }
+                            const prevEl = row.querySelector('.wl-prev');
+                            if (prevEl) { const prev = Number(q.reference_price) || 0; prevEl.textContent = prev ? fmtMoney(prev) : '--'; }
                             const chgEl = row.querySelector('.wl-chg');
                             if (chgEl) {
                                 if (change === 0 && pct === 0) {
@@ -612,34 +968,35 @@
                                 chgEl.style.color = color;
                             }
                             const volEl = row.querySelector('.wl-vol');
-                            if (volEl) volEl.textContent = 'KL: ' + fmtVol(q.volume);
+                            if (volEl) volEl.textContent = fmtVol(q.volume);
                         }).catch(function() {});
                 });
             }
             function loadWatchlist() {
                 const listEl = document.getElementById('wlList');
-                if (!listEl) return;
                 if (DEMO) {
-                    const demo = ['ACB', 'VCI', 'FPT', 'HPG', 'MBB'];
-                    listEl.innerHTML = demo.map(function(sym) { return wlItemHtml(sym, false); }).join('');
+                    watchlistSyms = ['ACB', 'VCI', 'FPT', 'HPG', 'MBB'];
+                    if (!listEl) return;
+                    listEl.innerHTML = watchlistSyms.map(function(sym) { return wlItemHtml(sym, false); }).join('');
                     bindWlList();
-                    fillWlQuotes(listEl, demo);
+                    fillWlQuotes(listEl, watchlistSyms);
                     return;
                 }
                 fetch('/api/watchlist', { headers: authHeaders() })
                     .then(function(r) { return r.ok ? r.json() : []; })
                     .then(function(list) {
                         const items = Array.isArray(list) ? list : [];
-                        if (!items.length) { listEl.innerHTML = '<div class="pf-empty">Chưa có cổ phiếu theo dõi.</div>'; return; }
-                        const syms = items.map(function(w) { return w.symbol; });
-                        listEl.innerHTML = syms.map(function(s) { return wlItemHtml(s, true); }).join('');
+                        watchlistSyms = items.map(function(w) { return w.symbol; });
+                        if (!listEl) return;
+                        if (!items.length) { listEl.innerHTML = '<tr><td colspan="6" class="pf-empty">Chưa có cổ phiếu theo dõi.</td></tr>'; return; }
+                        listEl.innerHTML = watchlistSyms.map(function(s) { return wlItemHtml(s, true); }).join('');
                         bindWlList();
-                        fillWlQuotes(listEl, syms);
+                        fillWlQuotes(listEl, watchlistSyms);
                     })
-                    .catch(function() { listEl.innerHTML = '<div class="pf-empty">Không tải được.</div>'; });
+                    .catch(function() { if (listEl) listEl.innerHTML = '<tr><td colspan="6" class="pf-empty">Không tải được.</td></tr>'; });
             }
             function bindWlList() {
-                document.querySelectorAll('.pf-wl-item').forEach(function(el) {
+                document.querySelectorAll('#wlList tr[data-symbol]').forEach(function(el) {
                     el.addEventListener('click', function(e) {
                         if (e.target.closest('.wl-rm')) return;
                         openStock(el.getAttribute('data-symbol'));
@@ -653,6 +1010,109 @@
                             .catch(function() { toast('Lỗi', true); });
                     });
                 });
+            }
+
+            // ---------- Portfolio table (nắm giữ + theo dõi) ----------
+            function renderPortfolioTable() {
+                return '<div class="pf-card"><h3>Bảng danh mục</h3>' +
+                    '<div class="pf-table-wrap"><table class="pf-pt-table"><thead><tr>' +
+                        '<th>Mã</th><th>Giá vốn TB</th><th>Giá hiện tại</th><th>SL</th><th>Giá trị</th><th>Lãi/Lỗ</th><th>%</th><th>Hỗ trợ</th><th>Kháng cự</th><th>Trạng thái</th>' +
+                    '</tr></thead><tbody id="pfPortfolioBody"><tr><td colspan="10" class="pf-loading">Đang tải…</td></tr></tbody></table></div>' +
+                '</div>';
+            }
+            function nearestZone(zones, kind, price) {
+                if (!Array.isArray(zones)) return null;
+                const filtered = zones.filter(function(z) { return z.kind === kind; });
+                if (!filtered.length) return null;
+                filtered.sort(function(a, b) {
+                    if (kind === 'support') return b.upper_bound - a.upper_bound;
+                    return a.lower_bound - b.lower_bound;
+                });
+                return filtered[0];
+            }
+            function zoneCell(zone) {
+                if (!zone) return '<span style="color:#b6c2d2;">-</span>';
+                const conf = zone.confidence === 'HIGH' ? '#0f7b3a' : (zone.confidence === 'MEDIUM' ? '#f5a623' : '#8a99b1');
+                return '<span style="white-space:nowrap;">' + fmtMoney(zone.lower_bound) + '–' + fmtMoney(zone.upper_bound) +
+                    ' <span style="font-size:10.5px;font-weight:700;color:' + conf + '" title="Độ mạnh ' + zone.strength_score + '/100 · chạm ' + zone.touch_count + ' lần · khối lượng ' + (zone.volume_confirmation ? 'xác nhận' : 'thường') + ' · ' + zone.confidence + '">' + zone.strength_score + '</span></span>';
+            }
+            function calcStatus(price, support, resistance, candles) {
+                const neutral = { label: 'Trung lập', icon: 'fa-minus', color: '#8a99b1' };
+                if (!price || price <= 0) return neutral;
+                const nearPct = 0.02;
+                if (support) {
+                    const d = Math.abs(price - support.upper_bound) / price;
+                    if (d <= nearPct) return { label: 'Gần hỗ trợ', icon: 'fa-arrow-down-to-line', color: '#26a69a' };
+                }
+                if (resistance) {
+                    const d = Math.abs(resistance.lower_bound - price) / price;
+                    if (d <= nearPct) return { label: 'Gần kháng cự', icon: 'fa-arrow-up-from-line', color: '#ef5350' };
+                }
+                let aboveMA = null, momentum = null;
+                if (candles && candles.length >= 20) {
+                    const ma20 = candles.slice(-20).reduce(function(s, c) { return s + c.close; }, 0) / 20;
+                    aboveMA = price >= ma20;
+                }
+                if (candles && candles.length >= 6) {
+                    momentum = price >= candles[candles.length - 6].close;
+                }
+                if (aboveMA !== null && momentum !== null) {
+                    if (aboveMA && momentum) return { label: 'Xu hướng tích cực', icon: 'fa-arrow-trend-up', color: '#0f7b3a' };
+                    if (!aboveMA && !momentum) return { label: 'Xu hướng suy yếu', icon: 'fa-arrow-trend-down', color: '#f5a623' };
+                }
+                return neutral;
+            }
+            function loadPortfolioTable() {
+                const tbody = document.getElementById('pfPortfolioBody');
+                if (!tbody) return;
+                const syms = [];
+                holdings.forEach(function(h) { if (syms.indexOf(h.symbol) === -1) syms.push(h.symbol); });
+                watchlistSyms.forEach(function(s) { if (syms.indexOf(s) === -1) syms.push(s); });
+                if (!syms.length) { tbody.innerHTML = '<tr><td colspan="10" class="pf-empty">Chưa có cổ phiếu nào trong danh mục.</td></tr>'; notifyParentHeight(); return; }
+                const hmap = {};
+                holdings.forEach(function(h) { hmap[h.symbol] = h; });
+                Promise.all(syms.map(function(sym) {
+                    return Promise.all([
+                        fetch('/api/stocks/' + encodeURIComponent(sym) + '/quote', { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+                        fetch('/api/stocks/' + encodeURIComponent(sym) + '/history?period=3m', { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+                        fetch('/api/stocks/' + encodeURIComponent(sym) + '/sr-zones?period=1y', { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+                    ]).then(function(res) { return { sym: sym, quote: res[0], bars: res[1], zones: res[2] }; });
+                })).then(function(rows) {
+                    if (!tbody) return;
+                    let html = '';
+                    rows.forEach(function(row) {
+                        const h = hmap[row.sym];
+                        const isHolding = !!h;
+                        const quote = row.quote;
+                        const price = isHolding ? (Number(h.price) || 0) : (quote ? Number(quote.price) || 0 : 0);
+                        const name = (isHolding && h.name) || (quote && (quote.company_name || quote.name)) || '';
+                        const zones = Array.isArray(row.zones) ? row.zones : [];
+                        const support = nearestZone(zones, 'support', price);
+                        const resistance = nearestZone(zones, 'resistance', price);
+                        const st = calcStatus(price, support, resistance, row.bars);
+                        const pnl = isHolding ? (Number(h.pnl) || 0) : null;
+                        const pct = isHolding ? (Number(h.pnl_pct) || 0) : null;
+                        const cls = isHolding ? (pnl >= 0 ? 'pos' : 'neg') : '';
+                        const dash = '<span style="color:#b6c2d2;">-</span>';
+                        html += '<tr data-symbol="' + esc(row.sym) + '">' +
+                            '<td><div class="td-sym">' + esc(row.sym) + (name ? '<span class="name">' + esc(name) + '</span>' : '') + '</div></td>' +
+                            '<td>' + (isHolding ? fmtMoney(h.avg_price) : dash) + '</td>' +
+                            '<td style="font-weight:800;">' + (price ? fmtMoney(price) : dash) + '</td>' +
+                            '<td>' + (isHolding ? fmtMoney(h.quantity) : dash) + '</td>' +
+                            '<td>' + (isHolding ? fmtMoney(h.market_value) : dash) + '</td>' +
+                            '<td class="' + cls + '">' + (isHolding ? ((pnl >= 0 ? '+' : '−') + fmtMoney(Math.abs(pnl))) : dash) + '</td>' +
+                            '<td class="' + cls + '">' + (isHolding ? fmtPct(pct) : dash) + '</td>' +
+                            '<td>' + zoneCell(support) + '</td>' +
+                            '<td>' + zoneCell(resistance) + '</td>' +
+                            '<td><span class="pf-st" style="color:' + st.color + ';"><i class="fas ' + st.icon + '"></i>' + st.label + '</span></td>' +
+                        '</tr>';
+                    });
+                    tbody.innerHTML = html;
+                    tbody.querySelectorAll('tr[data-symbol]').forEach(function(tr) {
+                        tr.addEventListener('click', function() { openStock(tr.getAttribute('data-symbol')); });
+                    });
+                    notifyParentHeight();
+                }).catch(function() { tbody.innerHTML = '<tr><td colspan="10" class="pf-empty">Không tải được.</td></tr>'; notifyParentHeight(); });
             }
 
             // ---------- Performance hero (Tổng lãi/lỗ danh mục) ----------
@@ -678,10 +1138,10 @@
             function renderPerformance() {
                 return '<div class="pf-card pf-perf" id="pfPerfCard">' +
                     '<div class="pf-perf-head">' +
-                        '<h2>Tổng lãi/lỗ danh mục</h2>' +
+                        '<h2>Tổng lãi/lỗ tài sản</h2>' +
                         '<div class="pf-perf-tag" id="pfPerfMeta">Đang tải…</div>' +
                     '</div>' +
-                    '<div id="pfPerfBody"><div class="pf-loading">Đang tính hiệu quả danh mục…</div></div>' +
+                    '<div id="pfPerfBody"><div class="pf-loading">Đang tính hiệu quả tài sản…</div></div>' +
                 '</div>';
             }
             function loadPerformance() {
@@ -692,7 +1152,7 @@
                     if (metaEl) metaEl.textContent = '';
                     bodyEl.innerHTML = '<div class="pf-perf-empty"><div class="pe-ico"><i class="fas fa-chart-line"></i></div>' +
                         '<div class="pe-title">Bạn chưa có dữ liệu đầu tư</div>' +
-                        '<div class="pe-desc">Thêm giao dịch mua cổ phiếu đầu tiên để TuniX bắt đầu theo dõi hiệu quả danh mục của bạn.</div>' +
+                        '<div class="pe-desc">Thêm giao dịch mua cổ phiếu đầu tiên để TuniX bắt đầu theo dõi hiệu quả tài sản của bạn.</div>' +
                         '<button type="button" class="btn btn-primary" id="pfGoAdd" style="margin-top:14px;"><i class="fas fa-plus"></i> Thêm giao dịch</button></div>';
                     const btn = document.getElementById('pfGoAdd');
                     if (btn) btn.addEventListener('click', scrollToForm);
@@ -718,7 +1178,7 @@
                 bodyEl.innerHTML =
                     '<div class="pf-perf-main">' +
                         '<div class="pf-perf-stat">' +
-                            '<div class="pf-stat-label">Tổng giá trị danh mục</div>' +
+                            '<div class="pf-stat-label">Tổng giá trị tài sản</div>' +
                             '<div class="pf-stat-value">' + fmtMoney(t.totalValue) + ' <span style="font-size:13px;font-weight:600;">đ</span></div>' +
                             '<div class="pf-stat-sub ' + (t.pnlPct > 0 ? 'pf-prof' : t.pnlPct < 0 ? 'pf-loss' : 'pf-neutral') + '">' + (t.pnlPct >= 0 ? '↑' : '↓') + ' ' + pctTxt + ' từ vốn đầu tư</div>' +
                         '</div>' +
@@ -728,9 +1188,6 @@
                             '<div class="pf-stat-sub">' + pctTxt + '</div>' +
                         '</div>' +
                         '<div class="pf-perf-chart">' +
-                            '<div class="pf-chart-tabs">' + PERF_PERIODS.map(function(p) {
-                                return '<button data-perf="' + p.k + '" class="' + (p.k === perfPeriod ? 'active' : '') + '">' + p.label + '</button>';
-                            }).join('') + '</div>' +
                             '<div id="pfPerfChart"><div class="pf-loading">Đang tải dữ liệu giá…</div></div>' +
                         '</div>' +
                     '</div>' +
@@ -744,30 +1201,22 @@
                     '</div>' +
                     '<div id="pfPerfWarn"></div>';
                 if (metaEl) metaEl.innerHTML = 'Hiệu suất từ <b>' + startTxt + '</b> · Đầu tư được <b>' + durTxt + '</b>';
-                bindPerfTabs();
                 loadPerfChart();
                 notifyParentHeight();
-            }
-            function bindPerfTabs() {
-                document.querySelectorAll('.pf-perf-chart .pf-chart-tabs button').forEach(function(b) {
-                    b.addEventListener('click', function() {
-                        perfPeriod = b.getAttribute('data-perf');
-                        document.querySelectorAll('.pf-perf-chart .pf-chart-tabs button').forEach(function(x) { x.classList.toggle('active', x === b); });
-                        loadPerfChart();
-                    });
-                });
             }
             function loadPerfChart() {
                 const wrap = document.getElementById('pfPerfChart');
                 if (!wrap) return;
-                const p = PERF_PERIODS.find(function(x) { return x.k === perfPeriod; }) || PERF_PERIODS[PERF_PERIODS.length - 1];
                 if (!holdings.length) { wrap.innerHTML = '<div class="pf-empty">Chưa có dữ liệu.</div>'; return; }
                 const qty = {};
                 holdings.forEach(function(h) { qty[h.symbol] = Number(h.quantity) || 0; });
+                // Biểu đồ luôn hiển thị TỪ KHI ĐẦU TƯ đến hiện tại (đã bỏ nút chọn kỳ hạn).
+                let start = null;
+                holdings.forEach(function(h) { if (h.created_at) { const d = String(h.created_at).slice(0, 10); if (!start || d < start) start = d; } });
                 wrap.innerHTML = '<div class="pf-loading">Đang tải dữ liệu giá…</div>';
-                buildPerfCurve(holdings.map(function(h) { return h.symbol; }), qty, p.hist).then(function(res) {
+                buildPerfCurve(holdings.map(function(h) { return h.symbol; }), qty, '5y').then(function(res) {
                     let curve = res.curve;
-                    if (p.days > 0 && curve.length > p.days) curve = curve.slice(curve.length - p.days);
+                    if (start) curve = curve.filter(function(c) { return c.date >= start; });
                     if (curve.length < 2) { wrap.innerHTML = '<div class="pf-empty">Chưa đủ dữ liệu lịch sử.</div>'; return; }
                     wrap.innerHTML = perfLineChart(curve, 540, 150);
                     if (res.failed > 0) {
@@ -861,6 +1310,16 @@
                 }
             }
 
+            // ---------- Tabs ----------
+            const TAB_DEFS = {
+                overview: { label: 'Tổng quan', html: function() { return renderSummary() + renderPerformance() + renderChartCard() + renderAlloc(); }, mount: function() { bindChart(); loadChart(); loadPerformance(); } },
+                holdings: { label: 'Cổ phiếu đang nắm giữ', html: function() { return renderTable() + renderForm(); }, mount: function() { bindTable(); bindForm(); } },
+                watchlist: { label: 'Cổ phiếu theo dõi', html: renderWatchlist, mount: function() { loadWatchlist(); bindWlAdd(); } },
+                portfolio: { label: 'Bảng danh mục', html: renderPortfolioTable, mount: function() { loadPortfolioTable(); } },
+                alerts: { label: 'Trung tâm cảnh báo', html: renderAlerts, mount: function() { loadAlerts(); } },
+                events: { label: 'Sự kiện liên quan', html: renderEvents, mount: function() { loadEvents(); } },
+                analysis: { label: 'Phân tích tài sản', html: function() { return renderReview() + renderAssetAlloc() + renderSectorAlloc(); }, mount: function() {} },
+            };
             // ---------- Main render ----------
             function render() {
                 const headRight = document.getElementById('pfHeadRight');
@@ -868,25 +1327,101 @@
                     ? '<a href="/Login" style="text-decoration:none;background:#008080;color:#fff;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px;">Đăng nhập</a>'
                     : '<span style="font-size:12px;color:#8a99b1;"><i class="fas fa-sync-alt"></i> Tự cập nhật theo phiên</span>';
                 body.innerHTML =
-                    renderSummary() +
-                    renderPerformance() +
-                    renderChartCard() +
-                    '<div class="pf-body"><div class="pf-main">' +
-                        renderAlloc() +
-                        renderTable() +
-                        renderForm() +
-                        renderWatchlist() +
-                    '</div><div class="pf-side">' +
-                        renderReview() +
-                        renderAlerts() +
-                    '</div></div>';
-                bindChart();
-                bindTable();
-                bindForm();
-                loadChart();
-                loadPerformance();
-                loadWatchlist();
+                    '<div class="pf-tabs">' +
+                        Object.keys(TAB_DEFS).map(function(k) {
+                            return '<button type="button" class="pf-tab' + (k === currentTab ? ' active' : '') + '" data-tab="' + k + '">' + TAB_DEFS[k].label + '</button>';
+                        }).join('') +
+                    '</div>' +
+                    '<div class="pf-tab-body" id="pfTabBody"></div>';
+                document.querySelectorAll('.pf-tab').forEach(function(b) {
+                    b.addEventListener('click', function() { showTab(b.getAttribute('data-tab')); });
+                });
+                showTab(currentTab);
+            }
+            function showTab(name) {
+                const def = TAB_DEFS[name];
+                if (!def) return;
+                currentTab = name;
+                document.querySelectorAll('.pf-tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === name); });
+                const content = document.getElementById('pfTabBody');
+                if (!content) return;
+                content.innerHTML = def.html();
+                def.mount();
                 notifyParentHeight();
+            }
+            const EVENT_TYPE_META = {
+                DIVIDEND:               { icon: 'fa-coins', color: '#00a08a', label: 'Cổ tức' },
+                EX_DIVIDEND_DATE:       { icon: 'fa-calendar-check', color: '#7b61c4', label: 'Chốt quyền' },
+                STOCK_SPLIT:            { icon: 'fa-scissors', color: '#f5a623', label: 'Chia tách' },
+                RIGHTS_ISSUE:           { icon: 'fa-file-invoice', color: '#f5a623', label: 'Phát hành' },
+                EARNINGS:               { icon: 'fa-chart-pie', color: '#4a7fc4', label: 'Kết quả KD' },
+                IMPORTANT_NEWS:         { icon: 'fa-newspaper', color: '#4a7fc4', label: 'Tin quan trọng' },
+                UNUSUAL_PRICE_MOVEMENT: { icon: 'fa-bolt', color: '#d0314e', label: 'Biến động bất thường' }
+            };
+            function renderEvents() {
+                return '<div class="pf-card"><h3>Sự kiện liên quan</h3>' +
+                    '<div class="pf-ev-note">Sự kiện cho cổ phiếu bạn đang <b>nắm giữ</b> và <b>theo dõi</b>: cổ tức, chốt quyền, tin quan trọng, biến động bất thường.</div>' +
+                    '<div id="pfEvents"><div class="pf-loading">Đang tải…</div></div></div>';
+            }
+            function fmtDateShort(iso) {
+                if (!iso) return '';
+                try {
+                    return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                } catch (e) { return ''; }
+            }
+            function renderEventList(items) {
+                const el = document.getElementById('pfEvents');
+                if (!el) return;
+                const groups = {};
+                items.forEach(function(e) {
+                    const sym = e.symbol || 'Thị trường';
+                    (groups[sym] = groups[sym] || []).push(e);
+                });
+                let html = '';
+                Object.keys(groups).forEach(function(sym) {
+                    html += '<div class="pf-ev-group"><div class="pf-ev-sym">' + esc(sym) + '</div>';
+                    groups[sym].forEach(function(e) {
+                        const m = EVENT_TYPE_META[e.event_type] || { icon: 'fa-bell', color: '#8a99b1', label: e.event_type };
+                        const inner = '<div class="pf-ev-ico" style="color:' + m.color + '"><i class="fas ' + m.icon + '"></i></div>' +
+                            '<div class="pf-ev-body">' +
+                                '<div class="pf-ev-row"><span class="pf-ev-badge" style="background:' + m.color + '1a;color:' + m.color + '">' + esc(m.label) + '</span>' +
+                                (e.event_date ? '<span class="pf-ev-date">' + fmtDateShort(e.event_date) + '</span>'
+                                              : (e.event_type === 'UNUSUAL_PRICE_MOVEMENT' ? '<span class="pf-ev-date">hôm nay</span>' : '')) + '</div>' +
+                                '<div class="pf-ev-title">' + esc(e.title) + '</div>' +
+                                (e.description ? '<div class="pf-ev-desc">' + esc(e.description) + '</div>' : '') +
+                            '</div>';
+                        html += e.news_id
+                            ? '<a class="pf-ev-item" href="#" data-news="' + e.news_id + '">' + inner + '</a>'
+                            : '<div class="pf-ev-item">' + inner + '</div>';
+                    });
+                    html += '</div>';
+                });
+                el.innerHTML = html;
+                el.querySelectorAll('[data-news]').forEach(function(a) {
+                    a.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({ type: 'tunix-open-tintuc', id: a.getAttribute('data-news'), slug: '' }, '*');
+                        }
+                    });
+                });
+                notifyParentHeight();
+            }
+            function loadEvents() {
+                const el = document.getElementById('pfEvents');
+                if (!el) return;
+                // CHỈ hiển thị sự kiện liên quan cổ phiếu đang nắm giữ / theo dõi — không fallback tin thị trường chung.
+                if (DEMO) { el.innerHTML = '<div class="pf-empty">Đăng nhập để xem sự kiện liên quan tài sản.</div>'; notifyParentHeight(); return; }
+                fetch('/api/asset-events?limit=60', { headers: authHeaders(), cache: 'no-store' })
+                    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+                    .then(function(items) {
+                        if (!items.length) {
+                            el.innerHTML = '<div class="pf-empty">Chưa có sự kiện liên quan đến cổ phiếu bạn đang nắm giữ / theo dõi.</div>';
+                            notifyParentHeight(); return;
+                        }
+                        renderEventList(items);
+                    })
+                    .catch(function() { el.innerHTML = '<div class="pf-empty">Không tải được sự kiện liên quan.</div>'; notifyParentHeight(); });
             }
             function bindChart() {
                 document.querySelectorAll('.pf-chart-tabs button').forEach(function(b) {
@@ -908,16 +1443,27 @@
                 if (sym) {
                     let t = null;
                     sym.addEventListener('input', function() {
-                        const v = sym.value.trim().toUpperCase();
+                        // Chỉ cho ký tự chữ & số, tối đa 3 ký tự.
+                        const cleaned = sym.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+                        if (sym.value !== cleaned) sym.value = cleaned;
                         const hint = document.getElementById('pfPriceHint');
                         clearTimeout(t);
-                        if (!v) { if (hint) hint.innerHTML = ''; return; }
-                        t = setTimeout(function() { fetchPriceHint(v); }, 350);
+                        if (!cleaned) { if (hint) hint.innerHTML = ''; return; }
+                        t = setTimeout(function() { fetchPriceHint(cleaned); }, 350);
                     });
                 }
+                document.querySelectorAll('.pf-trade-toggle .pf-tt').forEach(function(b) {
+                    b.addEventListener('click', function() {
+                        tradeMode = b.getAttribute('data-mode') === 'sell' ? 'sell' : 'buy';
+                        render();
+                    });
+                });
+            }
+            function bindWlAdd() {
                 const wlAdd = document.getElementById('wlAdd');
                 const wlInput = document.getElementById('wlInput');
-                if (wlAdd && wlInput) wlAdd.addEventListener('click', function() {
+                if (!wlAdd || !wlInput) return;
+                wlAdd.addEventListener('click', function() {
                     const v = wlInput.value.trim().toUpperCase();
                     if (!v) return;
                     fetch('/api/watchlist', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ symbol: v }) })
@@ -925,7 +1471,7 @@
                         .then(function() { wlInput.value = ''; toast('Đã thêm ' + v + ' vào danh sách theo dõi'); loadWatchlist(); })
                         .catch(function() { toast('Không thêm được. Đã tồn tại?', true); });
                 });
-                if (wlInput) wlInput.addEventListener('keydown', function(e) { if (e.key === 'Enter' && wlAdd) wlAdd.click(); });
+                wlInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') wlAdd.click(); });
             }
             function fetchPriceHint(symbol) {
                 const hint = document.getElementById('pfPriceHint');
@@ -935,7 +1481,8 @@
                     .then(function(q) {
                         if (!q || q.valid === false) { hint.innerHTML = 'Không tìm thấy mã ' + esc(symbol); return; }
                         const price = Number(q.price) || 0;
-                        hint.innerHTML = 'Giá hiện tại: <strong>' + fmtMoney(price) + ' đ</strong> · <a id="pfUsePrice">Dùng giá này làm giá vốn</a>';
+                        const useLabel = tradeMode === 'sell' ? 'Dùng giá này làm giá bán' : 'Dùng giá này làm giá mua';
+                        hint.innerHTML = 'Giá hiện tại: <strong>' + fmtMoney(price) + ' đ</strong> · <a id="pfUsePrice">' + useLabel + '</a>';
                         const a = document.getElementById('pfUsePrice');
                         if (a) a.addEventListener('click', function() { const avg = document.getElementById('pfAvg'); if (avg) { avg.value = price; toast('Đã điền giá hiện tại'); } });
                     })
@@ -943,21 +1490,46 @@
             }
             function submitHolding() {
                 const symbol = (document.getElementById('pfSymbol').value || '').trim().toUpperCase();
-                const quantity = parseFloat(document.getElementById('pfQty').value);
-                const avg_price = parseFloat(document.getElementById('pfAvg').value);
                 if (!symbol) { toast('Nhập mã cổ phiếu.', true); return; }
-                if (!(quantity > 0)) { toast('Số lượng phải lớn hơn 0.', true); return; }
-                if (!(avg_price >= 0)) { toast('Giá vốn không hợp lệ.', true); return; }
-                const url = editId ? ('/api/portfolio/' + editId) : '/api/portfolio';
-                const method = editId ? 'PUT' : 'POST';
-                fetch(url, { method: method, headers: authHeaders(), body: JSON.stringify({ symbol: symbol, quantity: quantity, avg_price: avg_price }) })
-                    .then(function(r) {
-                        if (r.status === 409) { toast('Cổ phiếu này đã có trong danh mục.', true); throw null; }
-                        if (!r.ok) { return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); }); }
-                        return r.json();
-                    })
-                    .then(function() { editId = null; toast('✅ Đã lưu danh mục'); load(); })
-                    .catch(function(e) { if (e && e.message) toast('❌ ' + e.message, true); });
+                const feeEl = document.getElementById('pfFee');
+                const fee = feeEl ? (parseFloat(feeEl.value) || 0) : 0;
+                if (fee < 0) { toast('Phí giao dịch không hợp lệ.', true); return; }
+                function send(url, method, body) {
+                    fetch(url, { method: method, headers: authHeaders(), body: JSON.stringify(body) })
+                        .then(function(r) {
+                            if (!r.ok) { return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); }); }
+                            return r.json();
+                        })
+                        .then(function(d) {
+                            if (method === 'POST' && url.indexOf('/sell') !== -1) toast('✅ ' + (d.message || 'Đã bán'));
+                            else if (method === 'POST') toast('✅ Đã mua thêm vào danh mục');
+                            else toast('✅ Đã cập nhật');
+                            editId = null;
+                            load();
+                        })
+                        .catch(function(e) { if (e && e.message) toast('❌ ' + e.message, true); });
+                }
+                if (editId) {
+                    const quantity = parseFloat(document.getElementById('pfQty').value);
+                    const avg_price = parseFloat(document.getElementById('pfAvg').value);
+                    if (!(quantity > 0)) { toast('Số lượng phải lớn hơn 0.', true); return; }
+                    if (!(avg_price >= 0)) { toast('Giá vốn không hợp lệ.', true); return; }
+                    send('/api/portfolio/' + editId, 'PUT', { quantity: quantity, avg_price: avg_price });
+                    return;
+                }
+                const quantity = parseFloat(document.getElementById('pfQty').value);
+                const price = parseFloat(document.getElementById('pfAvg').value);
+                if (!(quantity > 0)) { toast('Số lượng mua/bán phải lớn hơn 0.', true); return; }
+                if (!(price > 0)) { toast('Giá mua/bán không hợp lệ.', true); return; }
+                if (quantity > 1000000) { toast('Số lượng tối đa 1.000.000.', true); return; }
+                if (price > 1000000) { toast('Giá tối đa 1.000.000.', true); return; }
+                if (tradeMode === 'sell') {
+                    const h = holdings.find(function(x) { return x.symbol === symbol; });
+                    if (!h) { toast('Mã ' + symbol + ' không có trong danh mục.', true); return; }
+                    send('/api/portfolio/' + h.id + '/sell', 'POST', { quantity: quantity, fee: fee });
+                    return;
+                }
+                send('/api/portfolio', 'POST', { symbol: symbol, quantity: quantity, avg_price: price, fee: fee });
             }
             function bindTable() {
                 document.querySelectorAll('[data-edit]').forEach(function(btn) {
@@ -997,7 +1569,7 @@
             function load() {
                 const banner = document.getElementById('pfDemoBanner');
                 if (banner) banner.innerHTML = DEMO
-                    ? '<div class="pf-demo-banner"><i class="fas fa-flask"></i> Bạn đang xem <b>dữ liệu mẫu</b> để trải nghiệm giao diện. <a href="/Login">Đăng nhập</a> để dùng danh mục thật của bạn.</div>'
+                    ? '<div class="pf-demo-banner"><i class="fas fa-flask"></i> Bạn đang xem <b>dữ liệu mẫu</b> để trải nghiệm giao diện. <a href="/Login">Đăng nhập</a> để dùng quản lý tài sản thật của bạn.</div>'
                     : '';
                 if (!loggedIn()) {
                     DEMO = true;
@@ -1016,6 +1588,7 @@
                             if (list === null) return;
                             holdings = Array.isArray(list) ? list : [];
                             render();
+                            loadWatchlist();
                         })
                         .catch(function(e) { if (e && e.message) { body.innerHTML = '<div class="pf-loading">Không tải được danh mục. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>'; notifyParentHeight(); } });
                 });
@@ -1049,6 +1622,7 @@
                 Promise.all(fetches).then(function(list) {
                     holdings = list.filter(function(h) { return h && h.price > 0; });
                     render();
+                    loadWatchlist();
                 });
             }
 

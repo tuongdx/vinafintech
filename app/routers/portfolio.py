@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user
 from app.db import get_db
 from app.models import PortfolioHolding, User
-from app.schemas import PortfolioHoldingCreate, PortfolioHoldingOut, PortfolioHoldingUpdate
+from app.schemas import PortfolioHoldingCreate, PortfolioHoldingOut, PortfolioHoldingUpdate, PortfolioSell
 from app.services import portfolio_performance as pps
 from app.services import vnstock_service as vns
 
@@ -128,22 +128,33 @@ def add_holding(
             detail=f"Không có mã cổ phiếu {symbol} trên các sàn HOSE, HNX, UPCoM.",
         )
 
+    qty = float(payload.quantity or 0)
+    buy_price = float(payload.avg_price or 0)
+    fee_pct = max(0.0, float(payload.fee or 0)) / 100.0
+    # Giá mua hiệu dụng đã gồm phí giao dịch → giá vốn bình quân phản ánh chi phí thực.
+    effective_price = buy_price * (1 + fee_pct) if buy_price > 0 else 0.0
+
     existing = (
         db.query(PortfolioHolding)
         .filter(PortfolioHolding.user_id == user.id, PortfolioHolding.symbol == symbol)
         .first()
     )
     if existing:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Cổ phiếu {symbol} đã có trong danh mục. Hãy cập nhật số lượng / giá vốn.",
-        )
+        # Mua thêm cùng mã → cộng dồn số lượng, tính lại giá vốn bình quân gia quyền (gồm phí).
+        old_qty = float(existing.quantity or 0)
+        old_avg = float(existing.avg_price or 0)
+        new_qty = old_qty + qty
+        existing.avg_price = (old_qty * old_avg + qty * effective_price) / new_qty if new_qty else 0.0
+        existing.quantity = new_qty
+        db.commit()
+        db.refresh(existing)
+        return _enrich(existing, quote)
 
     row = PortfolioHolding(
         user_id=user.id,
         symbol=symbol,
-        quantity=float(payload.quantity or 0),
-        avg_price=float(payload.avg_price or 0),
+        quantity=qty,
+        avg_price=effective_price,
     )
     db.add(row)
     db.commit()
@@ -195,3 +206,37 @@ def delete_holding(
     db.delete(row)
     db.commit()
     return {"message": "Đã xoá khỏi danh mục", "symbol": symbol}
+
+
+@router.post("/{holding_id}/sell")
+def sell_holding(
+    holding_id: int,
+    payload: PortfolioSell,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Bán cổ phiếu: trừ khối lượng, giữ nguyên giá vốn. Về 0 → đóng vị thế."""
+    row = (
+        db.query(PortfolioHolding)
+        .filter(PortfolioHolding.id == holding_id, PortfolioHolding.user_id == user.id)
+        .first()
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Không tìm thấy vị thế này trong danh mục.")
+    qty = float(payload.quantity or 0)
+    if qty <= 0:
+        raise HTTPException(status_code=400, detail="Số lượng bán phải lớn hơn 0.")
+    # Phí bán là chi phí realized — không làm đổi vị thế còn lại (giá vốn giữ nguyên).
+    if float(payload.fee or 0) < 0:
+        raise HTTPException(status_code=400, detail="Phí giao dịch không hợp lệ.")
+    symbol = row.symbol
+    new_qty = float(row.quantity or 0) - qty
+    if new_qty < 0:
+        raise HTTPException(status_code=400, detail=f"Không đủ {symbol} để bán (đang giữ {row.quantity:g}).")
+    if new_qty == 0:
+        db.delete(row)
+        db.commit()
+        return {"message": f"Đã bán hết {symbol}. Vị thế đã đóng.", "symbol": symbol, "quantity": 0, "deleted": True}
+    row.quantity = new_qty
+    db.commit()
+    return {"message": f"Đã bán {qty:g} {symbol}. Còn lại {new_qty:g} cổ phiếu.", "symbol": symbol, "quantity": new_qty, "deleted": False}

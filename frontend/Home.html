@@ -241,7 +241,7 @@
             <aside class="ov-side">
                 <!-- PORTFOLIO -->
                 <div class="ov-port">
-                    <h3>Danh mục của bạn</h3>
+                    <h3>Quản lý tài sản</h3>
                     <div id="ovPortBody"><div class="ov-empty">Đang tải…</div></div>
                 </div>
 
@@ -279,7 +279,7 @@
             function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*'); }
             function openNews(id, slug) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-tintuc', id: id, slug: slug }, '*'); }
             function sendAi(p) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-ai-open', prompt: p }, '*'); }
-            // Chặn link nội bộ (VD: /danh-muc) khi Home được nhúng trong shell → báo parent điều
+            // Chặn link nội bộ (VD: /quan-ly-tai-san) khi Home được nhúng trong shell → báo parent điều
             // hướng qua menu chính (tránh load shell lồng nhau bên trong iframe).
             document.addEventListener('click', function(e) {
                 const a = e.target.closest('a[href]');
@@ -488,9 +488,9 @@
                         // Đã đăng nhập nhưng chưa có cổ phiếu → data rỗng + nút Xem chi tiết danh mục.
                         el.innerHTML = '<div class="op-empty op-empty-login">' +
                             '<div class="opel-ico"><i class="fas fa-briefcase"></i></div>' +
-                            '<div class="opel-title">Danh mục đang trống</div>' +
+                            '<div class="opel-title">Danh mục tài sản đang trống</div>' +
                             '<div class="opel-desc">Thêm cổ phiếu đầu tiên để TuniX bắt đầu theo dõi hiệu quả danh mục của bạn.</div>' +
-                            '<a class="op-link" href="/danh-muc">Xem chi tiết danh mục →</a>' +
+                            '<a class="op-link" href="/quan-ly-tai-san">Xem chi tiết quản lý tài sản →</a>' +
                         '</div>';
                         return;
                     }
@@ -510,7 +510,7 @@
                         '<div class="op-day ' + (today >= 0 ? 'pos' : 'neg') + '">Hôm nay: ' + (today >= 0 ? '+' : '−') + fmtMoney(Math.abs(today)) + ' (' + pct(todayPct) + ') · P/L ' + pct(pnlPct) + '</div>' +
                         '<div class="op-donut-row"><div class="op-donut">' + donut + '<div class="op-center"><span class="n">' + list.length + '</span><span class="l">vị thế</span></div></div>' +
                         '<div class="op-legend">' + legend + '</div></div>' +
-                        '<a class="op-link" href="/danh-muc">Xem chi tiết danh mục →</a>';
+                        '<a class="op-link" href="/quan-ly-tai-san">Xem chi tiết quản lý tài sản →</a>';
                 };
                 if (!token) {
                     // Chưa đăng nhập → hiển thị empty state + nút Đăng nhập để quản lý danh mục.

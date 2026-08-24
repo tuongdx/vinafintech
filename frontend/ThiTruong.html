@@ -416,7 +416,7 @@
                 try {
                     const r = await fetch('/api/stocks/index-detail?key=' + chartKey + '&period=' + encodeURIComponent(p), { cache: 'no-store' });
                     const d = await r.json();
-                    let hist = (d.history || []).map(function(b) { return { t: b.time, c: Number(b.close), v: Number(b.volume) || 0 }; }).filter(function(b) { return isFinite(b.c); });
+                    let hist = (d.history || []).map(function(b) { return { t: b.time, c: Number(b.close), v: Number(b.volume) || 0, m: Number(b.value) || 0 }; }).filter(function(b) { return isFinite(b.c); });
                     if (slice > 0) hist = hist.slice(-slice);
                     chartQuote = d;
                     renderMainChart(hist, d);
@@ -528,7 +528,7 @@
                         tip.innerHTML =
                             '<div class="tip-v">' + fmtPts(b.c) + ' điểm</div>' +
                             '<div class="tip-r">Ngày: ' + fmtDate(b.t) + '</div>' +
-                            '<div class="tip-r">Thanh khoản: ' + fmtVol(b.v) + ' cp</div>';
+                            '<div class="tip-r">Thanh khoản: ' + fmtVol(b.v) + ' cp' + (b.m ? ' · ' + fmt(b.m / 1e9, 0) + ' tỷ' : '') + '</div>';
                         tip.classList.add('show');
                         let t = e.clientX - r.left + 16;
                         let ty = e.clientY - r.top + 16;
@@ -578,11 +578,14 @@
                 const gtg = Number(f.gtgd_today) || 0;
                 const gtgY = Number(f.gtgd_yesterday) || 0;
                 const gtgDelta = gtgY ? ((gtg / gtgY - 1) * 100) : 0;
+                const volNow = Number(liq.last_volume) || 0;
+                const volPrev = Number(liq.prev_volume) || 0;
+                const volDelta = volPrev ? ((volNow / volPrev - 1) * 100) : 0;
                 const cards = [
                     { ico: 'fa-coins', label: 'Giá trị giao dịch', val: fmt(gtg, 0) + ' <span style="font-size:12px;font-weight:600;">tỷ</span>', sub: 'Hôm qua ' + fmt(gtgY, 0) + ' tỷ · ' + pct(gtgDelta), cls2: cls2(gtgDelta) },
                     { ico: 'fa-flag', label: 'Khối ngoại', val: signed(net / 1e9, 'tỷ'), sub: 'Mua ròng theo giá trị giao dịch', cls2: cls2(net) },
                     { ico: 'fa-building-columns', label: 'Tự doanh', val: '—', sub: 'Chưa có dữ liệu', cls2: '' },
-                    { ico: 'fa-water', label: 'Thanh khoản', val: (liq.volume_ratio ? fmt(liq.volume_ratio, 2) : '--') + '<span style="font-size:12px;font-weight:600;"> lần TB 1 tháng</span>', sub: 'KL phiên: ' + fmt(liq.last_volume / 1e6, 1) + ' tr cp · TB 1T: ' + fmt(liq.avg_volume_1m / 1e6, 1) + ' tr cp', cls2: '' },
+                    { ico: 'fa-water', label: 'Thanh khoản', val: (liq.volume_ratio ? fmt(liq.volume_ratio, 2) : '--') + '<span style="font-size:12px;font-weight:600;"> lần TB 1 tháng</span>', sub: 'Hôm nay: ' + fmt(volNow / 1e6, 1) + ' tr cp · ' + fmt(gtg, 0) + ' tỷ<br>Hôm qua: ' + fmt(volPrev / 1e6, 1) + ' tr cp · ' + fmt(gtgY, 0) + ' tỷ · ' + pct(volDelta), cls2: cls2(volDelta) },
                     { ico: 'fa-arrow-trend-up', label: 'Số mã tăng trần', val: (f.ceiling_count || 0), sub: 'Trong tổng mã tăng', cls2: 'fc-up' },
                     { ico: 'fa-arrow-trend-down', label: 'Số mã giảm sàn', val: (f.floor_count || 0), sub: 'Trong tổng mã giảm', cls2: 'fc-down' }
                 ];
