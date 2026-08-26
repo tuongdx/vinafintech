@@ -28,6 +28,38 @@
         .pf-demo-banner { margin-bottom: 16px; background: #fff8e8; border: 1px solid #f2d9a0; color: #8a6d1a; border-radius: 12px; padding: 10px 16px; font-size: 13px; display: flex; align-items: center; gap: 10px; }
         .pf-demo-banner a { color: #008080; font-weight: 700; text-decoration: none; }
 
+        /* ===== Trang bị khóa (yêu cầu đăng nhập) ===== */
+        .pf-locked {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; gap: 14px;
+            min-height: 420px; padding: 48px 24px;
+            background: #fff; border: 1px solid #e9edf2; border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        }
+        .pf-lock-icon {
+            width: 76px; height: 76px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,128,128,0.12); color: #008080; font-size: 30px;
+        }
+        .pf-locked h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; color: #12203a; }
+        .pf-locked p { max-width: 400px; font-size: 14px; color: #6b7a8f; line-height: 1.6; }
+        .pf-lock-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+        .pf-lock-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 11px 22px; border-radius: 12px; border: 1px solid #dce3ec;
+            background: #fff; color: #3c4b5f; font-weight: 700; font-size: 14px;
+            cursor: pointer; text-decoration: none; transition: all 0.2s; font-family: inherit;
+        }
+        .pf-lock-btn:hover { border-color: #008080; color: #008080; }
+        .pf-lock-btn.primary { background: #008080; border-color: #008080; color: #fff; }
+        .pf-lock-btn.primary:hover { background: #00968f; border-color: #00968f; }
+        body.dark-mode .pf-locked { background: #161b22; border-color: #30363d; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        body.dark-mode .pf-locked h2 { color: #e6edf3; }
+        body.dark-mode .pf-locked p { color: #8b949e; }
+        body.dark-mode .pf-lock-btn { background: #21262d; border-color: #30363d; color: #9fb0c7; }
+        body.dark-mode .pf-lock-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+        body.dark-mode .pf-lock-btn.primary { background: #008080; border-color: #008080; color: #fff; }
+
         /* ===== Summary ===== */
         .pf-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
         .pf-sum-card { background: #fff; border: 1px solid #e9edf2; border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(15,23,42,0.05); position: relative; overflow: hidden; }
@@ -1016,8 +1048,8 @@
             function renderPortfolioTable() {
                 return '<div class="pf-card"><h3>Bảng danh mục</h3>' +
                     '<div class="pf-table-wrap"><table class="pf-pt-table"><thead><tr>' +
-                        '<th>Mã</th><th>Giá vốn TB</th><th>Giá hiện tại</th><th>SL</th><th>Giá trị</th><th>Lãi/Lỗ</th><th>%</th><th>Hỗ trợ</th><th>Kháng cự</th><th>Trạng thái</th>' +
-                    '</tr></thead><tbody id="pfPortfolioBody"><tr><td colspan="10" class="pf-loading">Đang tải…</td></tr></tbody></table></div>' +
+                        '<th>Mã</th><th>Giá vốn TB</th><th>Giá hôm qua</th><th>Giá hiện tại</th><th>SL</th><th>Giá trị</th><th>Lãi/Lỗ (%)</th><th>%HN</th><th>Hỗ trợ</th><th>Kháng cự</th><th>Trạng thái</th>' +
+                    '</tr></thead><tbody id="pfPortfolioBody"><tr><td colspan="11" class="pf-loading">Đang tải…</td></tr></tbody></table></div>' +
                 '</div>';
             }
             function nearestZone(zones, kind, price) {
@@ -1068,7 +1100,7 @@
                 const syms = [];
                 holdings.forEach(function(h) { if (syms.indexOf(h.symbol) === -1) syms.push(h.symbol); });
                 watchlistSyms.forEach(function(s) { if (syms.indexOf(s) === -1) syms.push(s); });
-                if (!syms.length) { tbody.innerHTML = '<tr><td colspan="10" class="pf-empty">Chưa có cổ phiếu nào trong danh mục.</td></tr>'; notifyParentHeight(); return; }
+                if (!syms.length) { tbody.innerHTML = '<tr><td colspan="11" class="pf-empty">Chưa có cổ phiếu nào trong danh mục.</td></tr>'; notifyParentHeight(); return; }
                 const hmap = {};
                 holdings.forEach(function(h) { hmap[h.symbol] = h; });
                 Promise.all(syms.map(function(sym) {
@@ -1085,6 +1117,13 @@
                         const isHolding = !!h;
                         const quote = row.quote;
                         const price = isHolding ? (Number(h.price) || 0) : (quote ? Number(quote.price) || 0 : 0);
+                        // Giá hôm qua (giá tham chiếu) + % lãi/lỗ so với hôm qua
+                        let prevClose = quote ? (Number(quote.reference_price) || 0) : 0;
+                        if (!prevClose && quote && price > 0 && (Number(quote.percent_change) || 0) > -100) {
+                            prevClose = price / (1 + (Number(quote.percent_change) || 0) / 100);
+                        }
+                        const dailyPct = (price > 0 && prevClose > 0) ? ((price - prevClose) / prevClose * 100) : null;
+                        const dCls = dailyPct === null ? '' : (dailyPct >= 0 ? 'pos' : 'neg');
                         const name = (isHolding && h.name) || (quote && (quote.company_name || quote.name)) || '';
                         const zones = Array.isArray(row.zones) ? row.zones : [];
                         const support = nearestZone(zones, 'support', price);
@@ -1097,11 +1136,12 @@
                         html += '<tr data-symbol="' + esc(row.sym) + '">' +
                             '<td><div class="td-sym">' + esc(row.sym) + (name ? '<span class="name">' + esc(name) + '</span>' : '') + '</div></td>' +
                             '<td>' + (isHolding ? fmtMoney(h.avg_price) : dash) + '</td>' +
+                            '<td>' + (prevClose ? fmtMoney(prevClose) : dash) + '</td>' +
                             '<td style="font-weight:800;">' + (price ? fmtMoney(price) : dash) + '</td>' +
                             '<td>' + (isHolding ? fmtMoney(h.quantity) : dash) + '</td>' +
                             '<td>' + (isHolding ? fmtMoney(h.market_value) : dash) + '</td>' +
-                            '<td class="' + cls + '">' + (isHolding ? ((pnl >= 0 ? '+' : '−') + fmtMoney(Math.abs(pnl))) : dash) + '</td>' +
-                            '<td class="' + cls + '">' + (isHolding ? fmtPct(pct) : dash) + '</td>' +
+                            '<td class="' + cls + '">' + (isHolding ? ((pnl >= 0 ? '+' : '−') + fmtMoney(Math.abs(pnl)) + ' <span style="font-size:11.5px;font-weight:600;">(' + fmtPct(pct) + ')</span>') : dash) + '</td>' +
+                            '<td class="' + dCls + '">' + (dailyPct === null ? dash : fmtPct(dailyPct)) + '</td>' +
                             '<td>' + zoneCell(support) + '</td>' +
                             '<td>' + zoneCell(resistance) + '</td>' +
                             '<td><span class="pf-st" style="color:' + st.color + ';"><i class="fas ' + st.icon + '"></i>' + st.label + '</span></td>' +
@@ -1112,7 +1152,7 @@
                         tr.addEventListener('click', function() { openStock(tr.getAttribute('data-symbol')); });
                     });
                     notifyParentHeight();
-                }).catch(function() { tbody.innerHTML = '<tr><td colspan="10" class="pf-empty">Không tải được.</td></tr>'; notifyParentHeight(); });
+                }).catch(function() { tbody.innerHTML = '<tr><td colspan="11" class="pf-empty">Không tải được.</td></tr>'; notifyParentHeight(); });
             }
 
             // ---------- Performance hero (Tổng lãi/lỗ danh mục) ----------
@@ -1566,21 +1606,36 @@
             }
 
             // ---------- Load ----------
+            // ---------- Trang bị khóa (yêu cầu đăng nhập) ----------
+            function showLocked() {
+                DEMO = false;
+                const banner = document.getElementById('pfDemoBanner');
+                if (banner) banner.innerHTML = '';
+                body.innerHTML =
+                    '<div class="pf-locked">' +
+                        '<div class="pf-lock-icon"><i class="fas fa-lock"></i></div>' +
+                        '<h2>Trang bị khóa</h2>' +
+                        '<p>Trang quản lý tài sản yêu cầu đăng nhập để bảo vệ danh mục đầu tư và tài sản của bạn.</p>' +
+                        '<div class="pf-lock-actions">' +
+                            '<a class="pf-lock-btn primary" href="/Login?next=' + encodeURIComponent('/quan-ly-tai-san') + '" target="_top"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>' +
+                            '<a class="pf-lock-btn" href="/register" target="_top"><i class="fas fa-user-plus"></i> Tạo tài khoản</a>' +
+                        '</div>' +
+                    '</div>';
+                notifyParentHeight();
+            }
+
             function load() {
                 const banner = document.getElementById('pfDemoBanner');
-                if (banner) banner.innerHTML = DEMO
-                    ? '<div class="pf-demo-banner"><i class="fas fa-flask"></i> Bạn đang xem <b>dữ liệu mẫu</b> để trải nghiệm giao diện. <a href="/Login">Đăng nhập</a> để dùng quản lý tài sản thật của bạn.</div>'
-                    : '';
+                if (banner) banner.innerHTML = '';
                 if (!loggedIn()) {
-                    DEMO = true;
-                    loadScreenerMap().then(function() { loadDemo(); });
+                    showLocked();
                     return;
                 }
                 DEMO = false;
                 loadScreenerMap().then(function() {
                     fetch('/api/portfolio', { headers: authHeaders() })
                         .then(function(r) {
-                            if (r.status === 401) { DEMO = true; loadDemo(); return null; }
+                            if (r.status === 401) { showLocked(); return null; }
                             if (!r.ok) throw new Error('Lỗi tải danh mục');
                             return r.json();
                         })
@@ -1658,5 +1713,6 @@
             load();
         })();
     </script>
+    <script src="/static/context-menu.js?v=20260826c"></script>
 </body>
 </html>

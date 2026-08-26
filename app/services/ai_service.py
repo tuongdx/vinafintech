@@ -411,6 +411,58 @@ QUY TẮC BẮT BUỘC:
 7. Khi phân tích cổ phiếu hãy nêu: giá & biến động, định giá (P/E, P/B), tăng trưởng (lợi nhuận theo quý), rủi ro, tin tức liên quan."""
 
 
+def _build_system(memory: str = "") -> str:
+    """System prompt + bộ nhớ đã học về người dùng (nếu có)."""
+    base = SYSTEM_PROMPT
+    mem = (memory or "").strip()
+    if mem:
+        base += (
+            "\n\n=== GHI NHỚ VỀ NGƯỜI DÙNG (học từ lịch sử trò chuyện trước) ===\n"
+            + mem
+        )
+    return base
+
+
+_MEMORY_SYSTEM = (
+    "Bạn là hệ thống ghi nhớ của TuniAI. Đọc lịch sử trò chuyện và viết (TIẾNG VIỆT) một bản "
+    "tóm tắt NGẮN GỌN về người dùng: cổ phiếu/ngành người dùng quan tâm, thông tin người dùng đã "
+    "cung cấp (cổ phiếu đang sở hữu, tầm vốn, khẩu vị rủi ro, mục tiêu đầu tư...), chủ đề gần đây. "
+    "Chỉ giữ thông tin hữu ích và chắc chắn, KHÔNG bịa. Tối đa 600 từ."
+)
+
+
+async def summarize_memory(current: str, recent: list[dict[str, Any]]) -> str:
+    """Tổng hợp bộ nhớ người dùng từ memory cũ + các lượt gần đây (best-effort)."""
+    _ensure_configured()
+    user_content = (
+        "Bộ nhớ cũ:\n"
+        + (current or "(trống)")
+        + "\n\nLịch sử trò chuyện gần đây:\n"
+        + json.dumps(recent, ensure_ascii=False, default=str)
+    )
+    msgs = [
+        {"role": "system", "content": _MEMORY_SYSTEM},
+        {"role": "user", "content": user_content},
+    ]
+    timeout = httpx.Timeout(60.0, connect=10.0)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        payload = {
+            "model": settings.deepseek_model,
+            "messages": msgs,
+            "temperature": 0.2,
+            "max_tokens": 700,
+            "stream": False,
+        }
+        resp = await client.post(_deepseek_url(), json=payload, headers=_deepseek_headers())
+        if resp.status_code != 200:
+            return current
+        data = resp.json()
+        try:
+            return (data["choices"][0]["message"].get("content") or current).strip()
+        except Exception:
+            return current
+
+
 def _deepseek_url() -> str:
     base = (settings.deepseek_base_url or "https://api.deepseek.com").rstrip("/")
     return base + "/chat/completions"
@@ -448,10 +500,10 @@ async def _run_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Chat không streaming
 # ---------------------------------------------------------------------------
-async def chat(messages: list[dict[str, Any]]) -> dict[str, Any]:
+async def chat(messages: list[dict[str, Any]], memory: str = "") -> dict[str, Any]:
     """Chạy vòng lặp tool-calling, trả về câu trả lời cuối cùng."""
     _ensure_configured()
-    msgs = [{"role": "system", "content": SYSTEM_PROMPT}] + _normalize_messages(messages)
+    msgs = [{"role": "system", "content": _build_system(memory)}] + _normalize_messages(messages)
     tool_log: list[dict[str, Any]] = []
     timeout = httpx.Timeout(60.0, connect=10.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
@@ -517,12 +569,12 @@ async def chat(messages: list[dict[str, Any]]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Chat streaming (SSE)
 # ---------------------------------------------------------------------------
-async def stream_chat(messages: list[dict[str, Any]]) -> AsyncGenerator[dict[str, Any], None]:
+async def stream_chat(messages: list[dict[str, Any]], memory: str = "") -> AsyncGenerator[dict[str, Any], None]:
     """Stream token + sự kiện tool qua generator. Mỗi event là dict:
     {'type':'delta'|'tool'|'done'|'error', ...}
     """
     _ensure_configured()
-    msgs = [{"role": "system", "content": SYSTEM_PROMPT}] + _normalize_messages(messages)
+    msgs = [{"role": "system", "content": _build_system(memory)}] + _normalize_messages(messages)
     tool_log: list[dict[str, Any]] = []
     timeout = httpx.Timeout(120.0, connect=10.0)
 

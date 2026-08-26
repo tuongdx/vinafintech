@@ -238,6 +238,44 @@ class Plan(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+class AiMemory(Base):
+    """Bộ nhớ TuniAI học từ lịch sử trò chuyện (theo user).
+
+    - memory: bản tóm tắt tiếng Việt về sở thích / thông tin người dùng đã nói,
+      được model sinh ra để TuniAI "nhớ" qua các lần trò chuyện.
+    - recent : JSON list các lượt gần đây ({"role", "content"}) để cập nhật memory.
+    """
+
+    __tablename__ = "ai_memory"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True, nullable=False)
+    memory: Mapped[str] = mapped_column(Text, default="")
+    recent: Mapped[str] = mapped_column(Text, default="[]")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class AiConversation(Base):
+    """Lịch sử hội thoại TuniAI theo tài khoản.
+
+    Đồng bộ lên server để người dùng logout → login lại vẫn giữ được lịch sử
+    hỏi đáp của chính tài khoản đó (không phụ thuộc máy/trình duyệt).
+    - cid     : id client sinh ra ('c<timestamp>'), dùng làm khóa đồng bộ.
+    - messages: JSON list [{"role", "content"}] nội dung hội thoại.
+    """
+
+    __tablename__ = "ai_conversations"
+    __table_args__ = (UniqueConstraint("user_id", "cid", name="uq_ai_conv_user_cid"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    cid: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), default="")
+    messages: Mapped[str] = mapped_column(Text, default="[]")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class Feature(Base):
     __tablename__ = "features"
 

@@ -3064,31 +3064,30 @@
         #aiSendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
         .ai-disclaimer { font-size: 10px; color: #9aa8bd; text-align: center; padding: 6px 10px; background: #f8f9fb; }
         body.dark-mode .ai-disclaimer { background: #0d1117; color: #6b7a8f; }
+        /* TuniAI Tools — nút công cụ nhanh trong panel chat (khung xanh bên phải) */
+        .ai-tools { padding: 10px 12px 6px; border-bottom: 1px solid #eef2f6; background: #fbfcfe; flex-shrink: 0; }
+        body.dark-mode .ai-tools { background: #10151c; border-bottom-color: #21262d; }
+        .ai-tools-title {
+            font-size: 11px; font-weight: 800; color: #8a99b1; text-transform: uppercase; letter-spacing: 0.4px;
+            display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+        }
+        .ai-tools-title i { color: #008080; }
+        .ai-tools-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .ai-tool {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            padding: 8px 4px; border: 1px solid #e5e9f0; border-radius: 10px; cursor: pointer;
+            background: #fff; color: #3c4b5f; font-family: inherit; transition: all 0.2s; text-align: center;
+        }
+        .ai-tool i { font-size: 15px; color: #008080; }
+        .ai-tool span { font-size: 10.5px; font-weight: 700; line-height: 1.2; }
+        .ai-tool:hover { border-color: #008080; background: #f0fbf9; color: #008080; transform: translateY(-1px); }
+        body.dark-mode .ai-tool { background: #161b22; border-color: #30363d; color: #9fb0c7; }
+        body.dark-mode .ai-tool:hover { border-color: #4db6b6; background: #10151c; color: #4db6b6; }
         @media (max-width: 480px) {
             #tunixAiFab { right: 16px; bottom: 16px; }
             #tunixAiPanel { right: 16px; bottom: 84px; width: calc(100vw - 32px); }
         }
     </style>
-    <button id="tunixAiFab" title="TuniAI - Trợ lý chứng khoán" aria-label="Mở TuniAI">
-        <i class="fas fa-robot"></i>
-        <span class="ai-fab-dot"></span>
-    </button>
-    <div id="tunixAiPanel" hidden>
-        <div class="ai-panel-header">
-            <div class="ai-title"><i class="fas fa-robot"></i> TuniAI <small>Trợ lý chứng khoán</small></div>
-            <div class="ai-header-actions">
-                <button type="button" class="ai-icon-btn" id="aiClearBtn" title="Xóa hội thoại"><i class="fas fa-trash"></i></button>
-                <button type="button" class="ai-icon-btn" id="aiCloseBtn" title="Đóng"><i class="fas fa-times"></i></button>
-            </div>
-        </div>
-        <div class="ai-messages" id="aiMessages"></div>
-        <div class="ai-input-row">
-            <textarea id="aiInput" rows="1" placeholder="Hỏi về cổ phiếu, thị trường, tin tức..."></textarea>
-            <button type="button" id="aiSendBtn" title="Gửi"><i class="fas fa-paper-plane"></i></button>
-        </div>
-        <div class="ai-disclaimer">TuniAI cung cấp thông tin tham khảo, không phải khuyến nghị đầu tư.</div>
-    </div>
-
     <script src="/static/header-search.js?v=20260822"></script>
     <script>
         const PAGE_FILE_MAP = {
@@ -3262,9 +3261,44 @@
         // sau khi thoát fullscreen mở từ trang KHÔNG phải chi tiết cổ phiếu (icon nến).
         let lastLoadedPage = null;
         let fsReturnState = null;
+
+        // ---- Lịch sử điều hướng trong-app (cho menu chuột phải "Quay lại trang trước") ----
+        // App dùng replaceState + iframe nên history.back() của trình duyệt sẽ rời khỏi web.
+        // Ta tự theo dõi các trang đã mở (sessionStorage) và quay lại trong-app.
+        const APP_HISTORY_KEY = 'tunix-app-history';
+        function getAppHistory() {
+            try { return JSON.parse(sessionStorage.getItem(APP_HISTORY_KEY) || '[]'); } catch (e) { return []; }
+        }
+        function saveAppHistory(h) {
+            try { sessionStorage.setItem(APP_HISTORY_KEY, JSON.stringify(h)); } catch (e) {}
+        }
+        function pushAppHistory(page) {
+            const h = getAppHistory();
+            if (h[h.length - 1] !== page) {
+                h.push(page);
+                if (h.length > 50) h.shift();
+                saveAppHistory(h);
+            }
+        }
+        function goBackInApp() {
+            const h = getAppHistory();
+            if (h.length >= 2) {
+                h.pop();                // bỏ trang hiện tại
+                const prev = h.pop();    // trang trước đó
+                saveAppHistory(h);
+                loadContent(prev);
+                return;
+            }
+            // Không có trang trước trong-app → về trang chủ (không rời khỏi web)
+            saveAppHistory(['/Home']);
+            loadContent('/Home');
+            window.history.replaceState({}, '', '/');
+        }
+        window.tunixGoBackInApp = goBackInApp;
+
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260823';
+        const CACHE_VERSION = '20260826e';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3771,6 +3805,7 @@
             if (!container) return;
             // Lưu trang đang hiển thị — dùng để quay lại trang trước đó sau khi thoát fullscreen icon nến.
             lastLoadedPage = page;
+            pushAppHistory(page);
 
             // Cập nhật header theo trang đang xem: trang tin tức / bài viết tin tức → logo thêm chữ "Tin tức", nút đổi thành "Thị trường".
             setHeaderContext(page.includes('tintuc') || page.includes('tin-tuc'));
@@ -4304,6 +4339,10 @@
         window.addEventListener('message', function(event) {
             const data = event.data;
             if (!data) return;
+            if (data.type === 'tunix-go-back') {
+                goBackInApp();
+                return;
+            }
             if (data.type === 'tunix-set-theme') {
                 applyTheme(data.mode === 'dark' ? 'dark' : 'light');
                 return;
@@ -4313,17 +4352,12 @@
                 return;
             }
             if (data.type === 'tunix-ai-open') {
-                // Chart fullscreen workspace / trang Cổ phiếu: mở TuniX AI + điền sẵn câu hỏi.
-                if (typeof window.openTuniAi === 'function') window.openTuniAi();
-                const aiInput = document.getElementById('aiInput');
-                if (aiInput) {
-                    const prompt = String(data.prompt || '').trim();
-                    const sym = String(data.symbol || '').trim().toUpperCase();
-                    aiInput.value = prompt || (sym
-                        ? ('Phân tích cổ phiếu ' + sym + ' (xu hướng, hỗ trợ/kháng cự, chỉ báo RSI/MACD).')
-                        : '');
-                    aiInput.style.height = 'auto';
-                }
+                // Từ chart/Home/KhamPha: chuyển sang trang TuniAI và gửi sẵn câu hỏi (không còn khung chat nổi).
+                const prompt = String(data.prompt || '').trim();
+                const sym = String(data.symbol || '').trim().toUpperCase();
+                const p = prompt || (sym ? ('Phân tích cổ phiếu ' + sym + ' (xu hướng, hỗ trợ/kháng cự, chỉ báo RSI/MACD).') : '');
+                if (p) { try { sessionStorage.setItem('tunix_ai_prompt', p); } catch (e) {} }
+                openTuniAiPage();
                 return;
             }
             if (data.type === 'tunix-open-stock' && data.symbol) {
@@ -4661,7 +4695,7 @@
                         btn.href = '#';
                         btn.onclick = function(e) {
                             e.preventDefault();
-                            if (typeof window.openTuniAi === 'function') window.openTuniAi();
+                            openTuniAiPage();
                         };
                     }
                 } else {
@@ -5218,6 +5252,14 @@
             }
 
             sendBtn.addEventListener('click', send);
+            // TuniAI Tools — nút công cụ nhanh trong panel chat (khung xanh bên phải)
+            document.querySelectorAll('.ai-tool').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    input.value = btn.getAttribute('data-p');
+                    input.style.height = 'auto';
+                    send();
+                });
+            });
             if (closeBtn) closeBtn.addEventListener('click', function() { panel.hidden = true; });
             if (clearBtn) clearBtn.addEventListener('click', function() {
                 history = [];
@@ -5249,5 +5291,6 @@
             renderHistory();
         })();
     </script>
+    <script src="/static/context-menu.js?v=20260826c"></script>
 </body>
 </html>

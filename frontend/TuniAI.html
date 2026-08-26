@@ -154,6 +154,34 @@
 
         .ta-demo-foot { margin-top: 14px; font-size: 11.5px; color: #8a99b1; display: flex; align-items: center; gap: 8px; }
 
+        /* ===== Chat trực tiếp trên trang TuniAI ===== */
+        .ta-chat { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
+        .ta-welcome {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 12px; text-align: center; padding: 48px 20px;
+            background: #fff; border: 1px solid #e9edf2; border-radius: 18px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        }
+        body.dark-mode .ta-welcome { background: #161b22; border-color: #21262d; }
+        .tw-ico { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; background: linear-gradient(135deg, #008080, #00a08a); box-shadow: 0 8px 20px rgba(0,128,128,0.28); }
+        .tw-text { font-size: 14px; color: #8a99b1; max-width: 460px; line-height: 1.6; }
+        .ta-msg-ai .ta-ai-reply {
+            background: #fff; border: 1px solid #e9edf2; border-radius: 14px 14px 14px 4px;
+            padding: 12px 14px; font-size: 13.5px; line-height: 1.6; color: #1a1f36;
+        }
+        body.dark-mode .ta-msg-ai .ta-ai-reply { background: #161b22; border-color: #21262d; color: #e6edf3; }
+        .ta-msg-ai .ta-ai-reply pre { background: #0d1117; color: #e6edf3; padding: 8px 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+        .ta-msg-ai .ta-ai-reply code { background: rgba(0,128,128,0.1); color: #008080; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+        .ta-msg-ai .ta-ai-reply a { color: #008080; }
+        .ta-msg-ai .ta-ai-reply .ta-p { margin: 0 0 6px; }
+        .ta-msg-ai .ta-ai-reply .ta-li { margin: 3px 0; }
+        .ta-msg-ai .ta-ai-reply h1, .ta-msg-ai .ta-ai-reply h2, .ta-msg-ai .ta-ai-reply h3 { font-size: 14px; margin: 8px 0 4px; }
+        .ta-typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
+        .ta-typing span { width: 7px; height: 7px; background: #008080; border-radius: 50%; animation: taBlink 1.2s infinite; }
+        .ta-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .ta-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes taBlink { 0%,80%,100% { opacity: 0.25; } 40% { opacity: 1; } }
+
         /* ===== Dark ===== */
         body.dark-mode { background: transparent; color: #e6edf3; }
         body.dark-mode .ta-input-card { background: #161b22; border-color: #21262d; }
@@ -178,102 +206,177 @@
 
         @media (max-width: 1180px) { .ta-suggests { grid-template-columns: repeat(3, 1fr); } .ta-tools { grid-template-columns: repeat(2, 1fr); } .ta-grid4 { grid-template-columns: repeat(2, 1fr); } .ta-data-cards { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 640px) { .ta-suggests { grid-template-columns: 1fr 1fr; } .ta-tools { grid-template-columns: 1fr; } .ta-grid4 { grid-template-columns: 1fr; } .ta-scenarios { grid-template-columns: 1fr; } .ta-data-cards { grid-template-columns: 1fr 1fr; } .ta-msg-user { max-width: 100%; } .ta-input-row { flex-wrap: wrap; } .ta-input-row button { width: 100%; } }
+
+        /* ===== Chat App Layout ===== */
+        .ta-app {
+            display: flex;
+            height: 660px;
+            background: #fff;
+            border: 1px solid #e9edf2;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 34px rgba(15,23,42,0.08);
+        }
+        body.dark-mode .ta-app { background: #161b22; border-color: #21262d; box-shadow: none; }
+
+        /* Sidebar */
+        .ta-side {
+            display: flex; flex-direction: column;
+            flex: 0 0 268px; width: 268px;
+            min-height: 0; overflow: hidden;
+            background: #f4f7fb; border-right: 1px solid #e9edf2; min-width: 0;
+        }
+        body.dark-mode .ta-side { background: #10151c; border-right-color: #21262d; }
+        .ta-side-head { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .ta-brand { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 800; color: #12203a; }
+        body.dark-mode .ta-brand { color: #e6edf3; }
+        .ta-brand i { color: #008080; }
+        .ta-new-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            border: none; cursor: pointer; padding: 10px 12px; border-radius: 12px;
+            background: linear-gradient(135deg, #008080, #00a08a); color: #fff;
+            font-family: inherit; font-size: 13.5px; font-weight: 700; transition: all 0.2s;
+        }
+        .ta-new-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,128,128,0.25); }
+        .ta-side-label { padding: 6px 16px 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #8a99b1; }
+        .ta-history { flex: 1; overflow-y: auto; padding: 0 8px 8px; display: flex; flex-direction: column; gap: 4px; }
+        .ta-h-empty { font-size: 12.5px; color: #8a99b1; padding: 10px 12px; text-align: center; }
+        .ta-h-item {
+            position: relative; display: flex; flex-direction: column; gap: 3px;
+            padding: 9px 12px; border-radius: 10px; cursor: pointer; border: 1px solid transparent;
+            background: transparent; transition: all 0.15s; min-width: 0;
+        }
+        .ta-h-item:hover { background: #eef2f7; }
+        body.dark-mode .ta-h-item:hover { background: #1b222c; }
+        .ta-h-item.is-active { background: #fff; border-color: #dfe7ef; box-shadow: 0 1px 3px rgba(15,23,42,0.06); }
+        body.dark-mode .ta-h-item.is-active { background: #161b22; border-color: #30363d; }
+        .ta-h-title { font-size: 13px; font-weight: 700; color: #33415c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 26px; }
+        body.dark-mode .ta-h-title { color: #e6edf3; }
+        .ta-h-time { font-size: 11px; color: #8a99b1; }
+        .ta-h-del {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            border: none; background: transparent; color: #b6c2d2; cursor: pointer;
+            width: 24px; height: 24px; border-radius: 6px; font-size: 12px;
+            display: none; align-items: center; justify-content: center;
+        }
+        .ta-h-item:hover .ta-h-del { display: flex; }
+        .ta-h-del:hover { color: #d0314e; background: rgba(208,49,78,0.1); }
+        .ta-side-foot { padding: 10px 14px; font-size: 11px; color: #8a99b1; line-height: 1.5; border-top: 1px solid #e9edf2; display: flex; gap: 6px; align-items: flex-start; }
+        body.dark-mode .ta-side-foot { border-top-color: #21262d; color: #6b7a8f; }
+        .ta-side-foot i { color: #008080; margin-top: 2px; }
+
+        /* Main */
+        .ta-main { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; background: #fff; }
+        body.dark-mode .ta-main { background: #161b22; }
+        .ta-main-head { padding: 12px 20px; border-bottom: 1px solid #eef2f6; display: flex; flex-direction: column; gap: 2px; }
+        body.dark-mode .ta-main-head { border-bottom-color: #21262d; }
+        .ta-chat-title { font-size: 15px; font-weight: 800; color: #12203a; }
+        body.dark-mode .ta-chat-title { color: #e6edf3; }
+        .ta-chat-meta { font-size: 11.5px; color: #8a99b1; display: flex; align-items: center; gap: 6px; }
+        .ta-chat-meta i { color: #008080; }
+        .ta-messages { flex: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; scrollbar-width: none; -ms-overflow-style: none; }
+        .ta-messages::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        .ta-composer { padding: 10px 16px 14px; border-top: 1px solid #eef2f6; }
+        body.dark-mode .ta-composer { border-top-color: #21262d; }
+        .ta-composer .ta-input-row { background: #f6f8fb; border: 1px solid #e5eaf0; border-radius: 14px; padding: 6px 8px 6px 18px; transition: border-color 0.2s; }
+        .ta-composer .ta-input-row:focus-within { border-color: #008080; background: #fff; }
+        .ta-composer .ta-input-row i { color: #fff; font-size: 17px; }
+        .ta-composer .ta-input-row input { flex: 1; border: none; outline: none; background: transparent; font-size: 15px; font-family: inherit; color: #12203a; padding: 12px 6px; }
+        body.dark-mode .ta-composer .ta-input-row input { color: #e6edf3; }
+        .ta-composer .ta-input-row button {
+            width: 46px; height: 46px; flex: 0 0 46px; border: none; border-radius: 13px; cursor: pointer;
+            background: linear-gradient(135deg, #008080, #00a08a); color: #fff;
+            font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,128,128,0.32); transition: all 0.15s;
+        }
+        .ta-composer .ta-input-row button i { display: block; }
+        .ta-composer .ta-input-row button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        .ta-composer .ta-input-row button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,128,128,0.42); }
+        .ta-composer .ta-input-row button:active:not(:disabled) { transform: scale(0.94); }
+        .ta-composer-note { margin-top: 6px; font-size: 10.5px; color: #9aa8bd; text-align: center; }
+
+        /* Welcome (empty state) */
+        .ta-welcome {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 12px; text-align: center; height: 100%; padding: 20px 8px;
+        }
+        .ta-welcome .tw-ico { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; background: linear-gradient(135deg, #008080, #00a08a); box-shadow: 0 8px 20px rgba(0,128,128,0.28); }
+        .ta-welcome .tw-title { font-size: 19px; font-weight: 800; color: #12203a; }
+        body.dark-mode .ta-welcome .tw-title { color: #e6edf3; }
+        .ta-welcome .tw-text { font-size: 13.5px; color: #8a99b1; max-width: 460px; line-height: 1.6; }
+        .ta-welcome .ta-suggests { margin-top: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-width: 640px; width: 100%; }
+        .ta-welcome .ta-sugg { border: 1px solid #e9edf2; border-radius: 12px; padding: 10px 12px; cursor: pointer; font-size: 12.5px; color: #4a5a72; transition: all 0.2s; background: #fff; text-align: left; }
+        body.dark-mode .ta-welcome .ta-sugg { background: #161b22; border-color: #21262d; color: #adbac7; }
+        .ta-welcome .ta-sugg:hover { border-color: #008080; color: #008080; background: #f0fbf9; }
+        body.dark-mode .ta-welcome .ta-sugg:hover { border-color: #4db6b6; color: #4db6b6; background: #10151c; }
+        .ta-welcome .ta-tools { margin-top: 8px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 640px; width: 100%; }
+        .ta-welcome .ta-tool { background: #fff; border: 1px solid #e9edf2; border-radius: 12px; padding: 12px 10px; cursor: pointer; transition: all 0.2s; }
+        body.dark-mode .ta-welcome .ta-tool { background: #161b22; border-color: #21262d; }
+        .ta-welcome .ta-tool:hover { border-color: #008080; box-shadow: 0 6px 16px rgba(0,128,128,0.12); transform: translateY(-2px); }
+        .ta-welcome .ta-tool .tt-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff; background: linear-gradient(135deg, #008080, #00a08a); margin: 0 auto 8px; }
+        .ta-welcome .ta-tool .tt-title { font-size: 12.5px; font-weight: 800; text-align: center; }
+        .ta-welcome .ta-tool .tt-tag { display: inline-block; margin-top: 6px; font-size: 10px; font-weight: 700; color: #008080; background: rgba(0,128,128,0.08); padding: 2px 8px; border-radius: 20px; }
+
+        /* Message bubbles */
+        .ta-msg-user {
+            align-self: flex-end; max-width: 72%;
+            background: linear-gradient(135deg, #008080, #00a08a); color: #fff;
+            border-radius: 14px 14px 4px 14px; padding: 11px 15px; font-size: 14px; font-weight: 600;
+        }
+        .ta-msg-ai { display: flex; gap: 10px; max-width: 92%; }
+        .ta-ai-reply {
+            background: #f6f8fb; border: 1px solid #e9edf2; border-radius: 4px 14px 14px 14px;
+            padding: 11px 14px; font-size: 13.5px; line-height: 1.6; color: #1a1f36;
+        }
+        body.dark-mode .ta-ai-reply { background: #10151c; border-color: #21262d; color: #e6edf3; }
+        .ta-ai-reply pre { background: #0d1117; color: #e6edf3; padding: 8px 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+        .ta-ai-reply code { background: rgba(0,128,128,0.1); color: #008080; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+        .ta-ai-reply a { color: #008080; }
+        .ta-ai-reply .ta-p { margin: 0 0 6px; }
+        .ta-ai-reply .ta-li { margin: 3px 0; }
+        .ta-ai-reply h1, .ta-ai-reply h2, .ta-ai-reply h3 { font-size: 14px; margin: 8px 0 4px; }
+        .ta-typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
+        .ta-typing span { width: 7px; height: 7px; background: #008080; border-radius: 50%; animation: taBlink 1.2s infinite; }
+        .ta-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .ta-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes taBlink { 0%,80%,100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+        @media (max-width: 760px) {
+            .ta-app { flex-direction: column; height: auto; }
+            .ta-side { flex: 0 0 auto; width: 100%; border-right: none; border-bottom: 1px solid #e9edf2; max-height: 260px; }
+            .ta-main { flex: 0 0 auto; min-height: 460px; }
+            .ta-messages { height: 60vh; min-height: 320px; }
+            .ta-history { max-height: 200px; }
+        }
     </style>
 </head>
 <body>
     <div class="ta-page">
-        <!-- HERO -->
-        <header class="ta-hero">
-            <span class="ta-badge"><i class="fas fa-robot"></i> TuniAI · Trợ lý tài chính thông minh</span>
-            <h1>TuniAI</h1>
-            <div class="ta-headline">Phân tích thị trường bằng ngôn ngữ tự nhiên</div>
-            <p class="ta-sub">Hỏi bất cứ điều gì về cổ phiếu, doanh nghiệp, thị trường hoặc danh mục của bạn.</p>
-            <div class="ta-hero-tags">
-                <span>⚡ Dữ liệu thời gian thực</span>
-                <span>🎯 Phân tích chuyên sâu</span>
-                <span>🔐 An toàn &amp; bảo mật</span>
-            </div>
-        </header>
-
-        <!-- INPUT -->
-        <div class="ta-input-card">
-            <div class="ta-input-row">
-                <i class="fas fa-magnifying-glass"></i>
-                <input id="taInput" type="text" placeholder="Bạn muốn phân tích điều gì?" />
-                <button id="taBtn"><i class="fas fa-paper-plane"></i> Phân tích</button>
-            </div>
-            <div class="ta-suggests" id="taSuggests"></div>
-        </div>
-
-        <!-- TOOLS -->
-        <div class="ta-sec-title">TuniAI Tools</div>
-        <div class="ta-tools">
-            <div class="ta-tool" data-p="Phân tích chuyên sâu cổ phiếu">
-                <div class="tt-icon"><i class="fas fa-chart-line"></i></div>
-                <div class="tt-title">AI Stock Analysis</div>
-                <div class="tt-desc">Phân tích chuyên sâu một cổ phiếu</div>
-                <span class="tt-tag">Phân tích</span>
-            </div>
-            <div class="ta-tool" data-p="So sánh doanh nghiệp">
-                <div class="tt-icon"><i class="fas fa-scale-balanced"></i></div>
-                <div class="tt-title">AI Compare</div>
-                <div class="tt-desc">So sánh doanh nghiệp</div>
-                <span class="tt-tag">So sánh</span>
-            </div>
-            <div class="ta-tool" data-p="Tìm cổ phiếu bằng ngôn ngữ tự nhiên">
-                <div class="tt-icon"><i class="fas fa-sliders-h"></i></div>
-                <div class="tt-title">AI Screener</div>
-                <div class="tt-desc">Tìm cổ phiếu bằng ngôn ngữ tự nhiên</div>
-                <span class="tt-tag">Bộ lọc</span>
-            </div>
-            <div class="ta-tool" data-p="Phân tích danh mục của tôi">
-                <div class="tt-icon"><i class="fas fa-briefcase"></i></div>
-                <div class="tt-title">AI Portfolio</div>
-                <div class="tt-desc">Phân tích danh mục</div>
-                <span class="tt-tag">Danh mục</span>
-            </div>
-        </div>
-
-        <!-- DEMO CONVERSATION -->
-        <div class="ta-sec-title">💬 Ví dụ phân tích <span style="font-size:12px;color:#8a99b1;font-weight:600;">(minh họa giao diện)</span></div>
-        <div class="ta-demo">
-            <div class="ta-demo-head">
-                <h3><i class="fas fa-robot" style="color:#008080;"></i> Hội thoại mẫu</h3>
-                <span class="td-live"><span class="pulse"></span> Dữ liệu thực từ thị trường</span>
-            </div>
-
-            <div class="ta-msg-user">Phân tích VCI</div>
-
-            <div class="ta-msg-ai">
-                <div class="ta-ai-avatar"><i class="fas fa-robot"></i></div>
-                <div class="ta-ai-body">
-                    <div class="ta-ai-name">TuniAI</div>
-                    <div class="ta-card">
-                        <div class="ta-ai-head">
-                            <div>
-                                <div class="tah-sym" id="demoSym">VCI</div>
-                                <div class="tah-name" id="demoName">CTCP Chứng khoán Vietcap</div>
-                            </div>
-                            <div class="score-big">
-                                <div class="sb-num" id="demoScore" style="color:#008080;">--</div>
-                                <div class="sb-label">/ 100<br />TuniX Score</div>
-                            </div>
-                        </div>
-
-                        <div class="ta-grid4" id="demoQuad"></div>
-
-                        <div class="ta-chart" id="demoChart"><span style="color:#8a99b1;font-size:12px;">Đang tải biểu đồ…</span></div>
-
-                        <div class="ta-scenarios" id="demoScen"></div>
-
-                        <div class="ta-data-cards" id="demoData"></div>
-                    </div>
-                    <div class="ta-demo-foot">
-                        <i class="fas fa-circle-info" style="color:#008080;"></i>
-                        Đây là mẫu minh họa giao diện trả lời của TuniAI. Nhập câu hỏi ở trên để nhận câu trả lời thực từ trợ lý.
-                    </div>
+        <div class="ta-app">
+            <aside class="ta-side">
+                <div class="ta-side-head">
+                    <div class="ta-brand"><i class="fas fa-robot"></i> TuniAI</div>
+                    <button type="button" class="ta-new-btn" id="taNewChat"><i class="fas fa-plus"></i> Trò chuyện mới</button>
                 </div>
-            </div>
+                <div class="ta-side-label">Lịch sử trò chuyện</div>
+                <div class="ta-history" id="taHistory"></div>
+                <div class="ta-side-foot"><i class="fas fa-brain"></i> TuniAI học hỏi từ lịch sử trò chuyện để hiểu sở thích và nhớ những gì bạn đã nói.</div>
+            </aside>
+            <main class="ta-main">
+                <header class="ta-main-head">
+                    <div class="ta-chat-title" id="taChatTitle">Cuộc trò chuyện mới</div>
+                    <div class="ta-chat-meta"><i class="fas fa-circle-info"></i> TuniAI — Trợ lý chứng khoán Việt Nam · Dữ liệu realtime từ TuniX</div>
+                </header>
+                <div class="ta-messages" id="taMessages"></div>
+                <div class="ta-composer">
+                    <div class="ta-input-row">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input id="taInput" type="text" placeholder="Hỏi về cổ phiếu, thị trường, tin tức..." autocomplete="off" />
+                        <button id="taBtn" title="Gửi"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                    <div class="ta-composer-note">TuniAI cung cấp thông tin tham khảo, không phải khuyến nghị đầu tư.</div>
+                </div>
+            </main>
         </div>
     </div>
 
@@ -286,27 +389,427 @@
                 { text: 'Thị trường hôm nay đang mạnh hay yếu?', q: 'Thị trường hôm nay đang mạnh hay yếu?' },
                 { text: 'Phân tích danh mục của tôi', q: 'Phân tích danh mục của tôi' }
             ];
-            const suggEl = document.getElementById('taSuggests');
-            suggEl.innerHTML = sugg.map(function(s) {
-                return '<div class="ta-sugg" data-q="' + s.q.replace(/"/g, '&quot;') + '">' + s.text + '</div>';
-            }).join('');
-            suggEl.querySelectorAll('.ta-sugg').forEach(function(el) {
-                el.addEventListener('click', function() { sendAi(el.getAttribute('data-q')); });
-            });
-            document.querySelectorAll('.ta-tool').forEach(function(el) {
-                el.addEventListener('click', function() { sendAi(el.getAttribute('data-p')); });
-            });
+            const tools = [
+                { p: 'Phân tích chuyên sâu cổ phiếu', icon: 'fa-chart-line', title: 'AI Stock', tag: 'Phân tích' },
+                { p: 'So sánh doanh nghiệp', icon: 'fa-balance-scale', title: 'AI Compare', tag: 'So sánh' },
+                { p: 'Tìm cổ phiếu bằng ngôn ngữ tự nhiên', icon: 'fa-sliders-h', title: 'AI Screener', tag: 'Bộ lọc' },
+                { p: 'Phân tích danh mục của tôi', icon: 'fa-briefcase', title: 'AI Portfolio', tag: 'Danh mục' }
+            ];
+
+            // ---------- Quản lý hội thoại (đồng bộ server theo tài khoản) ----------
+            const CONV_KEY = 'tunix_ai_conversations';
+            const API_CONV = '/api/ai/conversations';
+            const msgsEl = document.getElementById('taMessages');
+            const historyEl = document.getElementById('taHistory');
+            const titleEl = document.getElementById('taChatTitle');
+            let conversations = [];
+            let currentId = null;
+            let busy = false;
+
+            function loggedIn() { return !!localStorage.getItem('tunix_access_token'); }
+
+            function authHeaders() {
+                return {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + (localStorage.getItem('tunix_access_token') || '')
+                };
+            }
+
+            // Fetch có tự refresh token khi hết hạn (thử 1 lần)
+            async function serverFetch(url, opts) {
+                let res = await fetch(url, opts);
+                if (res.status === 401) {
+                    const refresh = localStorage.getItem('tunix_refresh_token');
+                    if (refresh) {
+                        try {
+                            const rr = await fetch('/api/auth/refresh-token', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ refresh_token: refresh })
+                            });
+                            const d = await rr.json();
+                            if (d.access_token) {
+                                localStorage.setItem('tunix_access_token', d.access_token);
+                                if (d.refresh_token) localStorage.setItem('tunix_refresh_token', d.refresh_token);
+                                if (d.user) localStorage.setItem('tunix_user', JSON.stringify(d.user));
+                                opts = Object.assign({}, opts, { headers: authHeaders() });
+                                res = await fetch(url, opts);
+                            }
+                        } catch (e) {}
+                    }
+                }
+                return res;
+            }
+
+            function loadConvs() {
+                try {
+                    const raw = JSON.parse(localStorage.getItem(CONV_KEY) || '[]');
+                    if (Array.isArray(raw)) conversations = raw;
+                } catch (e) { conversations = []; }
+            }
+            function saveConvs() {
+                try { localStorage.setItem(CONV_KEY, JSON.stringify(conversations.slice(-50))); } catch (e) {}
+                scheduleServerSync();
+            }
+
+            let _syncTimer = null;
+            function scheduleServerSync() {
+                if (!loggedIn()) return;
+                if (_syncTimer) clearTimeout(_syncTimer);
+                _syncTimer = setTimeout(syncAllToServer, 800);
+            }
+            async function syncAllToServer() {
+                if (!loggedIn()) return;
+                const list = conversations.slice(0, 50);
+                for (let i = 0; i < list.length; i++) {
+                    const c = list[i];
+                    if (!c.messages || !c.messages.length) continue; // chỉ lưu hội thoại có nội dung
+                    try {
+                        await serverFetch(API_CONV + '/' + encodeURIComponent(c.id), {
+                            method: 'PUT',
+                            headers: authHeaders(),
+                            body: JSON.stringify({ title: convTitleOf(c), messages: c.messages })
+                        });
+                    } catch (e) {}
+                }
+            }
+            // Tải lịch sử từ server về (theo tài khoản đã đăng nhập)
+            async function loadServerConvs() {
+                try {
+                    const res = await serverFetch(API_CONV, { headers: authHeaders() });
+                    if (!res.ok) return false;
+                    const list = await res.json();
+                    if (Array.isArray(list)) {
+                        conversations = list.map(function(x) {
+                            return {
+                                id: x.id,
+                                updated_at: x.updated_at ? new Date(x.updated_at).getTime() : Date.now(),
+                                messages: Array.isArray(x.messages) ? x.messages : []
+                            };
+                        });
+                        try { localStorage.setItem(CONV_KEY, JSON.stringify(conversations.slice(-50))); } catch (e) {}
+                        return true;
+                    }
+                } catch (e) {}
+                return false;
+            }
+            function currentConv() {
+                return conversations.find(function(c) { return c.id === currentId; }) || null;
+            }
+            function convTitleOf(c) {
+                const first = (c.messages || []).find(function(m) { return m.role === 'user'; });
+                if (first && first.content) {
+                    const t = String(first.content).trim();
+                    return t.length > 42 ? t.slice(0, 42) + '…' : t;
+                }
+                return 'Cuộc trò chuyện mới';
+            }
+
+            function newChat() {
+                const c = { id: 'c' + Date.now(), updated_at: Date.now(), messages: [] };
+                conversations.unshift(c);
+                currentId = c.id;
+                saveConvs();
+                renderHistory();
+                renderMessages();
+            }
+            function openConv(id) {
+                const c = conversations.find(function(x) { return x.id === id; });
+                if (!c) return;
+                currentId = id;
+                renderHistory();
+                renderMessages();
+            }
+            function deleteConv(id) {
+                conversations = conversations.filter(function(c) { return c.id !== id; });
+                if (currentId === id) {
+                    currentId = null;
+                    if (conversations.length) currentId = conversations[0].id;
+                }
+                saveConvs();
+                if (loggedIn()) {
+                    serverFetch(API_CONV + '/' + encodeURIComponent(id), { method: 'DELETE', headers: authHeaders() }).catch(function() {});
+                }
+                renderHistory();
+                renderMessages();
+            }
+
+            function escChat(s) {
+                return String(s == null ? '' : s)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
+            function scrollChat() { if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight; }
+
+            function renderAiText(text) {
+                let t = escChat(text || '');
+                t = t.replace(/```([\s\S]*?)```/g, function(m, c) { return '<pre>' + c + '</pre>'; });
+                t = t.replace(/`([^`]+)`/g, function(m, c) { return '<code>' + c + '</code>'; });
+                t = t.replace(/\*\*([^*]+)\*\*/g, function(m, c) { return '<strong>' + c + '</strong>'; });
+                t = t.replace(/(https?:\/\/[^\s]+)/g, function(m) { return '<a href="' + m + '" target="_blank" rel="noopener">' + m + '</a>'; });
+                let out = '';
+                t.split('\n').forEach(function(line) {
+                    const h = line.match(/^(#{1,3})\s+(.*)$/);
+                    if (h) { out += '<h' + h[1].length + '>' + h[2] + '</h' + h[1].length + '>'; return; }
+                    if (/^\s*[-*]\s+/.test(line)) { out += '<div class="ta-li">• ' + line.replace(/^\s*[-*]\s+/, '') + '</div>'; return; }
+                    if (/^\s*\d+\.\s+/.test(line)) { out += '<div class="ta-li">' + escChat(line.trim()) + '</div>'; return; }
+                    if (line.trim() === '') { return; }
+                    out += '<div class="ta-p">' + line + '</div>';
+                });
+                return out || '<div class="ta-p"></div>';
+            }
+
+            function renderMessages() {
+                if (!msgsEl) return;
+                const c = currentConv();
+                if (!c || !c.messages || !c.messages.length) {
+                    msgsEl.innerHTML = '<div class="ta-welcome">' +
+                        '<div class="tw-ico"><i class="fas fa-robot"></i></div>' +
+                        '<div class="tw-title">TuniAI — Trợ lý chứng khoán Việt Nam</div>' +
+                        '<div class="tw-text">Hỏi về cổ phiếu, doanh nghiệp, thị trường hoặc danh mục của bạn.</div>' +
+                        '<div class="ta-suggests"></div>' +
+                        '<div class="ta-tools"></div>' +
+                    '</div>';
+                    renderStarter();
+                    if (titleEl) titleEl.textContent = 'Cuộc trò chuyện mới';
+                    return;
+                }
+                if (titleEl) titleEl.textContent = convTitleOf(c);
+                let html = '';
+                c.messages.forEach(function(m) {
+                    if (m.role === 'user') {
+                        html += '<div class="ta-msg-user">' + escChat(m.content) + '</div>';
+                    } else if (m.role === 'assistant') {
+                        html += '<div class="ta-msg-ai"><div class="ta-ai-avatar"><i class="fas fa-robot"></i></div>' +
+                            '<div class="ta-ai-body"><div class="ta-ai-name">TuniAI</div>' +
+                            '<div class="ta-ai-reply">' + renderAiText(m.content) + '</div></div></div>';
+                    }
+                });
+                msgsEl.innerHTML = html;
+                scrollChat();
+            }
+
+            function renderStarter() {
+                const suggEl = msgsEl.querySelector('.ta-suggests');
+                if (suggEl) {
+                    suggEl.innerHTML = sugg.map(function(s) {
+                        return '<div class="ta-sugg" data-q="' + s.q.replace(/"/g, '&quot;') + '">' + s.text + '</div>';
+                    }).join('');
+                    suggEl.querySelectorAll('.ta-sugg').forEach(function(el) {
+                        el.addEventListener('click', function() { sendAi(el.getAttribute('data-q')); });
+                    });
+                }
+                const toolsEl = msgsEl.querySelector('.ta-tools');
+                if (toolsEl) {
+                    toolsEl.innerHTML = tools.map(function(t) {
+                        return '<div class="ta-tool" data-p="' + t.p.replace(/"/g, '&quot;') + '">' +
+                            '<div class="tt-icon"><i class="fas ' + t.icon + '"></i></div>' +
+                            '<div class="tt-title">' + t.title + '</div>' +
+                            '<span class="tt-tag">' + t.tag + '</span>' +
+                        '</div>';
+                    }).join('');
+                    toolsEl.querySelectorAll('.ta-tool').forEach(function(el) {
+                        el.addEventListener('click', function() { sendAi(el.getAttribute('data-p')); });
+                    });
+                }
+            }
+
+            function renderHistory() {
+                if (!historyEl) return;
+                if (!conversations.length) {
+                    historyEl.innerHTML = '<div class="ta-h-empty">Chưa có cuộc trò chuyện nào.</div>';
+                    return;
+                }
+                historyEl.innerHTML = conversations.map(function(c) {
+                    const active = c.id === currentId ? ' is-active' : '';
+                    const title = escChat(convTitleOf(c));
+                    const time = new Date(c.updated_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    return '<div class="ta-h-item' + active + '" data-id="' + c.id + '">' +
+                        '<span class="ta-h-title">' + title + '</span>' +
+                        '<span class="ta-h-time">' + time + '</span>' +
+                        '<button type="button" class="ta-h-del" title="Xóa" data-del="' + c.id + '"><i class="fas fa-trash"></i></button>' +
+                    '</div>';
+                }).join('');
+                historyEl.querySelectorAll('.ta-h-item').forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        if (e.target.closest('.ta-h-del')) return;
+                        openConv(el.getAttribute('data-id'));
+                    });
+                });
+                historyEl.querySelectorAll('.ta-h-del').forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        deleteConv(el.getAttribute('data-del'));
+                    });
+                });
+            }
+
+            function addUserMsg(text) {
+                if (!msgsEl) return;
+                const row = document.createElement('div');
+                row.className = 'ta-msg-user';
+                row.textContent = text;
+                msgsEl.appendChild(row);
+                scrollChat();
+            }
+            function addAiMsg(html) {
+                if (!msgsEl) return null;
+                const row = document.createElement('div');
+                row.className = 'ta-msg-ai';
+                row.innerHTML = '<div class="ta-ai-avatar"><i class="fas fa-robot"></i></div>' +
+                    '<div class="ta-ai-body"><div class="ta-ai-name">TuniAI</div><div class="ta-ai-reply">' +
+                    (html || '<div class="ta-typing"><span></span><span></span><span></span></div>') +
+                    '</div></div>';
+                msgsEl.appendChild(row);
+                scrollChat();
+                return row.querySelector('.ta-ai-reply');
+            }
+
+            async function fetchChat(retried) {
+                const c = currentConv();
+                const msgs = (c && c.messages) ? c.messages.slice(-20) : [];
+                const res = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('tunix_access_token') || '')
+                    },
+                    body: JSON.stringify({ messages: msgs, stream: true })
+                });
+                if (res.status === 401 && !retried) {
+                    const refresh = localStorage.getItem('tunix_refresh_token');
+                    if (refresh) {
+                        try {
+                            const rr = await fetch('/api/auth/refresh-token', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ refresh_token: refresh })
+                            });
+                            const d = await rr.json();
+                            if (d.access_token) {
+                                localStorage.setItem('tunix_access_token', d.access_token);
+                                if (d.refresh_token) localStorage.setItem('tunix_refresh_token', d.refresh_token);
+                                if (d.user) localStorage.setItem('tunix_user', JSON.stringify(d.user));
+                                return fetchChat(true);
+                            }
+                        } catch (e) {}
+                    }
+                    localStorage.removeItem('tunix_access_token');
+                    localStorage.removeItem('tunix_refresh_token');
+                    localStorage.removeItem('tunix_user');
+                }
+                return res;
+            }
+
+            async function streamAnswer(bubble) {
+                const res = await fetchChat(false);
+                if (!res.ok) {
+                    let detail = 'Lỗi khi gọi TuniAI. Vui lòng thử lại.';
+                    try { const d = await res.json(); if (d && d.detail) detail = d.detail; } catch (e) {}
+                    if (res.status === 401) detail = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                    bubble.innerHTML = escChat(detail);
+                    return '';
+                }
+                if (!res.body) { bubble.innerHTML = 'Trình duyệt không hỗ trợ streaming.'; return ''; }
+                const reader = res.body.getReader();
+                const dec = new TextDecoder();
+                let buf = '';
+                let full = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buf += dec.decode(value, { stream: true });
+                    let idx;
+                    while ((idx = buf.indexOf('\n\n')) >= 0) {
+                        const raw = buf.slice(0, idx);
+                        buf = buf.slice(idx + 2);
+                        raw.split('\n').forEach(function(line) {
+                            if (!line.startsWith('data:')) return;
+                            const data = line.slice(5).trim();
+                            if (data === '[DONE]') return;
+                            let ev;
+                            try { ev = JSON.parse(data); } catch (e) { return; }
+                            if (ev.type === 'delta') {
+                                full += (ev.content || '');
+                                bubble.innerHTML = renderAiText(full);
+                                scrollChat();
+                            } else if (ev.type === 'error') {
+                                bubble.innerHTML = escChat(ev.content || 'Có lỗi xảy ra.');
+                            }
+                        });
+                    }
+                }
+                return full;
+            }
 
             function sendAi(prompt) {
-                if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-ai-open', prompt: prompt }, '*');
+                prompt = String(prompt || '').trim();
+                if (!prompt || busy) return;
+                let c = currentConv();
+                if (!c) { newChat(); c = currentConv(); }
+                if (!loggedIn()) {
+                    const b = addAiMsg('');
+                    if (b) b.innerHTML = 'Hãy <strong>đăng nhập</strong> để được hỏi đáp về cổ phiếu. <a href="/Login?next=/tuniai" target="_top" style="color:#008080;font-weight:700;">Đăng nhập</a>';
+                    return;
+                }
+                addUserMsg(prompt);
+                c.messages.push({ role: 'user', content: prompt });
+                c.updated_at = Date.now();
+                if (titleEl) titleEl.textContent = convTitleOf(c);
+                busy = true;
+                const btn = document.getElementById('taBtn');
+                if (btn) btn.disabled = true;
+                const bubble = addAiMsg('');
+                if (!bubble) { busy = false; saveConvs(); return; }
+                streamAnswer(bubble).then(function(reply) {
+                    if (reply) c.messages.push({ role: 'assistant', content: reply });
+                }).finally(function() {
+                    busy = false;
+                    if (btn) btn.disabled = false;
+                    const input = document.getElementById('taInput');
+                    if (input) { input.value = ''; input.focus(); }
+                    c.updated_at = Date.now();
+                    saveConvs();
+                    renderHistory();
+                    notifyParentHeight();
+                });
             }
+
+            // Nhận câu hỏi từ nơi khác (chart, Home, KhamPha...) qua sessionStorage → tự gửi
+            function consumePendingPrompt() {
+                try {
+                    const p = sessionStorage.getItem('tunix_ai_prompt');
+                    if (p) {
+                        sessionStorage.removeItem('tunix_ai_prompt');
+                        setTimeout(function() { sendAi(p); }, 300);
+                    }
+                } catch (e) {}
+            }
+            const newBtn = document.getElementById('taNewChat');
+            if (newBtn) newBtn.addEventListener('click', newChat);
             document.getElementById('taBtn').addEventListener('click', function() {
                 const txt = document.getElementById('taInput').value.trim();
-                sendAi(txt || 'Tìm cổ phiếu có ROE trên 15%, P/E dưới 12 và lợi nhuận tăng trên 20%');
+                if (txt) sendAi(txt);
             });
             document.getElementById('taInput').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') document.getElementById('taBtn').click();
             });
+            function initChat() {
+                if (!conversations.length) {
+                    newChat();
+                } else {
+                    currentId = conversations[0].id;
+                    renderHistory();
+                    renderMessages();
+                }
+            }
+            loadConvs();
+            if (loggedIn()) {
+                loadServerConvs().then(function() { initChat(); });
+            } else {
+                initChat();
+            }
 
             // ---------- Mở chi tiết cổ phiếu ----------
             function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*'); }
@@ -427,8 +930,9 @@
                 obs.observe(document.querySelector('.ta-page') || document.body);
             }
             applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
-            loadDemo();
+            consumePendingPrompt();
         })();
     </script>
+    <script src="/static/context-menu.js?v=20260826c"></script>
 </body>
 </html>
