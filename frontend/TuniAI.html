@@ -26,6 +26,38 @@
         .ta-page { max-width: none; width: 100%; margin: 0 auto; padding: 20px; }
         .embedded .ta-page { padding: 0 0 40px; }
 
+        /* ===== Trang bị khóa (yêu cầu đăng nhập) ===== */
+        .ta-locked {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; gap: 14px;
+            min-height: 420px; padding: 48px 24px;
+            background: #fff; border: 1px solid #e9edf2; border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        }
+        .ta-lock-icon {
+            width: 76px; height: 76px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,128,128,0.12); color: #008080; font-size: 30px;
+        }
+        .ta-locked h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; color: #12203a; }
+        .ta-locked p { max-width: 400px; font-size: 14px; color: #6b7a8f; line-height: 1.6; }
+        .ta-lock-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+        .ta-lock-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 11px 22px; border-radius: 12px; border: 1px solid #dce3ec;
+            background: #fff; color: #3c4b5f; font-weight: 700; font-size: 14px;
+            cursor: pointer; text-decoration: none; transition: all 0.2s; font-family: inherit;
+        }
+        .ta-lock-btn:hover { border-color: #008080; color: #008080; }
+        .ta-lock-btn.primary { background: #008080; border-color: #008080; color: #fff; }
+        .ta-lock-btn.primary:hover { background: #00968f; border-color: #00968f; }
+        body.dark-mode .ta-locked { background: #161b22; border-color: #30363d; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        body.dark-mode .ta-locked h2 { color: #e6edf3; }
+        body.dark-mode .ta-locked p { color: #8b949e; }
+        body.dark-mode .ta-lock-btn { background: #21262d; border-color: #30363d; color: #9fb0c7; }
+        body.dark-mode .ta-lock-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+        body.dark-mode .ta-lock-btn.primary { background: #008080; border-color: #008080; color: #fff; }
+
         /* ===== Hero ===== */
         .ta-hero {
             position: relative;
@@ -408,6 +440,23 @@
 
             function loggedIn() { return !!localStorage.getItem('tunix_access_token'); }
 
+            // ---------- Trang bị khóa (yêu cầu đăng nhập) ----------
+            function showLocked() {
+                const page = document.querySelector('.ta-page');
+                if (!page) return;
+                page.innerHTML =
+                    '<div class="ta-locked">' +
+                        '<div class="ta-lock-icon"><i class="fas fa-lock"></i></div>' +
+                        '<h2>Trang bị khóa</h2>' +
+                        '<p>Trang TuniAI yêu cầu đăng nhập để sử dụng trợ lý tài chính thông minh.</p>' +
+                        '<div class="ta-lock-actions">' +
+                            '<a class="ta-lock-btn primary" href="/Login?next=' + encodeURIComponent('/tuniai') + '" target="_top"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>' +
+                            '<a class="ta-lock-btn" href="/register" target="_top"><i class="fas fa-user-plus"></i> Tạo tài khoản</a>' +
+                        '</div>' +
+                    '</div>';
+                notifyParentHeight();
+            }
+
             function authHeaders() {
                 return {
                     'Content-Type': 'application/json',
@@ -780,7 +829,7 @@
             function consumePendingPrompt() {
                 try {
                     const p = sessionStorage.getItem('tunix_ai_prompt');
-                    if (p) {
+                    if (p && loggedIn()) {
                         sessionStorage.removeItem('tunix_ai_prompt');
                         setTimeout(function() { sendAi(p); }, 300);
                     }
@@ -805,10 +854,10 @@
                 }
             }
             loadConvs();
-            if (loggedIn()) {
-                loadServerConvs().then(function() { initChat(); });
+            if (!loggedIn()) {
+                showLocked();
             } else {
-                initChat();
+                loadServerConvs().then(function() { initChat(); });
             }
 
             // ---------- Mở chi tiết cổ phiếu ----------
