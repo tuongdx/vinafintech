@@ -3298,7 +3298,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260827f';
+        const CACHE_VERSION = '20260827g';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -4338,6 +4338,43 @@
         window.filterStocks = filterStocks;
         window.loadContent = loadContent;
 
+        // Chuẩn hoá URL route shell → đường dẫn file thật để nhúng trực tiếp (tránh lồng shell 2 lần).
+        // Server trả index.html cho các route này; nếu nhúng thẳng vào iframe sẽ bị "trang trong trang".
+        function resolveShellPageUrl(url) {
+            if (!url) return url;
+            const u = String(url);
+            const qIdx = u.indexOf('?');
+            const path = qIdx >= 0 ? u.slice(0, qIdx) : u;
+            const qs = qIdx >= 0 ? u.slice(qIdx) : '';
+            const MAP = {
+                '/quan-ly-tai-san': '/frontend/quanlytaisan.html',
+                '/thi-truong': '/frontend/ThiTruong.html',
+                '/co-phieu': '/frontend/CoPhieu.html',
+                '/kham-pha': '/frontend/KhamPha.html',
+                '/tuniai': '/frontend/TuniAI.html',
+                '/tin-tuc': '/frontend/tin-tuc.html',
+                '/TrungTamTroGiup': '/frontend/TrungTamTroGiup.html',
+                '/HuongDanSuDung': '/frontend/HuongDanSuDung.html',
+                '/CauHoiThuongGap': '/frontend/CauHoiThuongGap.html',
+                '/LienHe': '/frontend/LienHe.html',
+                '/GopY': '/frontend/GopY.html',
+                '/DieuKhoanSuDung': '/frontend/DieuKhoanSuDung.html',
+                '/ChinhSachBaoMat': '/frontend/ChinhSachBaoMat.html',
+                '/MienTruTrachNhiem': '/frontend/MienTruTrachNhiem.html',
+                '/chung-khoan': '/frontend/tin-tuc.html?cat=chung-khoan',
+                '/ngan-hang': '/frontend/tin-tuc.html?cat=ngan-hang',
+                '/bat-dong-san': '/frontend/tin-tuc.html?cat=bat-dong-san',
+                '/doanh-nghiep': '/frontend/tin-tuc.html?cat=doanh-nghiep',
+                '/dong-tien-thong-minh': '/frontend/tin-tuc.html?cat=dong-tien-thong-minh',
+                '/tai-chinh-quoc-te': '/frontend/tin-tuc.html?cat=tai-chinh-quoc-te',
+                '/cong-nghe': '/frontend/tin-tuc.html?cat=cong-nghe'
+            };
+            const file = MAP[path];
+            if (!file) return u;
+            return file + qs;
+        }
+        window.resolveShellPageUrl = resolveShellPageUrl;
+
         // Nhận chiều cao từ iframe nhung để hiển thị đầy đủ nội dung trong left-col,
         // và lệnh mở bài viết khác từ phần "Tin liên quan".
         window.addEventListener('message', function(event) {
@@ -4390,15 +4427,11 @@
             }
             if (data.type === 'tunix-open-page' && data.url) {
                 // Link nội bộ từ trang nhúng (VD: Home → /quan-ly-tai-san): điều hướng qua shell như menu chính.
+                // Chuẩn hoá route shell → file nhúng trực tiếp để không lồng shell 2 lần.
                 const u = String(data.url).split('#')[0];
                 if (!u) return;
-                if (u === '/quan-ly-tai-san') {
-                    loadContent('/frontend/quanlytaisan.html');
-                    window.history.replaceState({}, '', '/quan-ly-tai-san');
-                } else {
-                    loadContent(u);
-                    window.history.replaceState({}, '', u);
-                }
+                loadContent(resolveShellPageUrl(u));
+                window.history.replaceState({}, '', u);
                 return;
             }
             if (data.type === 'tunix-go-login') {
@@ -4995,7 +5028,9 @@
                         } else if (link && link.indexOf('/cophieu-') === 0 && symbol && window.openStockDetailInIndex) {
                             window.openStockDetailInIndex(symbol);
                         } else if (link && window.loadContent) {
-                            window.loadContent(link);
+                            // Chuẩn hoá route shell (VD /quan-ly-tai-san) → file nhúng trực tiếp, tránh "trang trong trang".
+                            const target = (window.resolveShellPageUrl ? window.resolveShellPageUrl(link) : link);
+                            window.loadContent(target);
                         } else if (ntype === 'stock' && symbol && window.openStockDetailInIndex) {
                             window.openStockDetailInIndex(symbol);
                         } else if (ntype === 'news' && window.openTintuc) {
