@@ -619,6 +619,7 @@
             ];
 
             var PAGE_SIZE = 12;  // số bài mỗi lần nạp khi phân trang (cuộn)
+            var balancedPage = PAGE_SIZE; // số bài mỗi lần "Xem thêm" = đúng 1 màn hình cân bằng như lần nạp đầu (set trong loadInitial)
             var MAX_INIT = 50;   // giới hạn bài hiển thị ban đầu (backend tối đa 50)
             var GRID_GAP = 16;   // row-gap của lưới tin
             var currentCat = '';
@@ -1170,6 +1171,10 @@
                     }
                 }
 
+                // Số bài mỗi lần "Xem thêm" = đúng số bài đang hiển thị (1 màn hình cân bằng)
+                // → sau mỗi lần bấm layout vẫn giữ nguyên độ cân bằng như ban đầu.
+                balancedPage = gridEl.querySelectorAll('.news-card').length;
+
                 scheduleRealign();
             }
 
@@ -1184,17 +1189,17 @@
                 }
             }
 
-            // Nút "Xem thêm": tải thêm 1 trang (PAGE_SIZE bài)
+            // Nút "Xem thêm": tải thêm đúng 1 màn hình cân bằng (balancedPage) — giống số bài lần nạp đầu
             async function loadMore() {
                 if (isLoadingMore || !hasMore) return;
                 isLoadingMore = true;
                 setLoadMoreLoading(true);
                 try {
-                    var data = await fetchNews(nextOffset, PAGE_SIZE);
+                    var data = await fetchNews(nextOffset, balancedPage);
                     if (!data.length) {
                         hasMore = false;
                     } else {
-                        appendNews(data, PAGE_SIZE);
+                        appendNews(data, balancedPage);
                     }
                 } catch (e) {
                     // Lỗi mạng: giữ nút để người dùng bấm lại
@@ -1226,7 +1231,7 @@
                 var want = Math.max(cols, rows * cols);
                 var current = gridEl.querySelectorAll('.news-card').length;
                 if (want <= current || !hasMore) return;
-                var add = Math.min(want - current, PAGE_SIZE);
+                var add = Math.min(want - current, balancedPage);
                 isLoadingMore = true;
                 showLoadMore(true);
                 fetchNews(nextOffset, add).then(function (data) {
