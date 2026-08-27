@@ -6,6 +6,7 @@ Yêu cầu đăng nhập + rate limit + kiểm tra tính năng ai_chat (theo gó
 """
 import json
 import time
+from datetime import date
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -16,7 +17,15 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.dependencies import get_current_user
 from app.db import get_db
-from app.models import AiConversation, AiMemory, Feature, PlanTierEnum, User
+from app.models import (
+    AiConversation,
+    AiMemory,
+    Feature,
+    Notification,
+    NotificationType,
+    PlanTierEnum,
+    User,
+)
 from app.services import ai_service
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -116,6 +125,55 @@ def ai_status(db: Session = Depends(get_db)) -> dict[str, Any]:
         "enabled": feature.enabled if feature else True,
         "access_level": feature.access_level if feature else "free",
     }
+
+
+@router.get("/copilot")
+def ai_copilot(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """AI Investment Copilot — quét danh mục, trả về thay đổi đáng chú ý.
+    Đồng thời tạo thông báo (chuông) idempotent theo ref_key copilot:...:ngày.
+    """
+    _check_ai_access(db, user)
+    from app.services.copilot_service import CopilotService
+
+    try:
+        result = CopilotService.scan(user.id)
+    except Exception as exc:  # noqa: BLE001
+        return {"empty": False, "summary": "Tạm thời chưa quét được danh mục.", "changes": [], "error": str(exc)}
+
+    # Tạo thông báo (bell) cho từng thay đổi — dedupe theo (user, type, ref_key).
+    try:
+        today = date.today().isoformat()
+        for c in result.get("changes") or []:
+            ref = f"copilot:{c.get('symbol')}:{c.get('type')}:{today}"
+            exists = (
+                db.query(Notification)
+                .filter(
+                    Notification.user_id == user.id,
+                    Notification.type == NotificationType.stock,
+                    Notification.ref_key == ref,
+                )
+                .first()
+            )
+            if exists:
+                continue
+            db.add(
+                Notification(
+                    user_id=user.id,
+                    type=NotificationType.stock,
+                    title=c.get("title", ""),
+                    body=c.get("reason", ""),
+                    symbol=c.get("symbol"),
+                    link="/quan-ly-tai-san",
+                    ref_key=ref,
+                )
+            )
+        db.commit()
+    except Exception:  # noqa: BLE001 — thông báo lỗi không làm hỏng kết quả
+        pass
+    return result
 
 
 @router.post("/chat")
