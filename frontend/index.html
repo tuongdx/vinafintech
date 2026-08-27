@@ -3262,43 +3262,43 @@
         let lastLoadedPage = null;
         let fsReturnState = null;
 
-        // ---- Lịch sử điều hướng trong-app (cho menu chuột phải "Quay lại trang trước") ----
-        // App dùng replaceState + iframe nên history.back() của trình duyệt sẽ rời khỏi web.
-        // Ta tự theo dõi các trang đã mở (sessionStorage) và quay lại trong-app.
-        const APP_HISTORY_KEY = 'tunix-app-history';
-        function getAppHistory() {
-            try { return JSON.parse(sessionStorage.getItem(APP_HISTORY_KEY) || '[]'); } catch (e) { return []; }
-        }
-        function saveAppHistory(h) {
-            try { sessionStorage.setItem(APP_HISTORY_KEY, JSON.stringify(h)); } catch (e) {}
-        }
-        function pushAppHistory(page) {
-            const h = getAppHistory();
-            if (h[h.length - 1] !== page) {
-                h.push(page);
-                if (h.length > 50) h.shift();
-                saveAppHistory(h);
+        // ---- Điều hướng bằng nút Quay lại / Tiến tới của TRÌNH DUYỆT ----
+        // Mỗi lần chuyển trang trong-app ta pushState → trình duyệt tạo entry lịch sử,
+        // nên nút back/forward của trình duyệt (và menu chuột phải) hoạt động bình thường trong app.
+        // Khi popstate → routeFromUrl() nạp lại đúng trang theo URL hiện tại.
+        let historyReady = false;   // bật sau khi routing trang đầu → không tạo entry lúc khởi tạo
+        let handlingPop = false;    // đang xử lý popstate → không push thêm entry
+        let lastHistoryPage = null; // trang đã ghi lịch sử gần nhất (tránh entry trùng)
+        let appPushedCount = 0;     // số entry trong-app đã tạo (dùng cho nút "Quay lại" menu chuột phải)
+        function pushHistoryEntry(page) {
+            if (page === lastHistoryPage) return;
+            if (historyReady && !handlingPop) {
+                try { window.history.pushState(null, '', undefined); } catch (e) {}
+                appPushedCount++;
             }
+            lastHistoryPage = page;
         }
         function goBackInApp() {
-            const h = getAppHistory();
-            if (h.length >= 2) {
-                h.pop();                // bỏ trang hiện tại
-                const prev = h.pop();    // trang trước đó
-                saveAppHistory(h);
-                loadContent(prev);
-                return;
-            }
-            // Không có trang trước trong-app → về trang chủ (không rời khỏi web)
-            saveAppHistory(['/Home']);
+            // Đã từng điều hướng trong-app → back() ở lại trong app.
+            if (appPushedCount > 0) { window.history.back(); return; }
+            // Chưa có lịch sử trong-app → về trang chủ, KHÔNG rời khỏi web.
             loadContent('/Home');
-            window.history.replaceState({}, '', '/');
+            window.history.replaceState(null, '', '/');
         }
+        function goForwardInApp() {
+            window.history.forward();
+        }
+        // Nút back/forward của trình duyệt → nạp lại trang theo URL (routeFromUrl định nghĩa bên dưới).
+        window.addEventListener('popstate', function() {
+            handlingPop = true;
+            try { routeFromUrl(); } finally { handlingPop = false; }
+        });
         window.tunixGoBackInApp = goBackInApp;
+        window.tunixGoForwardInApp = goForwardInApp;
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260826e';
+        const CACHE_VERSION = '20260827b';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3657,7 +3657,11 @@
             fsReturnState = null;
             try {
                 if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
-                if (s.page) loadContent(s.page);
+                if (s.page) {
+                    // Phục hồi trang — không tạo thêm entry lịch sử trình duyệt.
+                    handlingPop = true;
+                    try { loadContent(s.page); } finally { handlingPop = false; }
+                }
                 if (s.url) window.history.replaceState({}, '', s.url);
             } catch (err) { /* ignore */ }
         }
@@ -3805,7 +3809,7 @@
             if (!container) return;
             // Lưu trang đang hiển thị — dùng để quay lại trang trước đó sau khi thoát fullscreen icon nến.
             lastLoadedPage = page;
-            pushAppHistory(page);
+            pushHistoryEntry(page);
 
             // Cập nhật header theo trang đang xem: trang tin tức / bài viết tin tức → logo thêm chữ "Tin tức", nút đổi thành "Thị trường".
             setHeaderContext(page.includes('tintuc') || page.includes('tin-tuc'));
@@ -4343,6 +4347,10 @@
                 goBackInApp();
                 return;
             }
+            if (data.type === 'tunix-go-forward') {
+                goForwardInApp();
+                return;
+            }
             if (data.type === 'tunix-set-theme') {
                 applyTheme(data.mode === 'dark' ? 'dark' : 'light');
                 return;
@@ -4432,6 +4440,8 @@
 
         // Trang chủ hiển thị đồng thời layout index + nội dung Home ở left-col,
         // hoặc StockDetail nếu được chuyển hướng từ ô tìm kiếm với tham số symbol.
+        // Tách thành routeFromUrl() để tái dùng khi nút back/forward của trình duyệt kích hoạt (popstate).
+        function routeFromUrl() {
         const initialParams = new URLSearchParams(window.location.search);
         const initialSymbol = initialParams.get('symbol');
         const initialPage = initialParams.get('page');
@@ -4509,6 +4519,10 @@
         } else {
             loadContent('/Home');
         }
+        } // hết routeFromUrl
+        // Routing trang đầu đã xong → từ giờ mỗi loadContent tạo entry lịch sử trình duyệt.
+        routeFromUrl();
+        historyReady = true;
 
         // ===== FULL-SCREEN MODAL nhận từ iframe StockDetail =====
         const fsModalOverlay = document.getElementById('fsModalOverlay');
@@ -5291,6 +5305,6 @@
             renderHistory();
         })();
     </script>
-    <script src="/static/context-menu.js?v=20260826c"></script>
+    <script src="/static/context-menu.js?v=20260827a"></script>
 </body>
 </html>

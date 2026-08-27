@@ -806,6 +806,9 @@
                 c.messages.push({ role: 'user', content: prompt });
                 c.updated_at = Date.now();
                 if (titleEl) titleEl.textContent = convTitleOf(c);
+                // Clear textbox ngay sau khi text đã được gửi đi
+                const sentInput = document.getElementById('taInput');
+                if (sentInput) sentInput.value = '';
                 busy = true;
                 const btn = document.getElementById('taBtn');
                 if (btn) btn.disabled = true;
@@ -982,6 +985,6 @@
             consumePendingPrompt();
         })();
     </script>
-    <script src="/static/context-menu.js?v=20260826c"></script>
+    <script src="/static/context-menu.js?v=20260827a"></script>
 </body>
 </html>

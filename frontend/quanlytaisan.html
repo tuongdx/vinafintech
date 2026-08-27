@@ -1244,6 +1244,16 @@
                 loadPerfChart();
                 notifyParentHeight();
             }
+            function prevTradingDay(dateStr) {
+                const d = new Date(String(dateStr) + 'T00:00:00');
+                d.setDate(d.getDate() - 1);
+                const p = function(n) { return String(n).padStart(2, '0'); };
+                return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+            }
+            function fmtDateVi(dateStr) {
+                const p = String(dateStr || '').split('-');
+                return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : (dateStr || '—');
+            }
             function loadPerfChart() {
                 const wrap = document.getElementById('pfPerfChart');
                 if (!wrap) return;
@@ -1253,11 +1263,25 @@
                 // Biểu đồ luôn hiển thị TỪ KHI ĐẦU TƯ đến hiện tại (đã bỏ nút chọn kỳ hạn).
                 let start = null;
                 holdings.forEach(function(h) { if (h.created_at) { const d = String(h.created_at).slice(0, 10); if (!start || d < start) start = d; } });
+                // Tổng vốn đã đầu tư (giá vốn) — dùng làm điểm gốc của biểu đồ hiệu suất.
+                let totalCost = 0;
+                holdings.forEach(function(h) { totalCost += (Number(h.quantity) || 0) * (Number(h.avg_price) || 0); });
                 wrap.innerHTML = '<div class="pf-loading">Đang tải dữ liệu giá…</div>';
-                buildPerfCurve(holdings.map(function(h) { return h.symbol; }), qty, '5y').then(function(res) {
+                // Dùng kỳ hạn 1y (dữ liệu NGÀY, cập nhật đến hôm nay) thay vì 5y
+                // (Simplize trả 5y bị lag ~3 ngày + mật độ thưa → đường biểu đồ thiếu các ngày gần nhất).
+                buildPerfCurve(holdings.map(function(h) { return h.symbol; }), qty, '1y').then(function(res) {
                     let curve = res.curve;
                     if (start) curve = curve.filter(function(c) { return c.date >= start; });
-                    if (curve.length < 2) { wrap.innerHTML = '<div class="pf-empty">Chưa đủ dữ liệu lịch sử.</div>'; return; }
+                    // Chèn điểm gốc = tổng vốn đầu tư (trước ngày bắt đầu 1 phiên) để biểu đồ luôn
+                    // có ≥ 2 điểm → hiển thị được ngay cả khi danh mục mới đầu tư ít phiên.
+                    if (start && totalCost > 0 && curve.length >= 1) {
+                        curve = [{ date: prevTradingDay(start), value: totalCost }].concat(curve);
+                    }
+                    if (curve.length < 2) {
+                        const startTxt = start ? fmtDateVi(start) : '—';
+                        wrap.innerHTML = '<div class="pf-empty">Cần ít nhất 2 phiên giao dịch sau ngày bắt đầu đầu tư (' + startTxt + ') để vẽ biểu đồ.</div>';
+                        return;
+                    }
                     wrap.innerHTML = perfLineChart(curve, 540, 150);
                     if (res.failed > 0) {
                         const warn = document.getElementById('pfPerfWarn');
@@ -1713,6 +1737,6 @@
             load();
         })();
     </script>
-    <script src="/static/context-menu.js?v=20260826c"></script>
+    <script src="/static/context-menu.js?v=20260827a"></script>
 </body>
 </html>

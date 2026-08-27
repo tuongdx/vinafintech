@@ -208,6 +208,20 @@
         window.location.href = (location.origin || '') + '/';
     }
 
+    /* "Tiến tới trang sau" — ngược với "Quay lại trang trước": ưu tiên trong-app (shell),
+       nếu không thì dùng history.forward() của trình duyệt. */
+    function goForwardPage() {
+        if (window.self !== window.top) {
+            try { window.parent.postMessage({ type: 'tunix-go-forward' }, '*'); } catch (e) { /* ignore */ }
+            return;
+        }
+        if (typeof window.tunixGoForwardInApp === 'function') {
+            window.tunixGoForwardInApp();
+            return;
+        }
+        history.forward();
+    }
+
     /* ------------------------------------------------------------------
      * Trạng thái menu
      * ------------------------------------------------------------------ */
@@ -375,7 +389,7 @@
             label: 'Quay lại trang trước', icon: 'fa-arrow-left', shortcut: 'Alt+←',
             action: goBackPage
         });
-        out.push({ label: 'Tiến tới trang sau', icon: 'fa-arrow-right', shortcut: 'Alt+→', action: function () { history.forward(); } });
+        out.push({ label: 'Tiến tới trang sau', icon: 'fa-arrow-right', shortcut: 'Alt+→', action: goForwardPage });
 
         // 7) Chung
         out.push({ divider: true });
@@ -414,7 +428,14 @@
     }
 
     function onKeyDown(e) {
-        if (!menuEl || !itemEls.length) return;
+        if (!menuEl || !itemEls.length) {
+            // Phím tắt toàn cục Alt+← / Alt+→ (khi menu không mở) → quay lại / tiến tới trang
+            if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                if (e.key === 'ArrowLeft') { e.preventDefault(); goBackPage(); return; }
+                if (e.key === 'ArrowRight') { e.preventDefault(); goForwardPage(); return; }
+            }
+            return;
+        }
         if (e.key === 'Escape') { e.preventDefault(); close(); return; }
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
