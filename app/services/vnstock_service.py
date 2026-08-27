@@ -44,11 +44,6 @@ _SYMBOL_SCREENER_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "
 _SYMBOL_DIVIDEND_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "symbol_dividends.json"
 _SYMBOL_BUSINESS_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "symbol_business.json"
 _EXCHANGE_CANONICAL = {"HSX": "HOSE", "HOSE": "HOSE", "HNX": "HNX", "UPCOM": "UPCOM", "UPCOMM": "UPCOM"}
-_EXCHANGE_CHART_SYMBOLS = {
-    "HOSE": ("VNINDEX", "index"),
-    "HNX": ("HNXINDEX", "index"),
-    "UPCOM": ("UPCOM", "index"),
-}
 
 
 class SimpleTTLCache:
@@ -766,16 +761,6 @@ def _get_symbol_summary(symbol: str) -> dict[str, Any]:
     return summary
 
 
-def _get_cached_symbol_summary(symbol: str) -> dict[str, Any]:
-    symbol_upper = symbol.upper().strip()
-    if not symbol_upper:
-        return {}
-    file_cache = _read_symbol_summary_cache_file()
-    if file_cache is None:
-        file_cache = {}
-    return file_cache.get(symbol_upper, {})
-
-
 _dividend_file_cache: dict[str, list[dict[str, Any]]] | None = None
 
 
@@ -1011,8 +996,6 @@ def _screener_request(page: int, size: int) -> list[dict[str, Any]]:
 def _fetch_screener_dataset() -> list[dict[str, Any]]:
     """Lấy toàn bộ cổ phiếu (phân trang song song) từ Simplize screener API."""
     first_page = _screener_request(0, _SCREENER_PAGE_SIZE)
-    total = 0
-    # total không nằm trong data; nếu cần có thể đọc riêng. Mặc định dùng len + lấy thêm 1 trang dự phòng.
     rows = list(first_page)
 
     # Dựa vào số lượng thực tế để tiếp tục lấy thêm trang cho tới khi hết dữ liệu.
@@ -1194,45 +1177,6 @@ def _is_known_symbol(symbol: str) -> bool:
         if item.get("symbol") == symbol_upper:
             return True
     return False
-
-
-def _sample_chart_points(series: list[dict[str, Any]], count: int = 13) -> list[dict[str, Any]]:
-    if not series:
-        return []
-    points: list[dict[str, Any]] = []
-    if len(series) <= count:
-        for item in series:
-            points.append(
-                {
-                    "time": str(item.get("time", "")),
-                    "close": _to_float(item.get("close", 0)),
-                    "volume": int(_to_float(item.get("volume", 0))),
-                }
-            )
-        return points
-
-    step = (len(series) - 1) / (count - 1)
-    for index in range(count):
-        item = series[min(round(index * step), len(series) - 1)]
-        points.append(
-            {
-                "time": str(item.get("time", "")),
-                "close": _to_float(item.get("close", 0)),
-                "volume": int(_to_float(item.get("volume", 0))),
-            }
-        )
-    return points
-
-
-def _group_chart_by_date(bars: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
-    grouped: dict[str, list[dict[str, Any]]] = {}
-    for bar in bars:
-        time = str(bar.get("time", ""))
-        if not time or "T" not in time:
-            continue
-        date = time.split("T", 1)[0]
-        grouped.setdefault(date, []).append(bar)
-    return grouped
 
 
 def _fetch_simplize_market_liquidity(exchange: str) -> dict[str, Any]:

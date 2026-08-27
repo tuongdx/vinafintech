@@ -19,14 +19,6 @@ from app.schemas import (
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-_ADMIN_ROLES = {
-    RoleEnum.super_admin,
-    RoleEnum.admin,
-    RoleEnum.content_manager,
-    RoleEnum.editor,
-    RoleEnum.support,
-}
-
 
 def _can_assign_role(actor: User, new_role: RoleEnum) -> bool:
     """Super-admin gán được mọi vai trò. Admin chỉ gán member/editor/content-manager/support,

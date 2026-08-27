@@ -9,7 +9,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.dependencies import get_current_user, get_optional_user, oauth2_scheme_optional
+from app.core.dependencies import get_current_user, oauth2_scheme_optional
 from app.core.security import (
     create_access_token,
     create_refresh_token,

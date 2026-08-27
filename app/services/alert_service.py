@@ -119,15 +119,6 @@ def _to_float(v: Any, default: float = 0.0) -> float:
         return default
 
 
-def _parse_json(raw: str, default: Any = None) -> Any:
-    if not raw:
-        return default
-    try:
-        return json.loads(raw)
-    except (TypeError, ValueError):
-        return default
-
-
 class AlertDetectionService:
     """Duy trì state cho từng phiên quét — dễ mở rộng thêm loại cảnh báo."""
 

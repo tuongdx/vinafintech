@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.security import decode_token
-from app.db import Base, SessionLocal, engine
+from app.db import SessionLocal
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
 from app.routers import ai, alerts, asset_events, auth, chart, contact, dashboard, faqs, features, feedback, logs, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
