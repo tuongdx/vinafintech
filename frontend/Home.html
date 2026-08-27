@@ -139,26 +139,6 @@
         .ov-ai .ai-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 15px; border: none; background: linear-gradient(135deg, #008080, #00a08a); color: #fff; font-weight: 700; font-size: 13.5px; padding: 11px 20px; border-radius: 11px; cursor: pointer; font-family: inherit; transition: transform 0.15s; }
         .ov-ai .ai-btn:hover { transform: translateY(-1px); }
 
-        /* ===== AI Investment Copilot ===== */
-        .ov-ai .ai-changes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-top: 14px; }
-        .ov-ai .ai-change { background: #fff; border: 1px solid #e9edf2; border-radius: 12px; padding: 12px 13px; min-width: 0; }
-        .ov-ai .ai-change .ac-top { display: flex; align-items: flex-start; gap: 10px; }
-        .ov-ai .ai-change .ac-ico { width: 32px; height: 32px; flex: 0 0 auto; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; background: rgba(0,128,128,0.1); color: #008080; }
-        .ov-ai .ai-change.neg .ac-ico { background: rgba(208,49,78,0.1); color: #d0314e; }
-        .ov-ai .ai-change .ac-body { flex: 1; min-width: 0; }
-        .ov-ai .ai-change .ac-title { font-size: 13px; font-weight: 800; color: #12203a; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .ov-ai .ai-change .ac-title .ac-sym { color: #008080; }
-        .ov-ai .ai-change .ac-reason { font-size: 11.5px; color: #6b7a8f; line-height: 1.5; margin-top: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .ov-ai .ai-change .ac-why { margin-top: 9px; border: 1px solid rgba(0,128,128,0.3); background: #f0fbf9; color: #008080; font-weight: 700; font-size: 11.5px; padding: 5px 11px; border-radius: 8px; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
-        .ov-ai .ai-change .ac-why:hover { background: #008080; color: #fff; }
-        body.dark-mode .ov-ai .ai-change { background: #161b22; border-color: #21262d; }
-        body.dark-mode .ov-ai .ai-change .ac-ico { background: rgba(0,128,128,0.18); color: #4db6b6; }
-        body.dark-mode .ov-ai .ai-change.neg .ac-ico { background: rgba(208,49,78,0.18); color: #ff8b8b; }
-        body.dark-mode .ov-ai .ai-change .ac-title { color: #e6edf3; }
-        body.dark-mode .ov-ai .ai-change .ac-title .ac-sym { color: #4db6b6; }
-        body.dark-mode .ov-ai .ai-change .ac-reason { color: #9fb0c7; }
-        body.dark-mode .ov-ai .ai-change .ac-why { background: #10151c; border-color: rgba(0,128,128,0.4); }
-
         /* ===== Portfolio widget ===== */
         .ov-port { background: #fff; border: 1px solid #e9edf2; border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(15,23,42,0.05); }
         .ov-port h3 { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
@@ -254,17 +234,6 @@
                 <section class="ov-sec">
                     <h2>Tin tức quan trọng</h2>
                     <div class="ov-news" id="ovNews"><div class="ov-empty">Đang tải…</div></div>
-                </section>
-
-                <!-- AI INVESTMENT COPILOT -->
-                <section class="ov-sec ov-ai" id="copilotSec" style="display:none;">
-                    <h2>AI Investment Copilot</h2>
-                    <div class="ai-top">
-                        <div class="ai-avatar"><i class="fas fa-robot"></i></div>
-                        <div><div class="ai-name">TuniAI Copilot</div><div class="ai-sub">Theo dõi danh mục của bạn</div></div>
-                    </div>
-                    <div class="ai-text" id="copilotText">Đang quét danh mục…</div>
-                    <div class="ai-changes" id="copilotChanges"></div>
                 </section>
 
             </div>
@@ -502,71 +471,6 @@
                 }).join('');
             }
             document.getElementById('aiBtn').addEventListener('click', function() { sendAi('Phân tích thị trường hôm nay: xu hướng, dòng tiền và cơ hội cổ phiếu'); });
-
-            // ---------- AI Investment Copilot ----------
-            function renderCopilot(d) {
-                const sec = document.getElementById('copilotSec');
-                const text = document.getElementById('copilotText');
-                const box = document.getElementById('copilotChanges');
-                if (!sec || !text || !box) return;
-                sec.style.display = '';
-                if (!d) { text.textContent = 'Tạm thời không quét được danh mục.'; box.innerHTML = ''; notifyParentHeight(); return; }
-                if (d.empty) {
-                    text.textContent = d.summary || 'Bạn chưa có cổ phiếu trong danh mục.';
-                    box.innerHTML = '<button class="ai-btn" style="margin-top:4px;"><i class="fas fa-briefcase"></i> Thêm cổ phiếu</button>';
-                    const btn = box.querySelector('.ai-btn');
-                    if (btn) btn.addEventListener('click', function() {
-                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-page', url: '/quan-ly-tai-san' }, '*');
-                        else window.location.href = '/quan-ly-tai-san';
-                    });
-                    notifyParentHeight();
-                    return;
-                }
-                text.textContent = d.summary || '';
-                const ch = d.changes || [];
-                if (!ch.length) { box.innerHTML = ''; notifyParentHeight(); return; }
-                box.innerHTML = (function(changes) {
-                    var TYPE_ICONS = {
-                        earnings: 'fa-chart-line', valuation: 'fa-tags', foreign_flow: 'fa-arrows-left-right',
-                        price: 'fa-bolt', trend: 'fa-arrow-trend-up', rsi: 'fa-wave-square', news: 'fa-newspaper'
-                    };
-                    return changes.map(function(c, i) {
-                        const neg = String(c.direction || '').indexOf('tiêu cực') >= 0;
-                        const icon = TYPE_ICONS[c.type] || 'fa-robot';
-                        const m = String(c.title || '').match(/^([A-Z0-9.\-]+):\s*(.*)$/);
-                        const sym = m ? m[1] : (c.symbol || '');
-                        const rest = m ? m[2] : (c.title || '');
-                        return '<div class="ai-change' + (neg ? ' neg' : '') + '" data-i="' + i + '">' +
-                            '<div class="ac-top">' +
-                                '<span class="ac-ico"><i class="fas ' + icon + '"></i></span>' +
-                                '<div class="ac-body">' +
-                                    '<div class="ac-title"><span class="ac-sym">' + esc(sym) + '</span> ' + esc(rest) + '</div>' +
-                                    '<div class="ac-reason">' + esc(c.reason || '') + '</div>' +
-                                    '<button class="ac-why"><i class="fas fa-question-circle"></i> Tại sao?</button>' +
-                                '</div>' +
-                            '</div>' +
-                        '</div>';
-                    }).join('');
-                })(ch);
-                Array.prototype.forEach.call(box.querySelectorAll('.ai-change'), function(el) {
-                    const idx = Number(el.getAttribute('data-i'));
-                    const prompt = ch[idx] && ch[idx].prompt;
-                    const btn = el.querySelector('.ac-why');
-                    if (btn && prompt) btn.addEventListener('click', function() { sendAi(prompt); });
-                });
-                notifyParentHeight();
-            }
-            function loadCopilot() {
-                const sec = document.getElementById('copilotSec');
-                if (!sec) return;
-                const token = localStorage.getItem('tunix_access_token');
-                if (!token) { sec.style.display = 'none'; return; }
-                fetch('/api/ai/copilot', { headers: { 'Authorization': 'Bearer ' + token } })
-                    .then(function(r) { return r.ok ? r.json() : null; })
-                    .then(renderCopilot)
-                    .catch(function() { renderCopilot(null); });
-            }
-            loadCopilot();
 
             // ---------- Portfolio widget ----------
             function goLogin() {
