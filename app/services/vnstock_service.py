@@ -3761,7 +3761,7 @@ def get_market_dashboard() -> dict[str, Any]:
         sectors.sort(key=lambda x: x["avg_pct"], reverse=True)
         impact.sort(key=lambda x: x["impact"], reverse=True)
         impact = [
-            {**it, "impact": round(it["impact"] / 1e9, 2)} for it in impact[:10]
+            {**it, "impact": round(it["impact"] / 1e9, 2)} for it in impact[:15]
         ]
     except Exception:
         pass

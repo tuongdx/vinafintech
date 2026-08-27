@@ -29,7 +29,7 @@
 
         /* ===== Layout ===== */
         .tt-top { display: flex; flex-direction: column; gap: 18px; margin-bottom: 18px; }
-        .tt-body { display: grid; grid-template-columns: 1fr 320px; gap: 18px; align-items: start; }
+        .tt-body { display: grid; grid-template-columns: 1fr 320px; gap: 18px; align-items: stretch; }
         .tt-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
         .tt-side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 
@@ -163,7 +163,7 @@
         .tt-radar-empty { color: #8a99b1; font-size: 12px; }
 
         /* ===== AI ===== */
-        .tt-ai { border-color: rgba(0,128,128,0.35); background: linear-gradient(180deg, #ffffff, #f2fbfa); }
+        .tt-ai { flex: 1; border-color: rgba(0,128,128,0.35); background: linear-gradient(180deg, #ffffff, #f2fbfa); }
         .tt-ai-body { font-size: 13.5px; color: #33415e; }
         .tt-ai-body .ai-sym { font-weight: 700; cursor: pointer; }
         .tt-ai-body .ai-sym:hover { color: #008080; }
@@ -185,6 +185,7 @@
         .tt-n-tag:hover { border-color: #008080; }
         .tt-n-tag.neg { background: #fdeaea; color: #d0314e; border-color: rgba(208,49,78,0.2); }
         .tt-n-tag .pct { font-weight: 800; margin-left: 2px; }
+        .tt-impact-card { flex: 1; }
         .tt-impact-row { display: grid; grid-template-columns: 46px 1fr 70px; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid #f2f4f8; cursor: pointer; }
         .tt-impact-row:hover { background: #f0fbf9; border-radius: 6px; }
         .tt-impact-row:last-child { border-bottom: none; }
@@ -975,7 +976,7 @@
                         (ev || '<div class="tt-radar-empty">Chưa có sự kiện.</div>') + '</section>' +
                     '<section class="tt-card"><h2>Tin tức nổi bật</h2>' +
                         (ns || '<div class="tt-radar-empty">Chưa có tin nổi bật.</div>') + '</section>' +
-                    '<section class="tt-card"><h2>Top cổ phiếu ảnh hưởng VN-INDEX</h2>' +
+                    '<section class="tt-card tt-impact-card"><h2>Top cổ phiếu ảnh hưởng VN-INDEX</h2>' +
                         (imp || '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</section>';
                 // Ảnh lỗi -> thay bằng placeholder
                 side.querySelectorAll('.tt-news-img').forEach(function(im) {
