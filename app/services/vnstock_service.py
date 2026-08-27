@@ -2636,6 +2636,84 @@ def get_profit_analysis(symbol: str, quarters: int = 12) -> dict[str, Any]:
         return empty
 
 
+_FIN_SECTION_ALIAS = {
+    "income": "INCOME_STATEMENT",
+    "income_statement": "INCOME_STATEMENT",
+    "kqkd": "INCOME_STATEMENT",
+    "balance": "BALANCE_SHEET",
+    "balance_sheet": "BALANCE_SHEET",
+    "cdkt": "BALANCE_SHEET",
+    "cashflow": "CASH_FLOW",
+    "cash_flow": "CASH_FLOW",
+    "lctt": "CASH_FLOW",
+}
+
+
+def get_financial_statement(symbol: str, section: str = "balance", periods: int = 6) -> dict[str, Any]:
+    """Đọc một mục của BÁO CÁO TÀI CHÍNH (VCI iQ): balance (Cân đối kế toán),
+    cashflow (Lưu chuyển tiền tệ). (Kết quả kinh doanh dùng get_profit_analysis.)
+    Trả về các kỳ gần nhất kèm các chỉ tiêu (ánh xạ tiêu đề tiếng Anh từ metadata)."""
+    symbol_upper = symbol.upper().strip()
+    section_key = _FIN_SECTION_ALIAS.get(str(section).lower().strip(), "BALANCE_SHEET")
+    periods = max(2, min(int(periods or 6), 12))
+    cache_key = f"fin-statement:{symbol_upper}:{section_key}:{periods}"
+    empty = {"symbol": symbol_upper, "section": section_key, "source": "empty", "periods": []}
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    try:
+        meta = _vci_get_json(f"/v1/company/{symbol_upper}/financial-statement/metrics")
+        metric_rows = (meta.get("data") or {}).get(section_key, [])
+        field_to_en: dict[str, str] = {}
+        for row in metric_rows:
+            if isinstance(row, dict):
+                en = str(row.get("titleEn") or "").strip()
+                if en:
+                    field_to_en[str(row.get("field") or "")] = en
+
+        fin = _vci_get_json(
+            f"/v1/company/{symbol_upper}/financial-statement",
+            {"section": section_key},
+        )
+        raw = (fin.get("data") or {}).get("quarters", [])
+        if not isinstance(raw, list) or not raw:
+            return empty
+
+        periods_data: list[dict[str, Any]] = []
+        for q in raw:
+            if not isinstance(q, dict):
+                continue
+            try:
+                year = int(q.get("yearReport"))
+                quarter = int(q.get("lengthReport"))
+            except (TypeError, ValueError):
+                continue
+            items: dict[str, Any] = {}
+            for field, en in field_to_en.items():
+                v = q.get(field)
+                if isinstance(v, (int, float)):
+                    items[en] = round(float(v), 2)
+            if 1 <= quarter <= 4:
+                label = f"Q{quarter}/{year}"
+                period_key = f"{year}-{quarter:02d}"
+            else:
+                label = f"{year} (kỳ {quarter})"
+                period_key = f"{year}-k{quarter:02d}"
+            periods_data.append({"period": period_key, "label": label, "items": items})
+        periods_data.sort(key=lambda x: x["period"])
+        periods_data = periods_data[-periods:]
+        result = {
+            "symbol": symbol_upper,
+            "section": section_key,
+            "source": "vci-finance",
+            "periods": periods_data,
+        }
+        cache.set(cache_key, result, ttl_seconds=21600)
+        return result
+    except Exception:
+        return empty
+
+
 def get_insider_trades(symbol: str) -> list[dict[str, Any]]:
     return [{"symbol": symbol.upper(), "person": "N/A", "action": "N/A", "volume": 0, "date": "N/A"}]
 

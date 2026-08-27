@@ -11,6 +11,7 @@ import asyncio
 import contextvars
 import json
 import re
+import unicodedata
 from typing import Any, AsyncGenerator
 
 import httpx
@@ -19,6 +20,7 @@ from app.core.config import settings
 from app.db import SessionLocal
 from app.models import News, NewsStatusEnum, PortfolioHolding
 from app.services import vnstock_service as vns
+from app.services.support_resistance import SupportResistanceService
 
 # Người dùng đang chat (per-request context) để tool đọc đúng danh mục của user đó.
 _current_user_id: contextvars.ContextVar[int | None] = contextvars.ContextVar(
@@ -517,6 +519,350 @@ def _portfolio_holdings() -> dict[str, Any]:
 
 
 # ===========================================================================
+# Tools — AI Screener / Tìm cổ phiếu theo yêu cầu tự nhiên
+# ===========================================================================
+def _vi_norm(s: str) -> str:
+    """Chuẩn hóa tiếng Việt: bỏ dấu, lowercase, đ -> d, bỏ ký tự đặc biệt."""
+    s = unicodedata.normalize("NFD", str(s or ""))
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    return s.lower().replace("đ", "d").strip()
+
+
+def _vi_tokens(s: str) -> set[str]:
+    return set(_vi_norm(s).replace("-", " ").replace("_", " ").split())
+
+
+@_tool(
+    "screen_stocks",
+    "AI Screener: tìm/lọc cổ phiếu theo yêu cầu tự nhiên (ngành, sàn, P/E, P/B, ROE, cổ tức, tăng trưởng lợi nhuận/doanh thu, rủi ro, vốn hóa, khối lượng...). Dùng khi người dùng nói 'tìm cổ phiếu có P/E thấp', 'cổ phiếu ngân hàng ROE cao', 'screener'.",
+    {"type": "object", "properties": {
+        "industry": {"type": "string", "description": "Ngành/sector (VD: 'Ngân hàng', 'Công nghệ', 'Bất động sản', 'tai-chinh', 'cong-nghe'...)"},
+        "exchange": {"type": "string", "enum": ["HOSE", "HNX", "UPCOM"], "description": "Sàn giao dịch"},
+        "pe_max": {"type": "number", "description": "P/E tối đa (VD 10)"},
+        "pe_min": {"type": "number", "description": "P/E tối thiểu (VD 5)"},
+        "pb_max": {"type": "number", "description": "P/B tối đa (VD 1.5)"},
+        "pb_min": {"type": "number", "description": "P/B tối thiểu"},
+        "roe_min": {"type": "number", "description": "ROE tối thiểu (%) (VD 15)"},
+        "dividend_yield_min": {"type": "number", "description": "Tỷ suất cổ tức tối thiểu (%) (VD 3)"},
+        "net_profit_growth_min": {"type": "number", "description": "Tăng trưởng lợi nhuận tối thiểu (%) (VD 10)"},
+        "revenue_growth_min": {"type": "number", "description": "Tăng trưởng doanh thu tối thiểu (%) (VD 10)"},
+        "risk": {"type": "string", "enum": ["low", "medium", "high", "extreme"], "description": "Mức rủi ro"},
+        "market_cap_min": {"type": "number", "description": "Vốn hóa tối thiểu (VND) (VD 5e12 = 5 ngàn tỷ)"},
+        "volume_ratio_min": {"type": "number", "description": "Tỷ lệ khối lượng so TB 10 phiên tối thiểu"},
+        "sort_by": {"type": "string", "enum": ["score", "pe_ratio", "pb_ratio", "roe", "dividend_yield", "net_profit_growth", "revenue_growth", "market_cap", "percent_change"], "description": "Sắp xếp theo (mặc định score)"},
+        "sort_order": {"type": "string", "enum": ["asc", "desc"], "description": "Thứ tự (mặc định desc)"},
+        "limit": {"type": "integer", "description": "Số kết quả (mặc định 15, tối đa 50)"},
+    }},
+)
+def _screen_stocks(**kw: Any) -> dict[str, Any]:
+    try:
+        data = vns.get_stock_screener_page()
+    except Exception:
+        return {"error": "Không lấy được dữ liệu screener."}
+    stocks = data.get("stocks") or []
+    industry = str(kw.get("industry") or "").strip()
+    exchange = str(kw.get("exchange") or "").upper()
+    limit = max(1, min(int(kw.get("limit") or 15), 50))
+
+    def _numq(v: Any, default: float = 0.0) -> float:
+        return v if isinstance(v, (int, float)) else default
+
+    out: list[dict[str, Any]] = []
+    for s in stocks:
+        if industry:
+            hay = _vi_tokens(
+                str(s.get("sectorName") or "") + " " + str(s.get("industryName") or "")
+            )
+            if not (_vi_tokens(industry) <= hay or _vi_norm(industry) == _vi_norm(s.get("sector") or "")):
+                continue
+        if exchange and str(s.get("exchange") or "").upper() != exchange:
+            continue
+        if kw.get("pe_min") is not None and not (_numq(s.get("pe_ratio")) >= float(kw["pe_min"])):
+            continue
+        if kw.get("pe_max") is not None and not (_numq(s.get("pe_ratio")) <= float(kw["pe_max"])):
+            continue
+        if kw.get("pb_min") is not None and not (_numq(s.get("pb_ratio")) >= float(kw["pb_min"])):
+            continue
+        if kw.get("pb_max") is not None and not (_numq(s.get("pb_ratio")) <= float(kw["pb_max"])):
+            continue
+        if kw.get("roe_min") is not None and not (_numq(s.get("roe")) >= float(kw["roe_min"])):
+            continue
+        if kw.get("dividend_yield_min") is not None and not (_numq(s.get("dividend_yield")) >= float(kw["dividend_yield_min"])):
+            continue
+        if kw.get("net_profit_growth_min") is not None and not (_numq(s.get("net_profit_growth")) >= float(kw["net_profit_growth_min"])):
+            continue
+        if kw.get("revenue_growth_min") is not None and not (_numq(s.get("revenue_growth")) >= float(kw["revenue_growth_min"])):
+            continue
+        if kw.get("risk") and str(s.get("risk") or "").lower() != str(kw["risk"]).lower():
+            continue
+        if kw.get("market_cap_min") is not None and not (_numq(s.get("market_cap")) >= float(kw["market_cap_min"])):
+            continue
+        if kw.get("volume_ratio_min") is not None and not (_numq(s.get("volume_ratio")) >= float(kw["volume_ratio_min"])):
+            continue
+        out.append(s)
+
+    sort_by = str(kw.get("sort_by") or "score")
+    sort_order = str(kw.get("sort_order") or "desc").lower()
+
+    def _sort_key(x: dict[str, Any]) -> float:
+        v = x.get(sort_by)
+        return v if isinstance(v, (int, float)) else -999999.0
+
+    out.sort(key=_sort_key, reverse=(sort_order != "asc"))
+
+    results = []
+    for s in out[:limit]:
+        results.append(
+            {
+                "symbol": s.get("symbol"),
+                "name": s.get("name"),
+                "exchange": s.get("exchange"),
+                "sector": s.get("sectorName"),
+                "price": s.get("price"),
+                "percent_change": s.get("percent_change"),
+                "change_1y": s.get("change_1y"),
+                "pe_ratio": s.get("pe_ratio"),
+                "pb_ratio": s.get("pb_ratio"),
+                "roe": s.get("roe"),
+                "dividend_yield": s.get("dividend_yield"),
+                "net_profit_growth": s.get("net_profit_growth"),
+                "revenue_growth": s.get("revenue_growth"),
+                "market_cap": s.get("market_cap"),
+                "risk": s.get("risk"),
+                "score": s.get("score"),
+            }
+        )
+    return {"count": len(results), "total_matched": len(out), "results": results}
+
+
+# ===========================================================================
+# Tools — Đọc BCTC / Phân tích chart / Bull-Bear thị trường
+# ===========================================================================
+@_tool(
+    "get_financial_statements",
+    "Đọc BÁO CÁO TÀI CHÍNH (BCTC) của một cổ phiếu: income (Kết quả kinh doanh theo quý: doanh thu, lợi nhuận gộp, LN trước/sau thuế), balance (Cân đối kế toán: tài sản, nợ, vốn chủ sở hữu), cashflow (Lưu chuyển tiền tệ: dòng tiền KD/đầu tư/tài chính). Dùng khi hỏi về BCTC, tình hình tài chính, nợ vay, dòng tiền.",
+    {"type": "object", "properties": {
+        "symbol": {"type": "string", "description": "Mã cổ phiếu"},
+        "statement": {"type": "string", "enum": ["income", "balance", "cashflow"], "description": "Loại báo cáo (mặc định income)"},
+        "periods": {"type": "integer", "description": "Số kỳ muốn xem (4-12, mặc định 6)"},
+    }, "required": ["symbol"]},
+)
+def _financial_statements(symbol: str, statement: str = "income", periods: int = 6) -> dict[str, Any]:
+    st = str(statement or "income").lower().strip()
+    if st == "income":
+        return _cap(vns.get_profit_analysis(symbol, quarters=periods), max_items=30)
+    return _cap(vns.get_financial_statement(symbol, section=st, periods=periods), max_items=30)
+
+
+def _ema(values: list[float], period: int) -> list[float]:
+    if not values:
+        return []
+    k = 2 / (period + 1)
+    ema = [values[0]]
+    for v in values[1:]:
+        ema.append(v * k + ema[-1] * (1 - k))
+    return ema
+
+
+def _ma(closes: list[float], n: int) -> float | None:
+    if len(closes) < n:
+        return None
+    return round(sum(closes[-n:]) / n, 2)
+
+
+def _rsi(closes: list[float], period: int = 14) -> float | None:
+    if len(closes) < period + 1:
+        return None
+    gains: list[float] = []
+    losses: list[float] = []
+    for i in range(1, len(closes)):
+        d = closes[i] - closes[i - 1]
+        gains.append(max(d, 0.0))
+        losses.append(max(-d, 0.0))
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+    for i in range(period, len(gains)):
+        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
+        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
+    if avg_loss == 0:
+        return 100.0
+    rs = avg_gain / avg_loss
+    return round(100 - 100 / (1 + rs), 2)
+
+
+def _macd(closes: list[float]) -> dict[str, Any] | None:
+    if len(closes) < 35:
+        return None
+    ema12 = _ema(closes, 12)
+    ema26 = _ema(closes, 26)
+    macd_line = [a - b for a, b in zip(ema12, ema26)]
+    signal = _ema(macd_line, 9)
+    macd_v = macd_line[-1]
+    sig_v = signal[-1]
+    return {
+        "macd": round(macd_v, 2),
+        "signal": round(sig_v, 2),
+        "histogram": round(macd_v - sig_v, 2),
+        "bullish": macd_v > sig_v,
+    }
+
+
+@_tool(
+    "analyze_chart",
+    "PHÂN TÍCH KỸ THUẬT biểu đồ giá (chart) của một cổ phiếu: xu hướng ngắn/trung/dài hạn, MA20/MA50/MA200, RSI, MACD, vùng Hỗ trợ/Kháng cự. Dùng khi hỏi 'phân tích chart', 'phân tích kỹ thuật', 'hỗ trợ/kháng cự', 'xu hướng', 'RSI/MACD'.",
+    {"type": "object", "properties": {
+        "symbol": {"type": "string", "description": "Mã cổ phiếu"},
+        "period": {"type": "string", "enum": ["3m", "6m", "1y"], "description": "Kỳ xem (mặc định 1y)"},
+    }, "required": ["symbol"]},
+)
+def _analyze_chart(symbol: str, period: str = "1y") -> dict[str, Any]:
+    sym = str(symbol or "").upper().strip()
+    bars = vns.get_history(sym, period=period) or []
+    closes = [b.get("close") for b in bars if isinstance(b.get("close"), (int, float))]
+    if len(closes) < 30:
+        return {"error": f"Không đủ dữ liệu giá để phân tích {sym}."}
+    price = closes[-1]
+    trend = _trend_from_bars(bars, {"short_1m_pct": 20, "mid_6m_pct": 120, "long_1y_pct": 250})
+    ma20 = _ma(closes, 20)
+    ma50 = _ma(closes, 50)
+    ma200 = _ma(closes, 200)
+    sr: dict[str, Any] = {"support": [], "resistance": []}
+    try:
+        sr = SupportResistanceService.nearest_zones(sym, bars, current_price=price, limit_per_side=2)
+    except Exception:
+        pass
+    change_pct = None
+    if len(closes) >= 2 and closes[0]:
+        change_pct = round((price / closes[0] - 1) * 100, 2)
+    return {
+        "symbol": sym,
+        "period": period,
+        "price": price,
+        "change_pct_over_period": change_pct,
+        "trend": trend,
+        "moving_averages": {
+            "ma20": ma20,
+            "ma50": ma50,
+            "ma200": ma200,
+            "price_above_ma20": bool(ma20) and price > ma20,
+            "price_above_ma50": bool(ma50) and price > ma50,
+            "price_above_ma200": bool(ma200) and price > ma200,
+        },
+        "rsi_14": _rsi(closes),
+        "macd": _macd(closes),
+        "support_resistance": sr,
+        "last_5_bars": bars[-5:],
+    }
+
+
+@_tool(
+    "analyze_market_sentiment",
+    "PHÂN TÍCH TÂM LÝ THỊ TRƯỜNG (Bull/Bear): tổng hợp biến động chỉ số (VNINDEX/VN30...), độ rộng thị trường (số mã tăng/giảm), dòng tiền khối ngoại, top cổ phiếu mạnh/yếu → kết luận xu hướng TĂNG (Bull) / GIẢM (Bear) / trung lập. Dùng khi hỏi 'thị trường đang bull hay bear', 'tâm lý thị trường', 'xu hướng thị trường'.",
+    {"type": "object", "properties": {}},
+)
+def _market_sentiment() -> dict[str, Any]:
+    try:
+        board = vns.get_realtime_exchange_board(["HOSE", "HNX", "UPCOM"])
+    except Exception:
+        board = {}
+    rows = board.get("data") or []
+
+    def _pctv(r: dict[str, Any]) -> float:
+        v = r.get("percent_change")
+        return v if isinstance(v, (int, float)) else 0.0
+
+    up = sum(1 for r in rows if _pctv(r) > 0)
+    down = sum(1 for r in rows if _pctv(r) < 0)
+    flat = sum(1 for r in rows if _pctv(r) == 0)
+    total = len(rows) or 1
+    breadth_pct = round((up - down) / total * 100, 1)
+
+    indices: list[dict[str, Any]] = []
+    try:
+        overview = vns.get_market_overview()
+        for o in overview:
+            if isinstance(o, dict) and str(o.get("name") or o.get("symbol") or "").upper() in ("VNINDEX", "VN30", "HNX", "UPCOM"):
+                indices.append(
+                    {
+                        "name": str(o.get("name") or o.get("symbol")),
+                        "value": o.get("value"),
+                        "percent_change": o.get("percent_change"),
+                    }
+                )
+    except Exception:
+        pass
+
+    foreign: dict[str, Any] = {}
+    try:
+        f = vns.get_foreign_trading("foreign", "1D")
+        if isinstance(f, dict):
+            totals = f.get("totals") or {}
+            foreign = {
+                "net": totals.get("net"),
+                "buy": totals.get("buy"),
+                "sell": totals.get("sell"),
+                "updated_at": f.get("updated_at"),
+            }
+    except Exception:
+        pass
+
+    ranked = sorted(rows, key=_pctv, reverse=True)
+    top_gainers = [
+        {"symbol": r.get("symbol"), "price": r.get("price"), "percent_change": _pctv(r)}
+        for r in ranked[:5] if _pctv(r) > 0
+    ]
+    top_losers = [
+        {"symbol": r.get("symbol"), "price": r.get("price"), "percent_change": _pctv(r)}
+        for r in ranked[-5:] if _pctv(r) < 0
+    ]
+
+    # Chấm điểm tâm lý: index + độ rộng + khối ngoại
+    score = 0
+    signals: list[str] = []
+    for idx in indices:
+        pct = idx.get("percent_change")
+        if isinstance(pct, (int, float)):
+            if pct > 0.5:
+                score += 1
+                signals.append(f"{idx['name']} tăng {pct:+.2f}%")
+            elif pct < -0.5:
+                score -= 1
+                signals.append(f"{idx['name']} giảm {pct:+.2f}%")
+    if breadth_pct > 10:
+        score += 1
+        signals.append(f"độ rộng tích cực ({up} tăng / {down} giảm)")
+    elif breadth_pct < -10:
+        score -= 1
+        signals.append(f"độ rộng tiêu cực ({up} tăng / {down} giảm)")
+    net = foreign.get("net")
+    if isinstance(net, (int, float)):
+        if net > 0:
+            score += 1
+            signals.append("khối ngoại MUA ròng")
+        elif net < 0:
+            score -= 1
+            signals.append("khối ngoại BÁN ròng")
+
+    if score >= 2:
+        sentiment = "BULL"
+    elif score <= -2:
+        sentiment = "BEAR"
+    else:
+        sentiment = "TRUNG LẬP"
+
+    return {
+        "sentiment": sentiment,
+        "score": score,
+        "signals": signals,
+        "market_breadth": {"up": up, "down": down, "flat": flat, "breadth_pct": breadth_pct},
+        "indices": indices,
+        "foreign_flow_1d": foreign,
+        "top_gainers": top_gainers,
+        "top_losers": top_losers,
+    }
+
+
+# ===========================================================================
 # DeepSeek client
 # ===========================================================================
 class AiConfigError(Exception):
@@ -539,7 +885,13 @@ QUY TẮC BẮT BUỘC:
 7. Khi phân tích cổ phiếu hãy nêu: giá & biến động, định giá (P/E, P/B), tăng trưởng (lợi nhuận theo quý), rủi ro, tin tức liên quan.
 8. Khi người dùng hỏi về DANH MỤC của mình ('phân tích danh mục của tôi', 'cổ phiếu đang nắm giữ', 'tài sản của tôi', 'danh mục đầu tư'...): BẮT BUỘC gọi get_portfolio_holdings trước.
    - Nếu danh mục rỗng (empty=true) → báo người dùng chưa có cổ phiếu và hướng dẫn thêm cổ phiếu đang nắm giữ ở trang Quản lý tài sản.
-   - Nếu có dữ liệu → phân tích TẤT CẢ cổ phiếu đang nắm giữ: từng MÃ (giá vốn, giá hiện tại, lãi/lỗ %), gộp theo từng NGÀNH, xu hướng NGẮN (1 tháng) / TRUNG (6 tháng) / DÀI (1 năm) hạn, và nêu rõ mã KHỎE (xu hướng tích cực, trên MA20, lãi) và mã YẾU (xu hướng tiêu cực, dưới MA20, lỗ) nếu có."""
+   - Nếu có dữ liệu → phân tích TẤT CẢ cổ phiếu đang nắm giữ: từng MÃ (giá vốn, giá hiện tại, lãi/lỗ %), gộp theo từng NGÀNH, xu hướng NGẮN (1 tháng) / TRUNG (6 tháng) / DÀI (1 năm) hạn, và nêu rõ mã KHỎE (xu hướng tích cực, trên MA20, lãi) và mã YẾU (xu hướng tiêu cực, dưới MA20, lỗ) nếu có.
+9. NĂNG LỰC CỦA TuniAI:
+   - AI Screener / tìm cổ phiếu theo yêu cầu tự nhiên → screen_stocks (lọc theo ngành, sàn, P/E, P/B, ROE, cổ tức, tăng trưởng, rủi ro, vốn hóa, khối lượng; sắp xếp theo tiêu chí).
+   - Đọc BCTC → get_financial_statements (income/balance/cashflow) khi hỏi tài chính, nợ, dòng tiền.
+   - Phân tích chart/kỹ thuật → analyze_chart (MA20/50/200, RSI, MACD, Hỗ trợ/Kháng cự, xu hướng ngắn/trung/dài hạn).
+   - Bull/Bear thị trường → analyze_market_sentiment (độ rộng thị trường, chỉ số, khối ngoại).
+   - TỰ ĐỘNG chọn tool phù hợp để lấy dữ liệu cần thiết trước khi trả lời."""
 
 
 def _build_system(memory: str = "") -> str:
