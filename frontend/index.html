@@ -3298,7 +3298,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260827g';
+        const CACHE_VERSION = '20260827h';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -5007,8 +5007,9 @@
                         const ntype = el.getAttribute('data-type');
                         const link = el.getAttribute('data-link');
                         const symbol = el.getAttribute('data-symbol');
+                        let item = null;
                         if (id) {
-                            const item = allItems.find(function(x) { return String(x.id) === String(id); });
+                            item = allItems.find(function(x) { return String(x.id) === String(id); });
                             if (item && !item.is_read) {
                                 item.is_read = true;
                                 unreadTotal = Math.max(0, unreadTotal - 1);
@@ -5022,11 +5023,21 @@
                         // Điều hướng ưu tiên theo link của thông báo:
                         // - /news/{id} (báo cáo / tin) → mở đúng bài viết
                         // - /cophieu-{SYM} (tăng trần/giảm sàn) → mở trang cổ phiếu
+                        // - /quan-ly-tai-san (AI Investment Copilot) → mở TuniAI tự hỏi "Tại sao ...?"
                         const newsMatch = link ? link.match(/\/news\/(\d+)/) : null;
                         if (newsMatch && window.openTintuc) {
                             window.openTintuc(newsMatch[1]);
                         } else if (link && link.indexOf('/cophieu-') === 0 && symbol && window.openStockDetailInIndex) {
                             window.openStockDetailInIndex(symbol);
+                        } else if (link === '/quan-ly-tai-san' && symbol) {
+                            // Thông báo AI Investment Copilot về cổ phiếu → chuyển sang TuniAI
+                            // và tự gửi câu hỏi "Tại sao {SYM} {nội dung}?" để AI phân tích.
+                            const title = (item && item.title) ||
+                                (el.querySelector('.ni-title') ? el.querySelector('.ni-title').textContent.trim() : '');
+                            const body = title.replace(/^[A-Za-z0-9.]+:\s*/, '').trim();
+                            const question = 'Tại sao ' + symbol + (body ? ' ' + body : '') + '?';
+                            try { sessionStorage.setItem('tunix_ai_prompt', question); } catch (e) {}
+                            openTuniAiPage();
                         } else if (link && window.loadContent) {
                             // Chuẩn hoá route shell (VD /quan-ly-tai-san) → file nhúng trực tiếp, tránh "trang trong trang".
                             const target = (window.resolveShellPageUrl ? window.resolveShellPageUrl(link) : link);
