@@ -24,6 +24,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     <style>
+        html {
+            /* Dự trữ khoảng trống thanh cuộn ở mọi lúc để khi modal (chia cổ tức / tóm tắt
+               doanh nghiệp / fullscreen) đặt body overflow:hidden → scrollbar bị ẩn thì
+               trang KHÔNG bị lệch ra/lệch vào (giữ nguyên bề rộng layout). */
+            scrollbar-gutter: stable;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -3169,7 +3176,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260827q';
+        const CACHE_VERSION = '20260827r';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
