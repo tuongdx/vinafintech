@@ -8,6 +8,7 @@ Kiến trúc (theo yêu cầu):
         → Dữ liệu TuniX → DeepSeek phân tích → Câu trả lời
 """
 import asyncio
+import contextvars
 import json
 import re
 from typing import Any, AsyncGenerator
@@ -16,8 +17,13 @@ import httpx
 
 from app.core.config import settings
 from app.db import SessionLocal
-from app.models import News, NewsStatusEnum
+from app.models import News, NewsStatusEnum, PortfolioHolding
 from app.services import vnstock_service as vns
+
+# Người dùng đang chat (per-request context) để tool đọc đúng danh mục của user đó.
+_current_user_id: contextvars.ContextVar[int | None] = contextvars.ContextVar(
+    "tunix_ai_user_id", default=None
+)
 
 # ---------------------------------------------------------------------------
 # Tool registry
@@ -389,6 +395,128 @@ def _news_content(news_id: int) -> dict[str, Any]:
 
 
 # ===========================================================================
+# Tools — Danh mục đầu tư của người dùng
+# ===========================================================================
+def _num(v: Any) -> float:
+    try:
+        return round(float(v), 2) if v is not None else 0.0
+    except Exception:
+        return 0.0
+
+
+def _screener_sector_map() -> dict[str, str]:
+    """Bản đồ mã → tên ngành (economicSectorName) từ dữ liệu screener đã cache."""
+    try:
+        out: dict[str, str] = {}
+        for row in vns._get_screener_dataset():
+            sym = str(row.get("ticker") or "").upper().strip()
+            if not sym:
+                continue
+            sec = str(row.get("economicSectorName") or "").strip()
+            if sec:
+                out[sym] = sec
+        return out
+    except Exception:
+        return {}
+
+
+def _trend_from_bars(bars: list[dict[str, Any]], windows: dict[str, int]) -> dict[str, Any]:
+    """Tính % thay đổi giá theo các cửa sổ (ngắn/trung/dài hạn) từ bars hàng ngày."""
+    closes = [b.get("close") for b in bars if isinstance(b.get("close"), (int, float))]
+    out: dict[str, Any] = {}
+    for key, n in windows.items():
+        if len(closes) >= n + 1 and closes[-n - 1]:
+            out[key] = round((closes[-1] / closes[-n - 1] - 1) * 100, 2)
+        elif len(closes) >= 2 and closes[0]:
+            out[key] = round((closes[-1] / closes[0] - 1) * 100, 2)
+        else:
+            out[key] = None
+    if len(closes) >= 20:
+        ma20 = sum(closes[-20:]) / 20
+        out["above_ma20"] = closes[-1] > ma20
+    else:
+        out["above_ma20"] = None
+    return out
+
+
+@_tool(
+    "get_portfolio_holdings",
+    "Lấy DANH MỤC CỔ PHIẾU NGƯỜI DÙNG ĐANG NẮM GIỮ (số lượng, giá vốn, giá hiện tại, lãi/lỗ, ngành, xu hướng ngắn/trung/dài hạn). Dùng khi người dùng hỏi 'phân tích danh mục của tôi', 'cổ phiếu đang nắm giữ', 'tài sản của tôi', 'danh mục đầu tư'.",
+    {"type": "object", "properties": {}},
+)
+def _portfolio_holdings() -> dict[str, Any]:
+    user_id = _current_user_id.get()
+    if user_id is None:
+        return {"error": "Chưa xác định được người dùng."}
+    db = SessionLocal()
+    try:
+        rows = db.query(PortfolioHolding).filter(PortfolioHolding.user_id == user_id).all()
+    finally:
+        db.close()
+    if not rows:
+        return {
+            "empty": True,
+            "message": "Bạn chưa có cổ phiếu nào trong danh mục. Hãy thêm cổ phiếu đang nắm giữ ở trang Quản lý tài sản để TuniAI phân tích được danh mục.",
+        }
+
+    sector_map = _screener_sector_map()
+    holdings_out: list[dict[str, Any]] = []
+    for h in rows:
+        sym = str(h.symbol or "").upper().strip()
+        if not sym:
+            continue
+        q = vns.get_quote(sym)
+        bars = vns.get_history(sym, period="1y") or []
+        trend = _trend_from_bars(
+            bars,
+            {"short_1m_pct": 20, "mid_6m_pct": 120, "long_1y_pct": 250},
+        )
+        price = _num(q.get("price"))
+        cost = (h.quantity or 0) * (h.avg_price or 0)
+        value = (h.quantity or 0) * price
+        pnl = value - cost
+        pnl_pct = round(pnl / cost * 100, 2) if cost else 0.0
+        sector = sector_map.get(sym) or ""
+        if not sector:
+            try:
+                sector = str(vns.get_company_summary(sym).get("sector") or "")
+            except Exception:
+                sector = ""
+        holdings_out.append(
+            {
+                "symbol": sym,
+                "quantity": h.quantity or 0,
+                "avg_price": h.avg_price or 0,
+                "cost": round(cost),
+                "price": price,
+                "value": round(value),
+                "pnl": round(pnl),
+                "pnl_pct": pnl_pct,
+                "percent_change_today": _num(q.get("percent_change")),
+                "pct_1w": _num(q.get("pct_1w")),
+                "pct_1m": _num(q.get("pct_1m")),
+                "pct_ytd": _num(q.get("pct_ytd")),
+                "pe": _num(q.get("pe")),
+                "pb": _num(q.get("pb")),
+                "market_cap": _num(q.get("market_cap")),
+                "sector": sector,
+                "trend": trend,
+            }
+        )
+    total_value = sum(x["value"] for x in holdings_out)
+    total_cost = sum(x["cost"] for x in holdings_out)
+    total_pnl = total_value - total_cost
+    return {
+        "count": len(holdings_out),
+        "total_value": round(total_value),
+        "total_cost": round(total_cost),
+        "total_pnl": round(total_pnl),
+        "total_pnl_pct": round(total_pnl / total_cost * 100, 2) if total_cost else 0.0,
+        "holdings": holdings_out,
+    }
+
+
+# ===========================================================================
 # DeepSeek client
 # ===========================================================================
 class AiConfigError(Exception):
@@ -408,7 +536,10 @@ QUY TẮC BẮT BUỘC:
 4. Phân biệt rõ: dữ liệu realtime (giá/bảng giá) vs dữ liệu báo cáo quá khứ (BCTC, lịch sử giá).
 5. Không đưa khuyến nghị mua/bán cụ thể; chỉ phân tích khách quan, nêu rủi ro và nhắc người dùng tự quyết định.
 6. Nếu tool trả lỗi hoặc không có dữ liệu, hãy nói rõ là không tìm thấy thay vì bịa.
-7. Khi phân tích cổ phiếu hãy nêu: giá & biến động, định giá (P/E, P/B), tăng trưởng (lợi nhuận theo quý), rủi ro, tin tức liên quan."""
+7. Khi phân tích cổ phiếu hãy nêu: giá & biến động, định giá (P/E, P/B), tăng trưởng (lợi nhuận theo quý), rủi ro, tin tức liên quan.
+8. Khi người dùng hỏi về DANH MỤC của mình ('phân tích danh mục của tôi', 'cổ phiếu đang nắm giữ', 'tài sản của tôi', 'danh mục đầu tư'...): BẮT BUỘC gọi get_portfolio_holdings trước.
+   - Nếu danh mục rỗng (empty=true) → báo người dùng chưa có cổ phiếu và hướng dẫn thêm cổ phiếu đang nắm giữ ở trang Quản lý tài sản.
+   - Nếu có dữ liệu → phân tích TẤT CẢ cổ phiếu đang nắm giữ: từng MÃ (giá vốn, giá hiện tại, lãi/lỗ %), gộp theo từng NGÀNH, xu hướng NGẮN (1 tháng) / TRUNG (6 tháng) / DÀI (1 năm) hạn, và nêu rõ mã KHỎE (xu hướng tích cực, trên MA20, lãi) và mã YẾU (xu hướng tiêu cực, dưới MA20, lỗ) nếu có."""
 
 
 def _build_system(memory: str = "") -> str:
@@ -490,17 +621,19 @@ def _normalize_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
-async def _run_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
+async def _run_tool(name: str, args: dict[str, Any], user_id: int | None = None) -> dict[str, Any]:
     handler = _HANDLERS.get(name)
     if not handler:
         return {"error": f"Tool '{name}' không tồn tại"}
+    if user_id is not None:
+        _current_user_id.set(user_id)
     return await asyncio.to_thread(handler, **args)
 
 
 # ---------------------------------------------------------------------------
 # Chat không streaming
 # ---------------------------------------------------------------------------
-async def chat(messages: list[dict[str, Any]], memory: str = "") -> dict[str, Any]:
+async def chat(messages: list[dict[str, Any]], memory: str = "", user_id: int | None = None) -> dict[str, Any]:
     """Chạy vòng lặp tool-calling, trả về câu trả lời cuối cùng."""
     _ensure_configured()
     msgs = [{"role": "system", "content": _build_system(memory)}] + _normalize_messages(messages)
@@ -554,7 +687,7 @@ async def chat(messages: list[dict[str, Any]], memory: str = "") -> dict[str, An
                     args = {}
                 tool_log.append({"name": name, "arguments": args})
                 try:
-                    result = await _run_tool(name, args)
+                    result = await _run_tool(name, args, user_id)
                     content = json.dumps(result, ensure_ascii=False, default=str)
                 except Exception as exc:
                     content = json.dumps({"error": str(exc)}, ensure_ascii=False)
@@ -569,7 +702,7 @@ async def chat(messages: list[dict[str, Any]], memory: str = "") -> dict[str, An
 # ---------------------------------------------------------------------------
 # Chat streaming (SSE)
 # ---------------------------------------------------------------------------
-async def stream_chat(messages: list[dict[str, Any]], memory: str = "") -> AsyncGenerator[dict[str, Any], None]:
+async def stream_chat(messages: list[dict[str, Any]], memory: str = "", user_id: int | None = None) -> AsyncGenerator[dict[str, Any], None]:
     """Stream token + sự kiện tool qua generator. Mỗi event là dict:
     {'type':'delta'|'tool'|'done'|'error', ...}
     """
@@ -670,7 +803,7 @@ async def stream_chat(messages: list[dict[str, Any]], memory: str = "") -> Async
                 tool_log.append({"name": name, "arguments": args})
                 yield {"type": "tool", "name": name, "arguments": args}
                 try:
-                    result = await _run_tool(name, args)
+                    result = await _run_tool(name, args, user_id)
                     content = json.dumps(result, ensure_ascii=False, default=str)
                 except Exception as exc:
                     content = json.dumps({"error": str(exc)}, ensure_ascii=False)

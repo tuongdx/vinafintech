@@ -137,7 +137,7 @@ async def chat(
         async def gen():
             full_reply = ""
             try:
-                async for ev in ai_service.stream_chat(msgs, memory=memory):
+                async for ev in ai_service.stream_chat(msgs, memory=memory, user_id=user.id):
                     if ev.get("type") == "delta":
                         full_reply += str(ev.get("content") or "")
                     yield f"data: {json.dumps(ev, ensure_ascii=False, default=str)}\n\n"
@@ -166,7 +166,7 @@ async def chat(
         )
 
     try:
-        result = await ai_service.chat(msgs, memory=memory)
+        result = await ai_service.chat(msgs, memory=memory, user_id=user.id)
     except ai_service.AiConfigError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ai_service.DeepSeekError as exc:
