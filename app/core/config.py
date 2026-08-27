@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     secret_key: str = "change_me_in_production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
-    refresh_token_expire_minutes: int = 60 * 24 * 7
+    refresh_token_expire_minutes: int = 60 * 24 * 30
 
     vnstock_api_key: str = ""
     redis_url: str = ""
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     # Auth / token
     access_token_expire_minutes: int = 60
-    refresh_token_expire_minutes: int = 60 * 24 * 7
+    refresh_token_expire_minutes: int = 60 * 24 * 30
     reset_token_expire_minutes: int = 30
     # Frontend public URL (dùng cho redirect OAuth & link reset)
     frontend_url: str = "http://localhost:8000"

@@ -3298,7 +3298,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260827n';
+        const CACHE_VERSION = '20260827p';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -4703,6 +4703,33 @@
             }
             const ADMIN_ROLES = ['super-admin', 'admin', 'content-manager', 'editor', 'support'];
 
+            // ---- Refresh token dùng chung toàn app (định nghĩa độc lập, luôn chạy) ----
+            // Access token hết hạn (1h) → refresh bằng refresh token (30 ngày khi tick "Nhớ đăng nhập")
+            // để giữ phiên khi mở lại app, thay vì đăng xuất.
+            let _refreshPromise = null;
+            window.refreshAccessToken = async function() {
+                if (_refreshPromise) return _refreshPromise;
+                _refreshPromise = (async function() {
+                    const refresh = localStorage.getItem('tunix_refresh_token');
+                    if (!refresh) return false;
+                    try {
+                        const res = await fetch('/api/auth/refresh-token', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ refresh_token: refresh })
+                        });
+                        if (!res.ok) return false;
+                        const data = await res.json();
+                        if (!data.access_token) return false;
+                        localStorage.setItem('tunix_access_token', data.access_token);
+                        if (data.refresh_token) localStorage.setItem('tunix_refresh_token', data.refresh_token);
+                        if (data.user) localStorage.setItem('tunix_user', JSON.stringify(data.user));
+                        return true;
+                    } catch (e) { return false; }
+                })().finally(function() { _refreshPromise = null; });
+                return _refreshPromise;
+            };
+
             // Cookie chỉ để server xác thực khi mở trực tiếp trang /QuanTri.
             // Token vẫn lưu chính trong localStorage; cookie chỉ là "vé" đi kèm khi điều hướng.
             function setAdminCookie() {
@@ -4767,13 +4794,26 @@
                     fetch('/api/auth/me', {
                         headers: { Authorization: 'Bearer ' + localStorage.getItem('tunix_access_token') }
                     })
-                        .then(function(r) { return r.ok ? r.json() : null; })
+                        .then(function(r) {
+                            if (r.ok) return r.json();
+                            // Access token hết hạn → thử refresh bằng refresh token trước khi đăng xuất
+                            // (hỗ trợ "Nhớ đăng nhập": mở lại app sau khi token hết hạn vẫn giữ phiên).
+                            if (r.status === 401 && window.refreshAccessToken) {
+                                return window.refreshAccessToken().then(function(refreshed) {
+                                    if (!refreshed) return null;
+                                    return fetch('/api/auth/me', {
+                                        headers: { Authorization: 'Bearer ' + localStorage.getItem('tunix_access_token') }
+                                    }).then(function(r2) { return r2.ok ? r2.json() : null; });
+                                });
+                            }
+                            return null;
+                        })
                         .then(function(u) {
                             if (u) {
                                 localStorage.setItem('tunix_user', JSON.stringify(u));
                                 renderMenu();
                             } else {
-                                // Token không còn hiệu lực → xoá và render trạng thái chưa đăng nhập
+                                // Refresh thất bại → phiên thật sự hết hạn → xoá và render chưa đăng nhập
                                 localStorage.removeItem('tunix_access_token');
                                 localStorage.removeItem('tunix_refresh_token');
                                 localStorage.removeItem('tunix_user');
@@ -4855,6 +4895,32 @@
             });
             window.addEventListener('load', renderMenu);
             renderMenu();
+
+            // ---- Nhớ đăng nhập: khi mở lại app (tắt/bật trình duyệt, tắt tab) ----
+            // nếu access token hết hạn nhưng còn refresh token (30 ngày khi tick "Nhớ đăng nhập")
+            // → tự refresh để giữ phiên, thay vì đăng xuất.
+            function tokenExpired() {
+                const t = localStorage.getItem('tunix_access_token');
+                if (!t) return true;
+                try {
+                    const b64 = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+                    const pad = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+                    const payload = JSON.parse(atob(pad));
+                    if (!payload.exp) return false;
+                    return (payload.exp * 1000) <= Date.now() + 30000;
+                } catch (e) { return false; }
+            }
+            function ensureFreshAuth() {
+                if (!localStorage.getItem('tunix_refresh_token')) return;
+                // Access token còn hạn → không cần refresh
+                if (localStorage.getItem('tunix_access_token') && !tokenExpired()) return;
+                if (window.refreshAccessToken) {
+                    window.refreshAccessToken().then(function() { renderMenu(); });
+                }
+            }
+            if (localStorage.getItem('tunix_refresh_token')) {
+                ensureFreshAuth();
+            }
         })();
     </script>
 
