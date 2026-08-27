@@ -140,8 +140,11 @@
         .ov-ai .ai-btn:hover { transform: translateY(-1px); }
 
         /* ===== AI Investment Copilot ===== */
-        .ov-ai .ai-changes { display: grid; gap: 10px; margin-top: 14px; }
-        .ov-ai .ai-change { background: #fff; border: 1px solid #e9edf2; border-radius: 12px; padding: 12px 13px; }
+        .ov-ai .ai-changes { display: flex; gap: 10px; margin-top: 14px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; scrollbar-color: #c3ccd8 transparent; }
+        .ov-ai .ai-changes::-webkit-scrollbar { height: 6px; }
+        .ov-ai .ai-changes::-webkit-scrollbar-track { background: transparent; }
+        .ov-ai .ai-changes::-webkit-scrollbar-thumb { background: #c3ccd8; border-radius: 3px; }
+        .ov-ai .ai-change { background: #fff; border: 1px solid #e9edf2; border-radius: 12px; padding: 12px 13px; flex: 0 0 262px; min-width: 0; }
         .ov-ai .ai-change .ac-top { display: flex; align-items: flex-start; gap: 10px; }
         .ov-ai .ai-change .ac-ico { width: 32px; height: 32px; flex: 0 0 auto; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; background: rgba(0,128,128,0.1); color: #008080; }
         .ov-ai .ai-change.neg .ac-ico { background: rgba(208,49,78,0.1); color: #d0314e; }
@@ -152,6 +155,8 @@
         .ov-ai .ai-change .ac-why { margin-top: 9px; border: 1px solid rgba(0,128,128,0.3); background: #f0fbf9; color: #008080; font-weight: 700; font-size: 11.5px; padding: 5px 11px; border-radius: 8px; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
         .ov-ai .ai-change .ac-why:hover { background: #008080; color: #fff; }
         body.dark-mode .ov-ai .ai-change { background: #161b22; border-color: #21262d; }
+        body.dark-mode .ov-ai .ai-changes { scrollbar-color: #39414d transparent; }
+        body.dark-mode .ov-ai .ai-changes::-webkit-scrollbar-thumb { background: #39414d; }
         body.dark-mode .ov-ai .ai-change .ac-ico { background: rgba(0,128,128,0.18); color: #4db6b6; }
         body.dark-mode .ov-ai .ai-change.neg .ac-ico { background: rgba(208,49,78,0.18); color: #ff8b8b; }
         body.dark-mode .ov-ai .ai-change .ac-title { color: #e6edf3; }
