@@ -920,6 +920,27 @@
                 return iframeTop + gridEl.getBoundingClientRect().top + ourScrollY;
             }
 
+            // Chiều cao khung nhìn dành cho lưới tin (từ đỉnh lưới tới cuối màn hình trang cha),
+            // để căn số bài "vừa đủ cân bằng" theo mọi kích thước màn hình khi không có cột phải
+            // (right-col đang tạm ẩn) để so sánh.
+            function viewportAvailHeight() {
+                var vh = 0;
+                try {
+                    if (window.parent && window.parent !== window && window.parent.innerHeight) {
+                        vh = window.parent.innerHeight;
+                    }
+                } catch (e) {}
+                if (!vh) vh = window.innerHeight || document.documentElement.clientHeight || 720;
+                var top = 0;
+                try {
+                    var frame = getParentIframe();
+                    if (frame) top = frame.getBoundingClientRect().top;
+                } catch (e) {}
+                if (!top) top = gridEl.getBoundingClientRect().top;
+                // Chừa khoảng trống dưới cùng cho nút "Xem thêm" + lề an toàn
+                return Math.max(240, vh - top - 90);
+            }
+
             // Vị trí đáy lưới tin trong tọa độ document trang cha
             function gridBottomDoc() {
                 return gridTopDoc() + gridEl.offsetHeight;
@@ -1091,8 +1112,10 @@
                 }
             }
 
-            // Trang đầu: hiển thị đủ số bài để chạm đáy block "Tin được xem nhiều nhất"
-            // (cột phải). Không có cột phải → hiển thị 1 trang PAGE_SIZE.
+            // Trang đầu: hiển thị đủ số bài để lưới tin cân bằng theo màn hình.
+            // Nếu có cột phải (block "Tin được xem nhiều nhất" bên phải) → căn theo đáy block đó;
+            // nếu không (right-col đang tạm ẩn / mở trực tiếp / màn hình hẹp) → căn theo chiều cao
+            // khung nhìn để "vừa đủ cân bằng" trên mọi kích thước màn hình (không còn cố định 12 bài).
             async function loadInitial() {
                 var target = mostViewedBottomDoc();
 
@@ -1104,14 +1127,16 @@
                 var cardH = probeCard ? probeCard.offsetHeight : 0;
                 var cols = gridCols();
 
-                var count;
+                var availH;
                 if (target == null) {
-                    count = PAGE_SIZE;
+                    availH = viewportAvailHeight();
                 } else {
-                    var availH = target - gridTopDoc();
-                    var rows = Math.max(1, Math.floor((availH + GRID_GAP) / (cardH + GRID_GAP)));
-                    count = Math.max(cols, rows * cols);
+                    availH = target - gridTopDoc();
                 }
+                // Làm tròn tới số hàng gần nhất để lưới lấp đầy màn hình "vừa đủ cân bằng"
+                // (không bỏ trống quá nhiều phía dưới, cũng không đẩy nút "Xem thêm" khỏi màn hình).
+                var rows = Math.max(1, Math.round((availH + GRID_GAP) / (cardH + GRID_GAP)));
+                var count = Math.max(cols, rows * cols);
                 count = Math.max(1, Math.min(count, MAX_INIT));
 
                 var data = await fetchNews(0, count);
@@ -1123,6 +1148,28 @@
                 hasMore = data.length >= count;
                 showLoadMore(hasMore);
                 notifyParentHeight();
+
+                // An toàn: nếu nút "Xem thêm" bị đẩy quá xa khỏi khung nhìn trang cha
+                // (card thật cao hơn card đo — title dài/ngắn), bớt 1 hàng cuối để nút
+                // luôn hiển thị. Chỉ cắt khi nút trôi quá 60px dưới mép màn hình.
+                var btnEl = document.getElementById('loadMoreBtn');
+                if (btnEl && data.length > cols) {
+                    var pv = 0, fTop = 0;
+                    try { if (window.parent && window.parent !== window) pv = window.parent.innerHeight; } catch (e) {}
+                    if (!pv) pv = window.innerHeight || document.documentElement.clientHeight || 720;
+                    try { var fr = getParentIframe(); if (fr) fTop = fr.getBoundingClientRect().top; } catch (e) {}
+                    var btnBottomParent = fTop + btnEl.getBoundingClientRect().bottom;
+                    if (btnBottomParent > pv + 60) {
+                        var fewer = data.slice(0, data.length - cols);
+                        gridEl.innerHTML = fewer.map(cardHtml).join('');
+                        gridEl.querySelectorAll('.news-card').forEach(bindCard);
+                        nextOffset = fewer.length;
+                        hasMore = true;
+                        showLoadMore(hasMore);
+                        notifyParentHeight();
+                    }
+                }
+
                 scheduleRealign();
             }
 
