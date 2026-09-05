@@ -1072,6 +1072,21 @@
             transition: background 0.3s ease;
         }
 
+        /* Vương miện hội viên đội phía TRÊN icon account */
+        .user-crown {
+            position: absolute;
+            top: -8px;
+            right: -6px;
+            font-size: 15px;
+            line-height: 1;
+            pointer-events: none;
+            transform: rotate(30deg);
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,.45));
+            z-index: 4;
+        }
+        .user-crown.silver { color: #cfd6e4; }
+        .user-crown.gold { color: #f7c948; }
+
         /* Theme toggle icon */
         .theme-toggle {
             cursor: pointer;
@@ -3176,7 +3191,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260827r';
+        const CACHE_VERSION = '20260905g';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -4623,6 +4638,33 @@
 
             function closeDropdown() { dropdown.style.display = 'none'; }
 
+            // ---- Vương miện hội viên trên icon account ----
+            // Hội viên (còn hạn): theo tháng → bạc; theo năm → vàng.
+            // Chưa đăng nhập / chưa đăng ký / hết hạn → không có vương miện.
+            let _memberMeta = null;
+            function applyMemberCrown(menu) {
+                if (!menu) return;
+                const old = menu.querySelector('.user-crown');
+                if (old) old.remove();
+                menu.style.position = 'relative';
+                const token = localStorage.getItem('tunix_access_token');
+                if (!token) return; // chưa đăng nhập → không vương miện
+                function show(meta) {
+                    if (!(meta && meta.active)) return; // chưa đăng ký / không còn hạn → không vương miện
+                    const crown = document.createElement('i');
+                    crown.className = 'fas fa-crown user-crown ' + (meta.plan === 'yearly' ? 'gold' : 'silver');
+                    menu.appendChild(crown);
+                }
+                if (_memberMeta) { show(_memberMeta); return; }
+                fetch('/api/membership/status', { headers: { 'Authorization': 'Bearer ' + token } })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (d) {
+                        _memberMeta = d ? { active: !!d.active, plan: d.plan || '' } : { active: false, plan: '' };
+                        show(_memberMeta);
+                    })
+                    .catch(function () { _memberMeta = { active: false, plan: '' }; });
+            }
+
             // Cập nhật lại menu khi người dùng đổi ảnh đại diện / thông tin (từ trang tài khoản)
             window.addEventListener('message', function(event) {
                 const data = event.data;
@@ -4707,6 +4749,7 @@
                     userMenu.style.cssText = 'cursor:pointer; display:flex; align-items:center;';
                     userMenu.innerHTML = '<i class="fas fa-user-circle"></i>';
                     dropdown.innerHTML = '';
+                    _memberMeta = null; // reset trạng thái hội viên khi chưa đăng nhập
                     userMenu.onclick = function() { window.location.href = '/Login'; };
                     return;
                 }
@@ -4718,10 +4761,12 @@
                 } else {
                     userMenu.textContent = initial;
                 }
+                // Vương miện hội viên (bạc: gói Theo tháng · vàng: gói Theo năm)
+                applyMemberCrown(userMenu);
 
                 let items = '';
                 items += '<div class="ud-item" data-act="profile"><i class="fas fa-user"></i> ' + (user.full_name || user.email) + '</div>';
-                items += '<div class="ud-item disabled" data-act="member" title="Tính năng Hội viên đang phát triển"><i class="fas fa-crown"></i> Hội viên <span class="soon">Sắp ra mắt</span></div>';
+                items += '<div class="ud-item" data-act="member"><i class="fas fa-crown"></i> Hội viên</div>';
                 if (ADMIN_ROLES.includes(user.role)) {
                     setAdminCookie();
                     items += '<div class="ud-item" data-act="admin"><i class="fas fa-shield-halved"></i> Quản trị</div>';
@@ -4745,6 +4790,13 @@
                             } else {
                                 window.location.href = '/?page=taikhoan';
                             }
+                        } else if (act === 'member') {
+                            // Mục "Hội viên": đăng ký hội viên / xem thông tin gói.
+                            if (window.TuniXMembership) {
+                                window.TuniXMembership.openMembershipCenter();
+                            } else if (window.loadContent) {
+                                window.loadContent('/taikhoan');
+                            }
                         } else if (act === 'admin') {
                             setAdminCookie();
                             window.location.href = '/QuanTri';
@@ -4761,6 +4813,7 @@
                             localStorage.removeItem('tunix_refresh_token');
                             localStorage.removeItem('tunix_user');
                             localStorage.removeItem('tunix_favorites');
+                            _memberMeta = null;
                             clearAdminCookie();
                             window.location.href = '/';
                         }
@@ -5041,6 +5094,7 @@
         })();
     </script>
 
+    <script src="/static/membership-gate.js?v=20260905f"></script>
     <script src="/static/context-menu.js?v=20260827a"></script>
 </body>
 </body>

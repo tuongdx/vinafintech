@@ -381,6 +381,39 @@
             background: #21262d;
         }
 
+        .topbar-actions .topbar-nav-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid #e5e9f0;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-size: 14px;
+            color: #4a5a72;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        body.dark-mode .topbar-actions .topbar-nav-btn {
+            border-color: #30363d;
+            color: #8b949e;
+        }
+        .topbar-actions .topbar-nav-btn:hover:not(:disabled) {
+            background: #f0f2f6;
+            border-color: #008080;
+            color: #008080;
+        }
+        body.dark-mode .topbar-actions .topbar-nav-btn:hover:not(:disabled) {
+            background: #21262d;
+            border-color: #4fa8a2;
+            color: #4fa8a2;
+        }
+        .topbar-actions .topbar-nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         .topbar-actions .logout-btn {
             display: flex;
             align-items: center;
@@ -746,6 +779,117 @@
         }
         body.dark-mode .stat-card .stat-sub {
             color: #6b7a8f;
+        }
+
+        /* ===== CLICKABLE DASHBOARD BLOCKS ===== */
+        .stat-card.clickable,
+        .dash-clickable {
+            cursor: pointer;
+        }
+        .stat-card.clickable:hover,
+        .dash-clickable:hover {
+            border-color: #008080;
+            box-shadow: 0 6px 16px rgba(0, 128, 128, 0.16);
+            transform: translateY(-1px);
+        }
+        .stat-card.clickable:active,
+        .dash-clickable:active {
+            transform: translateY(0);
+        }
+
+        /* ===== QUICK ACCESS FEATURES (Dashboard) ===== */
+        .feat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .feat-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            border: 1px solid #eef2f6;
+            border-radius: 14px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        body.dark-mode .feat-card {
+            background: #161b22;
+            border-color: #30363d;
+        }
+        .feat-card:hover {
+            border-color: #008080;
+            box-shadow: 0 6px 16px rgba(0, 128, 128, 0.14);
+            transform: translateY(-1px);
+        }
+        body.dark-mode .feat-card:hover {
+            border-color: #4fa8a2;
+        }
+        .feat-card .feat-ico {
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 17px;
+            color: #fff;
+        }
+        .feat-card .feat-txt {
+            min-width: 0;
+        }
+        .feat-card .feat-txt b {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 600;
+        }
+        .feat-card .feat-txt span {
+            display: block;
+            font-size: 11.5px;
+            color: #8a99b1;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        body.dark-mode .feat-card .feat-txt span {
+            color: #6b7a8f;
+        }
+        .feat-card.disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .feat-card.disabled:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: #eef2f6;
+        }
+        .feat-coming {
+            display: inline-block;
+            font-size: 9.5px;
+            font-weight: 600;
+            color: #f39c12;
+            background: #fef4e6;
+            border-radius: 20px;
+            padding: 1px 8px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        /* ===== DARK MODE: các panel/card trắng trên Dashboard ===== */
+        body.dark-mode #panelDashboard div[style*="background:#fff"] {
+            background: #161b22 !important;
+            border-color: #30363d !important;
+            color: #c9d1d9;
+        }
+        body.dark-mode #panelDashboard div[style*="background:#f8fafd"] {
+            background: #1c2128 !important;
+            border-color: #30363d !important;
+        }
+        body.dark-mode .feat-card .feat-txt b {
+            color: #e6edf3;
         }
 
         /* ===== RECENT ACTIVITY (Dashboard) ===== */
@@ -2917,13 +3061,9 @@
                 </button>
 
                 <div class="nav-label" style="margin-top:12px;">Hội viên</div>
-                <button class="nav-item" data-panel="plans" onclick="switchPanel('plans')" id="navPlans">
-                    <i class="fas fa-crown"></i>
-                    <span>Gói hội viên</span>
-                </button>
                 <button class="nav-item" data-panel="features" onclick="switchPanel('features')" id="navFeatures">
-                    <i class="fas fa-toggle-on"></i>
-                    <span>Tính năng</span>
+                    <i class="fas fa-lock"></i>
+                    <span>Các tính năng đang khoá hội viên</span>
                 </button>
 
                 <div class="nav-label" style="margin-top:12px;">Hỗ trợ</div>
@@ -2965,6 +3105,12 @@
                     <h1 id="pageTitle">Dashboard <small>Tổng quan hệ thống</small></h1>
                 </div>
                 <div class="topbar-actions">
+                    <button class="topbar-nav-btn" id="panelBackBtn" onclick="panelGoBack()" title="Quay lại trang trước (Alt+←)" disabled>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button class="topbar-nav-btn" id="panelForwardBtn" onclick="panelGoForward()" title="Tiến tới trang sau (Alt+→)" disabled>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
                     <button class="theme-toggle" id="themeToggle" title="Chuyển đổi giao diện">
                         <i class="fas fa-moon"></i>
                     </button>
@@ -2990,54 +3136,50 @@
                 </div>
 
                 <div class="stats-row">
-                    <div class="stat-card">
+                    <div class="stat-card clickable" onclick="dashboardGo('users')" title="Mở trang Quản lý tài khoản & Hội viên" role="button" tabindex="0">
                         <div class="stat-label">Tổng người dùng</div>
                         <div class="stat-value" id="statUsers">0</div>
                         <div class="stat-sub">Tổng số tài khoản hệ thống</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card clickable" onclick="dashboardGo('users')" title="Mở trang Quản lý tài khoản & Hội viên" role="button" tabindex="0">
                         <div class="stat-label">Quản trị viên</div>
                         <div class="stat-value" id="statAdmins">0</div>
                         <div class="stat-sub">Super Admin + Admin + Content Manager + Editor</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card clickable" onclick="dashboardGo('users')" title="Mở trang Quản lý tài khoản & Hội viên" role="button" tabindex="0">
                         <div class="stat-label">Thành viên (Member)</div>
                         <div class="stat-value" id="statMembers">0</div>
                         <div class="stat-sub">Người dùng giao diện</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card clickable" onclick="dashboardGo('users')" title="Mở trang Quản lý tài khoản & Hội viên" role="button" tabindex="0">
                         <div class="stat-label">Hội viên trả phí</div>
                         <div class="stat-value" id="statPaid">0</div>
                         <div class="stat-sub">Tỷ lệ chuyển đổi: 0%</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Tính năng đang bật</div>
+                    <div class="stat-card clickable" onclick="dashboardGo('features')" title="Mở trang Các tính năng đang khoá hội viên" role="button" tabindex="0">
+                        <div class="stat-label">Tính năng đang khoá</div>
                         <div class="stat-value" id="statFeaturesOn">0</div>
-                        <div class="stat-sub">Trên tổng số tính năng</div>
+                        <div class="stat-sub">Các block đang giới hạn cho hội viên</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card clickable" onclick="dashboardGo('news')" title="Mở trang Quản lý tin tức" role="button" tabindex="0">
                         <div class="stat-label">Tin tức</div>
                         <div class="stat-value" id="statNews">0</div>
                         <div class="stat-sub"><span class="status-badge pending" id="statPendingNews">0 chờ duyệt</span></div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card clickable" onclick="dashboardGo('tickets')" title="Mở trang Quản lý góp ý" role="button" tabindex="0">
                         <div class="stat-label">Góp ý</div>
                         <div class="stat-value" id="statFeedback">0</div>
                         <div class="stat-sub"><span class="status-badge pending" id="statPendingFeedback">0 chưa đọc</span></div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card clickable" onclick="dashboardGo('contact')" title="Mở trang Tin nhắn liên hệ" role="button" tabindex="0">
                         <div class="stat-label">Liên hệ</div>
                         <div class="stat-value" id="statContact">0</div>
                         <div class="stat-sub"><span class="status-badge pending" id="statPendingContact">0 chưa đọc</span></div>
                     </div>
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-                    <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #eef2f6;transition:all 0.3s ease;">
-                        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;transition:color 0.3s ease;">Phân bố gói hội viên (Member)</h3>
-                        <div id="planDistribution" style="display:flex;flex-direction:column;gap:8px;"></div>
-                    </div>
-                    <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #eef2f6;transition:all 0.3s ease;">
+                <div style="display:grid;grid-template-columns:1fr;gap:20px;">
+                    <div class="dash-clickable" onclick="dashboardGo('users')" title="Mở trang Quản lý tài khoản & Hội viên" role="button" tabindex="0" style="background:#fff;border-radius:16px;padding:20px;border:1px solid #eef2f6;transition:all 0.3s ease;">
                         <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;transition:color 0.3s ease;">Phân quyền hệ thống</h3>
                         <div id="roleDistribution" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                             <div style="background:#f8fafd;border-radius:8px;padding:10px 14px;border:1px solid #eef2f6;">
@@ -3062,6 +3204,13 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Quick access: toàn bộ tính năng menu bên trái -->
+                <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #eef2f6;margin-top:20px;transition:all 0.3s ease;">
+                    <h3 style="font-size:14px;font-weight:600;margin-bottom:4px;transition:color 0.3s ease;">Tất cả tính năng quản trị</h3>
+                    <div style="font-size:12px;color:#8a99b1;margin-bottom:14px;">Bấm vào từng thẻ để mở trang quản lý tương ứng trong menu bên trái.</div>
+                    <div class="feat-grid" id="featureGrid"></div>
                 </div>
 
                 <!-- Recent Activity -->
@@ -3409,46 +3558,25 @@
             </div>
 
             <!-- ============================================================ -->
-            <!-- PANEL: PLANS -->
-            <!-- ============================================================ -->
-            <div class="panel" id="panelPlans">
-                <div class="panel-header">
-                    <h2>Quản lý gói hội viên <small style="font-weight:400;font-size:13px;color:#8a99b1;">(Áp dụng cho Thành viên - Member)</small></h2>
-                    <button class="btn-primary" id="addPlanBtn" onclick="showToast('📦 Đang mở form tạo gói mới...', 'success')">
-                        <i class="fas fa-plus"></i> Thêm gói mới
-                    </button>
-                </div>
-
-                <div class="plans-grid" id="plansGrid"></div>
-            </div>
-
-            <!-- ============================================================ -->
-            <!-- PANEL: FEATURES -->
+            <!-- PANEL: FEATURES (các tính năng đang khoá hội viên) -->
             <!-- ============================================================ -->
             <div class="panel" id="panelFeatures">
                 <div class="panel-header">
-                    <h2>Quản lý tính năng theo gói</h2>
-                    <button class="btn-success" id="toggleFreeModeBtn" onclick="toggleFreeMode()">
-                        <i class="fas fa-gift"></i> <span id="freeModeBtnText">Đang Free</span>
-                    </button>
+                    <h2>Các tính năng đang khoá hội viên <small style="font-weight:400;font-size:13px;color:#8a99b1;">(Bật tắt trạng thái MỞ cho tất cả / KHOÁ chỉ hội viên cho từng block)</small></h2>
                 </div>
 
                 <div class="features-section">
                     <div class="section-header">
-                        <h3>Danh sách tính năng <small style="font-weight:400;font-size:12px;color:#8a99b1;">(Quyền cho Thành viên)</small></h3>
-                        <span class="free-mode-badge on" id="freeModeBadge">🔓 Free Mode: ĐANG BẬT</span>
+                        <h3>Các block website — bật/tắt trạng thái <small style="font-weight:400;font-size:12px;color:#8a99b1;">(MỞ = mọi người đều xem được, kể cả chưa đăng nhập · KHOÁ = chỉ hội viên mở gói)</small></h3>
+                        <span class="free-mode-badge off" id="lockedCountBadge">…</span>
                     </div>
                     <div class="features-table-wrap">
                         <table class="features-table">
                             <thead>
                                 <tr>
-                                    <th style="width:20%;">Tính năng</th>
-                                    <th style="width:25%;">Mô tả</th>
-                                    <th style="width:10%;text-align:center;">Free</th>
-                                    <th style="width:10%;text-align:center;">Basic</th>
-                                    <th style="width:10%;text-align:center;">Premium</th>
-                                    <th style="width:10%;text-align:center;">Pro</th>
-                                    <th style="width:15%;text-align:center;">Trạng thái</th>
+                                    <th style="width:40%;">Tính năng</th>
+                                    <th style="width:40%;">Mô tả</th>
+                                    <th style="width:20%;text-align:center;">Trạng thái</th>
                                 </tr>
                             </thead>
                             <tbody id="featuresTableBody"></tbody>
@@ -3694,52 +3822,15 @@
             <!-- ============================================================ -->
             <div class="panel" id="panelStocks">
                 <div class="panel-header">
-                    <h2>Quản lý danh sách cổ phiếu <small style="font-weight:400;font-size:13px;color:#8a99b1;">(Thêm mã IPO mới để API nhận dạng)</small></h2>
-                    <button class="btn-primary" id="toggleStockFormBtn" onclick="toggleStockForm()">
-                        <i class="fas fa-plus"></i> Thêm cổ phiếu mới IPO
+                    <h2>Quản lý danh sách cổ phiếu <small style="font-weight:400;font-size:13px;color:#8a99b1;">(Quét tự động để API nhận dạng mã mới)</small></h2>
+                    <button class="btn-primary" id="scanStocksBtn" onclick="scanStocks()">
+                        <i class="fas fa-sync"></i> Quét &amp; thêm cổ phiếu mới
                     </button>
                 </div>
-
-                <div class="faq-form-container" id="stockFormContainer">
-                    <div class="form-title">
-                        <span class="form-icon" id="stockFormIcon"><i class="fas fa-plus-circle"></i></span>
-                        <span id="stockFormTitle">Thêm mã cổ phiếu mới</span>
-                    </div>
-                    <form id="stockForm" onsubmit="submitStockSymbol(event)">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Mã cổ phiếu <span class="required">*</span></label>
-                                <input type="text" id="stockSymbolInput" placeholder="VD: ABC, DEF" maxlength="10" style="text-transform:uppercase;" oninput="lookupStockInfo()" required />
-                                <div class="helper-text">Chỉ chữ A-Z và số 0-9, ví dụ: VPB, FRT, SAB</div>
-                                <div class="helper-text" id="stockLookupMsg" style="color:#8e44ad;font-weight:500;"></div>
-                            </div>
-                            <div class="form-group">
-                                <label>Sàn giao dịch</label>
-                                <select id="stockExchangeInput" disabled>
-                                    <option value="">Chưa xác định</option>
-                                    <option value="HOSE">HOSE</option>
-                                    <option value="HNX">HNX</option>
-                                    <option value="UPCOM">UPCOM</option>
-                                </select>
-                                <div class="helper-text">Tự động hiển thị sàn chính thức khi nhập mã. Không thể chỉnh sửa.</div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Tên công ty</label>
-                            <input type="text" id="stockNameInput" placeholder="Tự động hiển thị tên chính thức khi nhập mã…" readonly />
-                            <div class="helper-text">Tự động hiển thị tên chính thức khi nhập mã. Không thể chỉnh sửa.</div>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary" id="stockSubmitBtn" disabled>
-                                <i class="fas fa-save"></i> Thêm mã cổ phiếu
-                            </button>
-                            <button type="button" class="btn-close-form" onclick="resetStockForm()">
-                                <i class="fas fa-times"></i> Đặt lại
-                            </button>
-                        </div>
-                    </form>
+                <div class="helper-text" style="margin:-4px 0 12px;">
+                    <i class="fas fa-info-circle"></i> Nhấn nút <strong>Quét &amp; thêm cổ phiếu mới</strong> để quét toàn bộ cổ phiếu
+                    đang niêm yết trên thị trường (HOSE, HNX, UPCoM) và <strong>tự động thêm</strong> các mã mới chưa có trong danh sách
+                    (ví dụ cổ phiếu vừa IPO). Mã đã có sẽ được giữ nguyên.
                 </div>
 
                 <div class="stock-summary" id="stockSummary"></div>
@@ -3768,7 +3859,7 @@
                         <select id="filterType" onchange="renderStocks()">
                             <option value="">Tất cả</option>
                             <option value="system">Hệ thống</option>
-                            <option value="custom">Thêm thủ công</option>
+                            <option value="custom">Tự cập nhật</option>
                         </select>
                     </div>
                     <div class="filter-cell">
@@ -3800,8 +3891,9 @@
                 </div>
                 <div class="helper-text" style="margin-top:8px;">
                     <i class="fas fa-info-circle"></i> Bảng liệt kê <strong>toàn bộ cổ phiếu</strong> hiện có trên các sàn
-                    (HOSE, HNX, UPCoM) cùng với các mã IPO mới do quản trị viên thêm thủ công (cột "Loại" = <em>Thêm thủ công</em>).
-                    Khi có cổ phiếu mới IPO, hãy thêm mã ở form bên trên để các API dữ liệu (giá, lịch sử, báo cáo…) nhận dạng được mã này.
+                    (HOSE, HNX, UPCoM) cùng với các mã mới do hệ thống tự thêm khi quét (cột "Loại" = <em>Tự cập nhật</em>).
+                    Khi có cổ phiếu mới IPO, nhấn nút <strong>Quét &amp; thêm cổ phiếu mới</strong> ở trên để các API dữ liệu
+                    (giá, lịch sử, báo cáo…) nhận dạng được mã này.
                 </div>
             </div>
 
@@ -4083,55 +4175,18 @@
             renderNews();
         }
 
-        // Plans
-        const plans = [
-            { id: 'free', name: 'Miễn phí', price: 0, desc: 'Dành cho người dùng mới', features: ['Xem dữ liệu cơ bản',
-                    'Theo dõi danh sách', 'Cảnh báo giá'
-                ], popular: false, status: 'active' },
-            { id: 'basic', name: 'Basic', price: 49, desc: 'Cho nhà đầu tư cá nhân', features: ['Tất cả Free +',
-                    'Phân tích kỹ thuật', 'Báo cáo hàng tuần', 'Tín hiệu giao dịch'
-                ], popular: false, status: 'active' },
-            { id: 'premium', name: 'Premium', price: 99, desc: 'Cho nhà đầu tư chuyên nghiệp', features: ['Tất cả Basic +',
-                    'Dữ liệu real-time', 'Phân tích chuyên sâu', 'Công cụ so sánh', 'Hỗ trợ ưu tiên'
-                ], popular: true, status: 'active' },
-            { id: 'pro', name: 'Pro', price: 199, desc: 'Dành cho tổ chức & quỹ đầu tư', features: ['Tất cả Premium +',
-                    'API truy cập', 'Dữ liệu lịch sử', 'Phân tích AI', 'Báo cáo tùy chỉnh', 'Hỗ trợ 24/7'
-                ], popular: false, status: 'active' },
+        // Thứ tự + nhãn của các block website (trạng thái thật đọc từ /api/features)
+        const FEATURE_META = [
+            { key: 'notable_stocks', name: 'Cổ phiếu nổi bật', description: 'Khối "Cổ phiếu nổi bật" theo nhóm (Tăng trưởng, Định giá, Dòng tiền, Breakout, Score) — Trang Cổ phiếu' },
+            { key: 'strategy_cashflow', name: 'Chiến lược: Dòng tiền mạnh', description: 'Nhóm chiến lược "Dòng tiền mạnh" — Trang Khám phá' },
+            { key: 'strategy_breakout', name: 'Chiến lược: Breakout', description: 'Nhóm chiến lược "Breakout" — Trang Khám phá' },
+            { key: 'rank_cashflow', name: 'Xếp hạng: Top dòng tiền', description: 'Bảng "Top dòng tiền" — Trang Khám phá' },
+            { key: 'rank_score', name: 'Xếp hạng: Top Score', description: 'Bảng "Top Score" — Trang Khám phá' },
+            { key: 'alert_center', name: 'Trung tâm cảnh báo', description: 'Cảnh báo gần hỗ trợ/kháng cự, breakout, MA… (kể cả quét tín hiệu)' },
+            { key: 'ai_unlimited', name: 'TuniAI không giới hạn', description: 'Hỏi đáp không giới hạn lượt/cuộc trò chuyện cho hội viên' },
         ];
-
-        // Features
-        const features = [
-            { id: 'view_data', name: 'Xem dữ liệu cơ bản', desc: 'Giá, khối lượng, chỉ số cơ bản', free: true, basic: true,
-                premium: true, pro: true },
-            { id: 'watchlist', name: 'Danh sách theo dõi', desc: 'Theo dõi cổ phiếu yêu thích', free: true, basic: true,
-                premium: true, pro: true },
-            { id: 'price_alert', name: 'Cảnh báo giá', desc: 'Nhận thông báo khi giá đạt ngưỡng', free: true, basic: true,
-                premium: true, pro: true },
-            { id: 'tech_analysis', name: 'Phân tích kỹ thuật', desc: 'Biểu đồ, chỉ báo kỹ thuật', free: false, basic: true,
-                premium: true, pro: true },
-            { id: 'weekly_report', name: 'Báo cáo hàng tuần', desc: 'Tổng hợp thị trường hàng tuần', free: false,
-                basic: true, premium: true, pro: true },
-            { id: 'signal', name: 'Tín hiệu giao dịch', desc: 'Gợi ý mua/bán dựa trên thuật toán', free: false,
-                basic: true, premium: true, pro: true },
-            { id: 'realtime_data', name: 'Dữ liệu real-time', desc: 'Cập nhật giá theo thời gian thực', free: false,
-                basic: false, premium: true, pro: true },
-            { id: 'deep_analysis', name: 'Phân tích chuyên sâu', desc: 'Phân tích tài chính, P/E, P/B, ROE', free: false,
-                basic: false, premium: true, pro: true },
-            { id: 'comparison', name: 'Công cụ so sánh', desc: 'So sánh cổ phiếu với nhau', free: false, basic: false,
-                premium: true, pro: true },
-            { id: 'priority_support', name: 'Hỗ trợ ưu tiên', desc: 'Phản hồi nhanh chóng từ đội ngũ', free: false,
-                basic: false, premium: true, pro: true },
-            { id: 'api_access', name: 'API truy cập', desc: 'Truy cập dữ liệu qua API', free: false, basic: false,
-                premium: false, pro: true },
-            { id: 'historical_data', name: 'Dữ liệu lịch sử', desc: 'Truy cập dữ liệu 10 năm', free: false, basic: false,
-                premium: false, pro: true },
-            { id: 'ai_analysis', name: 'Phân tích AI', desc: 'Dự đoán xu hướng bằng AI', free: false, basic: false,
-                premium: false, pro: true },
-            { id: 'custom_report', name: 'Báo cáo tùy chỉnh', desc: 'Tạo báo cáo theo yêu cầu', free: false, basic: false,
-                premium: false, pro: true },
-            { id: 'support_24h', name: 'Hỗ trợ 24/7', desc: 'Hỗ trợ qua chat và email 24/7', free: false, basic: false,
-                premium: false, pro: true },
-        ];
+        // Trạng thái các block website (từ /api/features) — null = chưa tải
+        let featureFlagsData = null;
 
         // Tickets (Yêu cầu hỗ trợ)
         const ticketsData = [
@@ -4169,7 +4224,6 @@
             return { id: 1, name: 'Super Admin', email: 'admin@tunix.com', role: 'super-admin', avatar: 'SA' };
         })();
 
-        let isFreeMode = true;
         let currentNewsFilter = 'all';
         let currentTicketFilter = 'all';
         let currentContactFilter = 'all';
@@ -4182,12 +4236,8 @@
         let feedbackData = [];
         let currentFeedbackFilter = 'all';
 
-        // Cổ phiếu do admin thêm thủ công (mã IPO mới)
+        // Danh sách cổ phiếu (nền + mã do tính năng quét tự thêm)
         let stocksData = [];
-        // Mã đang ở chế độ chỉnh sửa (null = chế độ thêm mới)
-        let editingStockSymbol = null;
-        // Trạng thái tra cứu mã khi nhập: null | 'ok' | 'exists' | 'unknown'
-        let stockLookup = { symbol: '', status: null };
 
         // ============================================================
         // 3. PERMISSION CHECKS
@@ -4195,10 +4245,7 @@
         function canManageStocks() {
             return currentUser.role === 'super-admin' || currentUser.role === 'admin';
         }
-        // Chỉ Super Admin được sửa/xóa mã cổ phiếu
-        function canEditStocks() {
-            return currentUser.role === 'super-admin';
-        }
+        // Chỉ Super Admin được xóa mã cổ phiếu đã thêm
         function canDeleteStocks() {
             return currentUser.role === 'super-admin';
         }
@@ -4319,7 +4366,6 @@
             setNavDisabled('navNews', !canManageNews());
             setNavDisabled('navStocks', !canManageStocks());
             setNavDisabled('navWritingTool', !canUseWritingTool());
-            setNavDisabled('navPlans', !canManagePlans());
             setNavDisabled('navFeatures', !canManageFeatures());
             setNavDisabled('navTickets', !canViewFeedback());
             setNavDisabled('navFaq', !canManageFaq());
@@ -4327,8 +4373,6 @@
 
             setBtnDisabled('addUserBtn', !canManageUsers());
             setBtnDisabled('createNewsBtn', !canCreateNews());
-            setBtnDisabled('addPlanBtn', !canManagePlans());
-            setBtnDisabled('toggleFreeModeBtn', !canManageFeatures());
             setBtnDisabled('addFaqBtn', !canManageFaq());
             // Nút xóa toàn bộ bài viết: chỉ Super Admin
             const delAllNewsBtn = document.getElementById('deleteAllNewsBtn');
@@ -4778,76 +4822,99 @@
             document.getElementById('approvalStep3').className = 'step-icon ' + (hasPublished ? 'done' : 'inactive');
         }
 
-        function renderPlans() {
-            const container = document.getElementById('plansGrid');
-            if (!container) return;
-
-            const planPrices = { free: '0', basic: '49,000', premium: '99,000', pro: '199,000' };
-            const statusMap = { active: 'Đang hoạt động', inactive: 'Đã khóa' };
-            const statusClassMap = { active: 'active', inactive: 'inactive' };
-
-            let html = '';
-            plans.forEach(plan => {
-                const isPopular = plan.popular;
-                const isFree = plan.id === 'free';
-
-                html += `
-                            <div class="plan-card ${isPopular ? 'popular' : ''}">
-                                ${isPopular ? '<span class="plan-badge">⭐ Phổ biến</span>' : ''}
-                                <div class="plan-name">${plan.name}</div>
-                                <div class="plan-price">${isFree ? 'Miễn phí' : planPrices[plan.id] + ' <small>VNĐ/tháng</small>'}</div>
-                                <div class="plan-desc">${plan.desc}</div>
-                                <ul class="plan-features">
-                                    ${plan.features.map(f => `<li><i class="fas fa-check" style="color:#2ecc71;"></i> ${f}</li>`).join('')}
-                                </ul>
-                                <span class="plan-status ${statusClassMap[plan.status] || 'inactive'}">${statusMap[plan.status] || plan.status}</span>
-                                <div class="plan-actions">
-                                    ${canManagePlans() ? `<button class="btn-secondary" onclick="editPlan('${plan.id}')"><i class="fas fa-edit"></i> Sửa</button>` : ''}
-                                    ${canManagePlans() && plan.id !== 'free' ? `<button class="btn-danger" onclick="togglePlan('${plan.id}')">${plan.status === 'active' ? 'Khóa' : 'Mở'}</button>` : ''}
-                                </div>
-                            </div>
-                        `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        function renderFeatures() {
+        async function renderFeatures() {
             const tbody = document.getElementById('featuresTableBody');
             if (!tbody) return;
 
-            let html = '';
-            features.forEach(f => {
-                const isEnabled = isFreeMode ? true : f.free;
-                const statusText = isEnabled ? 'Đang bật' : 'Đang tắt';
-                const statusClass = isEnabled ? 'enabled' : 'disabled';
+            // Nạp trạng thái block từ backend (mặc định MỞ nếu chưa khởi tạo).
+            if (featureFlagsData === null) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#8a99b1;padding:18px 10px;font-size:13px;">Đang tải danh sách block…</td></tr>';
+                try {
+                    const data = await authApi('/features');
+                    featureFlagsData = Array.isArray(data) ? data : [];
+                } catch (e) {
+                    featureFlagsData = [];
+                }
+            }
 
-                html += `
-                            <tr>
-                                <td><span class="feature-name">${f.name}</span></td>
-                                <td><span class="feature-desc">${f.desc}</span></td>
-                                <td style="text-align:center;">${f.free ? '<i class="fas fa-check" style="color:#2ecc71;"></i>' : '<i class="fas fa-times" style="color:#e74c3c;"></i>'}</td>
-                                <td style="text-align:center;">${f.basic ? '<i class="fas fa-check" style="color:#2ecc71;"></i>' : '<i class="fas fa-times" style="color:#e74c3c;"></i>'}</td>
-                                <td style="text-align:center;">${f.premium ? '<i class="fas fa-check" style="color:#2ecc71;"></i>' : '<i class="fas fa-times" style="color:#e74c3c;"></i>'}</td>
-                                <td style="text-align:center;">${f.pro ? '<i class="fas fa-check" style="color:#2ecc71;"></i>' : '<i class="fas fa-times" style="color:#e74c3c;"></i>'}</td>
-                                <td style="text-align:center;">
-                                    <span class="feature-status ${statusClass}">${statusText}</span>
-                                    ${isFreeMode ? '<br><span style="font-size:9px;color:#f39c12;">(Free Mode)</span>' : ''}
-                                </td>
-                            </tr>
-                        `;
+            // Ghép với metadata (thứ tự cố định + mô tả hiển thị).
+            const rows = FEATURE_META.map(function(m) {
+                const r = (featureFlagsData || []).find(function(f) { return f && f.key === m.key; });
+                return {
+                    id: r ? r.id : null,
+                    key: m.key,
+                    name: (r && r.name) || m.name,
+                    description: (r && r.description) || m.description,
+                    enabled: r ? !!r.enabled : true
+                };
             });
+            const locked = rows.filter(function(r) { return !r.enabled; });
+            // Admin & Super Admin được bật/tắt trạng thái block hội viên.
+            const canToggle = canManageFeatures();
 
+            let html = '';
+            rows.forEach(function(r) {
+                const on = !!r.enabled;
+                const toggle = r.id
+                    ? '<button type="button" class="switch-btn feature-toggle' + (on ? ' on' : '') + '" data-id="' + r.id + '" data-key="' + escapeHtml(r.key) + '" data-on="' + (on ? 'true' : 'false') + '" onclick="toggleFeatureFlag(this)"' +
+                        (canToggle ? '' : ' disabled title="Chỉ Super Admin được bật/tắt trạng thái"') + '>' +
+                        '<i class="fas fa-power-off"></i> <span class="switch-state">' + (on ? 'Mở' : 'Khoá') + '</span>' +
+                      '</button>' +
+                      '<div style="font-size:11px;color:#8a99b1;margin-top:6px;">' + (on ? 'Mọi người đều xem được (kể cả khách)' : 'Chỉ hội viên mở gói') + '</div>'
+                    : '<span style="color:#b6c2d2;font-size:12px;">Chưa khởi tạo</span>';
+                html += '<tr>' +
+                    '<td><span class="feature-name">' + escapeHtml(r.name) + '</span></td>' +
+                    '<td><span class="feature-desc">' + escapeHtml(r.description) + '</span></td>' +
+                    '<td style="text-align:center;">' + toggle + '</td>' +
+                '</tr>';
+            });
             tbody.innerHTML = html;
 
-            const totalFeatures = features.length;
-            const enabledFeatures = isFreeMode ? totalFeatures : features.filter(f => f.free).length;
-            document.getElementById('statFeaturesOn').textContent = enabledFeatures + '/' + totalFeatures;
+            // Cập nhật badge số lượng + thẻ thống kê Dashboard.
+            const badge = document.getElementById('lockedCountBadge');
+            if (badge) {
+                if (locked.length) {
+                    badge.textContent = locked.length + ' tính năng đang khoá';
+                    badge.className = 'free-mode-badge off';
+                } else {
+                    badge.textContent = 'Đang mở cho tất cả';
+                    badge.className = 'free-mode-badge on';
+                }
+            }
+            const stat = document.getElementById('statFeaturesOn');
+            if (stat) stat.textContent = locked.length + '/' + rows.length;
+        }
 
-            const badge = document.getElementById('freeModeBadge');
-            badge.textContent = isFreeMode ? '🔓 Free Mode: ĐANG BẬT' : '🔒 Free Mode: ĐANG TẮT';
-            badge.className = 'free-mode-badge ' + (isFreeMode ? 'on' : 'off');
-            document.getElementById('freeModeBtnText').textContent = isFreeMode ? 'Đang Free' : 'Bật Free';
+        // Admin/Super Admin bật/tắt block: ON = MỞ cho tất cả · OFF = KHOÁ hội viên.
+        async function toggleFeatureFlag(btn) {
+            if (!canManageFeatures()) {
+                showWarning('Bạn không có quyền quản lý tính năng hội viên.');
+                return;
+            }
+            const id = btn.getAttribute('data-id');
+            const key = btn.getAttribute('data-key');
+            if (!id || !key) return;
+            const cur = (featureFlagsData || []).find(function(f) { return f && f.key === key; });
+            if (!cur) return;
+            const next = !cur.enabled;
+            btn.disabled = true;
+            try {
+                await authApi('/features/' + id, 'PUT', {
+                    key: cur.key,
+                    name: cur.name || key,
+                    description: cur.description || '',
+                    access_level: 'free',
+                    enabled: next
+                });
+                cur.enabled = next;
+                showToast(next ? '🔓 Đã MỞ "' + (cur.name || key) + '" cho tất cả người dùng.' :
+                    '🔒 Đã KHOÁ "' + (cur.name || key) + '" — chỉ hội viên mở gói dùng được.', next ? 'success' : 'warning');
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không cập nhật được.'), 'error');
+            } finally {
+                btn.disabled = false;
+            }
+            renderFeatures();
         }
 
         function renderTickets() {
@@ -5075,6 +5142,57 @@
                 return;
             }
             container.innerHTML = top.map(function(i) { return i.html; }).join('');
+        }
+
+        // Dashboard: toàn bộ tính năng trong menu bên trái (truy cập nhanh)
+        const DASH_FEATURES = [
+            { panel: 'users', label: 'Tài khoản', desc: 'Quản lý người dùng & hội viên', icon: 'fa-users', color: '#008080', guard: canManageUsers },
+            { panel: 'news', label: 'Tin tức', desc: 'Quản lý bài viết', icon: 'fa-newspaper', color: '#f39c12', guard: canManageNews },
+            { panel: 'stocks', label: 'Cổ phiếu', desc: 'Danh sách & quét mã mới', icon: 'fa-chart-line', color: '#8e44ad', guard: canManageStocks },
+            { panel: 'writingTool', label: 'Tool viết bài', desc: 'Hỗ trợ viết & import tin', icon: 'fa-pen', color: '#2e86de', guard: canUseWritingTool },
+            { panel: 'features', label: 'Tính năng khoá hội viên', desc: 'Các tính năng đang khoá hội viên', icon: 'fa-lock', color: '#16a085', guard: canManageFeatures },
+            { panel: 'tickets', label: 'Góp ý', desc: 'Phản hồi của người dùng', icon: 'fa-comment-dots', color: '#0e7490', guard: canViewFeedback },
+            { panel: 'faq', label: 'Quản lý FAQ', desc: 'Câu hỏi thường gặp', icon: 'fa-circle-question', color: '#c0392b', guard: canManageFaq },
+            { panel: 'contact', label: 'Liên hệ', desc: 'Tin nhắn liên hệ', icon: 'fa-envelope-open-text', color: '#d35400', guard: canViewContact },
+            { panel: 'settings', label: 'Cài đặt', desc: 'Cấu hình hệ thống', icon: 'fa-cog', color: '#6b7a8f', coming: true },
+            { panel: 'logs', label: 'Nhật ký', desc: 'Nhật ký hoạt động', icon: 'fa-history', color: '#6b7a8f', coming: true }
+        ];
+
+        function renderDashFeatures() {
+            const el = document.getElementById('featureGrid');
+            if (!el) return;
+            el.innerHTML = DASH_FEATURES.map(function(f) {
+                const allowed = !f.coming && (!f.guard || f.guard());
+                const clickable = allowed ? ` onclick="dashboardGo('${f.panel}')" role="button" tabindex="0"` : '';
+                const tip = allowed ? 'Mở trang ' + f.label : (f.coming ? 'Sắp ra mắt' : 'Bạn không có quyền truy cập mục này');
+                const tag = f.coming ? '<span class="feat-coming">Sắp ra mắt</span>' : '';
+                return '<div class="feat-card' + (allowed ? '' : ' disabled') + '"' + clickable +
+                    ' title="' + tip + '">' +
+                    '<div class="feat-ico" style="background:' + f.color + ';"><i class="fas ' + f.icon + '"></i></div>' +
+                    '<div class="feat-txt"><b>' + f.label + tag + '</b><span>' + f.desc + '</span></div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        // Điều hướng từ các block Dashboard đến panel quản lý tương ứng (có kiểm tra quyền)
+        function dashboardGo(panel) {
+            const guardMap = {
+                users: canManageUsers,
+                news: canManageNews,
+                stocks: canManageStocks,
+                features: canManageFeatures,
+                tickets: canViewFeedback,
+                faq: canManageFaq,
+                contact: canViewContact,
+                writingTool: canUseWritingTool
+            };
+            const guard = guardMap[panel];
+            if (guard && !guard()) {
+                showWarning('Bạn không có quyền truy cập mục này.');
+                return;
+            }
+            hideWarning();
+            switchPanel(panel);
         }
 
         function filterContact(filter) {
@@ -5336,6 +5454,35 @@
         // 5. NAVIGATION
         // ============================================================
 
+        // === Quay lại / Tiến tới giữa các panel (admin) ===
+        let currentAdminPanel = null;
+        let panelBackStack = [];
+        let panelForwardStack = [];
+        let _panelJump = null; // 'back' | 'forward' | null
+
+        function updatePanelNavButtons() {
+            const backBtn = document.getElementById('panelBackBtn');
+            const fwdBtn = document.getElementById('panelForwardBtn');
+            if (backBtn) backBtn.disabled = panelBackStack.length === 0;
+            if (fwdBtn) fwdBtn.disabled = panelForwardStack.length === 0;
+        }
+
+        function panelGoBack() {
+            if (!panelBackStack.length) return;
+            const to = panelBackStack.pop();
+            if (currentAdminPanel) panelForwardStack.push(currentAdminPanel);
+            _panelJump = 'back';
+            switchPanel(to);
+        }
+
+        function panelGoForward() {
+            if (!panelForwardStack.length) return;
+            const to = panelForwardStack.pop();
+            if (currentAdminPanel) panelBackStack.push(currentAdminPanel);
+            _panelJump = 'forward';
+            switchPanel(to);
+        }
+
         function switchPanel(panelId) {
             if (panelId === 'users' && !canManageUsers()) {
                 showWarning('Bạn không có quyền quản lý tài khoản.');
@@ -5353,7 +5500,7 @@
                 showWarning('Bạn không có quyền sử dụng Tool hỗ trợ viết bài.');
                 return;
             }
-            if ((panelId === 'plans' || panelId === 'features') && !canManagePlans()) {
+            if (panelId === 'features' && !canManageFeatures()) {
                 showWarning('Bạn không có quyền quản lý hội viên.');
                 return;
             }
@@ -5376,6 +5523,16 @@
 
             hideWarning();
 
+            // Ghi lịch sử điều hướng (trừ khi đang quay lại/tiến tới)
+            const fromPanel = currentAdminPanel;
+            const jumpMode = _panelJump;
+            _panelJump = null;
+            if (!jumpMode && fromPanel && fromPanel !== panelId) {
+                panelBackStack.push(fromPanel);
+                panelForwardStack.length = 0;
+            }
+            currentAdminPanel = panelId;
+
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             const targetPanel = document.getElementById('panel' + panelId.charAt(0).toUpperCase() + panelId.slice(1));
             if (targetPanel) targetPanel.classList.add('active');
@@ -5390,8 +5547,7 @@
                 'news': 'Quản lý tin tức',
                 'stocks': 'Quản lý danh sách cổ phiếu',
                 'writingTool': 'Tool hỗ trợ viết bài',
-                'plans': 'Quản lý gói hội viên',
-                'features': 'Quản lý tính năng',
+                'features': 'Các tính năng đang khoá hội viên',
                 'tickets': 'Quản lý góp ý',
                 'faq': 'Quản lý FAQ',
                 'contact': 'Tin nhắn liên hệ',
@@ -5405,12 +5561,12 @@
             if (panelId === 'users') { loadUsers(); loadDeleteRequests(); }
             if (panelId === 'news') loadNews();
             if (panelId === 'stocks') loadStocks();
-            if (panelId === 'plans') renderPlans();
             if (panelId === 'features') renderFeatures();
             if (panelId === 'tickets') loadFeedback();
             if (panelId === 'faq') loadFaqs();
             if (panelId === 'contact') loadContactMessages();
-            if (panelId === 'dashboard') renderRecentActivity();
+            if (panelId === 'dashboard') { renderRecentActivity(); renderDashFeatures(); }
+            updatePanelNavButtons();
         }
 
         // ============================================================
@@ -5796,11 +5952,15 @@
             if (await confirmDialog('Bạn có chắc chắn muốn xóa người dùng "' + user.name + '"?')) {
                 try {
                     await authApi('/users/' + id, 'DELETE');
-                    showToast('✅ Đã xóa người dùng.', 'success');
-                    await loadUsers();
-                    await loadDeleteRequests();
+                    // Cập nhật state NGAY: bỏ tài khoản vừa xoá khỏi danh sách hiện tại,
+                    // không cần F5/reload toàn bộ trang hay chuyển trang rồi quay lại.
+                    usersData = usersData.filter(u => u.id !== id);
+                    renderUsers();
+                    showToast('✅ Đã xóa tài khoản thành công.', 'success');
+                    // Làm mới danh sách yêu cầu xoá (nếu có) để đồng bộ, không tải lại user list.
+                    loadDeleteRequests();
                 } catch (err) {
-                    showToast('❌ ' + (err.message || 'Không thể xóa người dùng.'), 'error');
+                    showToast('❌ ' + (err.message || 'Không thể xóa tài khoản.'), 'error');
                 }
             }
         }
@@ -5894,44 +6054,6 @@
             } catch (err) {
                 showToast('❌ ' + (err.message || 'Không thể xóa bài viết.'), 'error');
             }
-        }
-
-        function editPlan(planId) {
-            if (!canManagePlans()) {
-                showWarning('Bạn không có quyền chỉnh sửa gói hội viên.');
-                return;
-            }
-            const plan = plans.find(p => p.id === planId);
-            if (!plan) return;
-            const newName = prompt('Tên gói:', plan.name);
-            if (newName && newName.trim()) {
-                plan.name = newName.trim();
-                renderPlans();
-                showToast('✅ Đã cập nhật gói hội viên.', 'success');
-            }
-        }
-
-        function togglePlan(planId) {
-            if (!canManagePlans()) {
-                showWarning('Bạn không có quyền khóa/mở gói hội viên.');
-                return;
-            }
-            const plan = plans.find(p => p.id === planId);
-            if (!plan) return;
-            plan.status = plan.status === 'active' ? 'inactive' : 'active';
-            renderPlans();
-            showToast(`📦 Gói ${plan.name} đã ${plan.status === 'active' ? 'mở' : 'khóa'}`, 'success');
-        }
-
-        function toggleFreeMode() {
-            if (!canManageFeatures()) {
-                showWarning('Bạn không có quyền quản lý tính năng.');
-                return;
-            }
-            isFreeMode = !isFreeMode;
-            renderFeatures();
-            showToast(isFreeMode ? '🔓 Đã bật chế độ Free. Tất cả tính năng được mở cho Member!' :
-                '🔒 Đã tắt chế độ Free. Tính năng theo gói hội viên của Member.', isFreeMode ? 'success' : 'warning');
         }
 
         // ============================================================
@@ -6252,7 +6374,7 @@
         }
 
         // ============================================================
-        // 11b. QUẢN LÝ DANH SÁCH CỔ PHIẾU (mã IPO mới do admin thêm)
+        // 11b. QUẢN LÝ DANH SÁCH CỔ PHIẾU (quét & tự thêm mã mới)
         // ============================================================
         async function loadStocks() {
             try {
@@ -6292,7 +6414,7 @@
                 `<div class="summary-chip"><span style="color:#e67e22;font-weight:600;">HNX</span> <span class="chip-count">${counts.HNX}</span></div>` +
                 `<div class="summary-chip"><span style="color:#2ecc71;font-weight:600;">UPCOM</span> <span class="chip-count">${counts.UPCOM}</span></div>` +
                 `<div class="summary-chip"><span style="color:#8a99b1;">Khác</span> <span class="chip-count">${counts.KHAC}</span></div>` +
-                `<div class="summary-chip"><i class="fas fa-pen" style="color:#8e44ad;"></i> Thêm thủ công: <span class="chip-count">${custom}</span></div>`;
+                `<div class="summary-chip"><i class="fas fa-sync" style="color:#8e44ad;"></i> Tự cập nhật: <span class="chip-count">${custom}</span></div>`;
         }
 
         function renderStocks() {
@@ -6346,21 +6468,14 @@
                 const exchange = escapeHtml(item.exchange || '—');
                 const isCustom = !!item.is_custom;
                 const typeHtml = isCustom
-                    ? '<span style="display:inline-block;background:#efe9f7;color:#8e44ad;font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;">Thêm thủ công</span>'
+                    ? '<span style="display:inline-block;background:#efe9f7;color:#8e44ad;font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;">Tự cập nhật</span>'
                     : '<span style="color:#8a99b1;font-size:12px;">Hệ thống</span>';
                 const created = isCustom ? formatDateTime(item.created_at) : '—';
 
-                // Thao tác: chỉ mã thủ công mới có nút; Super Admin được Sửa/Xóa, admin thì không
+                // Thao tác: chỉ mã tự cập nhật mới có nút Xóa (chỉ Super Admin)
                 let actionHtml = '<span style="color:#b0b9c8;font-size:12px;">—</span>';
-                if (isCustom) {
-                    const btns = [];
-                    if (canEditStocks()) {
-                        btns.push(`<button class="btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="openEditStock('${symbol}')"><i class="fas fa-edit"></i> Sửa</button>`);
-                    }
-                    if (canDeleteStocks()) {
-                        btns.push(`<button class="btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteStockSymbol('${symbol}')"><i class="fas fa-trash"></i> Xóa</button>`);
-                    }
-                    actionHtml = btns.length ? btns.join(' ') : '<span style="color:#b0b9c8;font-size:12px;">—</span>';
+                if (isCustom && canDeleteStocks()) {
+                    actionHtml = `<button class="btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteStockSymbol('${symbol}')"><i class="fas fa-trash"></i> Xóa</button>`;
                 }
 
                 return `<tr>
@@ -6374,132 +6489,45 @@
             }).join('');
         }
 
-        function resetStockForm() {
-            const form = document.getElementById('stockForm');
-            if (form) form.reset();
-            editingStockSymbol = null;
-            stockLookup = { symbol: '', status: null };
-            const symbolInput = document.getElementById('stockSymbolInput');
-            if (symbolInput) symbolInput.disabled = false;
-            const nameInput = document.getElementById('stockNameInput');
-            if (nameInput) nameInput.value = '';
-            const exInput = document.getElementById('stockExchangeInput');
-            if (exInput) exInput.value = '';
-            const lookupMsg = document.getElementById('stockLookupMsg');
-            if (lookupMsg) { lookupMsg.textContent = ''; lookupMsg.style.color = '#8e44ad'; }
-            const title = document.getElementById('stockFormTitle');
-            if (title) title.textContent = 'Thêm mã cổ phiếu mới';
-            const icon = document.getElementById('stockFormIcon');
-            if (icon) icon.innerHTML = '<i class="fas fa-plus-circle"></i>';
-            const submitBtn = document.getElementById('stockSubmitBtn');
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-save"></i> Thêm mã cổ phiếu'; }
-        }
-
-        // Tự động tra cứu & hiển thị tên + sàn chính thức khi gõ mã (không cho admin sửa).
-        // Đồng thời chặn nút Thêm khi mã đã có trong danh sách hoặc chưa IPO.
-        let stockLookupTimer = null;
-        function lookupStockInfo() {
-            const input = document.getElementById('stockSymbolInput');
-            const nameInput = document.getElementById('stockNameInput');
-            const exInput = document.getElementById('stockExchangeInput');
-            const msg = document.getElementById('stockLookupMsg');
-            const submitBtn = document.getElementById('stockSubmitBtn');
-            if (!input || !nameInput || !exInput || !submitBtn) return;
-
-            const symbol = (input.value || '').trim().toUpperCase();
-            input.value = symbol;
-            if (editingStockSymbol) return;
-
-            if (!symbol) {
-                nameInput.value = '';
-                exInput.value = '';
-                stockLookup = { symbol: '', status: null };
-                submitBtn.disabled = true;
-                if (msg) { msg.textContent = ''; msg.style.color = '#8e44ad'; }
-                return;
-            }
-
-            if (msg) { msg.textContent = 'Đang tra cứu thông tin…'; msg.style.color = '#8e44ad'; }
-            clearTimeout(stockLookupTimer);
-            stockLookupTimer = setTimeout(async function() {
-                try {
-                    const data = await authApi('/admin/stocks/lookup?symbol=' + encodeURIComponent(symbol));
-
-                    // Xác định trạng thái một cách chắc chắn (kể cả khi server trả thiếu trường status):
-                    // 1) Mã đã nằm trong danh sách cổ phiếu đang hiển thị → chắc chắn "đã có"
-                    // 2) Server trả đủ status → dùng trực tiếp
-                    // 3) Còn lại dựa vào found để phân biệt hợp lệ / chưa niêm yết
-                    const inList = stocksData.some(function(s) {
-                        return String(s.symbol || '').toUpperCase() === symbol;
-                    });
-                    let status = (data && data.status) || null;
-                    if (inList) {
-                        status = 'exists';
-                    } else if (!status && data && data.found) {
-                        status = 'ok';
-                    } else if (!status) {
-                        status = 'unknown';
-                    }
-                    stockLookup = { symbol: symbol, status: status };
-
-                    if (status === 'ok') {
-                        nameInput.value = (data && data.name) || '';
-                        exInput.value = (data && data.exchange) || '';
-                        submitBtn.disabled = false;
-                        if (msg) { msg.innerHTML = '<i class="fas fa-check-circle"></i> Đã tìm thấy thông tin mã này.'; msg.style.color = '#0f7b3a'; }
-                    } else if (status === 'exists') {
-                        nameInput.value = (data && data.name) || '';
-                        exInput.value = (data && data.exchange) || '';
-                        submitBtn.disabled = true;
-                        if (msg) { msg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Mã cổ phiếu đã có trong danh sách cổ phiếu của hệ thống.'; msg.style.color = '#d0314e'; }
-                    } else {
-                        nameInput.value = '';
-                        exInput.value = '';
-                        submitBtn.disabled = true;
-                        if (msg) { msg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Cổ phiếu chưa được niêm yết (IPO) lên sàn chứng khoán Việt Nam. Hãy kiểm tra lại mã chứng khoán bạn đang nhập.'; msg.style.color = '#d0314e'; }
-                    }
-                } catch (e) {
-                    stockLookup = { symbol: symbol, status: 'unknown' };
-                    submitBtn.disabled = true;
-                    if (msg) msg.textContent = '';
-                }
-            }, 350);
-        }
-
-        // Hiển thị/ẩn form Thêm mã cổ phiếu mới (chỉ khi bấm nút "Thêm cổ phiếu mới IPO")
-        function updateStockFormBtn() {
-            const btn = document.getElementById('toggleStockFormBtn');
-            const container = document.getElementById('stockFormContainer');
-            if (!btn || !container) return;
-            const open = container.classList.contains('show');
-            btn.innerHTML = open
-                ? '<i class="fas fa-times"></i> Đóng form thêm'
-                : '<i class="fas fa-plus"></i> Thêm cổ phiếu mới IPO';
-        }
-
-        function toggleStockForm() {
+        // Quét toàn bộ cổ phiếu niêm yết trên thị trường và tự thêm mã mới (thay cho thêm thủ công)
+        async function scanStocks() {
             if (!canManageStocks()) {
                 showWarning('Bạn không có quyền quản lý danh sách cổ phiếu.');
                 return;
             }
             hideWarning();
-            const container = document.getElementById('stockFormContainer');
-            const isShowing = container.classList.contains('show');
-            if (isShowing) {
-                container.classList.remove('show');
-                resetStockForm();
-            } else {
-                resetStockForm();
-                container.classList.add('show');
-                container.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            updateStockFormBtn();
-        }
+            const okGo = await confirmDialog(
+                'Quét toàn bộ cổ phiếu đang niêm yết (HOSE, HNX, UPCoM) và tự thêm các mã mới chưa có trong danh sách? ' +
+                'Thao tác có thể mất vài giây. Mã đã có sẽ được giữ nguyên.'
+            );
+            if (!okGo) return;
 
-        function closeStockForm() {
-            const container = document.getElementById('stockFormContainer');
-            if (container) container.classList.remove('show');
-            updateStockFormBtn();
+            const btn = document.getElementById('scanStocksBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang quét…';
+            }
+            try {
+                const data = await authApi('/admin/stocks/scan', 'POST', {});
+                const addedCount = (data && data.added_count) || 0;
+                const scanned = (data && data.scanned) || 0;
+                if (addedCount > 0) {
+                    const added = (data && data.added) || [];
+                    const codes = added.slice(0, 6).map(function(x) { return x.symbol; }).join(', ');
+                    const more = addedCount > 6 ? ', …' : '';
+                    showToast(`✅ Đã thêm ${addedCount} cổ phiếu mới vào danh sách (${codes}${more}).`, 'success');
+                } else {
+                    showToast(`✅ Đã quét ${scanned} mã — không có cổ phiếu mới nào cần thêm.`, 'success');
+                }
+                await loadStocks();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không thể quét danh sách cổ phiếu.'), 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync"></i> Quét &amp; thêm cổ phiếu mới';
+                }
+            }
         }
 
         function resetStockFilters() {
@@ -6510,108 +6538,6 @@
             renderStocks();
         }
 
-        function openEditStock(symbol) {
-            if (!canEditStocks()) {
-                showWarning('Chỉ Super Admin được phép sửa mã cổ phiếu.');
-                return;
-            }
-            hideWarning();
-            const item = stocksData.find(function(s) {
-                return String(s.symbol || '').toUpperCase() === symbol.toUpperCase() && s.is_custom;
-            });
-            if (!item) {
-                showToast('Không tìm thấy mã cổ phiếu để sửa.', 'error');
-                return;
-            }
-
-            editingStockSymbol = item.symbol;
-            const title = document.getElementById('stockFormTitle');
-            if (title) title.textContent = 'Chỉnh sửa mã cổ phiếu: ' + item.symbol;
-            const icon = document.getElementById('stockFormIcon');
-            if (icon) icon.innerHTML = '<i class="fas fa-edit"></i>';
-            const submitBtn = document.getElementById('stockSubmitBtn');
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi'; }
-
-            document.getElementById('stockSymbolInput').value = item.symbol;
-            document.getElementById('stockSymbolInput').disabled = true;
-            document.getElementById('stockNameInput').value = item.name || '';
-            document.getElementById('stockExchangeInput').value = item.exchange || '';
-            const lookupMsg = document.getElementById('stockLookupMsg');
-            if (lookupMsg) { lookupMsg.textContent = ''; lookupMsg.style.color = '#8e44ad'; }
-
-            const container = document.getElementById('stockFormContainer');
-            container.classList.add('show');
-            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            updateStockFormBtn();
-        }
-
-        async function submitStockSymbol(e) {
-            e.preventDefault();
-            if (!canManageStocks()) {
-                showWarning('Bạn không có quyền quản lý danh sách cổ phiếu.');
-                return;
-            }
-            hideWarning();
-
-            const symbol = document.getElementById('stockSymbolInput').value.trim().toUpperCase();
-            const name = document.getElementById('stockNameInput').value.trim();
-            const exchange = document.getElementById('stockExchangeInput').value;
-
-            // Chế độ chỉnh sửa (chỉ Super Admin)
-            if (editingStockSymbol) {
-                if (!canEditStocks()) {
-                    showWarning('Chỉ Super Admin được phép sửa mã cổ phiếu.');
-                    return;
-                }
-                hideWarning();
-                if (!symbol) {
-                    showToast('Vui lòng nhập mã cổ phiếu.', 'error');
-                    return;
-                }
-                try {
-                    await authApi('/admin/stocks/' + encodeURIComponent(editingStockSymbol), 'PUT', {
-                        symbol: symbol, name: name, exchange: exchange
-                    });
-                    showToast(`✅ Đã cập nhật mã ${editingStockSymbol}.`, 'success');
-                    resetStockForm();
-                    closeStockForm();
-                    await loadStocks();
-                } catch (err) {
-                    showToast('❌ ' + (err.message || 'Không thể sửa mã cổ phiếu.'), 'error');
-                }
-                return;
-            }
-
-            // Chế độ thêm mới (admin & super-admin)
-            if (!symbol) {
-                showToast('Vui lòng nhập mã cổ phiếu.', 'error');
-                return;
-            }
-            if (!/^[A-Z0-9]{1,10}$/.test(symbol)) {
-                showToast('Mã cổ phiếu chỉ gồm chữ A-Z và số 0-9 (tối đa 10 ký tự).', 'error');
-                return;
-            }
-            // Chặn nếu mã đã có trong danh sách hoặc chưa IPO (phòng khi bấm Enter)
-            if (stockLookup.symbol === symbol && stockLookup.status === 'exists') {
-                showToast('❌ Mã cổ phiếu đã có trong danh sách cổ phiếu của hệ thống.', 'error');
-                return;
-            }
-            if (stockLookup.symbol === symbol && stockLookup.status === 'unknown') {
-                showToast('❌ Cổ phiếu chưa được niêm yết (IPO) lên sàn chứng khoán Việt Nam. Hãy kiểm tra lại mã chứng khoán bạn đang nhập.', 'error');
-                return;
-            }
-
-            const payload = { symbol: symbol, name: name, exchange: exchange };
-            try {
-                await authApi('/admin/stocks', 'POST', payload);
-                showToast(`✅ Đã thêm mã ${symbol} vào danh sách cổ phiếu!`, 'success');
-                resetStockForm();
-                closeStockForm();
-                await loadStocks();
-            } catch (err) {
-                showToast('❌ ' + (err.message || 'Không thể thêm mã cổ phiếu.'), 'error');
-            }
-        }
 
         async function deleteStockSymbol(symbol) {
             if (!canDeleteStocks()) {
@@ -7071,7 +6997,6 @@
         renderUsers();
         loadUsers();
         loadNews();
-        renderPlans();
         renderFeatures();
         loadFeedback();
         loadFaqs();
@@ -7079,20 +7004,29 @@
         if (canViewContact()) loadContactMessages();
         switchPanel('dashboard');
 
+        // Phím tắt Alt+← / Alt+→ điều hướng panel (bỏ qua khi đang gõ trong ô nhập)
+        document.addEventListener('keydown', function(e) {
+            const tag = (e.target && e.target.tagName) || '';
+            const editable = e.target && e.target.isContentEditable;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || editable) return;
+            if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); panelGoBack(); }
+            else if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); panelGoForward(); }
+        });
+
         // Expose functions
         window.switchPanel = switchPanel;
+        window.panelGoBack = panelGoBack;
+        window.panelGoForward = panelGoForward;
         window.toggleUserForm = toggleUserForm;
         window.togglePasswordVisibility = togglePasswordVisibility;
-        window.submitStockSymbol = submitStockSymbol;
+        window.scanStocks = scanStocks;
         window.deleteStockSymbol = deleteStockSymbol;
-        window.resetStockForm = resetStockForm;
         window.resetStockFilters = resetStockFilters;
-        window.openEditStock = openEditStock;
-        window.toggleStockForm = toggleStockForm;
-        window.lookupStockInfo = lookupStockInfo;
+        window.dashboardGo = dashboardGo;
         window.previewImport = previewImport;
         window.importNews = importNews;
         window.toggleSwitch = toggleSwitch;
+        window.toggleFeatureFlag = toggleFeatureFlag;
         window.handleFileSelect = handleFileSelect;
         window.submitUser = submitUser;
         window.openNewsForm = openNewsForm;
@@ -7107,9 +7041,6 @@
         window.changeUserPlan = changeUserPlan;
         window.editNews = editNews;
         window.deleteNews = deleteNews;
-        window.editPlan = editPlan;
-        window.togglePlan = togglePlan;
-        window.toggleFreeMode = toggleFreeMode;
         window.viewTicket = viewTicket;
         window.closeTicketDetail = closeTicketDetail;
         window.submitTicketReply = submitTicketReply;

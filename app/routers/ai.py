@@ -21,12 +21,13 @@ from app.models import (
     AiConversation,
     AiMemory,
     Feature,
+    MemberQuota,
     Notification,
     NotificationType,
     PlanTierEnum,
     User,
 )
-from app.services import ai_service
+from app.services import access, ai_service, feature_flags
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -60,16 +61,15 @@ _TIER_ORDER = {
 
 
 def _check_ai_access(db: Session, user: User) -> None:
-    """Kiểm tra tính năng ai_chat trong bảng features (Phase 1 mặc định cho mọi user)."""
-    feature = db.query(Feature).filter(Feature.key == "ai_chat").first()
-    if feature is None:
-        return  # chưa khai báo feature → mặc định cho dùng
-    if not feature.enabled:
-        raise HTTPException(status_code=403, detail="Tính năng TuniAI hiện đang tạm khóa.")
-    required = _TIER_ORDER.get(feature.access_level, 0)
-    user_tier = _TIER_ORDER.get(user.plan, 0)
-    if user_tier < required:
-        raise HTTPException(status_code=403, detail="Gói của bạn chưa bao gồm TuniAI. Vui lòng nâng cấp.")
+    """Quyền dùng TuniAI (chat + copilot) theo block 'ai_unlimited'.
+
+    - Block MỞ (enabled=True) → mọi user đã đăng nhập đều dùng được.
+    - Block KHOÁ (enabled=False) → chỉ hội viên đã mở gói dùng được.
+    """
+    if feature_flags.is_open(db, "ai_unlimited"):
+        return
+    if not access.is_active_member(user):
+        raise HTTPException(status_code=403, detail="TuniAI đang khoá hội viên. Vui lòng mở gói hội viên để sử dụng.")
 
 
 def _check_rate_limit(user_id: int) -> None:
@@ -84,6 +84,36 @@ def _check_rate_limit(user_id: int) -> None:
         )
     times.append(now)
     _usage[key] = times
+
+
+def _get_quota(db: Session, user: User) -> MemberQuota:
+    period = access.period_key()
+    row = (
+        db.query(MemberQuota)
+        .filter(MemberQuota.user_id == user.id, MemberQuota.period == period)
+        .first()
+    )
+    if row is None:
+        row = MemberQuota(user_id=user.id, period=period, ai_questions=0, ai_new_chats=0)
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+    return row
+
+
+def _enforce_free_ai_question(db: Session, user: User) -> None:
+    """Quyền hỏi TuniAI theo block 'ai_unlimited'.
+
+    - Block MỞ (enabled=True): mọi user (kể cả chưa mua gói) dùng KHÔNG GIỚI HẠN.
+    - Block KHOÁ (enabled=False): chỉ hội viên đã mở gói được dùng.
+    """
+    if feature_flags.is_open(db, "ai_unlimited"):
+        return
+    if not access.is_active_member(user):
+        raise HTTPException(
+            status_code=403,
+            detail="TuniAI đang khoá hội viên. Vui lòng mở gói hội viên để sử dụng.",
+        )
 
 
 def _get_or_create_memory(db: Session, user_id: int) -> AiMemory:
@@ -183,6 +213,7 @@ async def chat(
     db: Session = Depends(get_db),
 ):
     _check_ai_access(db, user)
+    _enforce_free_ai_question(db, user)
     _check_rate_limit(user.id)
     if not payload.messages:
         raise HTTPException(status_code=400, detail="Danh sách tin nhắn trống.")
@@ -306,6 +337,12 @@ def save_conversation(
         .first()
     )
     if row is None:
+        # Tạo trò chuyện MỚI: block 'ai_unlimited' MỞ → không giới hạn; KHOÁ → chỉ hội viên.
+        if not feature_flags.is_open(db, "ai_unlimited") and not access.is_active_member(user):
+            raise HTTPException(
+                status_code=403,
+                detail="TuniAI đang khoá hội viên. Vui lòng mở gói hội viên để sử dụng.",
+            )
         row = AiConversation(user_id=user.id, cid=cid)
         db.add(row)
     row.title = (payload.title or "")[:255]

@@ -5,12 +5,15 @@ from app.core.dependencies import require_roles
 from app.db import get_db
 from app.models import Feature, RoleEnum, User
 from app.schemas import FeatureCreate, FeatureOut
+from app.services import feature_flags
 
 router = APIRouter(prefix="/features", tags=["features"])
 
 
 @router.get("", response_model=list[FeatureOut])
 def list_features(db: Session = Depends(get_db)):
+    # Đảm bảo các dòng block website luôn tồn tại (mặc định MỞ cho tất cả).
+    feature_flags.ensure_block_features(db)
     return db.query(Feature).all()
 
 

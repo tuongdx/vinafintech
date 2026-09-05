@@ -32,9 +32,11 @@ class TicketStatusEnum(str, enum.Enum):
 
 class PlanTierEnum(str, enum.Enum):
     free = "free"
-    basic = "basic"
-    premium = "premium"
-    pro = "pro"
+    basic = "basic"  # legacy — coi là trả phí
+    premium = "premium"  # legacy — coi là trả phí
+    pro = "pro"  # legacy — coi là trả phí
+    monthly = "monthly"
+    yearly = "yearly"
 
 
 class UserDeleteRequestStatus(str, enum.Enum):
@@ -57,6 +59,9 @@ class User(Base):
     # avatar lưu data-URI base64 có thể rất lớn (ảnh nén vào DB) → dùng Text thay vì String(500)
     avatar: Mapped[str | None] = mapped_column(Text, nullable=True)
     plan_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Thông tin đăng ký hội viên (hiển thị ở mục "Hội viên" trong tài khoản)
+    membership_started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    membership_amount: Mapped[int | None] = mapped_column(Integer, nullable=True)
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     terms_accepted: Mapped[bool] = mapped_column(Boolean, default=False)
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -273,6 +278,20 @@ class AiConversation(Base):
     title: Mapped[str] = mapped_column(String(255), default="")
     messages: Mapped[str] = mapped_column(Text, default="[]")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class MemberQuota(Base):
+    """Hạn mức theo tháng cho user MIỄN PHÍ (TuniAI). Reset theo period 'YYYY-MM'."""
+
+    __tablename__ = "member_quota"
+    __table_args__ = (UniqueConstraint("user_id", "period", name="uq_member_quota_user_period"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    period: Mapped[str] = mapped_column(String(7), nullable=False)
+    ai_questions: Mapped[int] = mapped_column(Integer, default=0)
+    ai_new_chats: Mapped[int] = mapped_column(Integer, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/static/membership-gate.js?v=20260905f"></script>
     <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
@@ -636,13 +637,23 @@
             }
 
             function renderNotable() {
+                const gate = window.TuniXMembership;
+                // Chờ trạng thái block (features) tải xong để quyết định MỞ/KHOÁ (chỉ chờ 1 lần — tránh loop khi guest).
+                if (gate && gate.features === null && !window.__memberChecked) {
+                    window.__memberChecked = true;
+                    gate.ensure().then(function() { renderNotable(); });
+                    return;
+                }
+                // MỞ = Super Admin bật block "Cổ phiếu nổi bật" cho tất cả, hoặc user đang là hội viên.
+                const open = gate ? gate.featureOpen('notable_stocks') : true;
                 const cats = window.__cats || {};
                 const list = cats[activeTab] || [];
-                notableEl.innerHTML =
+                const headHtml =
                     '<div class="cp-notable-head"><h2>Cổ phiếu nổi bật</h2>' +
                         '<div class="cp-tabs">' + TABS.map(function(t) {
                             return '<button data-tab="' + t.key + '" class="' + (t.key === activeTab ? 'active' : '') + '">' + t.label + '</button>';
-                        }).join('') + '</div></div>' +
+                        }).join('') + '</div></div>';
+                const cardsHtml =
                     '<div class="cp-cards" id="cpCards">' + list.map(function(s) {
                         return '<div class="cp-card" data-symbol="' + esc(s.symbol) + '">' +
                             '<div class="cc-top"><span class="cc-sym">' + esc(s.symbol) + '</span><span class="cc-score" title="' + esc(SCORE_TIP) + '">Score ' + s.score + '</span></div>' +
@@ -654,6 +665,15 @@
                         '</div>';
                     }).join('') + '</div>';
 
+                // Tiêu đề + tab luôn HIỂN THỊ; chỉ làm mờ PHẦN NỘI DUNG (các thẻ cổ phiếu) khi block đang KHOÁ hội viên.
+                notableEl.innerHTML = headHtml + (open ? cardsHtml
+                    : '<div class="cp-cards-zone" id="cpCardsZone">' + cardsHtml + '</div>');
+
+                if (!open) {
+                    // Khóa kiểu MỜ: giữ tiêu đề rõ, nội dung bên dưới bị mờ + nút mở khóa ở giữa vùng nội dung.
+                    if (gate) gate.lockBlur(document.getElementById('cpCardsZone'));
+                    return;
+                }
                 notableEl.querySelectorAll('.cp-tabs button').forEach(function(b) {
                     b.addEventListener('click', function() {
                         activeTab = b.getAttribute('data-tab');

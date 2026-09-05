@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/static/membership-gate.js?v=20260905f"></script>
     <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
@@ -83,6 +84,30 @@
         .score-ring { position: relative; width: 40px; height: 40px; flex: 0 0 auto; }
         .score-ring svg { transform: rotate(-90deg); }
         .score-ring .sr-val { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+
+        /* ===== Cơ hội nổi bật (engine) ===== */
+        .kp-market { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: -4px 0 14px; }
+        .kp-market .km-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; padding: 7px 14px; border-radius: 30px; }
+        .kp-market .km-pill .km-dot { width: 9px; height: 9px; border-radius: 50%; }
+        .kp-market.pos .km-pill { color: #0b7a5c; background: #e6f6f0; }
+        .kp-market.pos .km-dot { background: #0f9d6a; box-shadow: 0 0 0 3px rgba(15,157,106,.18); }
+        .kp-market.neutral .km-pill { color: #8a6d1a; background: #fdf3d7; }
+        .kp-market.neutral .km-dot { background: #e6b23c; box-shadow: 0 0 0 3px rgba(230,178,60,.18); }
+        .kp-market.neg .km-pill { color: #b33951; background: #fdeaea; }
+        .kp-market.neg .km-dot { background: #d0314e; box-shadow: 0 0 0 3px rgba(208,49,78,.18); }
+        .kp-market .km-note { font-size: 12px; color: #8a99b1; }
+        .kp-card .fc-score { display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: help; }
+        .kp-card .fc-score .fc-score-num { font-size: 19px; font-weight: 800; color: #008080; line-height: 1; }
+        .kp-card .fc-score .fc-score-lb { font-size: 9.5px; color: #8a99b1; line-height: 1; }
+        .kp-card .fc-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .kp-card .fc-meta .fm { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 14px; background: #f0f6f6; color: #4f7f86; }
+        .kp-card .fc-meta .fm.up { background: #e7f5f0; color: #0b7a5c; }
+        .kp-card .fc-meta .fm.hot { background: #fdf3d7; color: #a06a00; }
+        .kp-card .fc-meta .fm.idx { background: #eef1f6; color: #5b6b85; }
+        .kp-card .fc-reasons { margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+        .kp-card .fc-reasons li { display: flex; gap: 7px; font-size: 11.5px; line-height: 1.4; color: #43506a; }
+        .kp-card .fc-reasons li i { color: #008080; margin-top: 2px; }
+        .kp-card .fc-trend { margin-top: 11px; font-size: 10.5px; color: #9aa8bd; }
 
         /* ===== Strategies ===== */
         .kp-strategies { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -221,6 +246,17 @@
         body.dark-mode .kp-card .fc-bar .fb-val { color: #e6edf3; }
         body.dark-mode .kp-card .sr-val { color: #e6edf3 !important; }
         body.dark-mode .kp-card .fc-name, body.dark-mode .kp-strat .st-desc { color: #8b949e; }
+        body.dark-mode .kp-card .fc-reasons li { color: #c9d1d9; }
+        body.dark-mode .kp-card .fc-reasons li i { color: #4db6b6; }
+        body.dark-mode .kp-card .fc-meta .fm { background: #1c2530; color: #9fb0c7; }
+        body.dark-mode .kp-card .fc-meta .fm.up { background: #0f2a21; color: #4db6b6; }
+        body.dark-mode .kp-card .fc-meta .fm.hot { background: #2b2410; color: #e6c36a; }
+        body.dark-mode .kp-card .fc-meta .fm.idx { background: #21262d; color: #9fb0c7; }
+        body.dark-mode .kp-card .fc-trend { color: #6b7a8f; }
+        body.dark-mode .kp-market .km-note { color: #8b949e; }
+        body.dark-mode .kp-market.pos .km-pill { color: #4db6b6; background: #0f2a21; }
+        body.dark-mode .kp-market.neutral .km-pill { color: #e6c36a; background: #2b2410; }
+        body.dark-mode .kp-market.neg .km-pill { color: #ff8fa3; background: #3a151f; }
         body.dark-mode .kp-strat { background: #161b22; border-color: #21262d; }
         body.dark-mode .kp-map-wrap { background: #10151c; border-color: #21262d; }
         body.dark-mode .kp-map-legend { color: #8b949e; }
@@ -257,6 +293,7 @@
         <div class="kp-topgrid">
             <section class="kp-sec">
                 <h2>🔥 Cơ hội nổi bật hôm nay</h2>
+                <div class="kp-market" id="kpMarket"></div>
                 <div class="kp-featured" id="kpFeatured"><div class="kp-empty">Đang tải…</div></div>
             </section>
 
@@ -308,6 +345,7 @@
     <script>
         (function() {
             const featuredEl = document.getElementById('kpFeatured');
+            const marketEl = document.getElementById('kpMarket');
             const strategiesEl = document.getElementById('kpStrategies');
             const mapEl = document.getElementById('kpMap');
             const rankTabsEl = document.getElementById('kpRankTabs');
@@ -357,29 +395,73 @@
             }
 
             // ---------- Featured ----------
-            function renderFeatured(list) {
+            // "Cơ hội nổi bật hôm nay" — engine động (market status + 3–5 mã có Opportunity Score).
+            // MỞ TỰ DO cho mọi user; KHÔNG hiển thị lời khuyên mua/bán.
+            const OPP_TOOLTIP = 'Opportunity Score là điểm đánh giá mức độ nổi bật của cổ phiếu dựa trên xu hướng giá, dòng tiền, động lượng, vị trí giá, yếu tố cơ bản và sức mạnh ngành. Đây không phải là khuyến nghị mua hoặc bán.';
+            function liq(v) { const n = Number(v) || 0; if (!n) return '--'; return (n / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' tỷ'; }
+            function renderMarket(market) {
+                if (!marketEl) return;
+                if (!market || !market.status) { marketEl.innerHTML = ''; marketEl.className = 'kp-market'; return; }
+                marketEl.className = 'kp-market ' + market.status;
+                const note = (market.vn_pct != null)
+                    ? 'VN-Index ' + pct(market.vn_pct) + ' · Tăng ' + (market.adv || 0) + ' / Giảm ' + (market.dec || 0)
+                    : '';
+                marketEl.innerHTML =
+                    '<span class="km-pill"><span class="km-dot"></span> ' + esc(market.label || '') + '</span>' +
+                    (note ? '<span class="km-note">' + esc(note) + '</span>' : '') +
+                    (market.status === 'negative' && market.message ? '<span class="km-note">' + esc(market.message) + '</span>' : '');
+            }
+            function fcMeta(f) {
+                const chips = [];
+                chips.push('<span class="fm idx"><i class="fas fa-coins"></i> ' + liq(Number(f.price) * Number(f.volume)) + '</span>');
+                if (f.volume_ratio != null && f.volume_ratio > 0) {
+                    const vr = Number(f.volume_ratio);
+                    chips.push('<span class="fm ' + (vr >= 1.5 ? 'hot' : vr >= 1.2 ? 'up' : '') + '"><i class="fas fa-chart-line"></i> V ' + vr.toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'x TB20</span>');
+                }
+                if (f.rsi != null) chips.push('<span class="fm up"><i class="fas fa-tachometer-alt"></i> RSI ' + fmt(f.rsi, 0) + '</span>');
+                return '<div class="fc-meta">' + chips.join('') + '</div>';
+            }
+            function fcReasons(f) {
+                const list = Array.isArray(f.reasons) && f.reasons.length ? f.reasons : [];
+                if (!list.length) return '';
+                return '<ul class="fc-reasons">' + list.slice(0, 3).map(function(r) {
+                    return '<li><i class="fas fa-check"></i><span>' + esc(r) + '</span></li>';
+                }).join('') + '</ul>';
+            }
+            function renderFeatured(list, market) {
+                renderMarket(market || null);
+                if (!list || !list.length) {
+                    const msg = market && market.status === 'negative'
+                        ? (market.message || 'Thị trường rủi ro cao. Chưa ghi nhận đủ tín hiệu nổi bật.')
+                        : 'Chưa ghi nhận đủ tín hiệu nổi bật trong phiên hôm nay.';
+                    featuredEl.innerHTML = '<div class="kp-empty">' + esc(msg) + '</div>';
+                    return;
+                }
                 featuredEl.innerHTML = list.map(function(f) {
+                    if (Array.isArray(f.reasons)) {
+                        return '<div class="kp-card opp" data-symbol="' + esc(f.symbol) + '">' +
+                            '<div class="fc-top">' +
+                                '<div style="min-width:0"><div class="fc-sym">' + esc(f.symbol) + '</div><div class="fc-name">' + esc(f.name) + '</div></div>' +
+                                '<div class="fc-score" title="' + esc(OPP_TOOLTIP) + '"><span class="fc-score-num">' + (Number(f.score) || 0) + '</span><span class="fc-score-lb">/100</span><i class="fas fa-circle-info" style="font-size:10px;color:#8a99b1;"></i></div>' +
+                            '</div>' +
+                            '<div class="fc-price">' + fmt(f.price, 0) + '</div>' +
+                            '<div class="fc-pct ' + cls(f.percent_change) + '">' + pct(f.percent_change) + '</div>' +
+                            fcMeta(f) +
+                            fcReasons(f) +
+                            (f.trend_status ? '<div class="fc-trend"><i class="fas fa-arrow-trend-up"></i> ' + esc(f.trend_status) + (f.sector_name ? ' · ' + esc(f.sector_name) : '') + '</div>' : '') +
+                        '</div>';
+                    }
+                    // fallback định dạng cũ (khi engine lỗi)
                     return '<div class="kp-card" data-symbol="' + esc(f.symbol) + '">' +
-                        '<div class="fc-top">' +
-                            '<div><div class="fc-sym">' + esc(f.symbol) + '</div><div class="fc-name">' + esc(f.name) + '</div></div>' +
-                            scoreRing(f.score) +
-                        '</div>' +
+                        '<div class="fc-top"><div><div class="fc-sym">' + esc(f.symbol) + '</div><div class="fc-name">' + esc(f.name) + '</div></div>' + scoreRing(f.score) + '</div>' +
                         '<div class="fc-price">' + fmt(f.price, 0) + '</div>' +
                         '<div class="fc-pct ' + cls(f.percent_change) + '">' + pct(f.percent_change) + '</div>' +
-                        '<div class="fc-spark" id="spark-' + esc(f.symbol) + '"><span style="color:#8a99b1;font-size:11px;">Đang tải…</span></div>' +
-                        '<div class="fc-scores">' +
-                            scoreBar('Tăng trưởng', f.growth_score, '#00a08a') +
-                            scoreBar('Định giá', f.valuation_score, '#008080') +
-                            scoreBar('Kỹ thuật', f.technical_score, '#4a7fc4') +
-                        '</div>' +
-                        '<div class="fc-note">' + esc(f.highlight) + '</div>' +
+                        (f.highlight ? '<div class="fc-note">' + esc(f.highlight) + '</div>' : '') +
                     '</div>';
                 }).join('');
                 featuredEl.querySelectorAll('.kp-card').forEach(function(c) {
                     c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); });
                 });
-                // lazy sparklines
-                list.forEach(function(f) { loadSpark('spark-' + f.symbol, f.symbol, f.percent_change); });
             }
             function loadSpark(elId, sym, pctChg) {
                 if (sparkCache[sym]) { const el = document.getElementById(elId); if (el) el.innerHTML = sparkline(sparkCache[sym], 120, 34, Number(pctChg) >= 0); return; }
@@ -395,20 +477,42 @@
             }
 
             // ---------- Strategies ----------
+            // Block website quản lý qua trang quản trị: "Chiến lược: Dòng tiền mạnh" + "Chiến lược: Breakout".
+            const STRATEGY_FEATURE = { cash_flow: 'strategy_cashflow', breakout: 'strategy_breakout' };
             function renderStrategies(list) {
+                const gate = window.TuniXMembership;
+                // Nhóm MỞ khi block tương ứng được bật (hoặc user đang là hội viên).
+                function stratOpen(key) {
+                    const fk = STRATEGY_FEATURE[key];
+                    return gate ? gate.featureOpen(fk || key) : true;
+                }
                 strategiesEl.innerHTML = list.map(function(st) {
                     const chips = (st.stocks || []).map(function(s) {
                         return '<span class="st-chip" data-symbol="' + esc(s.symbol) + '">' + esc(s.symbol) + '</span>';
                     }).join('');
-                    return '<div class="kp-strat">' +
+                    const chipsBody = '<div class="st-chips">' + (chips || '<span style="font-size:11px;color:#8a99b1;">—</span>') + '</div>';
+                    const locked = !stratOpen(st.key);
+                    return '<div class="kp-strat" data-key="' + esc(st.key) + '">' +
                         '<div class="st-title">' + esc(st.title) + '</div>' +
                         '<div class="st-desc">' + esc(st.desc) + '</div>' +
-                        '<div class="st-chips">' + (chips || '<span style="font-size:11px;color:#8a99b1;">—</span>') + '</div>' +
+                        (locked ? '<div class="st-chips-zone">' + chipsBody + '</div>' : chipsBody) +
                     '</div>';
                 }).join('');
                 strategiesEl.querySelectorAll('.st-chip').forEach(function(ch) {
+                    const card = ch.closest('.kp-strat');
+                    const fk = card ? STRATEGY_FEATURE[card.getAttribute('data-key')] : null;
+                    if (card && gate && !gate.featureOpen(fk || card.getAttribute('data-key'))) return; // nhóm đang khoá: không mở chi tiết
                     ch.addEventListener('click', function() { openStock(ch.getAttribute('data-symbol')); });
                 });
+                // Khóa kiểu MỜ vùng mã cổ phiếu của nhóm đang bị khoá
+                if (gate) {
+                    strategiesEl.querySelectorAll('.kp-strat').forEach(function(card) {
+                        const fk = STRATEGY_FEATURE[card.getAttribute('data-key')];
+                        if (gate.featureOpen(fk || card.getAttribute('data-key'))) return;
+                        const zone = card.querySelector(':scope > .st-chips-zone') || card.querySelector('.st-chips');
+                        if (zone) gate.lockBlur(zone, true);
+                    });
+                }
             }
 
             // ===== Bản đồ cơ hội thị trường — Quadrant Bubble Chart =====
@@ -686,9 +790,14 @@
             function hideMapTip() { const t = document.getElementById('kpMapTip'); if (t) t.style.display = 'none'; }
 
             // ---------- Rankings ----------
+            // Block website quản lý qua trang quản trị: "Xếp hạng: Top dòng tiền" + "Xếp hạng: Top Score".
+            const RANK_FEATURE = { cash_flow: 'rank_cashflow', score: 'rank_score' };
             function renderRankTabs() {
+                const gate = window.TuniXMembership;
                 rankTabsEl.innerHTML = rankings.map(function(r) {
-                    return '<button data-rank="' + r.key + '" class="' + (r.key === activeRank ? 'active' : '') + '">' + esc(r.title) + '</button>';
+                    const fk = RANK_FEATURE[r.key];
+                    const locked = gate ? !gate.featureOpen(fk || r.key) : false;
+                    return '<button data-rank="' + r.key + '" class="' + (r.key === activeRank ? 'active' : '') + '">' + esc(r.title) + (locked ? ' <i class="fas fa-lock" style="font-size:10px;opacity:.85;vertical-align:middle;margin-left:4px;"></i>' : '') + '</button>';
                 }).join('');
                 rankTabsEl.querySelectorAll('button').forEach(function(b) {
                     b.addEventListener('click', function() { activeRank = b.getAttribute('data-rank'); renderRankTabs(); renderRankTable(); });
@@ -697,8 +806,11 @@
             function renderRankTable() {
                 const rk = rankings.find(function(r) { return r.key === activeRank; });
                 if (!rk) { rankEl.innerHTML = ''; return; }
+                const gate = window.TuniXMembership;
+                const fk = RANK_FEATURE[rk.key];
+                const locked = gate ? !gate.featureOpen(fk || rk.key) : false;
                 const showScoreCol = rk.key !== 'score'; // tab "Top Score" không lặp cột Score
-                rankEl.innerHTML = '<table class="kp-table">' +
+                const tableHtml = '<table class="kp-table">' +
                     '<thead><tr><th>#</th><th>Mã</th><th>Tên</th><th>Giá</th><th>% thay đổi</th><th>' + esc(rk.metric) + '</th>' + (showScoreCol ? '<th>Score</th>' : '') + '</tr></thead>' +
                     '<tbody>' + rk.rows.map(function(r, i) {
                         let valHtml;
@@ -717,9 +829,16 @@
                             (showScoreCol ? '<td class="rk-score ' + scls + '">' + (r.score || 0) + '</td>' : '') +
                         '</tr>';
                     }).join('') + '</tbody></table>';
-                rankEl.querySelectorAll('tr[data-symbol]').forEach(function(tr) {
-                    tr.addEventListener('click', function() { openStock(tr.getAttribute('data-symbol')); });
-                });
+                // Free + tab bị khóa → bọc bảng vào zone rồi làm mờ (thanh tab ở trên vẫn thấy).
+                rankEl.innerHTML = locked ? '<div class="rk-zone">' + tableHtml + '</div>' : tableHtml;
+                if (!locked) {
+                    rankEl.querySelectorAll('tr[data-symbol]').forEach(function(tr) {
+                        tr.addEventListener('click', function() { openStock(tr.getAttribute('data-symbol')); });
+                    });
+                } else if (gate) {
+                    const zone = rankEl.querySelector('.rk-zone');
+                    if (zone) gate.lockBlur(zone, true);
+                }
             }
 
             // ---------- AI ----------
@@ -750,7 +869,13 @@
                     } else {
                         asOfEl.textContent = 'Cập nhật lúc ' + new Date().toLocaleString('vi-VN');
                     }
-                    renderFeatured(d.featured || []);
+                    // Chờ trạng thái block/features (1 lần) trước khi dựng các block có khóa.
+                    const gate = window.TuniXMembership;
+                    if (gate && gate.features === null && !window.__memberChecked) {
+                        window.__memberChecked = true;
+                        await gate.ensure();
+                    }
+                    renderFeatured(d.featured || [], d.market_status || null);
                     renderStrategies(d.strategies || []);
                     renderMap(d.opportunity || null);
                     rankings = d.rankings || [];

@@ -36,41 +36,6 @@ from app.schemas import (
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
-def _add_notification(
-    db: Session,
-    user: User,
-    ntype: NotificationType,
-    title: str,
-    body: str = "",
-    symbol: str | None = None,
-    link: str | None = None,
-    ref_key: str = "",
-) -> None:
-    exists = (
-        db.query(Notification)
-        .filter(
-            Notification.user_id == user.id,
-            Notification.type == ntype,
-            Notification.ref_key == ref_key,
-        )
-        .first()
-    )
-    if exists:
-        return
-    db.add(
-        Notification(
-            user_id=user.id,
-            type=ntype,
-            title=title,
-            body=body,
-            symbol=symbol,
-            link=link,
-            ref_key=ref_key,
-        )
-    )
-    db.commit()
-
-
 def _price_limit_notification(symbol: str) -> tuple[str, str] | None:
     """Trả về (title, body) nếu cổ phiếu đang tăng trần / giảm sàn, ngược lại None.
 
@@ -135,6 +100,39 @@ def _sync_notifications(db: Session, user: User) -> None:
     notify_news = user.notify_news if user.notify_news is not None else True
     today = date.today().isoformat()
 
+    # Dedupe bằng ref_key — nạp các ref_key đã có MỘT lần để khỏi query từng
+    # thông báo; gom hết dòng mới rồi commit 1 lần duy nhất ở cuối (trước đây
+    # query + commit theo TỪNG thông báo khi mở danh sách → rất chậm nếu nhiều).
+    seen_refs = {
+        ref
+        for (ref,) in db.query(Notification.ref_key)
+        .filter(
+            Notification.user_id == user.id,
+            Notification.ref_key.isnot(None),
+        )
+        .all()
+        if ref
+    }
+    pending: list[Notification] = []
+
+    def _push(ntype, title, body="", symbol=None, link=None, ref_key="") -> None:
+        key = ref_key or ""
+        if key and key in seen_refs:
+            return
+        if key:
+            seen_refs.add(key)
+        pending.append(
+            Notification(
+                user_id=user.id,
+                type=ntype,
+                title=title,
+                body=body,
+                symbol=symbol,
+                link=link,
+                ref_key=ref_key,
+            )
+        )
+
     # Tối ưu hiệu năng: nạp TẤT CẢ tin hợp lệ MỘT lần (trước đây lặp lại query này
     # theo từng mã trong watchlist → N+1). Lọc ngưỡng created_at theo từng fav sau đó
     # bằng in-memory, giữ nguyên kết quả.
@@ -159,8 +157,8 @@ def _sync_notifications(db: Session, user: User) -> None:
             if is_report:
                 if not notify_reports:
                     continue
-                _add_notification(
-                    db, user, NotificationType.stock,
+                _push(
+                    NotificationType.stock,
                     title=f"Có báo cáo mới về {sym}",
                     body=n.title,
                     symbol=sym,
@@ -170,8 +168,8 @@ def _sync_notifications(db: Session, user: User) -> None:
             else:
                 if not notify_news:
                     continue
-                _add_notification(
-                    db, user, NotificationType.news,
+                _push(
+                    NotificationType.news,
                     title=f"Tin mới về {sym}",
                     body=n.title,
                     symbol=sym,
@@ -185,8 +183,8 @@ def _sync_notifications(db: Session, user: User) -> None:
             title, body = limit
             is_ceiling = title.endswith("tăng trần")
             ref_key = f"ceiling:{sym}:{today}" if is_ceiling else f"floor:{sym}:{today}"
-            _add_notification(
-                db, user, NotificationType.stock,
+            _push(
+                NotificationType.stock,
                 title=title, body=body, symbol=sym,
                 link=f"/cophieu-{sym}", ref_key=ref_key,
             )
@@ -194,11 +192,16 @@ def _sync_notifications(db: Session, user: User) -> None:
     # Thông báo hệ thống → toàn bộ thành viên (sinh khi user mở danh sách)
     announcements = db.query(SystemAnnouncement).order_by(SystemAnnouncement.created_at.desc()).all()
     for ann in announcements:
-        _add_notification(
-            db, user, NotificationType.system,
+        _push(
+            NotificationType.system,
             title=ann.title, body=ann.body, link=ann.link,
             ref_key=f"sys:{ann.id}",
         )
+
+    # Ghi TẤT CẢ bằng đúng 1 commit (trước đây commit theo từng thông báo).
+    if pending:
+        db.add_all(pending)
+        db.commit()
 
 
 @router.get("", response_model=NotificationListOut)

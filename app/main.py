@@ -14,7 +14,7 @@ from app.core.security import decode_token
 from app.db import SessionLocal
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, alerts, asset_events, auth, chart, contact, dashboard, faqs, features, feedback, logs, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, alerts, asset_events, auth, chart, contact, dashboard, faqs, features, feedback, logs, membership, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -25,6 +25,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Nén HTTP (giảm băng thông → API/HTML tải nhanh hơn trên mọi client)
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 # ============================================================
 # Bảo vệ khu vực Quản trị: chỉ user có quyền quản trị mới xem được.
@@ -105,7 +108,11 @@ def _stable_api_max_age(path: str) -> int | None:
         return 300
     if "/stock-lists" in path or path.startswith("/api/chart/config"):
         return 300
-    if path.startswith("/api/faqs") or path.startswith("/api/plans") or path.startswith("/api/features"):
+    # Trạng thái MỞ/KHOÁ block hội viên phải cập nhật tức thì cho toàn bộ website
+    # → KHÔNG cache /api/features ở trình duyệt (tránh user thấy trạng thái cũ).
+    if path.startswith("/api/features"):
+        return 0
+    if path.startswith("/api/faqs") or path.startswith("/api/plans"):
         return 600
     if path.startswith("/api/stocks/search"):
         return 120
@@ -151,6 +158,7 @@ async def cache_and_timing(request: Request, call_next):
 api = settings.api_prefix
 app.include_router(ai.router, prefix=api)
 app.include_router(auth.router, prefix=api)
+app.include_router(membership.router, prefix=api)
 app.include_router(chart.router, prefix=api)
 app.include_router(users.router, prefix=api)
 app.include_router(stocks.router, prefix=api)
@@ -180,6 +188,18 @@ if frontend_path.exists():
 @app.on_event("startup")
 def on_startup() -> None:
     ensure_schema()
+    # Tạo sẵn các dòng block website (MỞ cho tất cả) nếu chưa tồn tại.
+    try:
+        from app.db import SessionLocal
+        from app.services import feature_flags
+
+        session = SessionLocal()
+        try:
+            feature_flags.ensure_block_features(session)
+        finally:
+            session.close()
+    except Exception:  # noqa: BLE001 — không để lỗi seed làm hỏng startup
+        pass
     _warm_home_caches()
 
 
@@ -190,6 +210,8 @@ def _warm_home_caches() -> None:
     from app.services import vnstock_service as vs
 
     def _warm() -> None:
+        from concurrent.futures import ThreadPoolExecutor
+
         jobs = [
             ("index-detail", lambda: vs.get_index_detail("vnindex", "1y")),
             ("market-overview", vs.get_market_overview),
@@ -198,11 +220,17 @@ def _warm_home_caches() -> None:
             ("exchange-chart", lambda: vs.get_exchange_chart("HOSE")),
             ("top-stocks", lambda: vs.get_top_stocks("breakout", "1w")),
         ]
-        for name, job in jobs:
+
+        def run(item):
+            name, job = item
             try:
                 job()
             except Exception:  # noqa: BLE001
                 _perf_logger.debug("warm %s failed", name)
+
+        # Warm song song để cache nóng nhanh hơn (giảm thời gian lần truy cập đầu)
+        with ThreadPoolExecutor(max_workers=max(1, min(8, len(jobs)))) as ex:
+            list(ex.map(run, jobs))
 
     threading.Thread(target=_warm, daemon=True).start()
 

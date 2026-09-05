@@ -267,6 +267,15 @@
         .ta-composer .ta-input-row button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,128,128,0.42); }
         .ta-composer .ta-input-row button:active:not(:disabled) { transform: scale(0.94); }
         .ta-composer-note { margin-top: 6px; font-size: 10.5px; color: #9aa8bd; text-align: center; }
+        .ta-ai-reply .ta-quota { background: linear-gradient(180deg, #f2fbf9, #e9f7f3); border: 1px solid rgba(0,128,128,.25); border-radius: 16px; padding: 18px 16px 16px; text-align: center; }
+        body.dark-mode .ta-ai-reply .ta-quota { background: linear-gradient(180deg, #0f2420, #0a1a17); border-color: rgba(0,128,128,.35); }
+        .ta-ai-reply .ta-quota .tq-ico { width: 48px; height: 48px; margin: 0 auto 10px; border-radius: 50%; background: linear-gradient(135deg,#008080,#00a08a); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 21px; box-shadow: 0 8px 18px rgba(0,128,128,.3); }
+        .ta-ai-reply .ta-quota .tq-title { font-weight: 800; font-size: 14.5px; color: #0b3b38; line-height: 1.5; }
+        body.dark-mode .ta-ai-reply .ta-quota .tq-title { color: #e6f4f1; }
+        .ta-ai-reply .ta-quota .tq-desc { font-size: 12.5px; color: #4f7f86; margin-top: 5px; line-height: 1.55; }
+        body.dark-mode .ta-ai-reply .ta-quota .tq-desc { color: #9fbfb8; }
+        .ta-ai-reply .ta-quota .tq-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; border: none; background: linear-gradient(135deg,#008080,#00a08a); color: #fff; font-weight: 700; font-size: 13.5px; padding: 11px 20px; border-radius: 30px; cursor: pointer; font-family: inherit; box-shadow: 0 8px 20px rgba(0,128,128,.35); transition: transform .15s, box-shadow .15s; }
+        .ta-ai-reply .ta-quota .tq-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,128,128,.45); }
 
         /* Welcome (empty state) */
         .ta-welcome {
@@ -313,6 +322,11 @@
         .ta-typing span:nth-child(2) { animation-delay: 0.2s; }
         .ta-typing span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes taBlink { 0%,80%,100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+        /* ===== TuniAI đang xử lý / tìm kiếm — chưa có nội dung trả về ===== */
+        .ta-wait { display: inline-flex; align-items: center; gap: 8px; color: #6b7a8f; font-size: 13px; line-height: 1.5; }
+        .ta-wait i { color: #008080; font-size: 14px; }
+        body.dark-mode .ta-wait { color: #8b949e; }
 
         @media (max-width: 760px) {
             .ta-app { flex-direction: column; height: auto; }
@@ -368,6 +382,10 @@
                 { p: 'Tìm cổ phiếu bằng ngôn ngữ tự nhiên', icon: 'fa-sliders-h', title: 'AI Screener', tag: 'Bộ lọc' },
                 { p: 'Phân tích danh mục của tôi', icon: 'fa-briefcase', title: 'AI Portfolio', tag: 'Danh mục' }
             ];
+
+            // Text hiển thị trong khung chat khi TuniAI đang xử lý/tìm kiếm thông tin
+            // (chỉ hiện khi chưa trả được nội dung; khi có câu trả lời sẽ bị thay thế tự động).
+            const WAITING_HTML = '<span class="ta-wait"><i class="fas fa-spinner fa-spin"></i> Xin chờ chút để TuniAI xử lý thông tin...</span>';
 
             // ---------- Quản lý hội thoại (đồng bộ server theo tài khoản) ----------
             const CONV_KEY = 'tunix_ai_conversations';
@@ -698,6 +716,12 @@
                     let detail = 'Lỗi khi gọi TuniAI. Vui lòng thử lại.';
                     try { const d = await res.json(); if (d && d.detail) detail = d.detail; } catch (e) {}
                     if (res.status === 401) detail = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                    // Hết lượt hỏi TuniAI miễn phí → tin nhắn ngắn + mở DIALOG nổi trên khung chat.
+                    if (res.status === 403 && /hết lượt|TuniAI miễn phí/i.test(detail)) {
+                        bubble.innerHTML = escChat('Bạn đã dùng hết lượt hỏi TuniAI miễn phí trong tháng này.');
+                        if (window.TuniXMembership && window.TuniXMembership.showQuotaDialog) window.TuniXMembership.showQuotaDialog();
+                        return '';
+                    }
                     bubble.innerHTML = escChat(detail);
                     return '';
                 }
@@ -706,6 +730,8 @@
                 const dec = new TextDecoder();
                 let buf = '';
                 let full = '';
+                let received = false; // đã nhận nội dung thật (delta) để thay text chờ
+                let sawError = false;  // đã có lỗi trả về → giữ nguyên thông báo lỗi
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
@@ -721,14 +747,23 @@
                             let ev;
                             try { ev = JSON.parse(data); } catch (e) { return; }
                             if (ev.type === 'delta') {
+                                received = true;
                                 full += (ev.content || '');
+                                // Nội dung bắt đầu hiển thị → text chờ tự động biến mất.
                                 bubble.innerHTML = renderAiText(full);
                                 scrollChat();
                             } else if (ev.type === 'error') {
+                                sawError = true;
                                 bubble.innerHTML = escChat(ev.content || 'Có lỗi xảy ra.');
+                                scrollChat();
                             }
                         });
                     }
+                }
+                // Xử lý xong mà vẫn chưa có nội dung/lỗi nào → bỏ text chờ, thay bằng thông báo nhẹ.
+                if (!received && !sawError) {
+                    bubble.innerHTML = 'TuniAI chưa tìm thấy đủ thông tin để trả lời. Bạn vui lòng thử lại với câu hỏi khác nhé.';
+                    scrollChat();
                 }
                 return full;
             }
@@ -753,7 +788,8 @@
                 busy = true;
                 const btn = document.getElementById('taBtn');
                 if (btn) btn.disabled = true;
-                const bubble = addAiMsg('');
+                // Hiển thị text chờ khi TuniAI đang xử lý/tìm kiếm (xóa đi khi có nội dung trả về).
+                const bubble = addAiMsg(WAITING_HTML);
                 if (!bubble) { busy = false; saveConvs(); return; }
                 streamAnswer(bubble).then(function(reply) {
                     if (reply) c.messages.push({ role: 'assistant', content: reply });
@@ -841,6 +877,7 @@
             consumePendingPrompt();
         })();
     </script>
+    <script src="/static/membership-gate.js?v=20260905f"></script>
     <script src="/static/context-menu.js?v=20260827a"></script>
 </body>
 </html>

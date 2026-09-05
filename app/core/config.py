@@ -58,6 +58,12 @@ class Settings(BaseSettings):
     ai_rate_limit_minutes: int = 5
     ai_rate_limit_max: int = 30
 
+    # Gói hội viên (2 gói) & hạn mức miễn phí theo tháng
+    membership_monthly_price: int = 99000
+    membership_yearly_price: int = 999000
+    free_ai_questions_month: int = 1
+    free_ai_new_chats_month: int = 2
+
     # Trung tâm cảnh báo (Alert Center) — Support/Resistance + phát hiện tín hiệu
     alert_near_support_threshold: float = 0.03    # % gần vùng hỗ trợ để cảnh báo (3%)
     alert_near_resistance_threshold: float = 0.03  # % gần vùng kháng cự để cảnh báo (3%)

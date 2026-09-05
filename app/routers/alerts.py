@@ -17,9 +17,25 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user
 from app.db import get_db
 from app.models import Alert, AlertCategory, User
+from app.services import access, feature_flags
 from app.services.alert_service import alert_service
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
+
+
+def _require_alert_access(db: Session, user: User) -> None:
+    """Quét tín hiệu (scan) theo block 'alert_center'.
+
+    - Block MỞ (enabled=True): mọi user đã đăng nhập đều quét được.
+    - Block KHOÁ (enabled=False): chỉ hội viên đã mở gói được quét.
+    """
+    if feature_flags.is_open(db, "alert_center"):
+        return
+    if not access.is_active_member(user):
+        raise HTTPException(
+            status_code=403,
+            detail="Trung tâm cảnh báo thuộc gói hội viên. Vui lòng mở gói để sử dụng.",
+        )
 
 
 def _alert_out(a: Alert) -> dict:
@@ -50,7 +66,8 @@ def list_alerts(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Danh sách cảnh báo (mới nhất trước). Lọc tuỳ chọn theo category."""
+    """Danh sách cảnh báo (mới nhất trước). Lọc tuỳ chọn theo category.
+    Mọi user đã đăng nhập đều lấy được (frontend tự mờ + khóa cho user free)."""
     q = db.query(Alert).filter(Alert.user_id == user.id)
     if category:
         try:
@@ -87,4 +104,5 @@ def mark_all_read(db: Session = Depends(get_db), user: User = Depends(get_curren
 @router.post("/scan")
 def scan(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Chạy quét tín hiệu cho toàn bộ cổ phiếu đang nắm giữ + theo dõi của user."""
+    _require_alert_access(db, user)
     return alert_service.scan_user(db, user)

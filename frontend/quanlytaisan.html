@@ -822,7 +822,7 @@
                 '</div>';
             }
 
-            function loadAlerts() {
+            function loadAlerts(lockedFree) {
                 const list = document.getElementById('pfAlertList');
                 const scanBtn = document.getElementById('pfAlertScan');
                 if (scanBtn) {
@@ -833,7 +833,7 @@
                             .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
                             .then(function(res) {
                                 toast('Đã quét ' + (res.scanned || 0) + ' mã, tạo ' + (res.created || 0) + ' cảnh báo.');
-                                return loadAlerts();
+                                return loadAlerts(false);
                             })
                             .catch(function() { toast('Quét cảnh báo thất bại.', true); })
                             .finally(function() {
@@ -844,8 +844,51 @@
                 if (DEMO) { list.innerHTML = '<div class="pf-empty">Đăng nhập để xem Trung tâm cảnh báo.</div>'; return; }
                 fetch('/api/alerts?limit=100', { headers: authHeaders(), cache: 'no-store' })
                     .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-                    .then(function(items) { alertData = items; renderAlertList(); })
+                    .then(function(items) {
+                        alertData = items;
+                        renderAlertList();
+                        // Free: giữ nội dung thật phía sau lớp MỜ + nút mở khóa (teaser).
+                        const gate = window.TuniXMembership;
+                        if (lockedFree && gate) {
+                            const l2 = document.getElementById('pfAlertList');
+                            if (l2) {
+                                const hasCards = !!l2.querySelector('.pf-alert-card');
+                                if (!hasCards) {
+                                    l2.innerHTML = gate.lockCardHTML({
+                                        title: 'Trung tâm cảnh báo dành cho Hội viên',
+                                        desc: 'Phát hiện gần hỗ trợ/kháng cự, breakout, MA… cho cổ phiếu bạn theo dõi.',
+                                        icon: 'fa-bell'
+                                    });
+                                } else if (!l2.getAttribute('data-tg-locked')) {
+                                    gate.lockBlur(l2, false);
+                                }
+                            }
+                        }
+                        notifyParentHeight();
+                    })
                     .catch(function() { list.innerHTML = '<div class="pf-empty">Không tải được cảnh báo.</div>'; notifyParentHeight(); });
+            }
+
+            function mountAlerts() {
+                const list = document.getElementById('pfAlertList');
+                if (!list) return;
+                const gate = window.TuniXMembership;
+                const apply = function(m) {
+                    const l = document.getElementById('pfAlertList');
+                    if (!l) return;
+                    const scanBtn = document.getElementById('pfAlertScan');
+                    // "Trung tâm cảnh báo" MỞ khi Super Admin bật cho tất cả, hoặc user đang là hội viên.
+                    const open = gate ? gate.featureOpen('alert_center') : !!(m && m.active);
+                    if ((m && m.active) || open) {
+                        if (scanBtn) scanBtn.style.display = '';
+                        loadAlerts(false);
+                        return;
+                    }
+                    // Khoá hội viên: ẩn nút Quét, VẪN tải nội dung để làm mờ (teaser) + khóa.
+                    if (scanBtn) scanBtn.style.display = 'none';
+                    loadAlerts(true);
+                };
+                if (gate) gate.ensure().then(apply); else loadAlerts(false);
             }
 
             function fmtAgo(iso) {
@@ -967,7 +1010,7 @@
                     '<td class="wl-prev">--</td>' +
                     '<td class="wl-chg" style="font-weight:700;">--</td>' +
                     '<td class="wl-vol">--</td>' +
-                    (showRemove ? '<td style="text-align:right;"><div class="td-actions" style="justify-content:flex-end;"><button class="wl-rm" data-rm="' + esc(sym) + '" title="Bỏ theo dõi"><i class="fas fa-times"></i></button></div></td>' : '') +
+                    (showRemove ? '<td style="text-align:right;"><div class="td-actions" style="justify-content:flex-end;"><button type="button" class="act-btn del wl-rm" data-rm="' + esc(sym) + '" title="Xóa"><i class="fas fa-trash"></i></button></div></td>' : '') +
                 '</tr>';
             }
             function fillWlQuotes(listEl, symbols) {
@@ -1038,8 +1081,22 @@
                     b.addEventListener('click', function() {
                         const sym = b.getAttribute('data-rm');
                         fetch('/api/watchlist/' + encodeURIComponent(sym), { method: 'DELETE', headers: authHeaders() })
-                            .then(function() { toast('Đã bỏ theo dõi ' + sym); loadWatchlist(); })
-                            .catch(function() { toast('Lỗi', true); });
+                            .then(function(r) {
+                                if (!r.ok) { return r.json().then(function(j) { throw new Error((j && j.detail) || 'Xóa thất bại'); }); }
+                                return null;
+                            })
+                            .then(function() {
+                                // Cập nhật state NGAY: bỏ mã khỏi danh sách theo dõi hiện tại, không cần load lại toàn bộ.
+                                watchlistSyms = watchlistSyms.filter(function(s) { return s !== sym; });
+                                document.querySelectorAll('#wlList tr[data-symbol="' + sym + '"]').forEach(function(el) { el.remove(); });
+                                const listEl = document.getElementById('wlList');
+                                if (listEl && !watchlistSyms.length) {
+                                    listEl.innerHTML = '<tr><td colspan="6" class="pf-empty">Chưa có cổ phiếu theo dõi.</td></tr>';
+                                }
+                                toast('Đã bỏ theo dõi ' + sym);
+                                notifyParentHeight();
+                            })
+                            .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Lỗi'), true); });
                     });
                 });
             }
@@ -1380,7 +1437,7 @@
                 holdings: { label: 'Cổ phiếu đang nắm giữ', html: function() { return renderTable() + renderForm(); }, mount: function() { bindTable(); bindForm(); } },
                 watchlist: { label: 'Cổ phiếu theo dõi', html: renderWatchlist, mount: function() { loadWatchlist(); bindWlAdd(); } },
                 portfolio: { label: 'Bảng danh mục', html: renderPortfolioTable, mount: function() { loadPortfolioTable(); } },
-                alerts: { label: 'Trung tâm cảnh báo', html: renderAlerts, mount: function() { loadAlerts(); } },
+                alerts: { label: 'Trung tâm cảnh báo', html: renderAlerts, mount: function() { mountAlerts(); } },
                 events: { label: 'Sự kiện liên quan', html: renderEvents, mount: function() { loadEvents(); } },
                 analysis: { label: 'Phân tích tài sản', html: function() { return renderReview() + renderAssetAlloc() + renderSectorAlloc(); }, mount: function() {} },
             };
@@ -1606,9 +1663,17 @@
                         const h = holdings.find(function(x) { return x.id === id; });
                         if (!window.confirm('Xóa cổ phiếu ' + (h ? h.symbol : '') + ' khỏi danh mục?')) return;
                         fetch('/api/portfolio/' + id, { method: 'DELETE', headers: authHeaders() })
-                            .then(function(r) { if (!r.ok) throw new Error('Xóa thất bại'); return r.json(); })
-                            .then(function() { toast('🗑️ Đã xóa khỏi danh mục'); load(); })
-                            .catch(function(e) { toast('❌ ' + e.message, true); });
+                            .then(function(r) {
+                                if (!r.ok) { return r.json().then(function(j) { throw new Error((j && j.detail) || 'Xóa thất bại'); }); }
+                                return r.json();
+                            })
+                            .then(function() {
+                                // Cập nhật state NGAY: bỏ vị thế vừa xoá khỏi danh mục hiện tại, không cần load() lại từ server.
+                                holdings = holdings.filter(function(x) { return x.id !== id; });
+                                toast('🗑️ Đã xóa khỏi danh mục');
+                                render();
+                            })
+                            .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Xóa thất bại'), true); });
                     });
                 });
                 document.querySelectorAll('tbody tr[data-symbol]').forEach(function(tr) {
@@ -1737,6 +1802,7 @@
             load();
         })();
     </script>
+    <script src="/static/membership-gate.js?v=20260905f"></script>
     <script src="/static/context-menu.js?v=20260827a"></script>
 </body>
 </html>

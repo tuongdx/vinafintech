@@ -16,6 +16,8 @@ _USER_COLUMNS: list[tuple[str, str, str]] = [
     ("users", "phone", "VARCHAR(20)"),
     ("users", "avatar", "VARCHAR(500)"),
     ("users", "plan_expires_at", "DATETIME"),
+    ("users", "membership_started_at", "DATETIME"),
+    ("users", "membership_amount", "INTEGER"),
     ("users", "last_login", "DATETIME"),
     ("users", "terms_accepted", "BOOLEAN DEFAULT FALSE"),
     ("users", "email_verified", "BOOLEAN DEFAULT FALSE"),

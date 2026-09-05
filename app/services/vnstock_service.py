@@ -268,12 +268,32 @@ def invalidate_symbol_directory_cache() -> None:
     cache.delete_prefix("search:")
 
 
+def _last_quote(symbol: str) -> dict[str, Any]:
+    """Bảng giá realtime của 1 mã (Simplize last-price) — cache ngắn 15s.
+
+    Trả về dict row hoặc {} nếu mã chưa có giá. Dùng chung cho tra tên
+    (lookup_symbol_name) và kiểm tra "đang giao dịch" (has_live_quote)."""
+    symbol_upper = (symbol or "").strip().upper()
+    if not symbol_upper:
+        return {}
+    key = f"last-quote:{symbol_upper}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    try:
+        last_map = _simplize_last("stock", [symbol_upper])
+        row = last_map.get(symbol_upper, {}) or {}
+    except Exception:
+        row = {}
+    cache.set(key, row, ttl_seconds=15)
+    return row
+
+
 def lookup_symbol_name(symbol: str) -> str:
     """Tra cứu tên công ty từ Simplize cho mã cổ phiếu (trả về '' nếu không có).
     Ưu tiên tên từ bảng giá; nếu chưa có thì lấy tên từ dữ liệu screener."""
     try:
-        last_map = _simplize_last("stock", [symbol.upper()])
-        last = last_map.get(symbol.upper(), {}) or {}
+        last = _last_quote(symbol)
         name = str(last.get("name") or "").strip()
         if name:
             return name
@@ -315,6 +335,20 @@ def is_listed_symbol(symbol: str) -> bool:
     except Exception:
         pass
     return False
+
+
+def has_live_quote(symbol: str) -> bool:
+    """Mã có dữ liệu giá realtime trên bảng giá (Simplize last-price) hay chưa.
+
+    Dùng làm dấu hiệu "đã niêm yết & đang giao dịch" cho mã IPO rất mới:
+    bảng giá thường có ngay từ phiên đầu, trong khi Simplize chỉ đưa mã vào
+    screener sau đó (khi đã đủ hồ sơ công ty) — tránh chặn oan mã đã lên sàn
+    (VD: LPS giao dịch trên HOSE nhưng chưa nằm trong screener).
+    """
+    try:
+        return _to_float(_last_quote(symbol).get("price")) > 0
+    except Exception:
+        return False
 
 
 def _to_float(value: Any, default: float = 0.0) -> float:
@@ -1079,6 +1113,89 @@ def _get_screener_dataset() -> list[dict[str, Any]]:
         cache.set("screener-dataset", file_rows, ttl_seconds=_SCREENER_CACHE_TTL_SECONDS)
         return file_rows
     return []
+
+
+# ---------------------------------------------------------------------------
+# VŨ TRỤ CỔ PHIẾU KẾT HỢP (Simplize screener + Vietcap getAll)
+# Vietcap /price/symbols/getAll nhận diện IPO mới SỚM hơn screener Simplize
+# (VD: LPS đã có trên Vietcap nhưng chưa vào screener), nên dùng làm nguồn bổ
+# sung cho tính năng "Quét & thêm cổ phiếu mới" ở trang quản trị.
+# ---------------------------------------------------------------------------
+_VCI_GETALL_URL = f"{_VCI_TRADING_URL}/price/symbols/getAll"
+_VCI_UNIVERSE_TTL_SECONDS = 1800
+
+
+def _fetch_vci_getall_rows() -> list[dict[str, Any]]:
+    """Toàn bộ sản phẩm niêm yết từ Vietcap (stocks/bonds/CW/funds...) — raw."""
+    try:
+        response = _get_http_client().get(
+            _VCI_GETALL_URL,
+            headers=_VCI_TRADING_HEADERS,
+            timeout=httpx.Timeout(30, connect=10.0),
+        )
+        data = response.json()
+    except Exception:
+        return []
+    return [row for row in data if isinstance(row, dict)] if isinstance(data, list) else []
+
+
+def _get_vci_stock_universe() -> list[dict[str, str]]:
+    """Cổ phiếu (STOCK) trên HOSE/HNX/UPCoM theo Vietcap — chuẩn hoá sàn/tên."""
+    cache_key = "vci-stock-universe"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    rows: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in _fetch_vci_getall_rows():
+        if str(item.get("type") or "").upper() != "STOCK":
+            continue
+        symbol = str(item.get("symbol") or "").strip().upper()
+        exchange = _EXCHANGE_CANONICAL.get(str(item.get("board") or "").strip().upper(), "")
+        if not symbol or exchange not in ("HOSE", "HNX", "UPCOM") or symbol in seen:
+            continue
+        seen.add(symbol)
+        rows.append(
+            {
+                "symbol": symbol,
+                "name": str(item.get("organName") or symbol).strip(),
+                "exchange": exchange,
+            }
+        )
+    rows.sort(key=lambda r: r["symbol"])
+    cache.set(cache_key, rows, ttl_seconds=_VCI_UNIVERSE_TTL_SECONDS)
+    return rows
+
+
+def _get_combined_stock_universe() -> list[dict[str, str]]:
+    """Vũ trụ cổ phiếu kết hợp: screener Simplize (nền, giàu hồ sơ công ty)
+    + Vietcap getAll (bổ sung IPO mới chưa vào screener). Trùng mã → giữ
+    dữ liệu screener (tên/sàn chuẩn hoá)."""
+    screener: list[dict[str, str]] = []
+    for row in _get_screener_dataset():
+        if not isinstance(row, dict):
+            continue
+        symbol = str(row.get("ticker") or "").strip().upper()
+        if not symbol:
+            continue
+        exchange = _EXCHANGE_CANONICAL.get(str(row.get("stockExchange") or "").strip().upper(), "")
+        screener.append(
+            {
+                "symbol": symbol,
+                "name": str(row.get("companyNameVi") or symbol).strip(),
+                "exchange": exchange,
+            }
+        )
+    seen = {item["symbol"] for item in screener}
+    merged = list(screener)
+    for item in _get_vci_stock_universe():
+        if item["symbol"] in seen:
+            continue
+        seen.add(item["symbol"])
+        merged.append(item)
+    merged.sort(key=lambda r: (r["exchange"], r["symbol"]))
+    return merged
 
 
 def _screener_matches_industry(row: dict[str, Any], industry: str | None) -> bool:

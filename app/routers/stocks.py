@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.services.opportunity_service import get_top_opportunities
 from app.services.support_resistance import sr_service
 from app.services.vnstock_service import (
     filter_stocks,
@@ -185,8 +186,24 @@ def stock_screener():
 
 @router.get("/stock-discover")
 def stock_discover():
-    """Trang 'Khám phá': cơ hội nổi bật, chiến lược, bản đồ cơ hội, xếp hạng TuniX."""
-    return get_stock_discover_page()
+    """Trang 'Khám phá': cơ hội nổi bật hôm nay, chiến lược, bản đồ cơ hội, xếp hạng TuniX."""
+    data = get_stock_discover_page()
+    try:
+        opp = get_top_opportunities()
+        if opp.get("ok"):
+            # Thay danh sách featured tĩnh (4 mã cố định) bằng engine động + trạng thái thị trường.
+            data["featured"] = opp.get("items") or []
+            data["market_status"] = opp.get("market")
+    except Exception as exc:  # không làm hỏng trang nếu engine lỗi
+        import logging
+        logging.getLogger("tunix.opportunity").warning("stock-discover: bỏ qua engine opportunity: %s", exc)
+    return data
+
+
+@router.get("/opportunities")
+def opportunities():
+    """Cơ hội nổi bật hôm nay: trạng thái thị trường + 3–5 mã có Opportunity Score."""
+    return get_top_opportunities()
 
 
 @router.get("/filter")
