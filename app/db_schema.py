@@ -11,14 +11,15 @@ from app.core.config import settings
 from app.db import Base, engine
 
 # (table, column, ddl) — ddl tương thích CẢ SQLite lẫn PostgreSQL
-# Lưu ý: PostgreSQL yêu cầu DEFAULT FALSE/TRUE cho cột BOOLEAN (không dùng 0/1).
+# Lưu ý: PostgreSQL KHÔNG có kiểu DATETIME — phải dùng TIMESTAMP (map sang DateTime của SQLAlchemy).
+# PostgreSQL yêu cầu DEFAULT FALSE/TRUE cho cột BOOLEAN (không dùng 0/1).
 _USER_COLUMNS: list[tuple[str, str, str]] = [
     ("users", "phone", "VARCHAR(20)"),
     ("users", "avatar", "VARCHAR(500)"),
-    ("users", "plan_expires_at", "DATETIME"),
-    ("users", "membership_started_at", "DATETIME"),
+    ("users", "plan_expires_at", "TIMESTAMP"),
+    ("users", "membership_started_at", "TIMESTAMP"),
     ("users", "membership_amount", "INTEGER"),
-    ("users", "last_login", "DATETIME"),
+    ("users", "last_login", "TIMESTAMP"),
     ("users", "terms_accepted", "BOOLEAN DEFAULT FALSE"),
     ("users", "email_verified", "BOOLEAN DEFAULT FALSE"),
     ("users", "notify_reports", "BOOLEAN DEFAULT TRUE"),
