@@ -133,6 +133,8 @@
         .kp-map svg { width: 100%; height: auto; display: block; touch-action: none; }
         .kp-map-legend { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 8px; flex-wrap: wrap; font-size: 11.5px; color: #6b7a8f; }
         .kp-map-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+        .kp-map-legend .km-lg-hint { color: #008080; font-weight: 800; letter-spacing: .2px; }
+        body.dark-mode .kp-map-legend .km-lg-hint { color: #4db6b6; }
         .kp-map-legend .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
         .kp-map-legend .bub { display: inline-block; border: 1.5px solid #008080; border-radius: 50%; }
         .kp-map-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -553,8 +555,11 @@
                 if (f.sector) pool = pool.filter(function(s) { return s.sectorName === f.sector; });
                 if (f.exchange) pool = pool.filter(function(s) { return s.exchange === f.exchange; });
                 if (f.group === 'vn30') {
-                    const t = new Set(pool.slice().sort(function(a, b) { return (b.market_cap || 0) - (a.market_cap || 0); }).slice(0, 30).map(function(s) { return s.symbol; }));
-                    pool = pool.filter(function(s) { return t.has(s.symbol); });
+                    // Lọc theo ĐÚNG rổ VN30 (backend đánh dấu s.vn30), KHÔNG phải top-30 vốn hóa.
+                    pool = pool.filter(function(s) { return s.vn30; });
+                } else if (f.group === 'blue') {
+                    // Blue chip = vốn hóa lớn (≥ 10 nghìn tỷ VND).
+                    pool = pool.filter(function(s) { return (s.market_cap || 0) >= 10e12; });
                 } else if (f.group === 'mid') pool = pool.filter(function(s) { return (s.market_cap || 0) >= 3e12 && (s.market_cap || 0) < 10e12; });
                 else if (f.group === 'small') pool = pool.filter(function(s) { return (s.market_cap || 0) < 3e12; });
                 if (f.liquidity === 'high') pool = pool.filter(function(s) { return (s.liquidity || 0) >= 50; });
@@ -584,6 +589,7 @@
                     '<span class="km-f"><label>Nhóm</label><select data-k="group">' +
                         '<option value="">Tất cả</option>' +
                         '<option value="vn30"' + (mapFilters.group === 'vn30' ? ' selected' : '') + '>VN30</option>' +
+                        '<option value="blue"' + (mapFilters.group === 'blue' ? ' selected' : '') + '>Blue chip (vốn hóa lớn)</option>' +
                         '<option value="mid"' + (mapFilters.group === 'mid' ? ' selected' : '') + '>Mid Cap</option>' +
                         '<option value="small"' + (mapFilters.group === 'small' ? ' selected' : '') + '>Small Cap</option>' +
                     '</select></span>' +
@@ -706,6 +712,7 @@
                     '<span class="lg"><span class="dot" style="background:#008080;"></span> Tuni Score ≥ 70</span>' +
                     '<span class="lg"><span class="dot" style="background:#f5a623;"></span> 50–69</span>' +
                     '<span class="lg"><span class="dot" style="background:#d0314e;"></span> &lt; 50</span>' +
+                    '<span class="lg km-lg-hint">Kích thước bong bóng = vốn hóa</span>' +
                     '<span class="lg"><span class="bub" style="width:10px;height:10px;"></span> Vốn hóa nhỏ</span>' +
                     '<span class="lg"><span class="bub" style="width:22px;height:22px;"></span> Vốn hóa lớn</span>';
                 bindMapEvents();

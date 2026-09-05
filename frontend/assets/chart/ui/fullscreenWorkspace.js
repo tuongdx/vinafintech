@@ -32,6 +32,31 @@ function esc(s) {
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Làm sạch text AI trước khi đưa vào HTML: giải mã entity (&quot; → ", &amp; → &, &lt; → < ...)
+// và chuyển/bỏ thẻ HTML lỡ xuất ra (<strong>, <br>, ...) để không hiện lộn xộn,
+// rồi escape an toàn và render **in đậm** → <strong>.
+function aiTextToHtml(s) {
+    let t = String(s == null ? '' : s)
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"').replace(/&#34;/g, '"')
+        .replace(/&#39;/g, "'").replace(/&apos;/g, "'")
+        .replace(/&lt;/g, '<').replace(/&#60;/g, '<')
+        .replace(/&gt;/g, '>').replace(/&#62;/g, '>')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&ndash;/g, '\u2013').replace(/&mdash;/g, '\u2014')
+        .replace(/&hellip;/g, '\u2026')
+        .replace(/&#x([0-9a-fA-F]+);/g, (m, h) => { const c = parseInt(h, 16); return (c > 0 && c <= 0x10FFFF) ? String.fromCodePoint(c) : m; })
+        .replace(/&#(\d+);/g, (m, d) => { const c = parseInt(d, 10); return (c > 0 && c <= 0x10FFFF) ? String.fromCodePoint(c) : m; })
+        .replace(/<\/(strong|b)>/gi, '**')
+        .replace(/<(strong|b)\b[^>]*>/gi, '**')
+        .replace(/<\/(p|div|li|ul|ol|h[1-6]|tr)>/gi, '\n')
+        .replace(/<(br|hr)\s*\/?>/gi, '\n')
+        .replace(/<li\b[^>]*>/gi, '\n- ')
+        .replace(/<\/?[a-zA-Z][^>]*>/g, '')
+        .trim();
+    return esc(t).replace(/\*\*([^*]+)\*\*/g, (m, c) => '<strong>' + c + '</strong>');
+}
+
 function fmtNum(n, dec = 0) {
     const v = Number(n);
     if (!Number.isFinite(v) || v === 0) return '--';
@@ -1066,7 +1091,7 @@ export class FullscreenWorkspace {
         }
         if (ai.status === 'ok') {
             const body = ai.reply
-                ? ai.reply.split('\n').map((l) => '<div class="fsb-ai-line">' + esc(l) + '</div>').join('')
+                ? ai.reply.split('\n').map((l) => '<div class="fsb-ai-line">' + aiTextToHtml(l) + '</div>').join('')
                 : '<div class="fss-muted">--</div>';
             this._setAiHtml('<div class="fsb-ai-body">' + body + '</div>' + this._aiFooter());
             return;

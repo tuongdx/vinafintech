@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi.responses import Response
 
 from app.services.opportunity_service import get_top_opportunities
 from app.services.support_resistance import sr_service
@@ -30,6 +31,7 @@ from app.services.vnstock_service import (
     get_stock_screener_page,
     get_top_stocks,
     get_watchlist,
+    render_candlestick_svg,
     search_stocks,
 )
 
@@ -39,6 +41,16 @@ router = APIRouter(prefix="/stocks", tags=["stocks"])
 @router.get("/search")
 def search(q: str):
     return search_stocks(q)
+
+
+@router.get("/{symbol}/chart-svg")
+def chart_svg(symbol: str, period: str = "3m"):
+    """Ảnh biểu đồ nến (SVG) của 1 cổ phiếu — để TuniAI nhúng vào câu trả lời."""
+    svg = render_candlestick_svg(symbol, period=period)
+    if not svg:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Không đủ dữ liệu để vẽ biểu đồ")
+    return Response(content=svg, media_type="image/svg+xml")
 
 
 @router.get("/{symbol}/quote")

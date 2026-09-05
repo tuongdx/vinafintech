@@ -13,6 +13,7 @@ from app.schemas import (
     WatchlistCreate,
     WatchlistOut,
 )
+from app.services.alert_service import alert_service
 
 router = APIRouter(prefix="/watchlist", tags=["watchlist"])
 
@@ -66,6 +67,8 @@ def remove_watchlist(symbol: str, db: Session = Depends(get_db), user: User = De
         raise HTTPException(status_code=404, detail="Không có mã này trong danh sách theo dõi.")
     db.delete(row)
     db.commit()
+    # Dọn cảnh báo mồ côi của mã vừa bỏ theo dõi.
+    alert_service.prune_untracked(db, user.id)
     return {"message": "Đã bỏ theo dõi", "symbol": sym}
 
 

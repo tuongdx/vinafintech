@@ -18,6 +18,7 @@ from app.models import PortfolioHolding, User
 from app.schemas import PortfolioHoldingCreate, PortfolioHoldingOut, PortfolioHoldingUpdate, PortfolioSell
 from app.services import portfolio_performance as pps
 from app.services import vnstock_service as vns
+from app.services.alert_service import alert_service
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
@@ -205,6 +206,8 @@ def delete_holding(
     symbol = row.symbol
     db.delete(row)
     db.commit()
+    # Dọn cảnh báo mồ côi của mã vừa gỡ khỏi danh sách.
+    alert_service.prune_untracked(db, user.id)
     return {"message": "Đã xoá khỏi danh mục", "symbol": symbol}
 
 
@@ -236,6 +239,8 @@ def sell_holding(
     if new_qty == 0:
         db.delete(row)
         db.commit()
+        # Đã bán hết → dọn cảnh báo nếu mã không còn được theo dõi.
+        alert_service.prune_untracked(db, user.id)
         return {"message": f"Đã bán hết {symbol}. Vị thế đã đóng.", "symbol": symbol, "quantity": 0, "deleted": True}
     row.quantity = new_qty
     db.commit()

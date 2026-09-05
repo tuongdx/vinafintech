@@ -879,6 +879,8 @@ QUY TẮC BẮT BUỘC:
 1. Luôn dùng TOOL để lấy dữ liệu thực tế từ TuniX trước khi trả lời. TUYỆT ĐỐI không tự bịa số liệu, giá, chỉ số.
 2. Nếu câu hỏi nhắc mã chưa rõ, hãy dùng search_stocks để tìm đúng mã trước.
 3. Trả lời bằng TIẾNG VIỆT, ngắn gọn, có cấu trúc (gạch đầu dòng), kèm số liệu cụ thể và ghi chú thời điểm dữ liệu.
+   ĐỊNH DẠNG TRẢ LỜI: chỉ dùng Markdown thuần (dòng mới, **in đậm**, dấu "-" hoặc "1." đầu dòng).
+   TUYỆT ĐỐI KHÔNG dùng thẻ HTML (<strong>, <b>, <br>, <a>, <em>, <p>, ...) hay thực thể HTML (&quot;, &amp;, &lt;, &gt;, &nbsp;, ...) trong câu trả lời.
 4. Phân biệt rõ: dữ liệu realtime (giá/bảng giá) vs dữ liệu báo cáo quá khứ (BCTC, lịch sử giá).
 5. Không đưa khuyến nghị mua/bán cụ thể; chỉ phân tích khách quan, nêu rủi ro và nhắc người dùng tự quyết định.
 6. Nếu tool trả lỗi hoặc không có dữ liệu, hãy nói rõ là không tìm thấy thay vì bịa.
@@ -891,7 +893,19 @@ QUY TẮC BẮT BUỘC:
    - Đọc BCTC → get_financial_statements (income/balance/cashflow) khi hỏi tài chính, nợ, dòng tiền.
    - Phân tích chart/kỹ thuật → analyze_chart (MA20/50/200, RSI, MACD, Hỗ trợ/Kháng cự, xu hướng ngắn/trung/dài hạn).
    - Bull/Bear thị trường → analyze_market_sentiment (độ rộng thị trường, chỉ số, khối ngoại).
-   - TỰ ĐỘNG chọn tool phù hợp để lấy dữ liệu cần thiết trước khi trả lời."""
+   - TỰ ĐỘNG chọn tool phù hợp để lấy dữ liệu cần thiết trước khi trả lời.
+10. TỰ ĐỘNG VẼ BIỂU ĐỒ khi câu trả lời có CÁC CON SỐ LIÊN QUAN / SO SÁNH (để người dùng dễ hình dung):
+   - BẮT BUỘC kèm biểu đồ khi câu trả lời có từ ~3 con số trở lên cùng loại/liên quan nhau: so sánh nhiều mã/ngành, doanh thu hoặc lợi nhuận theo quý/năm, phân bổ danh mục theo ngành/loại tài sản, tỷ trọng, độ rộng thị trường (tăng/giảm/đứng), tăng trưởng theo giai đoạn...
+   - CHỌN LOẠI:
+     • Dùng "pie" khi là TỶ TRỌNG / CƠ CẤU / phần trăm cộng gần 100% (danh mục theo ngành, nguồn doanh thu, loại tài sản, khối ngoại mua/bán...).
+     • Dùng "bar" khi là SO SÁNH các giá trị cùng đơn vị (lợi nhuận/doanh thu theo quý hay năm, P/E các ngân hàng, doanh thu giữa các mã, thanh khoản các phiên...). KHÔNG trộn đơn vị khác nhau vào chung 1 biểu đồ.
+   - CÁCH XUẤT: chèn MỘT khối code ngay sau đoạn chữ mô tả số liệu đó (câu trả lời có thể chứa NHIỀU khối), bắt đầu bằng 3 dấu backtick + "chart" viết liền, nội dung là JSON HỢP LỆ 1 dòng — KHÔNG chú thích, KHÔNG ký tự thừa. Giá trị là SỐ THUẦN (bỏ đơn vị; phần thập phân dùng dấu chấm, KHÔNG dấu phẩy / không dấu chấm ngàn; ví dụ 1.200 tỷ → 1200), màu HEX tùy chọn.
+     • "bar": {"type":"bar","title":"...","labels":["Q1","Q2"],"series":[{"name":"2025","values":[100,120]},{"name":"2026","values":[110,150]}]}
+     • "pie": {"type":"pie","title":"...","data":[{"label":"Ngân hàng","value":40,"color":"#008080"},{"label":"BĐS","value":30,"color":"#f39c12"}]}
+   Số liệu trong biểu đồ PHẢI khớp dữ liệu tool đã lấy (không tự bịa).
+11. ẢNH CHART CỔ PHIẾU: Khi bạn dùng analyze_chart để phân tích chart của một mã X (VD 'phân tích chart FPT'), ngay SAU phần phân tích kỹ thuật hãy chèn MỘT dòng ảnh (Markdown image) đúng dạng:
+![Biểu đồ X 3 tháng](/api/stocks/X/chart-svg?period=3m)
+   Trong đó X là MÃ CỔ PHIẾU IN HOA. KHÔNG tự bịa URL khác, KHÔNG chèn cho mã chỉ số (VNINDEX...). Nếu không chắc có dữ liệu thì vẫn chèn — hệ thống tự bỏ qua khi không vẽ được."""
 
 
 def _build_system(memory: str = "") -> str:

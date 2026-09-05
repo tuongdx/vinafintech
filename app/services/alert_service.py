@@ -383,13 +383,40 @@ class AlertDetectionService:
                 syms.append(s)
         return syms
 
+    def prune_untracked(self, db: Session, user_id: int, commit: bool = True) -> int:
+        """Xoá 'cảnh báo mồ côi': cảnh báo của mã KHÔNG còn trong holdings ∪ watchlist.
+
+        Gọi sau khi: quét cảnh báo, xoá/bán hết 1 vị thế, hoặc bỏ theo dõi 1 mã.
+        """
+        tracked: set[str] = set()
+        for row in db.query(PortfolioHolding.symbol).filter(PortfolioHolding.user_id == user_id).all():
+            s = (row.symbol or "").upper().strip()
+            if s:
+                tracked.add(s)
+        for row in db.query(Watchlist.symbol).filter(Watchlist.user_id == user_id).all():
+            s = (row.symbol or "").upper().strip()
+            if s:
+                tracked.add(s)
+        q = db.query(Alert).filter(Alert.user_id == user_id)
+        if tracked:
+            q = q.filter(~Alert.symbol.in_(sorted(tracked)))
+        rows = q.all()
+        for a in rows:
+            db.delete(a)
+        n = len(rows)
+        if commit and n:
+            db.commit()
+        return n
+
     def scan_user(self, db: Session, user: User) -> dict[str, Any]:
         syms = self.user_symbols(db, user)
         created = 0
         for s in syms:
             created += self.scan_symbol(db, user.id, s)
+        # Dọn cảnh báo của mã không còn trong holdings ∪ watchlist (cảnh báo mồ côi).
+        pruned = self.prune_untracked(db, user.id, commit=False)
         db.commit()
-        return {"created": created, "scanned": len(syms), "symbols": syms}
+        return {"created": created, "scanned": len(syms), "symbols": syms, "pruned": pruned}
 
 
 alert_service = AlertDetectionService()

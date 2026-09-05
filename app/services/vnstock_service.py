@@ -2074,6 +2074,105 @@ def get_history(symbol: str, interval: str = "1d", period: str = "1y") -> list[d
     return fallback
 
 
+def render_candlestick_svg(symbol: str, period: str = "3m", limit: int = 72) -> str | None:
+    """Vẽ biểu đồ NẾN đơn giản (SVG) của 1 cổ phiếu — dùng để nhúng vào câu trả lời TuniAI.
+
+    Trả về chuỗi SVG hoặc None nếu không đủ dữ liệu.
+    """
+    bars: list[dict[str, Any]] = []
+    try:
+        raw = get_history(symbol, "1d", period)
+        bars = [b for b in (raw or []) if isinstance(b, dict)]
+    except Exception:
+        bars = []
+    if len(bars) < 10:
+        return None
+    bars = bars[-limit:]
+    closes = [float(b.get("close") or 0) for b in bars]
+    if not any(closes):
+        return None
+    highs: list[float] = []
+    lows: list[float] = []
+    for i, bar in enumerate(bars):
+        highs.append(float(bar.get("high") or closes[i]))
+        lows.append(float(bar.get("low") or closes[i]))
+    vols = [float(bar.get("volume") or 0) for bar in bars]
+    hi, lo = max(highs), min(lows)
+    span = (hi - lo) or ((hi or 1.0) * 0.01)
+    hi += span * 0.07
+    lo = max(0.0, lo - span * 0.07)
+    vmax = max([v for v in vols if v > 0] or [1.0]) or 1.0
+
+    W, H = 760, 360
+    mL, mR, mT = 14, 14, 22
+    volTop = H - 66
+    volBottom = H - 20
+    plotW = W - mL - mR
+    plotH = volTop - mT - 6
+    n = len(bars)
+    step = plotW / n
+    bw = max(1.5, min(14.0, step * 0.62))
+
+    def X(i: int) -> float:
+        return mL + step * (i + 0.5)
+
+    def Y(v: float) -> float:
+        return mT + (hi - v) / (hi - lo) * plotH
+
+    up, dn = "#16a34a", "#d94b3f"
+    parts: list[str] = []
+    # Lưới ngang + nhãn giá
+    grid_rows = 4
+    for g in range(grid_rows + 1):
+        val = hi - (hi - lo) * g / grid_rows
+        y = Y(val)
+        parts.append(f'<line x1="{mL}" y1="{y:.1f}" x2="{W - mR}" y2="{y:.1f}" stroke="#e8edf4" stroke-width="1"/>')
+        parts.append(f'<text x="{W - mR - 4}" y="{y + 3:.1f}" text-anchor="end" font-size="10" fill="#9aa8bd">{val:,.0f}</text>')
+    # MA20
+    ma: list[float | None] = []
+    for i in range(n):
+        if i < 19:
+            ma.append(None)
+        else:
+            ma.append(sum(closes[i - 19:i + 1]) / 20.0)
+    # Nến + khối lượng
+    for i, b in enumerate(bars):
+        c = closes[i]
+        o = float(b.get("open") or c)
+        h = highs[i]
+        l = lows[i]
+        x = X(i)
+        color = up if c >= o else dn
+        top, bot = min(o, c), max(o, c)
+        parts.append(f'<line x1="{x:.2f}" y1="{Y(h):.2f}" x2="{x:.2f}" y2="{Y(l):.2f}" stroke="{color}" stroke-width="1"/>')
+        parts.append(f'<rect x="{x - bw / 2:.2f}" y="{Y(bot):.2f}" width="{bw:.2f}" height="{max(1.0, Y(top) - Y(bot)):.2f}" fill="{color}" rx="1"/>')
+        v = vols[i] or 0
+        if v > 0:
+            hh = (volBottom - volTop) * (v / vmax)
+            parts.append(f'<rect x="{x - bw / 2:.2f}" y="{volBottom - hh:.2f}" width="{bw:.2f}" height="{hh:.2f}" fill="{color}" opacity="0.28"/>')
+    # Đường MA20
+    pts = [f"{X(i):.2f},{Y(v):.2f}" for i, v in enumerate(ma) if v is not None]
+    if pts:
+        parts.append(f'<polyline points="{" ".join(pts)}" fill="none" stroke="#0f6bbd" stroke-width="1.6" opacity="0.9"/>')
+    # Giá đóng cửa gần nhất
+    last_close = closes[-1]
+    ylast = Y(last_close)
+    parts.append(f'<line x1="{mL}" y1="{ylast:.2f}" x2="{W - mR}" y2="{ylast:.2f}" stroke="#008080" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>')
+    parts.append(f'<text x="{W - mR - 4}" y="{ylast - 5:.2f}" text-anchor="end" font-size="11" font-weight="800" fill="#008080">{last_close:,.0f}</text>')
+    sym = str(symbol).upper()
+    title = f"{sym} · {period.upper()} · Giá {last_close:,.0f}".replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
+
+        f'font-family="Inter, Arial, sans-serif" role="img">'
+        f'<rect width="{W}" height="{H}" fill="#ffffff"/>'
+        f'<text x="{mL}" y="16" font-size="13" font-weight="800" fill="#12203a">{title}</text>'
+        f'<line x1="{mL}" y1="{volTop}" x2="{W - mR}" y2="{volTop}" stroke="#e8edf4" stroke-width="1"/>'
+        + "".join(parts)
+        + "</svg>"
+    )
+
+
 def _get_quote_fundamentals(symbol: str) -> dict[str, Any]:
     """Chỉ số cơ bản của cổ phiếu: Vốn hoá, Giá trị sổ sách, P/E, P/B, EPS, ROE, ROA,
     KLGD TB 10 phiên, %1W, %1M, %YTD.
@@ -4089,6 +4188,7 @@ def get_stock_discover_page() -> dict[str, Any]:
 
     # Ngưỡng thanh khoản tối thiểu (tỷ VND/phiên) — cấu hình được.
     _MAP_MIN_LIQUIDITY_TY = 5.0
+    vn30_set = set(_VN30_TICKERS)
     eligible: list[dict[str, Any]] = []
     for s in stocks:
         growth_raw = _blend_growth(s)
@@ -4105,6 +4205,7 @@ def get_stock_discover_page() -> dict[str, Any]:
         eligible.append(
             {
                 "symbol": s["symbol"],
+                "vn30": s["symbol"] in vn30_set,
                 "name": s["name"],
                 "exchange": s["exchange"],
                 "sector": s.get("sector") or "khac",
