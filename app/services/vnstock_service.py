@@ -3655,6 +3655,7 @@ _INDEX_CARD_KEYS: list[tuple[str, str]] = [
 ]
 
 
+@_singleflight(lambda: "market-dashboard", ttl_seconds=60, stale_while_revalidate=True)
 def get_market_dashboard() -> dict[str, Any]:
     """Toàn cảnh thị trường cho trang "Thị trường" (dashboard).
 
@@ -3662,13 +3663,8 @@ def get_market_dashboard() -> dict[str, Any]:
     độ rộng thị trường (tăng/giảm/tham chiếu + trần/sàn), dòng tiền (GTGD, khối ngoại,
     thanh khoản), hiệu suất ngành, radar (ngành hút tiền / breakout / volume lạ / nhóm
     suy yếu / khối ngoại mua mạnh) và top cổ phiếu ảnh hưởng VN-INDEX.
-    Cache 60s.
+    Cache 60s + stale-while-revalidate (hết hạn trả bản cũ ngay, refresh nền).
     """
-    key = "market-dashboard"
-    cached = cache.get(key)
-    if cached is not None:
-        return cached
-
     # 1) Bốn chỉ số chính
     indices: list[dict[str, Any]] = []
     for k, label in _INDEX_CARD_KEYS:
@@ -3848,7 +3844,6 @@ def get_market_dashboard() -> dict[str, Any]:
         },
         "impact": impact,
     }
-    cache.set(key, payload, ttl_seconds=60)
     return payload
 
 
@@ -3977,16 +3972,12 @@ def get_stock_screener_page() -> dict[str, Any]:
     return payload
 
 
+@_singleflight(lambda: "stock-discover-page", ttl_seconds=120, stale_while_revalidate=True)
 def get_stock_discover_page() -> dict[str, Any]:
     """Dữ liệu trang "Khám phá": cơ hội nổi bật hôm nay, chiến lược, bản đồ cơ hội
     thị trường (bubble chart) và các bảng xếp hạng TuniX. Tái sử dụng dữ liệu
-    screener (đã cache 120s). Cache 120s key "stock-discover-page".
+    screener (đã cache). Cache 120s + stale-while-revalidate.
     """
-    key = "stock-discover-page"
-    cached = cache.get(key)
-    if cached is not None:
-        return cached
-
     screener = get_stock_screener_page()
     stocks = screener["stocks"]
     by_sym = {s["symbol"]: s for s in stocks}
@@ -4227,5 +4218,4 @@ def get_stock_discover_page() -> dict[str, Any]:
             "Tìm cổ phiếu đang breakout",
         ],
     }
-    cache.set(key, payload, ttl_seconds=120)
     return payload

@@ -756,43 +756,64 @@
             }
 
             // ---------- Load ----------
+            // Mỗi block tự render NGAY khi dữ liệu của nó sẵn sàng (gọi fetch song song
+            // thay vì await nối tiếp) → trang hiện nội dung nhanh hơn rõ rệt.
+            function fetchJson(url) {
+                return fetch(url, { cache: 'no-store' })
+                    .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })
+                    .catch(function() { return null; });
+            }
             async function load() {
-                try {
-                    const res = await fetch('/api/stocks/market-dashboard', { cache: 'no-store' });
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    const d = await res.json();
+                // Khởi động TẤT CẢ fetch song song cùng lúc
+                const dashP = fetchJson('/api/stocks/market-dashboard');
+                const screenerP = fetchJson('/api/stocks/stock-screener');
+                const oppP = fetchJson('/api/stocks/opportunities');
+                const discP = fetchJson('/api/stocks/stock-discover');
+                const newsP = fetchJson('/api/news?limit=6');
+
+                let notableStocks = [];
+
+                // 1) Chỉ số + Market Radar + TuniAI Market View (market-dashboard)
+                dashP.then(function(d) {
+                    if (!d) return;
                     (d.indices || []).forEach(function(i) { indicesMap[i.key] = i; });
                     renderIndices();
                     loadExtraIndices();
                     renderRadar(d);
                     renderAi(d);
-                    // screener for hot stocks
-                    const sr = await fetch('/api/stocks/stock-screener');
-                    let notableStocks = [];
-                    if (sr.ok) {
-                        const sd = await sr.json();
-                        notableStocks = sd.stocks || [];
-                        const symMap = {};
-                        notableStocks.forEach(function(s) { symMap[s.symbol] = s; });
-                        setNewsSyms(symMap);
-                    }
-                    // Cơ hội nổi bật hôm nay (engine backend); fallback danh sách đáng chú ý cũ nếu lỗi
-                    const oppR = await fetch('/api/stocks/opportunities', { cache: 'no-store' });
-                    if (oppR.ok) renderTodayOpp(await oppR.json());
-                    else renderHot(pickNotable(notableStocks));
-                    // opportunities
-                    const disc = await fetch('/api/stocks/stock-discover', { cache: 'no-store' });
-                    if (disc.ok) renderOpps(await disc.json());
-                } catch (e) {
-                    document.getElementById('ovHot').innerHTML = '<div class="ov-empty">Không tải được dữ liệu. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
-                }
-                // news
-                try {
-                    const nr = await fetch('/api/news?limit=6', { cache: 'no-store' });
-                    if (nr.ok) renderNews(await nr.json());
-                } catch (e) {}
+                });
+
+                // 2) Screener: bản đồ mã (tên + % hôm nay) cho chip tin tức + rổ fallback
+                screenerP.then(function(sd) {
+                    if (!sd) return;
+                    notableStocks = sd.stocks || [];
+                    const symMap = {};
+                    notableStocks.forEach(function(s) { symMap[s.symbol] = s; });
+                    setNewsSyms(symMap);
+                });
+
+                // 3) Cơ hội nổi bật hôm nay (engine backend); fallback rổ cũ nếu lỗi
+                oppP.then(function(d) {
+                    if (d) { renderTodayOpp(d); return; }
+                    screenerP.then(function() {
+                        if (notableStocks.length) renderHot(pickNotable(notableStocks));
+                        else document.getElementById('ovHot').innerHTML = '<div class="ov-empty">Không tải được dữ liệu. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
+                    });
+                });
+
+                // 4) Cơ hội mới (từ stock-discover)
+                discP.then(function(d) { if (d) renderOpps(d); });
+
+                // 5) Tin tức quan trọng
+                newsP.then(function(list) { if (list) renderNews(list); });
+
+                // Widget danh mục — độc lập với các block trên
                 renderPortfolio();
-                notifyParentHeight();
+
+                // Khi toàn bộ dữ liệu về → thông báo chiều cao chuẩn cho shell nhúng.
+                Promise.allSettled([dashP, screenerP, oppP, discP, newsP]).then(function() {
+                    notifyParentHeight();
+                });
             }
 
             // ===== Embed =====

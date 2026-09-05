@@ -860,20 +860,23 @@
             // ---------- Load ----------
             async function load() {
                 try {
-                    const res = await fetch('/api/stocks/stock-discover');
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    const d = await res.json();
+                    // Fetch dữ liệu trang và trạng thái hội viên (khóa block) SONG SONG
+                    // để không xếp chuỗi tuần tự làm chậm render lần đầu.
+                    const discoverP = fetch('/api/stocks/stock-discover')
+                        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+                    const gate = window.TuniXMembership;
+                    const gateP = (async function() {
+                        if (gate && gate.features === null && !window.__memberChecked) {
+                            window.__memberChecked = true;
+                            await gate.ensure();
+                        }
+                    })();
+                    const [d] = await Promise.all([discoverP, gateP]);
                     const asOfEl = document.getElementById('kpAsOf');
                     if (d.as_of) {
                         asOfEl.textContent = 'Cập nhật lúc ' + d.as_of;
                     } else {
                         asOfEl.textContent = 'Cập nhật lúc ' + new Date().toLocaleString('vi-VN');
-                    }
-                    // Chờ trạng thái block/features (1 lần) trước khi dựng các block có khóa.
-                    const gate = window.TuniXMembership;
-                    if (gate && gate.features === null && !window.__memberChecked) {
-                        window.__memberChecked = true;
-                        await gate.ensure();
                     }
                     renderFeatured(d.featured || [], d.market_status || null);
                     renderStrategies(d.strategies || []);

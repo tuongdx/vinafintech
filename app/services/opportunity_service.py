@@ -568,49 +568,82 @@ def _compute_impl() -> dict[str, Any]:
     return payload
 
 
-# ---------------- Cache + SWR ----------------
+# ---------------- Cache + SWR (single-flight) ----------------
+_COMPUTE_TIMEOUT = 8.0   # chờ tối đa khi chưa từng có cache (lần đầu sau khi khởi động)
+
+_inflight_guard = threading.Lock()
+_inflight_evt: threading.Event | None = None
+_inflight_result: dict[str, Any] | None = None
+
+
+def _spawn_compute() -> threading.Event:
+    """Đảm bảo CHỈ MỘT luồng tính toán tại một thời điểm (kể cả lúc warm / nhiều request
+    cùng lúc) — chống stampede. Trả về Event để caller chờ; đọc _inflight_result sau khi set."""
+    global _inflight_evt, _inflight_result
+    with _inflight_guard:
+        evt = _inflight_evt
+        if evt is not None and not evt.is_set():
+            return evt  # đã có luồng đang tính
+        evt = threading.Event()
+        _inflight_evt = evt
+        _inflight_result = None
+
+    def _run() -> None:
+        global _inflight_result
+        try:
+            data = _compute_impl()
+        except Exception as exc:  # pragma: no cover
+            logger.error("opportunity: compute lỗi: %s", exc)
+            data = None
+        if data is not None:
+            with _LOCK:
+                _CACHE["opp"] = {"ts": time.time(), "data": data, "computing": False}
+        with _inflight_guard:
+            _inflight_result = data
+            _inflight_evt = None
+            evt.set()
+
+    threading.Thread(target=_run, daemon=True).start()
+    return evt
+
+
 def get_top_opportunities(force: bool = False) -> dict[str, Any]:
-    """Trả kết quả cached; nếu hết hạn → refresh nền và trả bản cũ (stale-while-revalidate).
-    Lần đầu (chưa có cache) sẽ tính đồng bộ.
+    """Trả kết quả cached; hết hạn → trả bản cũ (stale) NGAY + refresh nền (không chặn user).
+    Lần đầu (chưa có cache) → chờ luồng compute single-flight (tối đa _COMPUTE_TIMEOUTs)
+    để không tính trùng khi nhiều request tới cùng lúc.
     """
     now = time.time()
-    entry = _CACHE.get("opp")
-    if force:
+    with _LOCK:
+        entry = _CACHE.get("opp")
+    if force and entry is not None:
+        with _LOCK:
+            _CACHE.pop("opp", None)
         entry = None
+
     if entry and now - entry["ts"] < _CACHE_TTL_SECONDS:
         return entry["data"]
 
     stale = entry["data"] if entry else None
-    if entry and entry.get("computing"):
-        # đang có thread refresh — trả bản đang có ngay
-        return stale or _compute_sync()
 
-    if not entry:
-        return _compute_sync()
+    # Có dữ liệu cũ (hết hạn hoặc force) → trả ngay, tính lại ở nền.
+    if stale is not None:
+        _spawn_compute()
+        return stale
 
-    # stale tồn tại → refresh nền, trả stale ngay (không chặn homepage)
-    entry["computing"] = True
-
-    def _refresh() -> None:
-        try:
-            data = _compute_impl()
-            with _LOCK:
-                _CACHE["opp"] = {"ts": time.time(), "data": data, "computing": False}
-        except Exception as exc:  # pragma: no cover
-            logger.error("opportunity: refresh nền lỗi: %s", exc)
-            with _LOCK:
-                _CACHE["opp"] = entry  # giữ bản cũ
-                entry["computing"] = False
-
-    threading.Thread(target=_refresh, daemon=True).start()
-    return stale
-
-
-def _compute_sync() -> dict[str, Any]:
-    data = _compute_impl()
-    with _LOCK:
-        _CACHE["opp"] = {"ts": time.time(), "data": data, "computing": False}
-    return data
+    # Chưa từng có dữ liệu → đợi kết quả compute (chung 1 luồng cho mọi caller).
+    evt = _spawn_compute()
+    evt.wait(timeout=_COMPUTE_TIMEOUT)
+    with _inflight_guard:
+        data = _inflight_result
+    if data:
+        return data
+    return {
+        "ok": False,
+        "market": None,
+        "items": [],
+        "computed_at": None,
+        "error": "Hệ thống đang tải dữ liệu thị trường, vui lòng thử lại sau vài giây.",
+    }
 
 
 def get_last_audit() -> list[dict[str, Any]]:

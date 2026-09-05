@@ -212,7 +212,15 @@ def _warm_home_caches() -> None:
     def _warm() -> None:
         from concurrent.futures import ThreadPoolExecutor
 
+        from app.services.opportunity_service import get_top_opportunities
+
         jobs = [
+            # Các endpoint nặng của trang chủ / khám phá — làm nóng cache ở nền để
+            # người dùng đầu tiên sau khi deploy không phải chờ tính toán đồng bộ.
+            ("market-dashboard", vs.get_market_dashboard),
+            ("stock-screener", vs.get_stock_screener_page),
+            ("stock-discover", vs.get_stock_discover_page),
+            ("opportunities", lambda: get_top_opportunities(force=True)),
             ("index-detail", lambda: vs.get_index_detail("vnindex", "1y")),
             ("market-overview", vs.get_market_overview),
             ("watchlist", vs.get_watchlist),

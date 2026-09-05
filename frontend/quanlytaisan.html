@@ -521,8 +521,8 @@
             }
 
             // ---------- Allocation donut ----------
-            function renderAlloc() {
-                if (!holdings.length) return '<div class="pf-card"><h2>Phân bổ tài sản</h2><div class="pf-empty">Chưa có dữ liệu.</div></div>';
+            function allocBodyHtml() {
+                if (!holdings.length) return '<div class="pf-empty">Chưa có dữ liệu.</div>';
                 const total = totals().totalValue || 1;
                 const sectors = {};
                 holdings.forEach(function(h) {
@@ -535,8 +535,18 @@
                 const legend = list.map(function(s, i) {
                     return '<div class="al-row"><span class="al-dot" style="background:' + PALETTE[i % PALETTE.length] + ';"></span><span class="al-name">' + esc(s.name) + '</span><span class="al-pct">' + s.pct.toFixed(0) + '%</span><span class="al-val">' + fmtMoney(s.value) + ' đ</span></div>';
                 }).join('');
-                return '<div class="pf-card"><h2>Phân bổ theo ngành</h2><div class="pf-alloc">' +
-                    '<div>' + donut + '</div><div class="pf-alloc-legend">' + legend + '</div></div></div>';
+                return '<div>' + donut + '</div><div class="pf-alloc-legend">' + legend + '</div>';
+            }
+            function renderAlloc() {
+                if (!holdings.length) return '<div class="pf-card"><h2>Phân bổ tài sản</h2><div class="pf-empty">Chưa có dữ liệu.</div></div>';
+                return '<div class="pf-card"><h2>Phân bổ theo ngành</h2><div class="pf-alloc" id="pfAllocBody">' + allocBodyHtml() + '</div></div>';
+            }
+            // Làm mới riêng vùng "Phân bổ theo ngành" khi screener (ngành) về sau —
+            // tránh phải dựng lại cả tab (không gọi lại chart/perf).
+            function refreshAlloc() {
+                const inner = document.getElementById('pfAllocBody');
+                if (!inner || !holdings.length) return;
+                inner.innerHTML = allocBodyHtml();
             }
             function donutSvg(list, w, h, centerLabel) {
                 const cx = w / 2, cy = h / 2, r = w / 2 - 6, ir = r * 0.62;
@@ -1686,12 +1696,13 @@
                 return fetch('/api/stocks/stock-screener')
                     .then(function(r) { return r.ok ? r.json() : null; })
                     .then(function(d) {
-                        if (!d) return;
+                        if (!d) return false;
                         (d.stocks || []).forEach(function(s) {
                             screenerMap[s.symbol] = { sectorName: s.sectorName, volume_ratio: s.volume_ratio, risk: s.risk };
                         });
+                        return true;
                     })
-                    .catch(function() {});
+                    .catch(function() { return false; });
             }
 
             // ---------- Load ----------
@@ -1721,21 +1732,26 @@
                     return;
                 }
                 DEMO = false;
-                loadScreenerMap().then(function() {
-                    fetch('/api/portfolio', { headers: authHeaders() })
-                        .then(function(r) {
-                            if (r.status === 401) { showLocked(); return null; }
-                            if (!r.ok) throw new Error('Lỗi tải danh mục');
-                            return r.json();
-                        })
-                        .then(function(list) {
-                            if (list === null) return;
-                            holdings = Array.isArray(list) ? list : [];
-                            render();
-                            loadWatchlist();
-                        })
-                        .catch(function(e) { if (e && e.message) { body.innerHTML = '<div class="pf-loading">Không tải được danh mục. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>'; notifyParentHeight(); } });
-                });
+                // Tải screener (ngành/rủi ro cho nhãn) ở NỀN — không chặn hiển thị danh mục.
+                const screenerDone = loadScreenerMap();
+                fetch('/api/portfolio', { headers: authHeaders() })
+                    .then(function(r) {
+                        if (r.status === 401) { showLocked(); return null; }
+                        if (!r.ok) throw new Error('Lỗi tải danh mục');
+                        return r.json();
+                    })
+                    .then(function(list) {
+                        if (list === null) return;
+                        holdings = Array.isArray(list) ? list : [];
+                        render();
+                        loadWatchlist();
+                        // Screener về SAU khi tab đã render → cập nhật đúng ngành cho
+                        // vùng "Phân bổ theo ngành" (không dựng lại toàn bộ tab).
+                        screenerDone.then(function(ok) {
+                            if (ok && currentTab === 'overview') refreshAlloc();
+                        });
+                    })
+                    .catch(function(e) { if (e && e.message) { body.innerHTML = '<div class="pf-loading">Không tải được danh mục. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>'; notifyParentHeight(); } });
             }
             function loadDemo() {
                 const demoSyms = ['ACB', 'VCI', 'FPT', 'HPG', 'MBB'];
