@@ -239,6 +239,13 @@
         .cp-ind-head .cp-ind-desc { color: rgba(255,255,255,0.92) !important; }
         .cp-ind-head .cp-ind-btn { color: #fff !important; background: rgba(255,255,255,0.16) !important; border-color: rgba(255,255,255,0.35) !important; }
         .cp-ind-head .cp-ind-btn:hover { color: #008080 !important; background: #fff !important; border-color: #fff !important; }
+        .cp-ind-head .cp-asof {
+            display: inline-block; margin-top: 10px; position: relative; z-index: 1;
+            background: rgba(255,255,255,0.16); padding: 4px 12px; border-radius: 20px;
+            font-size: 12px; color: #fff;
+        }
+        .cp-ind-head .cp-asof i { margin-right: 4px; }
+        .cp-ind-head .cp-asof b { color: #fff; }
     </style>
 </head>
 <body>
@@ -425,8 +432,9 @@
                         : '<a class="cb-item" href="#" data-nav="' + esc(p.path.join('/')) + '">' + esc(p.label) + '</a>';
                 }).join('<span class="cb-sep">›</span>') + '</nav>';
             }
-            function headerHtml(title, desc, action) {
-                return '<div class="cp-ind-head"><div class="cp-ind-head-row"><h1>' + esc(title) + '</h1>' + (action || '') + '</div>' + (desc ? '<div class="cp-ind-desc">' + esc(desc) + '</div>' : '') + '</div>';
+            const CP_ASOF = '<span class="cp-asof"><i class="far fa-clock"></i> Cập nhật lần cuối: <b>06/09/2026 · 11:24</b></span>';
+            function headerHtml(title, desc, action, asof) {
+                return '<div class="cp-ind-head"><div class="cp-ind-head-row"><h1>' + esc(title) + '</h1>' + (action || '') + '</div>' + (desc ? '<div class="cp-ind-desc">' + esc(desc) + '</div>' : '') + (asof || '') + '</div>';
             }
             function bindNav() {
                 screenerEl.querySelectorAll('[data-nav]').forEach(function(el) {
@@ -594,7 +602,8 @@
                 const action = currentPath.length === 0
                     ? '<a class="cp-ind-btn" href="#" data-nav="nganh"><i class="fas fa-layer-group"></i> Nhóm ngành</a>'
                     : '';
-                screenerEl.innerHTML = breadcrumbHtml() + headerHtml(hd.title, hd.desc, action) + tableHtml();
+                const asof = currentPath.length === 0 ? CP_ASOF : '';
+                screenerEl.innerHTML = breadcrumbHtml() + headerHtml(hd.title, hd.desc, action, asof) + tableHtml();
                 bindNav();
                 // bind table sort + pager + rows
                 const tableCard = screenerEl.querySelector('.cp-table-card');
