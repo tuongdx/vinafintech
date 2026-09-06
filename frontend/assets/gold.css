@@ -157,3 +157,10 @@ body.dark-mode .gv-hint { color: #8b949e; }
     .gv-page { padding: 12px 10px 24px; }
     .gv-table { min-width: 520px; }
 }
+
+/* Ẩn thanh cuộn NỘI BỘ trang Giá Vàng/Bạc (vẫn cuộn được) — thanh cuộn toàn website vẫn giữ
+   (không thêm /gia-vang-bac vào updateScrollBarMode của shell — giống crypto). */
+html, body { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+.gv-page, .gv-page * { scrollbar-width: none; -ms-overflow-style: none; }
+.gv-page *::-webkit-scrollbar { width: 0; height: 0; display: none; }
