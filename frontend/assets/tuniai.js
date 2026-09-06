@@ -122,6 +122,7 @@
                             return {
                                 id: x.id,
                                 updated_at: x.updated_at ? new Date(x.updated_at).getTime() : Date.now(),
+                                title: (x.title && String(x.title).trim()) ? String(x.title).trim() : undefined,
                                 messages: Array.isArray(x.messages) ? x.messages : []
                             };
                         });
@@ -134,7 +135,10 @@
             function currentConv() {
                 return conversations.find(function(c) { return c.id === currentId; }) || null;
             }
+            // Tiêu đề hiển thị: ưu tiên tên NGƯỜI DÙNG tự đổi (c.title), nếu chưa có mới lấy tự động
+            // từ câu hỏi đầu tiên trong hội thoại.
             function convTitleOf(c) {
+                if (c && c.title && String(c.title).trim()) return String(c.title).trim();
                 const first = (c.messages || []).find(function(m) { return m.role === 'user'; });
                 if (first && first.content) {
                     const t = String(first.content).trim();
@@ -170,6 +174,52 @@
                 }
                 renderHistory();
                 renderMessages();
+            }
+
+            // Đổi tên 1 cuộc trò chuyện trong danh sách Lịch sử (sửa inline bằng ô nhập).
+            function startRenameConv(id) {
+                const c = conversations.find(function(x) { return x.id === id; });
+                if (!c) return;
+                const item = historyEl && historyEl.querySelector('.ta-h-item[data-id="' + id + '"]');
+                if (!item || item.classList.contains('editing')) return;
+                const span = item.querySelector('.ta-h-title');
+                if (!span) return;
+                const oldTitle = convTitleOf(c);
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'ta-h-input';
+                input.maxLength = 80;
+                input.value = oldTitle;
+                input.setAttribute('aria-label', 'Tiêu đề cuộc trò chuyện');
+                span.replaceWith(input);
+                item.classList.add('editing');
+                input.focus();
+                input.select();
+                let finished = false;
+                function finish(save) {
+                    if (finished) return;
+                    finished = true;
+                    const val = input.value.replace(/\s+/g, ' ').trim();
+                    if (save) {
+                        if (val && val !== oldTitle) {
+                            c.title = val;          // tên người dùng tự đặt
+                        } else if (!val) {
+                            delete c.title;          // xoá trắng → về tiêu đề tự động
+                        }
+                    }
+                    const newSpan = document.createElement('span');
+                    newSpan.className = 'ta-h-title';
+                    newSpan.textContent = convTitleOf(c);
+                    item.classList.remove('editing');
+                    input.replaceWith(newSpan);
+                    if (currentId === c.id && titleEl) titleEl.textContent = convTitleOf(c);
+                    saveConvs(); // lưu local + đồng bộ title mới lên server
+                }
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+                    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+                });
+                input.addEventListener('blur', function() { finish(true); });
             }
 
             function escChat(s) {
@@ -224,12 +274,12 @@
 
             // ---------- Bảng Markdown (| cột | ...) ----------
             // Dòng phân tách kiểu: | --- | :---: | ---: |
+            // (DeepSeek hay xuất THIẾU "|" ở đầu/cuối dòng → vẫn nhận diện được "--- | --- | ---").
             function isTableSep(line) {
                 const tr = String(line || '').trim();
-                if (!/^\|/.test(tr)) return false;
                 return /^[\s|:\-]+$/.test(tr) && tr.indexOf('-') >= 0 && tr.indexOf('|') >= 0;
             }
-            // Cắt 1 hàng "| a | b |" → ['a','b']
+            // Cắt 1 hàng "| a | b |" (hoặc "a | b") → ['a','b']
             function splitTableRow(line) {
                 return String(line || '').trim()
                     .replace(/^\|/, '').replace(/\|$/, '')
@@ -237,20 +287,39 @@
                     .map(function(c) { return String(c == null ? '' : c).trim(); });
             }
             // Dựng <table> an toàn (nội dung ô đã được escape + render markdown inline từ trước).
+            // TỰ CÂN CHỈNH CỘT: AI hay quên cột "chỉ tiêu" ở header (VD header chỉ có "PC1 | TV2"
+            // nhưng mỗi dòng 3 ô "Giá trị cuối kỳ | ~593 triệu | ~430-450 triệu") → chèn header trống
+            // phía trước để các cột thẳng hàng, hết bị lệch cột.
             function buildTableHtml(headCells, bodyRows) {
-                const head = (headCells || []).filter(function(c) { return String(c == null ? '' : c).trim() !== ''; });
-                const headCount = head.length;
+                const rawHead = (headCells || []).map(function(c) { return String(c == null ? '' : c).trim(); });
+                // headCount tính theo ô KHÔNG rỗng (dùng cho việc bẻ 4→2 ô như bảng "Chỉ tiêu|Giá trị").
+                const headCount = rawHead.filter(function(c) { return c !== ''; }).length;
                 // Nếu hàng dữ liệu có GẤP BỘI số cột header (VD header 2 cột mà hàng 4 ô:
                 // "Giá | 72.800 đ | P/E | 12,34") → tách thành nhiều hàng 2 cột cho dễ đọc.
                 const rows = [];
                 (bodyRows || []).forEach(function(r) {
                     if (!r || !r.length) return;
-                    if (headCount >= 2 && r.length > headCount && r.length % headCount === 0) {
-                        for (let k = 0; k < r.length; k += headCount) rows.push(r.slice(k, k + headCount));
+                    const cells = r.map(function(c) { return String(c == null ? '' : c).trim(); });
+                    if (headCount >= 2 && cells.length > headCount && cells.length % headCount === 0) {
+                        for (let k = 0; k < cells.length; k += headCount) rows.push(cells.slice(k, k + headCount));
                     } else {
-                        rows.push(r);
+                        rows.push(cells);
                     }
                 });
+                // Số cột thật = số ô PHỔ BIẾN NHẤT ở các hàng dữ liệu (tránh lệch khi hàng thiếu ô).
+                let cols = 0;
+                const freq = {};
+                rows.forEach(function(r) {
+                    if (!r || !r.length) return;
+                    freq[r.length] = (freq[r.length] || 0) + 1;
+                    if ((freq[r.length] || 0) > (freq[cols] || 0)) cols = r.length;
+                });
+                // Header ghép đủ số cột: nếu hàng dữ liệu NHIỀU HƠN header (hay gặp: thừa cột chỉ tiêu đầu)
+                // → chèn header trống vào ĐẦU để các ô chỉ tiêu nằm đúng cột riêng, không lệch.
+                const head = rawHead.slice();
+                if (head.length && cols > head.length) {
+                    for (let k = head.length; k < cols; k++) head.unshift('');
+                }
                 let html = '<div class="ta-table-wrap"><table class="ta-table">';
                 if (head.length) {
                     html += '<thead><tr>' + head.map(function(c) { return '<th>' + (c || '') + '</th>'; }).join('') + '</tr></thead>';
@@ -435,30 +504,57 @@
                     // Dòng đã được escape + render markdown ở trên → KHÔNG escape lại (tránh hiện &lt;strong&gt;).
                     if (/^\s*\d+\.\s+/.test(line)) { out += '<div class="ta-li">' + line.trim() + '</div>'; continue; }
                     if (line.trim() === '') { continue; }
-                    // Bảng Markdown: các dòng liên tiếp bắt đầu bằng "|"
-                    if (/^\s*\|/.test(line)) {
+                    // Bảng Markdown: gom các dòng liên tiếp có dấu "|".
+                    // Hỗ trợ CẢ bảng DeepSeek hay xuất KHÔNG có "|" ở đầu/cuối dòng
+                    // (VD "Chỉ tiêu | PC1 | TV2" và "--- | --- | ---").
+                    if (/^\s*\|/.test(line) || line.indexOf('|') >= 0) {
                         const rawRows = [];
-                        while (i < lines.length && /^\s*\|/.test(lines[i])) {
+                        while (i < lines.length && (/^\s*\|/.test(lines[i]) || lines[i].indexOf('|') >= 0)) {
                             rawRows.push(lines[i]);
                             i++;
                         }
                         i--; // vòng for sẽ tăng tiếp
-                        // Hàng 1 là header nếu hàng 2 là dòng phân tách |---|
-                        let headCells = null;
-                        let startBody = 0;
-                        if (rawRows.length >= 2 && isTableSep(rawRows[1])) {
-                            headCells = splitTableRow(rawRows[0]);
-                            startBody = 2;
-                        }
-                        const bodyRows = [];
-                        for (let j = startBody; j < rawRows.length; j++) {
-                            if (isTableSep(rawRows[j])) continue;
-                            const cells = splitTableRow(rawRows[j]);
-                            if (cells.length) bodyRows.push(cells);
-                        }
-                        if (headCells || bodyRows.length) {
-                            out += buildTableHtml(headCells, bodyRows);
-                            continue;
+                        const sepCount = rawRows.filter(isTableSep).length;
+                        const rowCount = rawRows.length - sepCount;
+                        // Chỉ coi là bảng khi: MỌI dòng bắt đầu bằng "|" (chủ đích viết bảng),
+                        // hoặc có ≥ 2 dòng dữ liệu, hoặc ≥ 1 dòng dữ liệu kèm dòng phân tách.
+                        const allPipeStart = rawRows.length > 0 && rawRows.every(function(r) { return /^\s*\|/.test(r); });
+                        const isTable = allPipeStart
+                            ? rawRows.length >= 1
+                            : (rowCount >= 2 || (rowCount >= 1 && sepCount >= 1));
+                        if (isTable) {
+                            // Hàng 1 là header nếu hàng 2 là dòng phân tách (| --- | ... |).
+                            let headCells = null;
+                            let startBody = 0;
+                            if (rawRows.length >= 2 && isTableSep(rawRows[1])) {
+                                headCells = splitTableRow(rawRows[0]);
+                                startBody = 2;
+                            } else if (rawRows.length >= 2 && !isTableSep(rawRows[0])) {
+                                // Không có dòng phân tách (DeepSeek hay bỏ): dòng 1 là header khi
+                                // SỐ Ô khác dòng kế tiếp, HOẶC dòng 1 toàn ô in đậm (**...) còn dòng kế thì không
+                                // (kiểu "**PC1** | **TV2**" rồi các dòng dữ liệu thường). Tránh đoán nhầm
+                                // khi 2 dòng cùng số ô và cùng kiểu in đậm.
+                                const firstCells = splitTableRow(rawRows[0]);
+                                const secondCells = splitTableRow(rawRows[1]);
+                                const allBold = function(cells) {
+                                    return cells.length > 0 && cells.every(function(c2) { return c2.indexOf('<strong>') >= 0; });
+                                };
+                                if (firstCells.length !== secondCells.length ||
+                                    (allBold(firstCells) && !allBold(secondCells))) {
+                                    headCells = firstCells;
+                                    startBody = 1;
+                                }
+                            }
+                            const bodyRows = [];
+                            for (let j = startBody; j < rawRows.length; j++) {
+                                if (isTableSep(rawRows[j])) continue;
+                                const cells = splitTableRow(rawRows[j]);
+                                if (cells.length) bodyRows.push(cells);
+                            }
+                            if (headCells || bodyRows.length) {
+                                out += buildTableHtml(headCells, bodyRows);
+                                continue;
+                            }
                         }
                     }
                     out += '<div class="ta-p">' + line + '</div>';
@@ -524,15 +620,19 @@
                     exportContentToPdf(content, question);
                 });
             }
-            // Thêm thanh nút xuất bên dưới 1 câu trả lời (dùng chung cho lịch sử & streaming).
-            function attachExportBar(bodyEl, content, question) {
-                if (!bodyEl) return;
-                let bar = bodyEl.querySelector('.ta-ai-bar');
+            // Thêm thanh nút xuất PDF VÀO TRONG khung trả lời (.ta-ai-reply) của TuniAI
+            // (giữ nguyên nút "Xuất PDF" toàn bộ hội thoại ở header chat).
+            function attachExportBar(replyHost, content, question) {
+                const host = (replyHost && replyHost.classList && replyHost.classList.contains('ta-ai-reply'))
+                    ? replyHost
+                    : (replyHost ? replyHost.querySelector('.ta-ai-reply') : null);
+                if (!host) return;
+                let bar = host.querySelector(':scope > .ta-ai-bar');
                 if (!bar) {
                     bar = document.createElement('div');
                     bar.className = 'ta-ai-bar';
                     bar.innerHTML = '<button type="button" class="ta-ai-export" title="Xuất nội dung này ra PDF"><i class="fas fa-file-pdf"></i> Xuất nội dung này ra PDF</button>';
-                    bodyEl.appendChild(bar);
+                    host.appendChild(bar);
                 }
                 const btn = bar.querySelector('.ta-ai-export');
                 if (btn && !btn.__expBound) {
@@ -540,10 +640,10 @@
                     btn.addEventListener('click', function() { askExportPdf(content, question); });
                 }
             }
-            // Gắn nút sau khi streaming xong 1 câu trả lời.
+            // Gắn nút sau khi streaming xong 1 câu trả lời (bubble = khung .ta-ai-reply).
             function attachLiveExport(bubble, content) {
                 if (!bubble || !content) return;
-                attachExportBar(bubble.closest('.ta-ai-body'), content, lastUserQuestion());
+                attachExportBar(bubble, content, lastUserQuestion());
             }
 
             function renderMessages() {
@@ -573,7 +673,7 @@
                     }
                 });
                 msgsEl.innerHTML = html;
-                // Gắn nút "Xuất nội dung này ra PDF" cho từng câu trả lời AI.
+                // Gắn nút "Xuất nội dung này ra PDF" cho từng câu trả lời AI (đặt TRONG khung trả lời).
                 const aiEls = msgsEl.querySelectorAll('.ta-msg-ai');
                 let aiIdx = 0;
                 c.messages.forEach(function(m, mi) {
@@ -585,7 +685,7 @@
                     for (let k = mi - 1; k >= 0; k--) {
                         if (c.messages[k] && c.messages[k].role === 'user') { q = c.messages[k].content || ''; break; }
                     }
-                    attachExportBar(row.querySelector('.ta-ai-body'), m.content, q);
+                    attachExportBar(row.querySelector('.ta-ai-reply'), m.content, q);
                 });
                 scrollChat();
             }
@@ -628,13 +728,21 @@
                     return '<div class="ta-h-item' + active + '" data-id="' + c.id + '">' +
                         '<span class="ta-h-title">' + title + '</span>' +
                         '<span class="ta-h-time">' + time + '</span>' +
+                        '<button type="button" class="ta-h-ren" title="Đổi tên" data-ren="' + c.id + '"><i class="fas fa-pen"></i></button>' +
                         '<button type="button" class="ta-h-del" title="Xóa" data-del="' + c.id + '"><i class="fas fa-trash"></i></button>' +
                     '</div>';
                 }).join('');
                 historyEl.querySelectorAll('.ta-h-item').forEach(function(el) {
                     el.addEventListener('click', function(e) {
-                        if (e.target.closest('.ta-h-del')) return;
+                        if (e.target.closest('.ta-h-del') || e.target.closest('.ta-h-ren') ||
+                            e.target.closest('.ta-h-input') || el.classList.contains('editing')) return;
                         openConv(el.getAttribute('data-id'));
+                    });
+                });
+                historyEl.querySelectorAll('.ta-h-ren').forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        startRenameConv(el.getAttribute('data-ren'));
                     });
                 });
                 historyEl.querySelectorAll('.ta-h-del').forEach(function(el) {

@@ -295,6 +295,29 @@ class MemberQuota(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class BankInterestRate(Base):
+    """Lãi suất tiền gửi (Giai đoạn 1 — dữ liệu TỔNG HỢP THAM KHẢO lưu trong DB, KHÔNG realtime).
+
+    Kiến trúc hướng Giai đoạn 2: sau này thay nguồn bằng API ngân hàng / nguồn tự động
+    → Backend cập nhật bảng này (không phải xây lại UI/API).
+    Mỗi dòng = 1 (ngân hàng, kỳ hạn, hình thức gửi, đối tượng) với một mức lãi suất %/năm.
+    """
+
+    __tablename__ = "bank_interest_rates"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    bank_code: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
+    bank_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    term_months: Mapped[int] = mapped_column(Integer, nullable=False)  # 1,3,6,12,18,24
+    interest_rate: Mapped[float] = mapped_column(Float, nullable=False)  # %/năm
+    channel: Mapped[str] = mapped_column(String(20), default="online")  # online | counter
+    customer_type: Mapped[str] = mapped_column(String(60), default="Khách hàng cá nhân")
+    min_amount: Mapped[float | None] = mapped_column(Float, nullable=True)  # số tiền tối thiểu (đ)
+    conditions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str] = mapped_column(String(120), default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class Feature(Base):
     __tablename__ = "features"
 

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
+    <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
+    <title>Lãi ngân hàng - TuniX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
+    <link rel="stylesheet" href="/static/lai-ngan-hang.css?v=20260906k" />
+</head>
+<body>
+    <div class="lnh-page">
+        <div class="lnh-head">
+            <h1>Lãi ngân hàng</h1>
+            <div class="lnh-sub">Tra cứu &amp; so sánh lãi suất tiền gửi tiết kiệm của các ngân hàng, ước tính tiền lãi khi đáo hạn.</div>
+            <div class="lnh-meta">
+                <span class="lnh-pill"><i class="fas fa-database"></i> Nguồn: <b id="metaSource">…</b></span>
+                <span class="lnh-pill"><i class="far fa-clock"></i> Cập nhật lần cuối: <b id="metaUpdated">…</b></span>
+            </div>
+        </div>
+
+        <!-- ============ 1. Công cụ tính lãi ============ -->
+        <div class="lnh-card">
+            <h3><i class="fas fa-calculator"></i> Tính tiền lãi tiết kiệm</h3>
+            <div class="lnh-row">
+                <div class="lnh-field">
+                    <label>Số tiền gửi <span class="opt">(VNĐ) *</span></label>
+                    <div class="lnh-input-wrap"><input id="lnhAmount" type="text" inputmode="numeric" placeholder="VD: 500.000.000" /></div>
+                </div>
+                <div class="lnh-field">
+                    <label>Ngân hàng</label>
+                    <div class="lnh-input-wrap"><select id="lnhBank"></select></div>
+                </div>
+                <div class="lnh-field">
+                    <label>Hình thức gửi</label>
+                    <div class="lnh-input-wrap"><select id="lnhChannel"></select></div>
+                </div>
+                <div class="lnh-field">
+                    <label>Kỳ hạn</label>
+                    <div class="lnh-input-wrap"><select id="lnhTerm"></select></div>
+                </div>
+            </div>
+            <div class="lnh-hint">Áp dụng cách tính <b>lãi đơn trả lãi cuối kỳ</b> (lãi = gốc × lãi suất%/năm × số tháng / 12). Kết quả là <b>ước tính</b>, mang tính tham khảo.</div>
+            <hr class="lnh-sep" />
+            <div class="lnh-actions">
+                <button type="button" class="lnh-btn primary" id="lnhCalcBtn"><i class="fas fa-calculator"></i> Tính lãi</button>
+                <button type="button" class="lnh-btn ghost" id="lnhExBtn">Ví dụ</button>
+            </div>
+            <div id="lnhCalcResult"></div>
+        </div>
+
+        <!-- ============ 2. So sánh giữa các ngân hàng ============ -->
+        <div class="lnh-card">
+            <h3><i class="fas fa-scale-balanced"></i> So sánh lãi suất giữa các ngân hàng</h3>
+            <div class="lnh-row">
+                <div class="lnh-field">
+                    <label>Số tiền gửi <span class="opt">(VNĐ) *</span></label>
+                    <div class="lnh-input-wrap"><input id="lnhCmpAmount" type="text" inputmode="numeric" placeholder="VD: 500.000.000" /></div>
+                </div>
+                <div class="lnh-field">
+                    <label>Kỳ hạn</label>
+                    <div class="lnh-input-wrap"><select id="lnhCmpTerm"></select></div>
+                </div>
+                <div class="lnh-field">
+                    <label>Sắp xếp theo</label>
+                    <div class="lnh-input-wrap">
+                        <select id="lnhCmpSort">
+                            <option value="rate_desc">Lãi suất cao → thấp</option>
+                            <option value="rate_asc">Lãi suất thấp → cao</option>
+                            <option value="name">Tên ngân hàng A → Z</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="lnh-hint">So sánh cùng hình thức gửi <b id="lnhCmpChannelLabel">Gửi Online</b>, cùng số tiền &amp; kỳ hạn giữa các ngân hàng.</div>
+            <hr class="lnh-sep" />
+            <div class="lnh-actions">
+                <button type="button" class="lnh-btn primary" id="lnhCompareBtn"><i class="fas fa-scale-balanced"></i> So sánh</button>
+                <button type="button" class="lnh-btn ghost" id="lnhCmpExBtn">Ví dụ</button>
+            </div>
+            <div id="lnhCompareResult"></div>
+        </div>
+
+        <!-- ============ 3. Bảng ma trận lãi suất ============ -->
+        <div class="lnh-card">
+            <h3><i class="fas fa-table"></i> Bảng lãi suất tiết kiệm theo ngân hàng &amp; kỳ hạn</h3>
+            <div class="lnh-mxbar">
+                <div class="lnh-chips" id="lnhChannelChips">
+                    <button type="button" class="lnh-chip on" data-ch="online"><i class="fas fa-mobile-screen-button"></i> Gửi Online</button>
+                    <button type="button" class="lnh-chip" data-ch="counter"><i class="fas fa-building-columns"></i> Tại quầy</button>
+                </div>
+                <div class="lnh-mxctrl">
+                    <div class="lnh-input-wrap small"><input id="lnhSearch" type="text" placeholder="Lọc ngân hàng…" /></div>
+                    <div class="lnh-input-wrap small"><select id="lnhTermSort" title="Kỳ hạn dùng để sắp xếp & đánh dấu"></select></div>
+                    <div class="lnh-input-wrap small"><select id="lnhMxSort">
+                        <option value="bank">Sắp xếp: A → Z</option>
+                        <option value="rate">Lãi suất kỳ hạn chọn: cao → thấp</option>
+                    </select></div>
+                </div>
+            </div>
+            <div class="lnh-tblwrap">
+                <table class="lnh-table" id="lnhMxTable">
+                    <thead id="lnhMxHead"></thead>
+                    <tbody id="lnhMxBody"></tbody>
+                </table>
+            </div>
+            <div class="lnh-hint" style="margin-top:8px;">
+                <span class="lnh-legend"></span> = lãi suất cao nhất ở kỳ hạn đang chọn. Nhấn vào một ô lãi suất để áp kỳ hạn vào công cụ tính phía trên.
+            </div>
+        </div>
+
+        <!-- ============ Nguồn dữ liệu ============ -->
+        <div class="lnh-note">
+            <i class="fas fa-circle-info"></i>
+            <b>Nguồn dữ liệu:</b> <span id="noteSource">…</span>. Dữ liệu được tổng hợp lưu trên hệ thống, <b>KHÔNG phải nguồn realtime</b> và không phải công bố chính thức của từng ngân hàng tại thời điểm bạn xem.
+            Lãi suất thực tế còn tùy thuộc sản phẩm, số tiền, đối tượng khách hàng và có thể thay đổi theo chính sách từng ngân hàng. Vui lòng <b>kiểm tra lại tại ngân hàng / website chính thức</b> trước khi quyết định. Số tiền lãi chỉ là <b>ước tính</b> (lãi đơn, trả lãi cuối kỳ).
+        </div>
+    </div>
+
+    <script src="/static/lai-ngan-hang.js?v=20260906k"></script>
+    <script src="/static/context-menu.js?v=20260827a"></script>
+</body>
+</html>

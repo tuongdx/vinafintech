@@ -14,7 +14,7 @@ from app.core.security import decode_token
 from app.db import SessionLocal
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, alerts, asset_events, auth, chart, contact, dashboard, faqs, features, feedback, logs, membership, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, alerts, asset_events, auth, bank_rates, chart, contact, dashboard, faqs, features, feedback, logs, membership, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -178,6 +178,7 @@ app.include_router(notifications.router, prefix=api)
 app.include_router(portfolio.router, prefix=api)
 app.include_router(alerts.router, prefix=api)
 app.include_router(asset_events.router, prefix=api)
+app.include_router(bank_rates.router, prefix=api)
 
 frontend_path = Path(settings.frontend_dir)
 if frontend_path.exists():
@@ -196,6 +197,17 @@ def on_startup() -> None:
         session = SessionLocal()
         try:
             feature_flags.ensure_block_features(session)
+        finally:
+            session.close()
+    except Exception:  # noqa: BLE001 — không để lỗi seed làm hỏng startup
+        pass
+    # Seed dữ liệu lãi suất ngân hàng (Giai đoạn 1 — dữ liệu tổng hợp tham khảo) nếu bảng trống.
+    try:
+        from app.services import bank_rate_service
+
+        session = SessionLocal()
+        try:
+            bank_rate_service.seed_rates(session)
         finally:
             session.close()
     except Exception:  # noqa: BLE001 — không để lỗi seed làm hỏng startup
@@ -264,12 +276,15 @@ PAGE_MAP: dict[str, str] = {
     "tin-tuc": "tin-tuc.html",
     "thi-truong": "ThiTruong.html",
     "co-phieu": "CoPhieu.html",
+    # Trang Lãi ngân hàng: /lai-ngan-hang giữ nguyên shell, nội dung nạp vào iframe left-col.
+    "lai-ngan-hang": "lai-ngan-hang.html",
     "kham-pha": "KhamPha.html",
     "tuniai": "TuniAI.html",
     "caidat": "caidat.html",
     "taikhoan": "taikhoan.html",
     "doimatkhau": "doimatkhau.html",
     "quan-ly-tai-san": "quanlytaisan.html",
+    "tien-ich": "tienich.html",
     "QuanTri": "QuanTri.html",
     "AdminLogin": "AdminLogin.html",
     "TrungTamTroGiup": "TrungTamTroGiup.html",
@@ -305,12 +320,16 @@ INDEX_SHELL_PAGES = {
     "thi-truong",
     # Trang cổ phiếu: /co-phieu giữ nguyên shell, nội dung nạp vào left-col.
     "co-phieu",
+    # Trang Lãi ngân hàng: /lai-ngan-hang giữ nguyên shell, nội dung nạp vào iframe left-col.
+    "lai-ngan-hang",
     # Trang khám phá: /kham-pha giữ nguyên shell, nội dung nạp vào left-col.
     "kham-pha",
     # Trang TuniAI: /tuniai giữ nguyên shell, nội dung nạp vào left-col.
     "tuniai",
     # Trang Quản lý tài sản: /quan-ly-tai-san giữ nguyên shell, nội dung nạp vào iframe left-col.
     "quan-ly-tai-san",
+    # Trang Tiện ích: /tien-ich giữ nguyên shell, nội dung nạp vào iframe left-col.
+    "tien-ich",
     # URL đẹp danh mục tin tức
     "chung-khoan",
     "ngan-hang",

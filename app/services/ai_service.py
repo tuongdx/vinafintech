@@ -654,6 +654,191 @@ def _financial_statements(symbol: str, statement: str = "income", periods: int =
     return _cap(vns.get_financial_statement(symbol, section=st, periods=periods), max_items=30)
 
 
+# ===========================================================================
+# Tool giải thích NGUYÊN NHÂN tăng/giảm KQKD (earnings bridge)
+# ===========================================================================
+_EARN_METRICS: list[tuple[str, str]] = [
+    ("revenue", "doanh_thu"),
+    ("gross_profit", "loi_nhuan_gop"),
+    ("selling_expense", "chi_phi_ban_hang"),
+    ("admin_expense", "chi_phi_quan_ly"),
+    ("operating_profit", "loi_nhuan_hoat_dong"),
+    ("financial_income", "thu_nhap_tai_chinh"),
+    ("financial_expense", "chi_phi_tai_chinh"),
+    ("interest_expense", "chi_phi_lai_vay"),
+    ("other_income_net", "thu_nhap_khac_rong"),
+    ("profit_before_tax", "loi_nhuan_truoc_thue"),
+    ("tax_expense", "thue_tndn"),
+    ("net_profit", "loi_nhuan_sau_thue"),
+    ("minority_interest", "loi_ich_co_dong_thieu_so"),
+    ("net_profit_parent", "loi_nhuan_sau_thue_cong_ty_me"),
+    ("eps", "eps"),
+]
+
+
+def _earn_delta(cur: Any, base: Any) -> float | None:
+    try:
+        if cur is None or base is None:
+            return None
+        cf, bf = float(cur), float(base)
+    except (TypeError, ValueError):
+        return None
+    if bf == 0:
+        return None
+    return round((cf / bf - 1.0) * 100.0, 2)
+
+
+def _fmt_vnd(v: Any) -> Any:
+    """Đổi số VND → chuỗi 'x,x tỷ' dễ đọc, giữ None nếu thiếu."""
+    try:
+        n = float(v)
+    except (TypeError, ValueError):
+        return None
+    if n == 0 and (v == 0 or v == 0.0):
+        return 0
+    if abs(n) >= 1e9:
+        return f"{round(n / 1e9, 1):g} tỷ"
+    if abs(n) >= 1e6:
+        return f"{round(n / 1e6, 1):g} triệu"
+    return round(n, 0)
+
+
+@_tool(
+    "explain_earnings_change",
+    "GIẢI THÍCH NGUYÊN NHÂN tăng/giảm KẾT QUẢ KINH DOANH của 1 cổ phiếu theo quý (earnings bridge): doanh thu, biên lãi gộp, chi phí bán hàng/QLDN, chi phí tài chính & lãi vay, thu nhập khác, thuế, LNST và LNST công ty mẹ — so CÙNG KỲ NĂM TRƯỚC (yoy) hoặc QUÝ TRƯỚC (qoq), kèm bối cảnh công ty (ngành nghề, chiến lược, rủi ro) và tin tức liên quan. Dùng khi cần biết VÌ SAO doanh thu/lợi nhuận giảm hay tăng, vì sao công ty LỖ, hoặc user hỏi 'nguyên nhân / tại sao' quanh các con số BCTC (VD giảm ~48%, lỗ sau thuế, tăng ~17%).",
+    {
+        "type": "object",
+        "properties": {
+            "symbol": {"type": "string", "description": "Mã cổ phiếu (VD: PC1)"},
+            "compare": {"type": "string", "enum": ["yoy", "qoq"], "description": "yoy = so cùng kỳ năm trước (mặc định); qoq = so quý liền trước"},
+        },
+        "required": ["symbol"],
+    },
+)
+def _explain_earnings(symbol: str, compare: str = "yoy") -> dict[str, Any]:
+    """So kỳ mới nhất với kỳ gốc, tính % đổi của từng dòng, kèm bối cảnh + tin tức."""
+    sym = str(symbol or "").upper().strip()
+    detail = vns.get_income_statement_detail(sym, quarters=8)
+    rows = (detail or {}).get("quarters") or []
+    if len(rows) < 2:
+        # Fallback: chỉ có 4 dòng chính từ get_profit_analysis.
+        pa = vns.get_profit_analysis(sym, quarters=8)
+        rows = [
+            {
+                "period": str(r.get("period") or ""),
+                "revenue": r.get("revenue"),
+                "gross_profit": r.get("gross_profit"),
+                "profit_before_tax": r.get("profit_before_tax"),
+                "net_profit": r.get("net_profit"),
+            }
+            for r in (pa or {}).get("quarters") or []
+            if isinstance(r, dict)
+        ]
+    if len(rows) < 2:
+        return {"symbol": sym, "error": f"Không có đủ dữ liệu KQKD của {sym} để so sánh."}
+
+    latest = rows[-1]
+
+    def _qinfo(period: str) -> tuple[int, int] | None:
+        m = re.match(r"(\d{4})-Q(\d)$", str(period or "").strip())
+        return (int(m.group(1)), int(m.group(2))) if m else None
+
+    base = None
+    base_desc = ""
+    li = _qinfo(str(latest.get("period") or ""))
+    if compare == "qoq" and len(rows) >= 2:
+        base = rows[-2]
+        base_desc = "quý liền trước"
+    else:
+        # yoy: tìm kỳ CÙNG quý ở năm trước gần nhất.
+        if li:
+            ly, lq = li
+            for r in reversed(rows[:-1]):
+                qi = _qinfo(str(r.get("period") or ""))
+                if qi and qi[1] == lq and qi[0] < ly:
+                    base = r
+                    base_desc = f"cùng kỳ năm trước ({qi[0]})"
+                    break
+        if base is None and len(rows) >= 2:
+            base = rows[-2]
+            base_desc = "quý liền trước (không có cùng kỳ năm trước)"
+    if base is None:
+        return {"symbol": sym, "error": "Không đủ dữ liệu để so sánh."}
+
+    _EXP_KEYS = {"selling_expense", "admin_expense", "financial_expense", "interest_expense", "tax_expense"}
+
+    def _clean(ek: str, v: Any) -> Any:
+        """Chi phí (dấu âm trong BCTC) hiển thị dạng DƯƠNG (độ lớn) cho dễ đọc."""
+        if v is None:
+            return None
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            return v
+        if f != f:  # NaN
+            return None
+        return abs(f) if ek in _EXP_KEYS else f
+
+    latest_c = {ek: _clean(ek, latest.get(ek)) for ek, _vn in _EARN_METRICS if latest.get(ek) is not None}
+    base_c = {ek: _clean(ek, base.get(ek)) for ek, _vn in _EARN_METRICS if base.get(ek) is not None}
+    latest_short = {vn: _fmt_vnd(latest_c.get(ek)) for ek, vn in _EARN_METRICS if latest_c.get(ek) is not None}
+    base_short = {vn: _fmt_vnd(base_c.get(ek)) for ek, vn in _EARN_METRICS if base_c.get(ek) is not None}
+    # % thay đổi của các dòng chủ chốt (chỉ giữ dòng CÓ dữ liệu cả 2 kỳ).
+    pct = {}
+    for ek, vn in _EARN_METRICS:
+        d = _earn_delta(latest_c.get(ek), base_c.get(ek))
+        if d is not None:
+            pct[vn] = d
+    # Biên lãi gộp chênh lệch (điểm phần trăm).
+    gm_new, gm_base = latest.get("gross_margin_pct"), base.get("gross_margin_pct")
+    gm_delta = None
+    if isinstance(gm_new, (int, float)) and isinstance(gm_base, (int, float)):
+        gm_delta = round(gm_new - gm_base, 2)
+
+    result: dict[str, Any] = {
+        "symbol": sym,
+        "so_sanh": base_desc,
+        "don_vi": "VND (đã đổi sang tỷ/triệu cho dễ đọc). Các dòng chi_phi_* (bán hàng, QLDN, tài chính, lãi vay, thuế) hiển thị DƯƠNG = độ lớn chi phí; % thay đổi của chúng là mức tăng/giảm chi phí.",
+        "ky_moi_nhat": {"ky": str(latest.get("period") or latest.get("label") or ""), **latest_short},
+        "ky_so_sanh": {"ky": str(base.get("period") or base.get("label") or ""), **base_short},
+        "thay_doi_phan_tram": pct,
+        "bien_lai_gop": {"ky_moi_nhat_pct": gm_new, "ky_so_sanh_pct": gm_base, "chenh_lech_diem_phan_tram": gm_delta},
+    }
+
+    # Bối cảnh công ty (ngành nghề, chiến lược, rủi ro) — ngắn gọn.
+    try:
+        cs = vns.get_company_summary(sym) or {}
+        biz: dict[str, Any] = {}
+        for key, src in (
+            ("nganh", "industry"),
+            ("linh_vuc_hoat_dong", "business_line"),
+            ("chien_luoc", "business_strategy"),
+            ("rui_ro", "business_risk"),
+            ("gioi_thieu", "business_overall"),
+        ):
+            txt = str(cs.get(src) or "").strip()
+            if txt and txt.lower() not in ("n/a", "none", "chưa có", ""):
+                biz[key] = txt[:600]
+        if biz:
+            result["bien_canh_cong_ty"] = biz
+    except Exception:
+        pass
+
+    # Tin tức liên quan mã trong hệ thống (nếu có).
+    try:
+        news = _query_news(sym, 6)
+        if news:
+            result["tin_tuc_lien_quan"] = [
+                {"tieu_de": n.get("title"), "tom_tat": (n.get("summary") or "")[:400], "nguon": n.get("source"), "ngay": n.get("date")}
+                for n in news[:6]
+            ]
+        else:
+            result["tin_tuc_lien_quan"] = []
+    except Exception:
+        result["tin_tuc_lien_quan"] = []
+    return result
+
+
 def _ema(values: list[float], period: int) -> list[float]:
     if not values:
         return []
@@ -881,6 +1066,7 @@ QUY TẮC BẮT BUỘC:
 3. Trả lời bằng TIẾNG VIỆT, ngắn gọn, có cấu trúc (gạch đầu dòng), kèm số liệu cụ thể và ghi chú thời điểm dữ liệu.
    ĐỊNH DẠNG TRẢ LỜI: chỉ dùng Markdown thuần (dòng mới, **in đậm**, dấu "-" hoặc "1." đầu dòng).
    TUYỆT ĐỐI KHÔNG dùng thẻ HTML (<strong>, <b>, <br>, <a>, <em>, <p>, ...) hay thực thể HTML (&quot;, &amp;, &lt;, &gt;, &nbsp;, ...) trong câu trả lời.
+   NẾU DÙNG BẢNG SO SÁNH: viết Markdown table ĐẦY ĐỦ, CỘT ĐẦU TIÊN là cột tên chỉ tiêu VÀ dòng tiêu đề phải có đủ cột đó (VD: | Chỉ tiêu | PC1 | TV2 |). Mỗi dòng phải có SỐ Ô BẰNG ĐÚNG số cột của dòng tiêu đề, có dòng phân tách ngay sau tiêu đề (|---|---|---|), và MỌI dòng (kể cả tiêu đề) đều bắt đầu và kết thúc bằng dấu "|". KHÔNG bỏ cột "Chỉ tiêu"/nhãn hàng ở dòng tiêu đề, KHÔNG viết cột sát nhau thiếu dấu "|".
 4. Phân biệt rõ: dữ liệu realtime (giá/bảng giá) vs dữ liệu báo cáo quá khứ (BCTC, lịch sử giá).
 5. Không đưa khuyến nghị mua/bán cụ thể; chỉ phân tích khách quan, nêu rủi ro và nhắc người dùng tự quyết định.
 6. Nếu tool trả lỗi hoặc không có dữ liệu, hãy nói rõ là không tìm thấy thay vì bịa.
@@ -888,13 +1074,19 @@ QUY TẮC BẮT BUỘC:
 8. Khi người dùng hỏi về DANH MỤC của mình ('phân tích danh mục của tôi', 'cổ phiếu đang nắm giữ', 'tài sản của tôi', 'danh mục đầu tư'...): BẮT BUỘC gọi get_portfolio_holdings trước.
    - Nếu danh mục rỗng (empty=true) → báo người dùng chưa có cổ phiếu và hướng dẫn thêm cổ phiếu đang nắm giữ ở trang Quản lý tài sản.
    - Nếu có dữ liệu → phân tích TẤT CẢ cổ phiếu đang nắm giữ: từng MÃ (giá vốn, giá hiện tại, lãi/lỗ %), gộp theo từng NGÀNH, xu hướng NGẮN (1 tháng) / TRUNG (6 tháng) / DÀI (1 năm) hạn, và nêu rõ mã KHỎE (xu hướng tích cực, trên MA20, lãi) và mã YẾU (xu hướng tiêu cực, dưới MA20, lỗ) nếu có.
-9. NĂNG LỰC CỦA TuniAI:
+9. GIẢI THÍCH NGUYÊN NHÂN (WHY) khi có con số BCTC BIẾN ĐỘNG LỚN hoặc LỖ:
+   Khi trong dữ liệu/câu trả lời có doanh thu hoặc lợi nhuận GIẢM/TĂNG đáng kể (≥ ~15% so cùng kỳ), công ty báo LỖ sau thuế, hoặc user hỏi 'tại sao giảm/tăng', 'vì sao lỗ', 'nguyên nhân', 'công ty làm ăn thua lỗ/lãi như thế nào' → BẮT BUỘC gọi explain_earnings_change (mặc định compare='yoy' so cùng kỳ năm trước; nếu user hỏi theo quý liền trước thì compare='qoq') để lấy các dòng KQKD của kỳ mới nhất so với kỳ gốc.
+   - Diễn giải rõ dòng nào KÉO lợi nhuận/doanh thu (doanh thu giảm, biên lãi gộp co hẹp, chi phí bán hàng/QLDN tăng, chi phí tài chính/lãi vay tăng, thu nhập khác giảm, thuế, lỗ liên doanh/liên kết...) hay ĐẨY lên.
+   - Kết hợp biến_canh_cong_ty do tool trả về + get_company_summary + get_news(symbol) (đọc thêm get_news_content nếu cần) để nêu bối cảnh doanh nghiệp/ngành và tin tức liên quan (kết quả kinh doanh, chính sách, vĩ mô, nước ngoài) nếu có.
+   - Nếu tool thiếu dòng/không có tin tức → nói rõ phần nào chưa có dữ liệu; TUYỆT ĐỐI không bịa nguyên nhân.
+10. NĂNG LỰC CỦA TuniAI:
    - AI Screener / tìm cổ phiếu theo yêu cầu tự nhiên → screen_stocks (lọc theo ngành, sàn, P/E, P/B, ROE, cổ tức, tăng trưởng, rủi ro, vốn hóa, khối lượng; sắp xếp theo tiêu chí).
    - Đọc BCTC → get_financial_statements (income/balance/cashflow) khi hỏi tài chính, nợ, dòng tiền.
+   - Giải thích vì sao LN/doanh thu tăng-giảm/lỗ → explain_earnings_change (xem quy tắc 9).
    - Phân tích chart/kỹ thuật → analyze_chart (MA20/50/200, RSI, MACD, Hỗ trợ/Kháng cự, xu hướng ngắn/trung/dài hạn).
    - Bull/Bear thị trường → analyze_market_sentiment (độ rộng thị trường, chỉ số, khối ngoại).
    - TỰ ĐỘNG chọn tool phù hợp để lấy dữ liệu cần thiết trước khi trả lời.
-10. TỰ ĐỘNG VẼ BIỂU ĐỒ khi câu trả lời có CÁC CON SỐ LIÊN QUAN / SO SÁNH (để người dùng dễ hình dung):
+11. TỰ ĐỘNG VẼ BIỂU ĐỒ khi câu trả lời có CÁC CON SỐ LIÊN QUAN / SO SÁNH (để người dùng dễ hình dung):
    - BẮT BUỘC kèm biểu đồ khi câu trả lời có từ ~3 con số trở lên cùng loại/liên quan nhau: so sánh nhiều mã/ngành, doanh thu hoặc lợi nhuận theo quý/năm, phân bổ danh mục theo ngành/loại tài sản, tỷ trọng, độ rộng thị trường (tăng/giảm/đứng), tăng trưởng theo giai đoạn...
    - CHỌN LOẠI:
      • Dùng "pie" khi là TỶ TRỌNG / CƠ CẤU / phần trăm cộng gần 100% (danh mục theo ngành, nguồn doanh thu, loại tài sản, khối ngoại mua/bán...).
@@ -903,7 +1095,7 @@ QUY TẮC BẮT BUỘC:
      • "bar": {"type":"bar","title":"...","labels":["Q1","Q2"],"series":[{"name":"2025","values":[100,120]},{"name":"2026","values":[110,150]}]}
      • "pie": {"type":"pie","title":"...","data":[{"label":"Ngân hàng","value":40,"color":"#008080"},{"label":"BĐS","value":30,"color":"#f39c12"}]}
    Số liệu trong biểu đồ PHẢI khớp dữ liệu tool đã lấy (không tự bịa).
-11. ẢNH CHART CỔ PHIẾU: Khi bạn dùng analyze_chart để phân tích chart của một mã X (VD 'phân tích chart FPT'), ngay SAU phần phân tích kỹ thuật hãy chèn MỘT dòng ảnh (Markdown image) đúng dạng:
+12. ẢNH CHART CỔ PHIẾU: Khi bạn dùng analyze_chart để phân tích chart của một mã X (VD 'phân tích chart FPT'), ngay SAU phần phân tích kỹ thuật hãy chèn MỘT dòng ảnh (Markdown image) đúng dạng:
 ![Biểu đồ X 3 tháng](/api/stocks/X/chart-svg?period=3m)
    Trong đó X là MÃ CỔ PHIẾU IN HOA. KHÔNG tự bịa URL khác, KHÔNG chèn cho mã chỉ số (VNINDEX...). Nếu không chắc có dữ liệu thì vẫn chèn — hệ thống tự bỏ qua khi không vẽ được."""
 

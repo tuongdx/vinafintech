@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>TuniX - Phân tích cổ phiếu toàn diện và quản lý đầu tư hiệu quả</title>
+    <title>TuniX - Nền tảng đầu tư thông minh và quản lý đầu tư hiệu quả</title>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B528QFKRN9"></script>
     <script>
@@ -579,6 +579,29 @@
         body.dark-mode .main-menu .mm-item.active { color: #4fb3b3; background: rgba(0, 128, 128, 0.15); }
         body.dark-mode .main-menu .mm-ai { color: #4fb3b3; }
         body.dark-mode .mm-sep { background: #21262d; }
+
+        /* Menu con "Tiện ích" (dropdown khi hover — canh bằng JS để không bị cắt bởi overflow-x của nav) */
+        .main-menu .mm-dd { position: relative; display: inline-flex; align-items: center; }
+        .main-menu .mm-dd > .mm-item { cursor: default; } /* mục cha Tiện ích không click được — chỉ hover mở menu con */
+        .main-menu .mm-dd .mm-item { padding-right: 8px; }
+        .mm-dd .mm-caret { font-size: 10px; opacity: .7; transition: transform .15s; margin-left: 2px; }
+        .main-menu .mm-dd:hover .mm-caret { transform: rotate(180deg); }
+        .mm-sub {
+            display: none; position: fixed; z-index: 400; min-width: 252px;
+            background: #fff; border: 1px solid #e9edf2; border-radius: 12px;
+            box-shadow: 0 14px 30px rgba(15,23,42,.14); padding: 6px;
+        }
+        .mm-sub.open { display: block; }
+        .mm-sub::before { content: ''; position: absolute; left: 0; right: 0; top: -7px; height: 8px; } /* cầu nối hover từ nút xuống menu con */
+        .mm-sub .mm-sub-item {
+            display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 8px;
+            color: #33415c; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; transition: all .15s;
+        }
+        .mm-sub .mm-sub-item:hover { background: #f0fbf9; color: #008080; }
+        .mm-sub .mm-sub-item i { width: 16px; text-align: center; color: #008080; }
+        body.dark-mode .mm-sub { background: #161b22; border-color: #30363d; box-shadow: 0 14px 30px rgba(0,0,0,.55); }
+        body.dark-mode .mm-sub .mm-sub-item { color: #c9d1d9; }
+        body.dark-mode .mm-sub .mm-sub-item:hover { background: #10151c; color: #4fb3b3; }
 
         .header {
             display: flex;
@@ -2621,9 +2644,19 @@
                 <span class="mm-sep"></span>
                 <a href="/co-phieu" class="mm-item" data-action="co-phieu">Cổ phiếu</a>
                 <span class="mm-sep"></span>
+                <a href="/lai-ngan-hang" class="mm-item" data-action="lai-ngan-hang">Lãi ngân hàng</a>
+                <span class="mm-sep"></span>
                 <a href="/kham-pha" class="mm-item" data-action="kham-pha">Khám phá</a>
                 <span class="mm-sep"></span>
                 <a href="/quan-ly-tai-san" class="mm-item" data-action="quan-ly-tai-san">Quản lý tài sản</a>
+                <span class="mm-sep"></span>
+                <span class="mm-dd" id="mmTienIch">
+                    <a href="/tien-ich" class="mm-item" data-action="tien-ich">Tiện ích <i class="fas fa-chevron-down mm-caret"></i></a>
+                    <span class="mm-sub" id="mmTienIchSub" role="menu">
+                        <a role="menuitem" href="/tien-ich?tool=adj" class="mm-sub-item" data-ti-sub="adj"><i class="fas fa-chart-line"></i> Giá điều chỉnh cổ phiếu</a>
+                        <a role="menuitem" href="/tien-ich?tool=dep" class="mm-sub-item" data-ti-sub="dep"><i class="fas fa-piggy-bank"></i> Lợi nhuận tiền gửi</a>
+                    </span>
+                </span>
                 <span class="mm-sep"></span>
                 <a href="/tuniai" class="mm-item mm-ai" data-action="tuniai"><i class="fas fa-robot"></i> TuniAI</a>
             </nav>
@@ -3191,7 +3224,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260905x';
+        const CACHE_VERSION = '20260906k';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3356,6 +3389,15 @@
             window.history.replaceState({}, '', '/co-phieu');
             setHeaderContext(false);
         }
+        function openLaiNganHangPage() {
+            // Mở trang "Lãi ngân hàng" trong shell — URL đẹp /lai-ngan-hang.
+            if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
+            if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
+            loadContent('/frontend/lai-ngan-hang.html');
+            window.history.replaceState({}, '', '/lai-ngan-hang');
+            setHeaderContext(false);
+        }
+        window.openLaiNganHangPage = openLaiNganHangPage;
         function openCoPhieuStock(symbol) {
             // Mở chi tiết cổ phiếu NHÚNG trong trang Cổ phiếu (breadcrumb ngành ... > MÃ) — dùng cho mọi trang list.
             const normalized = String(symbol || '').trim().toUpperCase();
@@ -3441,8 +3483,10 @@
             if (pg === '/Home' || /^\/Home(?:[?#].*)?$/.test(pg)) active = 'home';
             else if (/^\/thi-truong/.test(pg) || /ThiTruong\.html/.test(pg)) active = 'thi-truong';
             else if (/^\/co-phieu/.test(pg) || /CoPhieu\.html/.test(pg)) active = 'co-phieu';
+            else if (/^\/lai-ngan-hang/.test(pg) || /lai-ngan-hang\.html/.test(pg)) active = 'lai-ngan-hang';
             else if (/^\/kham-pha/.test(pg) || /KhamPha\.html/.test(pg)) active = 'kham-pha';
             else if (/^\/tuniai/.test(pg) || /TuniAI\.html/.test(pg)) active = 'tuniai';
+            else if (/^\/tien-ich(?:[?#].*)?$/.test(pg) || /tienich\.html/.test(pg)) active = 'tien-ich';
             else if (/^\/quan-ly-tai-san(?:[?#].*)?$/.test(pg) || /quanlytaisan\.html/.test(pg)) active = 'quan-ly-tai-san';
             else if (/tintuc|tin-tuc/.test(pg)) active = '';
             items.forEach(function(it) {
@@ -3454,6 +3498,11 @@
             mainMenu.addEventListener('click', function(e) {
                 const item = e.target.closest('.mm-item');
                 if (!item) return;
+                // Mục cha "Tiện ích" KHÔNG cho click — chỉ hover để hiện menu con (chặn mọi kiểu click).
+                if (item.getAttribute('data-action') === 'tien-ich') {
+                    e.preventDefault();
+                    return;
+                }
                 // Chuột phải / Ctrl+click → dùng href thật (mở tab/URL thật).
                 if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
                 e.preventDefault();
@@ -3464,6 +3513,8 @@
                     openThiTruongPage();
                 } else if (action === 'co-phieu') {
                     openCoPhieuPage();
+                } else if (action === 'lai-ngan-hang') {
+                    openLaiNganHangPage();
                 } else if (action === 'kham-pha') {
                     openKhamPhaPage();
                 } else if (action === 'quan-ly-tai-san') {
@@ -3478,9 +3529,11 @@
                 'home': '/Home',
                 'thi-truong': '/frontend/ThiTruong.html',
                 'co-phieu': '/frontend/CoPhieu.html',
+                'lai-ngan-hang': '/frontend/lai-ngan-hang.html',
                 'kham-pha': '/frontend/KhamPha.html',
                 'tuniai': '/frontend/TuniAI.html',
-                'quan-ly-tai-san': '/frontend/quanlytaisan.html'
+                'quan-ly-tai-san': '/frontend/quanlytaisan.html',
+                'tien-ich': '/frontend/tienich.html'
             };
             function prefetchPage(url) {
                 if (!url) return;
@@ -3499,6 +3552,54 @@
                 });
                 it.addEventListener('mouseleave', function() { clearTimeout(t); });
             });
+
+            // ---- Menu con "Tiện ích": hover hiển thị 2 công cụ con; bấm mở đúng màn hình ----
+            const mmTiWrap = mainMenu.querySelector('#mmTienIch');
+            const mmTiSub = mainMenu.querySelector('#mmTienIchSub');
+            if (mmTiWrap && mmTiSub) {
+                function placeTiSub() {
+                    try {
+                        const r = mmTiWrap.getBoundingClientRect();
+                        mmTiSub.style.top = Math.round(r.bottom + 6) + 'px';
+                        mmTiSub.style.left = Math.round(r.left) + 'px';
+                    } catch (e) {}
+                }
+                function showTiSub() { placeTiSub(); mmTiSub.classList.add('open'); }
+                function hideTiSub() { mmTiSub.classList.remove('open'); }
+                // Menu đóng khi chuột THỰC SỰ di ra ngoài (cả nút "Tiện ích" lẫn menu con) ~200ms;
+                // đứng yên trong menu con / rê xuống menu con đều KHÔNG bị biến mất.
+                let tiOutTimer = null;
+                function tiInsidePoint(x, y) {
+                    try {
+                        const el = document.elementFromPoint(x, y);
+                        return !!el && (el === mmTiWrap || mmTiWrap.contains(el));
+                    } catch (e) { return false; }
+                }
+                mmTiWrap.addEventListener('mouseenter', function () {
+                    if (tiOutTimer) { clearTimeout(tiOutTimer); tiOutTimer = null; }
+                    showTiSub();
+                });
+                document.addEventListener('mousemove', function (e) {
+                    if (!mmTiSub.classList.contains('open')) return;
+                    if (tiInsidePoint(e.clientX, e.clientY)) {
+                        if (tiOutTimer) { clearTimeout(tiOutTimer); tiOutTimer = null; }
+                    } else if (!tiOutTimer) {
+                        tiOutTimer = setTimeout(hideTiSub, 200);
+                    }
+                });
+                mmTiWrap.addEventListener('click', function(e) {
+                    const it = e.target.closest('.mm-sub-item');
+                    if (!it) return;
+                    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                    e.preventDefault();
+                    const sub = it.getAttribute('data-ti-sub');
+                    hideTiSub();
+                    loadContent('/frontend/tienich.html' + (sub ? '?tool=' + sub : ''));
+                    window.history.replaceState({}, '', '/tien-ich' + (sub ? '?tool=' + sub : ''));
+                });
+                window.addEventListener('scroll', function() { if (mmTiSub.classList.contains('open')) placeTiSub(); }, { passive: true });
+                window.addEventListener('resize', function() { if (mmTiSub.classList.contains('open')) placeTiSub(); });
+            }
         }
 
         // Logo TuniX — bấm về trang chủ tương ứng: tin tức → /tin-tuc, thị trường → /.
@@ -3721,7 +3822,7 @@
             updateRightColumnForStock(relatedSymbol);
 
             // Home va StockDetail duoc nhung bang iframe de giu nguyen HTML/CSS/JS.
-            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/quan-ly-tai-san(?:[?#].*)?$/.test(page) || /^\/frontend\/quanlytaisan\.html(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/tuniai(?:[?#].*)?$/.test(page) || /^\/frontend\/TuniAI\.html(?:[?#].*)?$/.test(page);
+            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/quan-ly-tai-san(?:[?#].*)?$/.test(page) || /^\/frontend\/quanlytaisan\.html(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/tuniai(?:[?#].*)?$/.test(page) || /^\/frontend\/TuniAI\.html(?:[?#].*)?$/.test(page) || /^\/tien-ich(?:[?#].*)?$/.test(page) || /^\/frontend\/tienich\.html(?:[?#].*)?$/.test(page) || /^\/lai-ngan-hang(?:[?#].*)?$/.test(page) || /^\/frontend\/lai-ngan-hang\.html(?:[?#].*)?$/.test(page);
             // Ẩn thanh cuộn trang khi đang xem chi tiết bài viết
             const isArticlePage = /^\/tintuc(?:[?#].*)?$/.test(page);
             document.body.classList.toggle('article-mode', isArticlePage);
@@ -4241,8 +4342,10 @@
             const qs = qIdx >= 0 ? u.slice(qIdx) : '';
             const MAP = {
                 '/quan-ly-tai-san': '/frontend/quanlytaisan.html',
+                '/tien-ich': '/frontend/tienich.html',
                 '/thi-truong': '/frontend/ThiTruong.html',
                 '/co-phieu': '/frontend/CoPhieu.html',
+                '/lai-ngan-hang': '/frontend/lai-ngan-hang.html',
                 '/kham-pha': '/frontend/KhamPha.html',
                 '/tuniai': '/frontend/TuniAI.html',
                 '/tin-tuc': '/frontend/tin-tuc.html',
@@ -4418,6 +4521,10 @@
             // Trang cổ phiếu: /co-phieu → nạp screener vào left-col.
             loadContent('/frontend/CoPhieu.html');
             setHeaderContext(false);
+        } else if (pathPage === 'lai-ngan-hang' || initialPage === 'lai-ngan-hang') {
+            // Trang Lãi ngân hàng: /lai-ngan-hang → nạp vào left-col.
+            loadContent('/frontend/lai-ngan-hang.html');
+            setHeaderContext(false);
         } else if (pathPage === 'kham-pha' || initialPage === 'kham-pha') {
             // Trang khám phá: /kham-pha → nạp discovery vào left-col.
             loadContent('/frontend/KhamPha.html');
@@ -4435,6 +4542,11 @@
         } else if (pathPage === 'quan-ly-tai-san' || initialPage === 'quan-ly-tai-san') {
             loadContent('/frontend/quanlytaisan.html');
             window.history.replaceState({}, '', '/quan-ly-tai-san');
+        } else if (pathPage === 'tien-ich' || initialPage === 'tien-ich') {
+            // Trang Tiện ích: /tien-ich (kèm ?tool=adj|dep khi vào thẳng menu con) → nạp vào left-col.
+            const toolParam = initialParams.get('tool');
+            loadContent('/frontend/tienich.html' + (toolParam ? '?tool=' + encodeURIComponent(toolParam) : ''));
+            window.history.replaceState({}, '', '/tien-ich' + (toolParam ? '?tool=' + encodeURIComponent(toolParam) : ''));
         } else if (PAGE_FILE_MAP[pathPage]) {
             // URL đẹp /Trang
             loadContent(PAGE_FILE_MAP[pathPage]);

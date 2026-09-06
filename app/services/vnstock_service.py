@@ -2874,6 +2874,105 @@ def get_financial_statement(symbol: str, section: str = "balance", periods: int 
         return empty
 
 
+def get_income_statement_detail(symbol: str, quarters: int = 8) -> dict[str, Any]:
+    """Chi tiết Bảng Kết quả kinh doanh (KQKD) theo quý — để AI giải thích NGUYÊN NHÂN
+    tăng/giảm doanh thu - lợi nhuận (bridge: doanh thu, biên gộp, chi phí bán hàng/QLDN,
+    chi phí tài chính/lãi vay, thu nhập khác, thuế, LNST công ty mẹ, EPS...).
+
+    Cùng nguồn VCI iQ insight như get_profit_analysis, nhưng trả về nhiều khoản mục hơn.
+    Dùng khi cần lý giải vì sao lợi nhuận/doanh thu đổi chiều hoặc biến động lớn.
+    """
+    symbol_upper = symbol.upper().strip()
+    safe_q = max(4, min(int(quarters or 8), 20))
+    empty = {"symbol": symbol_upper, "source": "empty", "unit": "vnd", "quarters": []}
+    cache_key = f"income-detail:{symbol_upper}:{safe_q}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    # Các khoản mục muốn lấy (khóa → mã isa* theo schema VCI đã kiểm chứng FPT/PC1/HPG...).
+    # Ưu tiên khớp tên tiếng Anh từ metadata; nếu không tìm thấy thì dùng mã dự phòng.
+    _TARGETS: list[tuple[str, list[str], str]] = [
+        ("revenue", ["net sales", "total operating income"], "isa3"),
+        ("gross_profit", ["gross profit"], "isa5"),
+        ("selling_expense", ["selling expense"], "isa9"),
+        ("admin_expense", ["general and admin"], "isa10"),
+        ("operating_profit", ["operating profit"], "isa11"),
+        ("financial_income", ["financial income"], "isa6"),
+        ("financial_expense", ["financial expenses"], "isa7"),
+        ("interest_expense", ["interest expenses"], "isa8"),
+        ("other_income_net", ["net other income"], "isa14"),
+        ("profit_before_tax", ["profit before tax"], "isa16"),
+        ("tax_expense", ["tax expense"], "isa19"),
+        ("net_profit", ["net profit", "after tax"], "isa20"),
+        ("minority_interest", ["minority interest"], "isa21"),
+        ("net_profit_parent", ["attributable to parent"], "isa22"),
+        ("eps", ["eps basic"], "isa23"),
+    ]
+    try:
+        meta = _vci_get_json(f"/v1/company/{symbol_upper}/financial-statement/metrics")
+        metric_rows = (meta.get("data") or {}).get("INCOME_STATEMENT", [])
+        field_to_en: dict[str, str] = {}
+        for row in metric_rows:
+            if isinstance(row, dict):
+                field_to_en[str(row.get("field") or "")] = str(row.get("titleEn") or "")
+
+        def _pick(field_candidates: list[str]) -> str | None:
+            for field, en in field_to_en.items():
+                lower = en.lower()
+                if all(nd in lower for nd in field_candidates):
+                    return field
+            return None
+
+        # field đích cho từng khóa: ưu tiên khớp tên, fallback mã isa.
+        target_field: dict[str, str] = {}
+        for key, needles, fallback in _TARGETS:
+            target_field[key] = _pick(needles) or fallback
+
+        fin = _vci_get_json(
+            f"/v1/company/{symbol_upper}/financial-statement",
+            {"section": "INCOME_STATEMENT"},
+        )
+        raw_quarters = (fin.get("data") or {}).get("quarters", [])
+        if not isinstance(raw_quarters, list) or not raw_quarters:
+            return empty
+
+        quarters_data: list[dict[str, Any]] = []
+        for q in raw_quarters:
+            if not isinstance(q, dict):
+                continue
+            try:
+                year = int(q.get("yearReport"))
+                quarter = int(q.get("lengthReport"))
+            except (TypeError, ValueError):
+                continue
+            if not (1 <= quarter <= 4):
+                continue
+            row: dict[str, Any] = {
+                "period": f"{year}-Q{quarter}",
+                "label": f"Q{quarter}/{year}",
+            }
+            for key, _needles, _fb in _TARGETS:
+                row[key] = _to_float(q.get(target_field.get(key, "")), default=None)
+            rev = row["revenue"]
+            gp = row["gross_profit"]
+            row["gross_margin_pct"] = round(gp / rev * 100.0, 2) if (isinstance(gp, (int, float)) and rev) else None
+            quarters_data.append(row)
+
+        quarters_data.sort(key=lambda item: item["period"])
+        quarters_data = quarters_data[-safe_q:]
+        result = {
+            "symbol": symbol_upper,
+            "source": "vci-finance",
+            "unit": "vnd",
+            "quarters": quarters_data,
+        }
+        cache.set(cache_key, result, ttl_seconds=21600)
+        return result
+    except Exception:
+        return empty
+
+
 def get_insider_trades(symbol: str) -> list[dict[str, Any]]:
     return [{"symbol": symbol.upper(), "person": "N/A", "action": "N/A", "volume": 0, "date": "N/A"}]
 

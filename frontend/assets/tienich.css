@@ -1,0 +1,139 @@
+/* TuniX — Tiện ích (trang tienich.html) */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: transparent; color: #12203a; line-height: 1.5; font-size: 14px; }
+body.dark-mode { color: #e6edf3; }
+.ti-page { width: 100%; max-width: 900px; margin: 0 auto; padding: 18px 16px 30px; }
+.embedded .ti-page { padding: 6px 0 30px; }
+
+.ti-head h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; color: #0b3b38; }
+body.dark-mode .ti-head h1 { color: #e6edf3; }
+.ti-head .ti-sub { color: #6b7a8f; font-size: 13.5px; margin-top: 4px; }
+body.dark-mode .ti-head .ti-sub { color: #8b949e; }
+
+/* ---------- Khung công cụ ---------- */
+.ti-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 18px 0 12px; flex-wrap: wrap; }
+.ti-toolbar .tt-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 17px; }
+.tt-name i { color: #008080; }
+.ti-switch { display: flex; gap: 6px; flex-wrap: wrap; }
+.ti-chip {
+    border: 1px solid #dbe4ec; background: #fff; color: #5a6b85; border-radius: 20px;
+    padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s;
+}
+body.dark-mode .ti-chip { background: #161b22; border-color: #30363d; color: #9fb0c7; }
+.ti-chip:hover { border-color: #008080; color: #008080; }
+.ti-chip.on { background: #008080; color: #fff; border-color: #008080; }
+
+.ti-card {
+    background: #fff; border: 1px solid #e9edf2; border-radius: 16px;
+    padding: 18px 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(15,23,42,0.04);
+}
+body.dark-mode .ti-card { background: #161b22; border-color: #30363d; }
+.ti-card h3 { font-size: 14px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+.ti-card h3 i { color: #008080; }
+
+.ti-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.ti-field label { display: block; font-size: 12px; font-weight: 700; color: #5a6b85; margin-bottom: 5px; }
+body.dark-mode .ti-field label { color: #9fb0c7; }
+.ti-field label .opt { font-weight: 500; color: #8a99b1; }
+.ti-input-wrap { display: flex; align-items: center; border: 1px solid #e3e8ef; border-radius: 10px; background: #fff; overflow: hidden; }
+body.dark-mode .ti-input-wrap { background: #0d1117; border-color: #30363d; }
+.ti-input-wrap:focus-within { border-color: #008080; box-shadow: 0 0 0 2px rgba(0,128,128,0.12); }
+.ti-input-wrap .pre { padding: 0 0 0 11px; color: #8a99b1; font-size: 13px; flex: 0 0 auto; }
+.ti-input-wrap input, .ti-input-wrap select {
+    flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-family: inherit;
+    font-size: 14px; color: #12203a; padding: 10px 11px; width: 100%;
+}
+body.dark-mode .ti-input-wrap input, body.dark-mode .ti-input-wrap select { color: #e6edf3; }
+.ti-input-wrap select {
+    appearance: none; cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, #008080 50%), linear-gradient(135deg, #008080 50%, transparent 50%);
+    background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%; background-size: 5px 5px; background-repeat: no-repeat;
+    padding-right: 28px;
+}
+.ti-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; user-select: none; }
+.ti-check input { width: 17px; height: 17px; accent-color: #008080; cursor: pointer; }
+.ti-hint { font-size: 12px; color: #8a99b1; margin-top: 6px; }
+body.dark-mode .ti-hint { color: #6b7a8f; }
+
+/* ---------- Nút ---------- */
+.ti-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 6px; }
+.ti-btn {
+    display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 10px;
+    font-family: inherit; font-weight: 700; font-size: 13.5px; cursor: pointer; padding: 10px 16px; transition: all .15s;
+}
+.ti-btn.primary { background: linear-gradient(135deg, #008080, #00a08a); color: #fff; box-shadow: 0 6px 16px rgba(0,128,128,0.25); }
+.ti-btn.primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.ti-btn.ghost { background: #fff; color: #008080; border: 1px solid #008080; }
+body.dark-mode .ti-btn.ghost { background: #161b22; }
+.ti-btn.ghost:hover { background: #f0fbf9; }
+body.dark-mode .ti-btn.ghost:hover { background: #10151c; }
+.ti-btn.danger { background: #fff; color: #d0314e; border: 1px solid #f0c4cc; }
+body.dark-mode .ti-btn.danger { background: #161b22; border-color: #7a2c38; }
+.ti-btn.danger:hover { background: #fdf1f3; }
+.ti-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ---------- Sự kiện điều chỉnh ---------- */
+.ev { border: 1px solid #e9edf2; border-radius: 12px; padding: 12px 12px 4px; margin-bottom: 10px; background: #fafbfd; }
+body.dark-mode .ev { background: #10151c; border-color: #30363d; }
+.ev-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.ev-name { font-size: 13px; font-weight: 800; color: #008080; }
+.ev-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.ev-rm { border: none; background: transparent; color: #b6c2d2; cursor: pointer; font-size: 13px; padding: 4px 6px; border-radius: 6px; }
+.ev-rm:hover { color: #d0314e; background: rgba(208,49,78,0.08); }
+.ev-summary { font-size: 12px; color: #5a6b85; margin: 2px 0 10px; }
+body.dark-mode .ev-summary { color: #9fb0c7; }
+
+/* ---------- Kết quả ---------- */
+.ti-result { margin-top: 14px; }
+.err-list { background: #fdf1f3; border: 1px solid #f0c4cc; color: #b02a44; border-radius: 12px; padding: 12px 14px; font-size: 13px; margin-top: 12px; }
+body.dark-mode .err-list { background: #2a1218; border-color: #7a2c38; color: #ff9fb0; }
+.err-list li { margin-left: 18px; }
+.adj-chain { margin-top: 8px; }
+.adj-step {
+    background: #f6f8fb; border: 1px solid #e9edf2; border-left: 4px solid #008080;
+    border-radius: 10px; padding: 10px 12px; margin: 8px 0;
+}
+body.dark-mode .adj-step { background: #10151c; border-color: #30363d; }
+.adj-step .as-name { font-weight: 800; font-size: 13px; }
+.adj-step .as-name .n { color: #008080; }
+.adj-step .as-detail { color: #5a6b85; font-size: 12.5px; margin-top: 2px; }
+body.dark-mode .adj-step .as-detail { color: #9fb0c7; }
+.adj-step .as-math { color: #6b7a8f; font-size: 12px; margin-top: 4px; font-style: italic; }
+.adj-step .as-val { margin-top: 6px; font-size: 13.5px; }
+.adj-step .as-val b { color: #008080; }
+.adj-arrow { text-align: center; color: #8a99b1; font-size: 13px; margin: 2px 0; }
+.adj-final {
+    background: linear-gradient(135deg, #008080, #00a08a); color: #fff; border-radius: 12px;
+    padding: 12px 16px; margin-top: 10px;
+}
+.adj-final .af-label { font-size: 12px; font-weight: 700; opacity: .9; }
+.adj-final .af-price { font-size: 24px; font-weight: 800; margin-top: 2px; }
+.adj-final .af-price span { font-size: 14px; font-weight: 600; opacity: .9; }
+
+.ti-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+.kpi { background: #f6f8fb; border: 1px solid #e9edf2; border-radius: 12px; padding: 11px 13px; }
+body.dark-mode .kpi { background: #10151c; border-color: #30363d; }
+.kpi .k-label { font-size: 11.5px; color: #6b7a8f; font-weight: 700; text-transform: uppercase; letter-spacing: .2px; }
+body.dark-mode .kpi .k-label { color: #8b949e; }
+.kpi .k-val { font-size: 16px; font-weight: 800; margin-top: 3px; color: #0b3b38; }
+body.dark-mode .kpi .k-val { color: #e6edf3; }
+.kpi.hl .k-val { color: #008080; }
+
+.ti-note {
+    background: #f0fbf9; border: 1px solid rgba(0,128,128,.25); border-left: 4px solid #008080;
+    border-radius: 10px; padding: 10px 13px; margin-top: 12px; font-size: 12.5px; color: #0b5a55; line-height: 1.55;
+}
+body.dark-mode .ti-note { background: #0f2420; color: #9fbfb8; border-color: rgba(77,182,182,.3); }
+.ti-note i { color: #008080; margin-right: 4px; }
+
+.ti-chart { margin-top: 14px; }
+.ti-chart .tc-title { font-size: 12.5px; font-weight: 800; margin-bottom: 8px; }
+.ti-chart svg { width: 100%; height: auto; display: block; border: 1px solid #e9edf2; border-radius: 10px; background: #fff; }
+body.dark-mode .ti-chart svg { background: #0d1117; border-color: #30363d; }
+
+.ti-sep { border: none; border-top: 1px dashed #e3e8ef; margin: 16px 0; }
+body.dark-mode .ti-sep { border-top-color: #2b323d; }
+@media (max-width: 560px) {
+    .ti-head h1 { font-size: 21px; }
+    .ti-row { grid-template-columns: 1fr; }
+}

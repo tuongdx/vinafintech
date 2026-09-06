@@ -1,0 +1,170 @@
+/* TuniX — Lãi ngân hàng (trang lai-ngan-hang.html) */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: transparent; color: #12203a; line-height: 1.5; font-size: 14px; }
+body.dark-mode { color: #e6edf3; }
+.lnh-page { width: 100%; max-width: 920px; margin: 0 auto; padding: 18px 16px 30px; }
+.embedded .lnh-page { padding: 6px 0 30px; }
+
+.lnh-head h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; color: #0b3b38; }
+body.dark-mode .lnh-head h1 { color: #e6edf3; }
+.lnh-head .lnh-sub { color: #6b7a8f; font-size: 13.5px; margin-top: 4px; }
+body.dark-mode .lnh-head .lnh-sub { color: #8b949e; }
+
+.lnh-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.lnh-pill {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
+    color: #0b5a55; background: #f0fbf9; border: 1px solid rgba(0,128,128,.25);
+    border-radius: 20px; padding: 4px 11px;
+}
+body.dark-mode .lnh-pill { color: #9fbfb8; background: #0f2420; border-color: rgba(77,182,182,.3); }
+.lnh-pill i { color: #008080; }
+.lnh-pill b { font-weight: 800; }
+
+/* ---------- Card / field chung ---------- */
+.lnh-card {
+    background: #fff; border: 1px solid #e9edf2; border-radius: 16px;
+    padding: 18px 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(15,23,42,0.04);
+}
+body.dark-mode .lnh-card { background: #161b22; border-color: #30363d; }
+.lnh-card h3 { font-size: 14px; font-weight: 800; margin-bottom: 13px; display: flex; align-items: center; gap: 7px; }
+.lnh-card h3 i { color: #008080; }
+
+.lnh-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.lnh-field label { display: block; font-size: 12px; font-weight: 700; color: #5a6b85; margin-bottom: 5px; }
+body.dark-mode .lnh-field label { color: #9fb0c7; }
+.lnh-field label .opt { font-weight: 500; color: #8a99b1; }
+.lnh-input-wrap { display: flex; align-items: center; border: 1px solid #e3e8ef; border-radius: 10px; background: #fff; overflow: hidden; }
+body.dark-mode .lnh-input-wrap { background: #0d1117; border-color: #30363d; }
+.lnh-input-wrap:focus-within { border-color: #008080; box-shadow: 0 0 0 2px rgba(0,128,128,0.12); }
+.lnh-input-wrap.small input, .lnh-input-wrap.small select { padding: 7px 10px; font-size: 12.5px; }
+.lnh-input-wrap input, .lnh-input-wrap select {
+    flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-family: inherit;
+    font-size: 14px; color: #12203a; padding: 10px 11px; width: 100%;
+}
+body.dark-mode .lnh-input-wrap input, body.dark-mode .lnh-input-wrap select { color: #e6edf3; }
+.lnh-input-wrap select {
+    appearance: none; cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, #008080 50%), linear-gradient(135deg, #008080 50%, transparent 50%);
+    background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%; background-size: 5px 5px; background-repeat: no-repeat;
+    padding-right: 28px;
+}
+.lnh-input-wrap input::placeholder { color: #a5b2c6; }
+body.dark-mode .lnh-input-wrap input::placeholder { color: #6b7a8f; }
+
+.lnh-hint { font-size: 12px; color: #8a99b1; margin-top: 6px; line-height: 1.5; }
+body.dark-mode .lnh-hint { color: #8b949e; }
+.lnh-sep { border: none; border-top: 1px dashed #e3e8ef; margin: 15px 0 13px; }
+body.dark-mode .lnh-sep { border-top-color: #2b323d; }
+
+.lnh-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 6px; }
+.lnh-btn {
+    display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 10px;
+    font-family: inherit; font-weight: 700; font-size: 13.5px; cursor: pointer; padding: 10px 16px; transition: all .15s;
+}
+.lnh-btn.primary { background: linear-gradient(135deg, #008080, #00a08a); color: #fff; box-shadow: 0 6px 16px rgba(0,128,128,0.25); }
+.lnh-btn.primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.lnh-btn.ghost { background: #fff; color: #008080; border: 1px solid #008080; }
+body.dark-mode .lnh-btn.ghost { background: #161b22; }
+.lnh-btn.ghost:hover { background: #f0fbf9; }
+body.dark-mode .lnh-btn.ghost:hover { background: #10151c; }
+.lnh-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ---------- Kết quả tính lãi ---------- */
+.lnh-result { margin-top: 4px; }
+.lnh-msg { background: #fdf1f3; border: 1px solid #f0c4cc; color: #b02a44; border-radius: 12px; padding: 12px 14px; font-size: 13px; margin-top: 12px; }
+body.dark-mode .lnh-msg { background: #2a1218; border-color: #7a2c38; color: #ff9fb0; }
+.lnh-msg.info { background: #f0fbf9; border-color: rgba(0,128,128,.3); color: #0b5a55; }
+body.dark-mode .lnh-msg.info { background: #0f2420; border-color: rgba(77,182,182,.3); color: #9fbfb8; }
+
+.lnh-rate-line {
+    background: #f6f8fb; border: 1px solid #e9edf2; border-radius: 12px; padding: 11px 14px;
+    font-size: 13.5px; color: #12203a; margin-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+body.dark-mode .lnh-rate-line { background: #10151c; border-color: #30363d; color: #e6edf3; }
+.lnh-rate-line .rr { font-size: 22px; font-weight: 800; color: #008080; }
+.lnh-rate-line i { color: #008080; }
+
+.lnh-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+.lnh-kpi { background: #f6f8fb; border: 1px solid #e9edf2; border-radius: 12px; padding: 11px 13px; }
+body.dark-mode .lnh-kpi { background: #10151c; border-color: #30363d; }
+.lnh-kpi .lk-label { font-size: 11.5px; color: #6b7a8f; font-weight: 700; text-transform: uppercase; letter-spacing: .2px; }
+body.dark-mode .lnh-kpi .lk-label { color: #8b949e; }
+.lnh-kpi .lk-val { font-size: 16px; font-weight: 800; margin-top: 3px; color: #0b3b38; }
+body.dark-mode .lnh-kpi .lk-val { color: #e6edf3; }
+.lnh-kpi.hl { background: linear-gradient(135deg, #008080, #00a08a); border: none; }
+.lnh-kpi.hl .lk-label { color: rgba(255,255,255,.92); }
+.lnh-kpi.hl .lk-val { color: #fff; font-size: 19px; }
+
+/* ---------- Thanh trên bảng ma trận ---------- */
+.lnh-mxbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.lnh-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.lnh-chip {
+    border: 1px solid #dbe4ec; background: #fff; color: #5a6b85; border-radius: 20px;
+    padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s;
+}
+body.dark-mode .lnh-chip { background: #161b22; border-color: #30363d; color: #9fb0c7; }
+.lnh-chip:hover { border-color: #008080; color: #008080; }
+.lnh-chip.on { background: #008080; color: #fff; border-color: #008080; }
+.lnh-mxctrl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.lnh-mxctrl .lnh-input-wrap { min-width: 120px; }
+.lnh-mxctrl .lnh-input-wrap:first-child { min-width: 150px; }
+
+/* ---------- Bảng ---------- */
+.lnh-tblwrap { overflow-x: auto; border: 1px solid #e9edf2; border-radius: 12px; }
+body.dark-mode .lnh-tblwrap { border-color: #30363d; }
+.lnh-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 560px; }
+.lnh-table th, .lnh-table td { padding: 8px 10px; border-bottom: 1px solid #eef1f5; text-align: center; white-space: nowrap; }
+body.dark-mode .lnh-table th, body.dark-mode .lnh-table td { border-bottom-color: #242b34; }
+.lnh-table thead th {
+    background: #f6f8fb; color: #5a6b85; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .2px;
+    position: sticky; top: 0;
+}
+body.dark-mode .lnh-table thead th { background: #10151c; color: #9fb0c7; }
+.lnh-table thead th.col-on { background: #e2f4f2; color: #008080; }
+body.dark-mode .lnh-table thead th.col-on { background: #12332f; color: #4dd8c4; }
+.lnh-table thead th.sticky, .lnh-table tbody td.sticky {
+    position: sticky; left: 0; z-index: 2; background: #f6f8fb; text-align: left; font-weight: 700; color: #12203a;
+}
+body.dark-mode .lnh-table thead th.sticky, body.dark-mode .lnh-table tbody td.sticky { background: #10151c; color: #e6edf3; }
+.lnh-table tbody td.sticky { background: #fff; }
+body.dark-mode .lnh-table tbody td.sticky { background: #161b22; }
+.lnh-table tbody tr:hover td { background: #f8fbfb; }
+body.dark-mode .lnh-table tbody tr:hover td { background: #1a2129; }
+.lnh-table tbody td.rate { cursor: pointer; font-weight: 600; }
+.lnh-table tbody td.rate:hover { color: #008080; }
+.lnh-table tbody td.rate.col-on { font-weight: 800; color: #008080; }
+body.dark-mode .lnh-table tbody td.rate.col-on { color: #4dd8c4; }
+.lnh-table tbody td.rate.best { background: #fff5d6; color: #9a6b00; font-weight: 800; box-shadow: inset 0 0 0 1px #f5d98a; }
+body.dark-mode .lnh-table tbody td.rate.best { background: #3a2f0d; color: #ffd966; box-shadow: inset 0 0 0 1px #6b5418; }
+.lnh-table tbody td.na { color: #c3ccd9; }
+.lnh-table tbody td.nb { font-weight: 600; color: #c0392b; }
+.lnh-table tbody tr.low td { opacity: .55; }
+.lnh-empty { padding: 22px; text-align: center; color: #8a99b1; font-size: 13px; }
+
+.lnh-legend { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: #fff5d6; border: 1px solid #f5d98a; vertical-align: -1px; }
+body.dark-mode .lnh-legend { background: #3a2f0d; border-color: #6b5418; }
+
+/* ---------- So sánh ---------- */
+.lnh-best-row td { background: #f0fbf9 !important; }
+body.dark-mode .lnh-best-row td { background: #0f2420 !important; }
+.lnh-badge { display: inline-block; font-size: 10.5px; font-weight: 800; color: #fff; background: #008080; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: 1px; }
+.lnh-compare-table td.num { text-align: right; }
+.lnh-table .cmp-total { font-weight: 800; color: #008080; }
+
+/* ---------- Note ---------- */
+.lnh-note {
+    background: #f0fbf9; border: 1px solid rgba(0,128,128,.25); border-left: 4px solid #008080;
+    border-radius: 10px; padding: 11px 14px; margin-top: 4px; font-size: 12.5px; color: #0b5a55; line-height: 1.6;
+}
+body.dark-mode .lnh-note { background: #0f2420; color: #9fbfb8; border-color: rgba(77,182,182,.3); }
+.lnh-note i { color: #008080; margin-right: 4px; }
+
+@media (max-width: 620px) {
+    .lnh-head h1 { font-size: 21px; }
+    .lnh-row { grid-template-columns: 1fr 1fr; }
+    .lnh-mxbar { flex-direction: column; align-items: stretch; }
+    .lnh-mxctrl .lnh-input-wrap { min-width: 100%; }
+}
+@media (max-width: 420px) {
+    .lnh-row { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/static/tienich-calc.js?v=20260906g"></script>
+    <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
+    <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
+    <title>Tiện ích - TuniX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
+    <link rel="stylesheet" href="/static/tienich.css?v=20260906g" />
+</head>
+<body>
+    <div class="ti-page">
+        <div class="ti-head">
+            <h1>Tiện ích</h1>
+            <div class="ti-sub">Các công cụ tính toán tài chính đơn giản, dễ dùng. Kết quả chỉ mang tính tham khảo, không phải khuyến nghị đầu tư.</div>
+        </div>
+
+        <!-- Vùng công cụ: hiển thị thẳng 1 trong 2 màn hình (Giá điều chỉnh / Lợi nhuận tiền gửi) -->
+        <div id="toolBody">
+            <div class="ti-toolbar">
+                <div class="tt-name" id="toolTitle"><i class="fas fa-wrench"></i><span></span></div>
+                <div class="ti-switch">
+                    <button type="button" class="ti-chip" data-tool="adj"><i class="fas fa-chart-line"></i> Giá điều chỉnh</button>
+                    <button type="button" class="ti-chip" data-tool="dep"><i class="fas fa-piggy-bank"></i> Lợi nhuận tiền gửi</button>
+                </div>
+            </div>
+
+            <!-- Tool 1: Giá điều chỉnh -->
+            <div id="panelAdj" style="display:none;">
+                <div class="ti-card">
+                    <h3><i class="fas fa-chart-line"></i> Giá điều chỉnh cổ phiếu</h3>
+                    <div class="ti-row">
+                        <div class="ti-field">
+                            <label>Giá trước ngày giao dịch không hưởng quyền <span class="opt">(đ/cổ phiếu) *</span></label>
+                            <div class="ti-input-wrap"><input id="adjPrice" type="text" inputmode="numeric" placeholder="VD: 30000" /></div>
+                        </div>
+                        <div class="ti-field">
+                            <label>Số cổ phiếu đang nắm giữ <span class="opt">(tùy chọn)</span></label>
+                            <div class="ti-input-wrap"><input id="adjQty" type="text" inputmode="numeric" placeholder="VD: 1000" /></div>
+                        </div>
+                    </div>
+                    <div class="ti-hint">Chọn được <b>đồng thời nhiều sự kiện</b> — mỗi sự kiện một block riêng, giá điều chỉnh tuần tự theo thứ tự bạn thêm.</div>
+                </div>
+
+                <div class="ti-card">
+                    <h3><i class="fas fa-list-ol"></i> Các sự kiện điều chỉnh</h3>
+                    <div id="evList"></div>
+                    <div class="ti-actions">
+                        <button type="button" class="ti-btn ghost" id="addEv"><i class="fas fa-plus"></i> Thêm sự kiện</button>
+                    </div>
+                    <hr class="ti-sep" />
+                    <div class="ti-actions">
+                        <button type="button" class="ti-btn primary" id="calcAdj"><i class="fas fa-calculator"></i> Tính toán</button>
+                        <button type="button" class="ti-btn ghost" id="resetAdj"><i class="fas fa-undo"></i> Đặt lại</button>
+                    </div>
+                </div>
+                <div id="adjResult"></div>
+            </div>
+
+            <!-- Tool 2: Lợi nhuận tiền gửi -->
+            <div id="panelDep" style="display:none;">
+                <div class="ti-card">
+                    <h3><i class="fas fa-piggy-bank"></i> Lợi nhuận tiền gửi</h3>
+                    <div class="ti-row">
+                        <div class="ti-field">
+                            <label>Số tiền gửi <span class="opt">(đ) *</span></label>
+                            <div class="ti-input-wrap"><input id="depPrincipal" type="text" inputmode="numeric" placeholder="VD: 100000000" /></div>
+                        </div>
+                        <div class="ti-field">
+                            <label>Lãi suất <span class="opt">(%/năm) *</span></label>
+                            <div class="ti-input-wrap"><input id="depRate" type="text" inputmode="decimal" placeholder="VD: 5.0" /><span class="pre">%/năm</span></div>
+                        </div>
+                        <div class="ti-field">
+                            <label>Thời gian gửi <span class="opt">(tháng) *</span></label>
+                            <div class="ti-input-wrap"><input id="depMonths" type="text" inputmode="numeric" placeholder="VD: 12" /><span class="pre">tháng</span></div>
+                        </div>
+                    </div>
+                    <div class="ti-row">
+                        <div class="ti-field">
+                            <label>Hình thức tính lãi</label>
+                            <div class="ti-input-wrap">
+                                <select id="depMode">
+                                    <option value="end">Cuối kỳ</option>
+                                    <option value="month">Hàng tháng</option>
+                                    <option value="quarter">Hàng quý</option>
+                                    <option value="compound">Lãi nhập gốc</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="ti-check"><input type="checkbox" id="depRecurring" /> Gửi thêm định kỳ</label>
+                    <div class="ti-row" id="depExtraRow" style="display:none; margin-top:10px;">
+                        <div class="ti-field">
+                            <label>Số tiền gửi thêm mỗi tháng <span class="opt">(đ)</span></label>
+                            <div class="ti-input-wrap"><input id="depExtra" type="text" inputmode="numeric" placeholder="VD: 1000000" /><span class="pre">/tháng</span></div>
+                        </div>
+                    </div>
+                    <div class="ti-hint" id="depHint"></div>
+                    <hr class="ti-sep" />
+                    <div class="ti-actions">
+                        <button type="button" class="ti-btn primary" id="calcDep"><i class="fas fa-calculator"></i> Tính toán</button>
+                        <button type="button" class="ti-btn ghost" id="exampleDep">Ví dụ</button>
+                        <button type="button" class="ti-btn ghost" id="resetDep"><i class="fas fa-undo"></i> Đặt lại</button>
+                    </div>
+                </div>
+                <div id="depResult"></div>
+            </div>
+        </div>
+
+        <div class="ti-note" style="margin-top:18px;">
+            <i class="fas fa-circle-info"></i> Các công cụ chỉ hỗ trợ <b>tính toán lý thuyết</b>. Không dùng kết quả để đưa ra khuyến nghị mua, bán hoặc nắm giữ bất kỳ cổ phiếu hay sản phẩm tài chính nào.
+        </div>
+    </div>
+
+    <script src="/static/tienich.js?v=20260906g"></script>
+    <script src="/static/context-menu.js?v=20260827a"></script>
+</body>
+</html>
