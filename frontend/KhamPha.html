@@ -864,6 +864,24 @@
                 sendAi(txt || 'Tìm cổ phiếu có ROE trên 15%, P/E dưới 12 và lợi nhuận tăng trên 20%');
             });
 
+            // Định dạng mốc thời gian VN (dd/MM/yyyy · HH:mm) — giống trang Cổ phiếu.
+            function pad2(n) { return (n < 10 ? '0' : '') + n; }
+            function fmtVnAsOfKp(iso) {
+                if (!iso) return '';
+                try {
+                    const t = new Date(iso).getTime();
+                    if (isNaN(t)) return '';
+                    const vn = new Date(t + 7 * 3600 * 1000); // VN = UTC+7
+                    return pad2(vn.getUTCDate()) + '/' + pad2(vn.getUTCMonth() + 1) + '/' + vn.getUTCFullYear()
+                        + ' · ' + pad2(vn.getUTCHours()) + ':' + pad2(vn.getUTCMinutes());
+                } catch (e) { return ''; }
+            }
+            function nowAsOfKp() {
+                const n = new Date();
+                return pad2(n.getDate()) + '/' + pad2(n.getMonth() + 1) + '/' + n.getFullYear()
+                    + ' · ' + pad2(n.getHours()) + ':' + pad2(n.getMinutes());
+            }
+
             // ---------- Load ----------
             async function load() {
                 try {
@@ -880,11 +898,8 @@
                     })();
                     const [d] = await Promise.all([discoverP, gateP]);
                     const asOfEl = document.getElementById('kpAsOf');
-                    if (d.as_of) {
-                        asOfEl.textContent = 'Cập nhật lúc ' + d.as_of;
-                    } else {
-                        asOfEl.textContent = 'Cập nhật lúc ' + new Date().toLocaleString('vi-VN');
-                    }
+                    const asOfTxt = fmtVnAsOfKp(d.as_of) || nowAsOfKp();
+                    asOfEl.textContent = 'Cập nhật lúc ' + asOfTxt;
                     renderFeatured(d.featured || [], d.market_status || null);
                     renderStrategies(d.strategies || []);
                     renderMap(d.opportunity || null);
