@@ -365,6 +365,29 @@
         @media (max-width: 980px) { .pf-perf-main { grid-template-columns: 1fr 1fr; } .pf-perf-chart { grid-column: 1 / -1; } .pf-perf-sub { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 900px) { .pf-alert-blocks { grid-template-columns: 1fr; } }
         @media (max-width: 640px) { .pf-summary { grid-template-columns: 1fr 1fr; } .pf-alloc { grid-template-columns: 1fr; } .pf-alloc-legend { flex-direction: row; flex-wrap: wrap; } .pf-perf-main { grid-template-columns: 1fr; } .pf-perf-sub { grid-template-columns: repeat(2, 1fr); } }
+
+        /* ===== Hero header Quản lý tài sản (tham khảo Khám phá: .kp-hero) ===== */
+        .pf-head {
+            position: relative; overflow: hidden; align-items: center;
+            background: linear-gradient(135deg, #006b6b 0%, #008080 55%, #00a08a 100%);
+            border-radius: 18px; padding: 22px 26px;
+            color: #fff; box-shadow: 0 2px 10px rgba(0, 60, 60, 0.10);
+        }
+        .pf-head::after {
+            content: ''; position: absolute; right: -60px; top: -60px;
+            width: 240px; height: 240px;
+            background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%);
+            border-radius: 50%; pointer-events: none;
+        }
+        .pf-head h1, .pf-head .pf-sub, .pf-head #pfHeadRight { position: relative; z-index: 1; }
+        .pf-head h1 { color: #fff !important; }
+        .pf-head .pf-sub { color: rgba(255,255,255,0.92) !important; }
+        .pf-head #pfHeadRight span { color: rgba(255,255,255,0.92) !important; background: rgba(255,255,255,0.16); padding: 5px 13px; border-radius: 20px; display: inline-block; }
+        .pf-head #pfHeadRight a { background: rgba(255,255,255,0.16) !important; border: 1px solid rgba(255,255,255,0.35) !important; }
+        @media (max-width: 560px) {
+            .pf-head { padding: 18px; }
+            .pf-head h1 { font-size: 21px; }
+        }
     </style>
 </head>
 <body>

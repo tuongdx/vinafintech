@@ -177,3 +177,28 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
 @media (max-width: 420px) {
     .lnh-row { grid-template-columns: 1fr; }
 }
+
+/* ===== Hero đầu trang (tham khảo Khám phá: .kp-hero) ===== */
+.lnh-head {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #006b6b 0%, #008080 55%, #00a08a 100%);
+    border-radius: 18px; padding: 24px 26px; margin-bottom: 16px;
+    color: #fff; box-shadow: 0 2px 10px rgba(0, 60, 60, 0.10);
+}
+.lnh-head::after {
+    content: ''; position: absolute; right: -60px; top: -60px;
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%);
+    border-radius: 50%; pointer-events: none;
+}
+.lnh-head h1, .lnh-head .lnh-sub, .lnh-head .lnh-meta { position: relative; z-index: 1; }
+.lnh-head h1 { color: #fff !important; font-size: 25px; }
+.lnh-head .lnh-sub { color: rgba(255,255,255,0.92) !important; max-width: 680px; }
+.lnh-head .lnh-meta { margin-top: 12px; }
+.lnh-head .lnh-pill { background: rgba(255,255,255,0.16) !important; border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+.lnh-head .lnh-pill b { color: #fff !important; }
+.lnh-head .lnh-pill i { color: rgba(255,255,255,0.92) !important; }
+@media (max-width: 560px) {
+    .lnh-head { padding: 20px 18px; }
+    .lnh-head h1 { font-size: 22px; }
+}
