@@ -13,8 +13,7 @@
         period: DEFAULT_PERIOD,
         world: null,
         domestic: null,
-        chartData: null,
-        fxOn: false
+        chartData: null
     };
 
     function $(id) { return document.getElementById(id); }
@@ -161,20 +160,15 @@
         refreshFx();
     }
     function refreshFx() {
+        // Luôn quy đổi & hiển thị giá VND bên dưới mỗi card (khi có tỷ giá).
         var fx = state.world && state.world.fx;
-        var btn = $('gvFxBtn'), rateEl = $('gvFxRate');
+        var rateEl = $('gvFxRate');
         var ok = !!(fx && fx.usd_vnd);
         if (rateEl) rateEl.innerHTML = ok ? ('1 USD ≈ <b>' + fmtVnd(fx.usd_vnd) + '</b> VND') : '';
-        if (btn) {
-            btn.style.display = ok ? 'inline-flex' : 'none';
-            btn.classList.toggle('on', !!state.fxOn);
-            var lbl = btn.querySelector('span');
-            if (lbl) lbl.textContent = state.fxOn ? 'Ẩn giá VND' : 'Quy đổi sang VND';
-        }
         Array.prototype.forEach.call(document.querySelectorAll('#gvWorld .gv-wcard'), function (card) {
             var old = card.querySelector('.gw-vnd');
             if (old) old.remove();
-            if (ok && state.fxOn) {
+            if (ok) {
                 var price = Number(card.getAttribute('data-price')) || 0;
                 if (price > 0) {
                     var div = document.createElement('div');
@@ -343,16 +337,6 @@
             loadChart(false);
         });
     }
-    function bindFx() {
-        var btn = $('gvFxBtn');
-        if (btn) {
-            btn.addEventListener('click', function () {
-                state.fxOn = !state.fxOn;
-                refreshFx();
-                notifyHeight();
-            });
-        }
-    }
 
     // ===== Embed / chiều cao / theme =====
     if (window.self !== window.top) document.body.classList.add('embedded');
@@ -380,7 +364,6 @@
 
     function init() {
         bindPeriods();
-        bindFx();
         loadWorld(false);
         loadDomestic(false);
         loadChart(false);
