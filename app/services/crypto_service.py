@@ -41,6 +41,26 @@ _cache: dict[str, tuple[float, object]] = {}
 _lock = threading.Lock()
 _TICK_TTL = 6.0
 _KLINES_TTL = 20.0
+_CAP_TTL = 3600.0  # market cap đổi chậm → cache 1h, ít tải nguồn phụ
+
+# Market cap: Binance KHÔNG cung cấp → lấy từ CoinGecko (chỉ để hiển thị vốn hóa;
+# giá vẫn luôn từ Binance). CoinGecko id theo symbol của TOP_COINS.
+_COINGECKO_BASE = "https://api.coingecko.com/api/v3"
+_CG_IDS: dict[str, str] = {
+    "BTC": "bitcoin", "ETH": "ethereum", "BNB": "binancecoin", "XRP": "ripple",
+    "SOL": "solana", "USDC": "usd-coin", "ADA": "cardano", "DOGE": "dogecoin",
+    "TRX": "tron", "TON": "the-open-network", "AVAX": "avalanche-2", "LINK": "chainlink",
+    "XLM": "stellar", "SHIB": "shiba-inu", "DOT": "polkadot", "LTC": "litecoin",
+    "BCH": "bitcoin-cash", "NEAR": "near", "UNI": "uniswap", "PEPE": "pepe",
+    "SUI": "sui", "ICP": "internet-computer", "APT": "aptos", "XMR": "monero",
+    "HBAR": "hedera-hashgraph", "ETC": "ethereum-classic", "ATOM": "cosmos", "OP": "optimism",
+    "ARB": "arbitrum", "FIL": "filecoin", "INJ": "injective-protocol", "IMX": "immutable-x",
+    "VET": "vechain", "TAO": "bittensor", "STX": "stacks", "RENDER": "render-token",
+    "SEI": "sei-network", "ALGO": "algorand", "TIA": "celestia", "FLOW": "flow",
+    "GRT": "the-graph", "AAVE": "aave", "RUNE": "thorchain", "ENA": "ethena",
+    "JUP": "jupiter-exchange-solana", "WIF": "dogwifcoin", "BONK": "bonk",
+    "CRV": "curve-dao-token", "LDO": "lido-dao", "PYTH": "pyth-network",
+}
 
 
 def _now_utc() -> datetime:
@@ -90,9 +110,35 @@ def _all_tickers() -> dict[str, dict]:
     return _cached("tickers:24hr", _TICK_TTL, _prod)
 
 
+def get_market_caps() -> dict[str, float]:
+    """Vốn hóa (USD) theo CoinGecko — 1 request cho toàn bộ danh sách, cache 1h.
+    Lỗi/hết id → trả {} để vẫn còn dữ liệu Binance (hiển thị '—')."""
+    def _prod() -> dict[str, float]:
+        ids = [cid for sym, cid in _CG_IDS.items() if sym in _TOP_SET]
+        if not ids:
+            return {}
+        try:
+            with httpx.Client(base_url=_COINGECKO_BASE, headers=_UA, timeout=15.0) as client:
+                r = client.get("/coins/markets", params={"vs_currency": "usd", "ids": ",".join(ids), "per_page": 250})
+                r.raise_for_status()
+            by_id: dict[str, float] = {}
+            for row in r.json():
+                cap = row.get("market_cap")
+                if isinstance(cap, (int, float)) and cap > 0:
+                    by_id[str(row.get("id") or "")] = float(cap)
+            # map symbol theo id
+            id_to_sym = {cid: sym for sym, cid in _CG_IDS.items()}
+            return {id_to_sym[k]: v for k, v in by_id.items() if k in id_to_sym}
+        except Exception:  # noqa: BLE001 — nguồn phụ lỗi không được phá trang
+            return {}
+
+    return _cached("coingecko:caps", _CAP_TTL, _prod)
+
+
 def get_markets() -> dict:
     """Top coin đã chọn với giá live Binance (1 request tổng, cache 6s)."""
     tickers = _all_tickers()
+    caps = get_market_caps()
     items: list[dict] = []
     seen: set[str] = set()
     for rank, (base, name) in enumerate(TOP_COINS, start=1):
@@ -115,7 +161,7 @@ def get_markets() -> dict:
                 "high": _f(t.get("highPrice")),
                 "low": _f(t.get("lowPrice")),
                 "volume": _f(t.get("quoteVolume")),  # Volume 24h quy đổi (USDT)
-                "market_cap": None,  # Binance không cung cấp
+                "market_cap": caps.get(base),  # USD — từ CoinGecko (Binance không cung cấp)
             }
         )
     return {
