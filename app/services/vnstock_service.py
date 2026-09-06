@@ -4161,8 +4161,15 @@ def get_stock_screener_page() -> dict[str, Any]:
         "score": stocks[:8],
     }
 
+    # Mốc thời gian dữ liệu (phiên realtime) — lấy từ market dashboard (VNINDEX).
+    try:
+        as_of = get_market_dashboard().get("as_of", "")
+    except Exception:  # noqa: BLE001
+        as_of = ""
+
     payload: dict[str, Any] = {
         "count": len(stocks),
+        "as_of": as_of,
         "stocks": stocks,
         "categories": categories,
         "examples": ["ACB", "VCI", "FPT", "HPG", "MBB"],

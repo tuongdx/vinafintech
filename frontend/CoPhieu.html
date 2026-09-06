@@ -432,7 +432,24 @@
                         : '<a class="cb-item" href="#" data-nav="' + esc(p.path.join('/')) + '">' + esc(p.label) + '</a>';
                 }).join('<span class="cb-sep">›</span>') + '</nav>';
             }
-            const CP_ASOF = '<span class="cp-asof"><i class="far fa-clock"></i> Cập nhật lần cuối: <b>06/09/2026 · 11:24</b></span>';
+            // Mốc thời gian dữ liệu (phiên realtime) hiển thị động theo giờ VN.
+            let marketAsOf = '';
+            function fmtVnAsOf(iso) {
+                if (!iso) return '';
+                try {
+                    const t = new Date(iso).getTime();
+                    if (isNaN(t)) return '';
+                    const vn = new Date(t + 7 * 3600 * 1000); // VN = UTC+7
+                    const p = function(n) { return (n < 10 ? '0' : '') + n; };
+                    return p(vn.getUTCDate()) + '/' + p(vn.getUTCMonth() + 1) + '/' + vn.getUTCFullYear()
+                        + ' · ' + p(vn.getUTCHours()) + ':' + p(vn.getUTCMinutes());
+                } catch (e) { return ''; }
+            }
+            function cpAsOfHtml() {
+                return marketAsOf
+                    ? '<span class="cp-asof"><i class="far fa-clock"></i> Cập nhật lần cuối: <b>' + marketAsOf + '</b></span>'
+                    : '';
+            }
             function headerHtml(title, desc, action, asof) {
                 return '<div class="cp-ind-head"><div class="cp-ind-head-row"><h1>' + esc(title) + '</h1>' + (action || '') + '</div>' + (desc ? '<div class="cp-ind-desc">' + esc(desc) + '</div>' : '') + (asof || '') + '</div>';
             }
@@ -602,7 +619,7 @@
                 const action = currentPath.length === 0
                     ? '<a class="cp-ind-btn" href="#" data-nav="nganh"><i class="fas fa-layer-group"></i> Nhóm ngành</a>'
                     : '';
-                const asof = currentPath.length === 0 ? CP_ASOF : '';
+                const asof = currentPath.length === 0 ? cpAsOfHtml() : '';
                 screenerEl.innerHTML = breadcrumbHtml() + headerHtml(hd.title, hd.desc, action, asof) + tableHtml();
                 bindNav();
                 // bind table sort + pager + rows
@@ -744,6 +761,7 @@
                     all = d.stocks || [];
                     window.__cats = d.categories || {};
                     currentPath = parseIndPath();
+                    marketAsOf = fmtVnAsOf(d.as_of || '');
                     render();
                 } catch (e) {
                     screenerEl.innerHTML = '<div class="cp-empty">Không tải được dữ liệu cổ phiếu. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
