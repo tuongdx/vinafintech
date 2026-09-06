@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
-    <link rel="stylesheet" href="/static/gold.css?v=20260906ak" />
+    <link rel="stylesheet" href="/static/gold.css?v=20260906al" />
 </head>
 <body>
     <div class="gv-page">
@@ -52,7 +52,13 @@
         <section class="gv-grid">
             <div class="gv-col">
                 <div class="gv-card">
-                    <div class="gv-card-head"><h3>Giá vàng/bạc thế giới</h3></div>
+                    <div class="gv-card-head">
+                        <h3>Giá vàng/bạc thế giới</h3>
+                        <div class="gv-fxctrl">
+                            <span class="gv-fx" id="gvFxRate"></span>
+                            <button type="button" class="gv-fxbtn" id="gvFxBtn" style="display:none;"><i class="fas fa-exchange-alt"></i> <span>Quy đổi sang VND</span></button>
+                        </div>
+                    </div>
                     <div id="gvWorldMsg"></div>
                     <div id="gvWorld"></div>
                 </div>
@@ -90,7 +96,7 @@
         </section>
     </div>
 
-    <script src="/static/gold.js?v=20260906aj"></script>
+    <script src="/static/gold.js?v=20260906am"></script>
     <script src="/static/context-menu.js?v=20260827a"></script>
 </body>
 </html>

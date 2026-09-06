@@ -50,6 +50,11 @@ _CHART_TTL = {       # biểu đồ — theo độ ổn định dữ liệu
     "5Y": 600.0,
 }
 _SNAP_KEY = "gold_vn_snapshot"
+_FX_TTL = 6 * 3600.0  # tỷ giá USD/VND đổi chậm → cache 6h
+_FX_URL = "https://open.er-api.com/v6/latest/USD"
+_FX_SRC = "open.er-api.com"
+_GOLDAPI_BASE = "https://api.gold-api.com"  # fallback spot XAU/XAG (không cần key)
+_GOLDAPI_SYM = {"xau": "XAU", "xag": "XAG"}
 
 # Các thương hiệu vàng trong nước trên giavang.org (slug → tên hiển thị + logo)
 VN_BRANDS: list[dict] = [
@@ -323,7 +328,7 @@ def _yahoo(symbol: str, rng: str, interval: str) -> dict | None:
     for base in (_Y_BASE, _Y_BASE2):
         url = f"{base}/v8/finance/chart/{symbol}?range={rng}&interval={interval}"
         try:
-            txt = _http_get(url, timeout=25.0)
+            txt = _http_get(url, timeout=8.0)
             data = json.loads(txt)
             res = data["chart"]["result"][0]
             meta = res.get("meta", {})
@@ -369,10 +374,48 @@ def _change_at(ts: list[int], closes: list[float], last_ts: int, seconds: int) -
     return (cur - ref, ((cur - ref) / abs(ref)) * 100.0)
 
 
+def _spot_alt(metal: str) -> dict | None:
+    """Giá spot thật dự phòng (gold-api.com) khi Yahoo lỗi/tạm khóa — chỉ giá hiện tại + mốc thời gian."""
+    sym = _GOLDAPI_SYM.get(metal, "XAU")
+    try:
+        data = json.loads(_http_get(f"{_GOLDAPI_BASE}/price/{sym}", timeout=8.0))
+        price = float(data.get("price") or 0)
+        if price <= 0:
+            return None
+        t: int | None = None
+        s = data.get("updatedAt")
+        if s:
+            try:
+                t = int(datetime.fromisoformat(str(s).replace("Z", "+00:00")).timestamp())
+            except (ValueError, TypeError):
+                t = None
+        return {"price": price, "time": t or int(_now())}
+    except Exception:  # noqa: BLE001 — nguồn phụ lỗi → trả None
+        return None
+
+
 def _world_item(key: str, name: str, symbol: str, ysymbol: str) -> dict:
     d = _yahoo(ysymbol, "1y", "1d")
-    if not d:
-        return {"key": key, "name": name, "symbol": symbol, "error": True}
+    if d is None:
+        # Fallback: Yahoo lỗi/429 (rate-limit) → lấy giá spot hiện tại từ gold-api.
+        alt = _spot_alt(key)
+        if alt is None:
+            return {"key": key, "name": name, "symbol": symbol, "error": True}
+        return {
+            "key": key,
+            "name": name,
+            "symbol": symbol,
+            "price": alt["price"],
+            "unit": "USD/ounce",
+            "time": alt["time"],
+            "fallback": True,
+            "change_24h": None,
+            "change_24h_pct": None,
+            "change_1w": None,
+            "change_1m": None,
+            "change_1y": None,
+            "change_1y_pct": None,
+        }
     ts, closes, last_ts = d["ts"], d["closes"], int(d["ts"][-1] if d["ts"] else d["time"])
     ch24 = _change_at(ts, closes, last_ts, 24 * 3600)
     ch1w = _change_at(ts, closes, last_ts, 7 * 24 * 3600)
@@ -397,8 +440,28 @@ def _world_item(key: str, name: str, symbol: str, ysymbol: str) -> dict:
     }
 
 
+def _get_usd_vnd() -> dict | None:
+    """Tỷ giá USD/VND thật (open.er-api.com, không cần key, cache 6h). Lỗi → None."""
+    def _prod() -> dict | None:
+        try:
+            data = json.loads(_http_get(_FX_URL, timeout=12.0))
+            rates = data.get("rates") or {}
+            vnd = rates.get("VND")
+            if not vnd:
+                return None
+            ts = data.get("time_last_update_unix")
+            return {"usd_vnd": float(vnd), "as_of": int(ts) if ts else int(_now())}
+        except Exception:  # noqa: BLE001 — nguồn phụ lỗi không làm hỏng giá chính
+            return None
+
+    try:
+        return _cached("gold:fx", _FX_TTL, _prod)  # type: ignore[return-value]
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def get_world() -> dict:
-    """Giá thế giới XAU/XAG — live Yahoo (GC=F/SI=F), cache 30s."""
+    """Giá thế giới XAU/XAG — live Yahoo (GC=F/SI=F), cache 30s. Kèm tỷ giá USD/VND để quy đổi."""
     def _prod() -> dict:
         items = []
         with ThreadPoolExecutor(max_workers=2) as ex:
@@ -406,11 +469,13 @@ def get_world() -> dict:
             for f in futs:
                 items.append(f.result())
         times = [it.get("time") for it in items if it.get("time")]
+        fx = _get_usd_vnd()
         return {
             "source": _SRC_WORLD,
             "source_url": _SRC_WORLD_URL,
             "as_of": max(times) if times else int(_now()),
             "items": items,
+            "fx": fx,
         }
 
     try:

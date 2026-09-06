@@ -13,7 +13,8 @@
         period: DEFAULT_PERIOD,
         world: null,
         domestic: null,
-        chartData: null
+        chartData: null,
+        fxOn: false
     };
 
     function $(id) { return document.getElementById(id); }
@@ -75,7 +76,7 @@
                 .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
             if (qs) url += '?' + qs;
         }
-        return fetch(url, { headers: { 'Accept': 'application/json' } }).then(function (r) {
+        return fetch(url, { headers: { 'Accept': 'application/json' }, cache: 'no-store' }).then(function (r) {
             if (!r.ok) throw new Error('HTTP ' + r.status);
             return r.json();
         });
@@ -147,7 +148,7 @@
                 var n = Number(it.change_24h), cls = n > 0 ? 'up' : (n < 0 ? 'down' : 'same'), sgn = n > 0 ? '+' : (n < 0 ? '−' : '');
                 chg = '<div class="gw-chg ' + cls + '">' + sgn + fmtUsd(Math.abs(n)) + ' <span class="gw-pct">(' + (it.change_24h_pct != null ? fmtPct(it.change_24h_pct).replace('-', '−') : '—') + ')</span></div>';
             }
-            html += '<div class="gv-wcard">' +
+            html += '<div class="gv-wcard" data-price="' + esc(it.price) + '">' +
                 '<div class="gw-top"><span class="gw-name">' + worldIconHtml(it.key) + esc(it.name) + '</span><span class="gw-sym">' + esc(it.symbol) + '</span></div>' +
                 '<div class="gw-price">' + fmtUsd(it.price) + '<span class="gw-unit">' + esc(it.unit) + '</span></div>' +
                 chg +
@@ -157,6 +158,32 @@
         box.innerHTML = html;
         renderCompare(d);
         setPill();
+        refreshFx();
+    }
+    function refreshFx() {
+        var fx = state.world && state.world.fx;
+        var btn = $('gvFxBtn'), rateEl = $('gvFxRate');
+        var ok = !!(fx && fx.usd_vnd);
+        if (rateEl) rateEl.innerHTML = ok ? ('1 USD ≈ <b>' + fmtVnd(fx.usd_vnd) + '</b> VND') : '';
+        if (btn) {
+            btn.style.display = ok ? 'inline-flex' : 'none';
+            btn.classList.toggle('on', !!state.fxOn);
+            var lbl = btn.querySelector('span');
+            if (lbl) lbl.textContent = state.fxOn ? 'Ẩn giá VND' : 'Quy đổi sang VND';
+        }
+        Array.prototype.forEach.call(document.querySelectorAll('#gvWorld .gv-wcard'), function (card) {
+            var old = card.querySelector('.gw-vnd');
+            if (old) old.remove();
+            if (ok && state.fxOn) {
+                var price = Number(card.getAttribute('data-price')) || 0;
+                if (price > 0) {
+                    var div = document.createElement('div');
+                    div.className = 'gw-vnd';
+                    div.innerHTML = '≈ ' + fmtVnd(price * fx.usd_vnd) + ' <span>VND/ounce</span>';
+                    card.appendChild(div);
+                }
+            }
+        });
     }
     function renderCompare(d) {
         var g = byKey(d.items || [], 'xau');
@@ -316,6 +343,16 @@
             loadChart(false);
         });
     }
+    function bindFx() {
+        var btn = $('gvFxBtn');
+        if (btn) {
+            btn.addEventListener('click', function () {
+                state.fxOn = !state.fxOn;
+                refreshFx();
+                notifyHeight();
+            });
+        }
+    }
 
     // ===== Embed / chiều cao / theme =====
     if (window.self !== window.top) document.body.classList.add('embedded');
@@ -343,6 +380,7 @@
 
     function init() {
         bindPeriods();
+        bindFx();
         loadWorld(false);
         loadDomestic(false);
         loadChart(false);
