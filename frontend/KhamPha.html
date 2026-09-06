@@ -47,6 +47,8 @@
         .kp-hero h1 { font-size: 25px; font-weight: 800; letter-spacing: -0.3px; }
         .kp-hero .kp-sub { font-size: 14px; margin-top: 6px; opacity: 0.92; max-width: 560px; }
         .kp-hero .kp-asof { font-size: 12px; margin-top: 12px; display: inline-block; background: rgba(255,255,255,0.16); padding: 4px 12px; border-radius: 20px; }
+        .kp-hero .kp-asof i { margin-right: 5px; }
+        .kp-hero .kp-asof b { font-weight: 700; }
 
         /* ===== Body layout ===== */
         .kp-topgrid { display: grid; grid-template-columns: 1fr 340px; gap: 18px; margin: 18px 0; align-items: stretch; }
@@ -288,7 +290,7 @@
         <header class="kp-hero">
             <h1>Khám phá cơ hội</h1>
             <p class="kp-sub">Tìm những cổ phiếu đáng chú ý từ hàng nghìn tín hiệu thị trường</p>
-            <span class="kp-asof" id="kpAsOf">Đang tải dữ liệu…</span>
+            <span class="kp-asof" id="kpAsOf">…</span>
         </header>
 
         <!-- TOP: Cơ hội nổi bật + AI -->
@@ -899,7 +901,7 @@
                     const [d] = await Promise.all([discoverP, gateP]);
                     const asOfEl = document.getElementById('kpAsOf');
                     const asOfTxt = fmtVnAsOfKp(d.as_of) || nowAsOfKp();
-                    asOfEl.textContent = 'Cập nhật lúc ' + asOfTxt;
+                    asOfEl.innerHTML = '<i class="far fa-clock"></i> Cập nhật lần cuối: <b>' + asOfTxt + '</b>';
                     renderFeatured(d.featured || [], d.market_status || null);
                     renderStrategies(d.strategies || []);
                     renderMap(d.opportunity || null);
