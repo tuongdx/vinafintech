@@ -168,6 +168,11 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
 .lnh-page, .lnh-page * { scrollbar-width: none; -ms-overflow-style: none; }
 .lnh-page *::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
+/* Option trong dropdown (đảm bảo đọc rõ ở cả sáng/tối) */
+.lnh-input-wrap select option { color: #12203a; background: #fff; }
+body.dark-mode .lnh-input-wrap select option { color: #e6edf3; background: #161b22; }
+body.dark-mode .lnh-input-wrap select option:hover, body.dark-mode .lnh-input-wrap select option:checked { background: #0d1117; }
+
 @media (max-width: 620px) {
     .lnh-head h1 { font-size: 21px; }
     .lnh-row { grid-template-columns: 1fr 1fr; }
