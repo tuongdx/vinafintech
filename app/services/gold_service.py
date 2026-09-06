@@ -95,19 +95,46 @@ def _now() -> float:
     return time.time()
 
 
+_key_locks: dict[str, threading.Lock] = {}
+
+
+def _key_lock(key: str) -> threading.Lock:
+    with _lock:
+        return _key_locks.setdefault(key, threading.Lock())
+
+
 def _cached(key: str, ttl: float, producer):
-    """Cache + single-flight đơn giản (tính trong lock để không trùng khi đồng thời)."""
+    """Cache + single-flight THEO KEY. Chỉ khoá đúng key đang fetch (không khoá global)
+    → domestic/world/chart/fx fetch song song; cùng 1 key không gọi mạng trùng lặp."""
     now = _now()
     with _lock:
         ent = _cache.get(key)
         if ent and now < ent[0]:
             return ent[1]
-        value = producer()
-        _cache[key] = (now + ttl, value)
-        if len(_cache) > 512:
-            for k in [k for k, v in _cache.items() if v[0] < now]:
-                _cache.pop(k, None)
-        return value
+    kl = _key_lock(key)
+    if kl.acquire(timeout=min(max(ttl, 5.0), 120.0) + 10.0):
+        try:
+            with _lock:
+                ent = _cache.get(key)
+                if ent and _now() < ent[0]:
+                    return ent[1]
+            value = producer()
+            with _lock:
+                ent = _cache.get(key)
+                if not (ent and ent[0] > _now()):
+                    _cache[key] = (_now() + ttl, value)
+                    if len(_cache) > 512:
+                        for k in [k for k, v in _cache.items() if v[0] < _now()]:
+                            _cache.pop(k, None)
+                return value
+        finally:
+            kl.release()
+    # không giành được lock (thread khác đang fetch lâu) → chờ nó xong rồi đọc cache
+    with _lock:
+        ent = _cache.get(key)
+        if ent:
+            return ent[1]
+    return producer()
 
 
 def _http_get(url: str, timeout: float = 20.0) -> str:
@@ -323,12 +350,25 @@ def get_domestic() -> dict:
 
 
 # ---------------------------------------------------------------- Thế giới
+# Circuit-breaker đơn giản cho Yahoo: nếu bị 429/khóa (rate-limit) thì "ngậm miệng"
+# một khoảng thời gian → request tiếp theo dùng thẳng nguồn dự phòng, không chờ timeout.
+_YAHOO_BLOCK_UNTIL = 0.0
+_YAHOO_BLOCK_429 = 300.0   # 429 rate-limit → chờ 5 phút
+_YAHOO_BLOCK_ERR = 90.0    # lỗi mạng/timeout → chờ 90s
+_YAHOO_TIMEOUT = 5.0
+
+
 def _yahoo(symbol: str, rng: str, interval: str) -> dict | None:
-    """Gọi Yahoo chart API → {'price', 'time', 'prev_close', 'ts':[], 'closes':[]}."""
+    """Gọi Yahoo chart API → {'price', 'time', 'prev_close', 'ts':[], 'closes':[]}.
+    Nếu Yahoo đang bị khóa (429) hoặc vừa lỗi liên tiếp → trả None ngay để dùng nguồn phụ."""
+    global _YAHOO_BLOCK_UNTIL
+    if time.time() < _YAHOO_BLOCK_UNTIL:
+        return None
+    blocked = False
     for base in (_Y_BASE, _Y_BASE2):
         url = f"{base}/v8/finance/chart/{symbol}?range={rng}&interval={interval}"
         try:
-            txt = _http_get(url, timeout=8.0)
+            txt = _http_get(url, timeout=_YAHOO_TIMEOUT)
             data = json.loads(txt)
             res = data["chart"]["result"][0]
             meta = res.get("meta", {})
@@ -349,8 +389,17 @@ def _yahoo(symbol: str, rng: str, interval: str) -> dict | None:
                 "ts": [int(t) for t in ts[: len(closes)]],
                 "closes": closes,
             }
-        except Exception:  # noqa: BLE001
+        except httpx.HTTPStatusError as e:
+            if e.response is not None and e.response.status_code == 429:
+                blocked = True  # rate-limit
             continue
+        except Exception:  # noqa: BLE001 — timeout/network
+            continue
+    if blocked:
+        _YAHOO_BLOCK_UNTIL = time.time() + _YAHOO_BLOCK_429
+    else:
+        # cả 2 host đều lỗi (timeout/network) → chặn ngắn để không chờ timeout lặp lại
+        _YAHOO_BLOCK_UNTIL = time.time() + _YAHOO_BLOCK_ERR
     return None
 
 
