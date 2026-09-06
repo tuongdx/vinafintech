@@ -1130,6 +1130,12 @@
             color: #008080;
         }
 
+        /* Ẩn thanh cuộn nhưng vẫn cuộn được khi xem trang công cụ (Tiện ích / Lãi ngân hàng).
+           Chỉ áp dụng khi html/body có class tx-hide-scroll (set theo trang đang load). */
+        html.tx-hide-scroll, html.tx-hide-scroll body { scrollbar-width: none; -ms-overflow-style: none; }
+        html.tx-hide-scroll::-webkit-scrollbar,
+        html.tx-hide-scroll body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
         /* MAIN GRID: 1 cột (right-col tạm ẩn — sẽ dùng lại sau) */
         .main-grid {
             display: grid;
@@ -3224,7 +3230,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260906l';
+        const CACHE_VERSION = '20260906m';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3797,6 +3803,15 @@
         }
         window.updateRightColumnForStock = updateRightColumnForStock;
 
+        // Bật/tắt ẩn thanh cuộn shell theo trang công cụ đang xem (Tiện ích / Lãi ngân hàng).
+        function updateScrollBarMode(page) {
+            const isTool = /^\/tien-ich/.test(page) || /tienich\.html/.test(page)
+                || /^\/lai-ngan-hang/.test(page) || /lai-ngan-hang\.html/.test(page);
+            document.documentElement.classList.toggle('tx-hide-scroll', !!isTool);
+            document.body.classList.toggle('tx-hide-scroll', !!isTool);
+        }
+        window.updateScrollBarMode = updateScrollBarMode;
+
         // Hàm load nội dung động vào left-col
         function loadContent(page) {
             const container = document.getElementById('dynamicContent');
@@ -3804,6 +3819,8 @@
             // Lưu trang đang hiển thị — dùng để quay lại trang trước đó sau khi thoát fullscreen icon nến.
             lastLoadedPage = page;
             pushHistoryEntry(page);
+            // Ẩn thanh cuộn trình duyệt (vẫn cuộn được) chỉ khi đang xem các trang công cụ mới.
+            updateScrollBarMode(page);
 
             // Cập nhật header theo trang đang xem: trang tin tức / bài viết tin tức → logo thêm chữ "Tin tức", nút đổi thành "Thị trường".
             setHeaderContext(page.includes('tintuc') || page.includes('tin-tuc'));

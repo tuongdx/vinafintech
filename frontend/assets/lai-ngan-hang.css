@@ -160,6 +160,12 @@ body.dark-mode .lnh-best-row td { background: #0f2420 !important; }
 body.dark-mode .lnh-note { background: #0f2420; color: #9fbfb8; border-color: rgba(77,182,182,.3); }
 .lnh-note i { color: #008080; margin-right: 4px; }
 
+/* Ẩn thanh cuộn nhưng vẫn cuộn được (toàn trang + mọi vùng cuộn nội bộ như bảng rộng) */
+html, body { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+.lnh-page, .lnh-page * { scrollbar-width: none; -ms-overflow-style: none; }
+.lnh-page *::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
 @media (max-width: 620px) {
     .lnh-head h1 { font-size: 21px; }
     .lnh-row { grid-template-columns: 1fr 1fr; }
