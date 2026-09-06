@@ -1,12 +1,10 @@
-"""Lãi ngân hàng — service (Giai đoạn 1).
+"""Lãi ngân hàng — service.
 
-Tách tầng để chuẩn bị Giai đoạn 2:
-  [Ngân hàng / nguồn tự động] → TuniX Backend (ghi bảng bank_interest_rates) → API → UI
+Tách tầng: [Ngân hàng / nguồn tự động] → TuniX Backend (ghi bảng bank_interest_rates) → API → UI.
 Logic tính toán tách hàm thuần (calc_interest...) để dễ kiểm thử.
 
-LƯU Ý DỮ LIỆU: Giai đoạn 1 chưa có nguồn cập nhật tự động → dùng bộ dữ liệu TỔNG HỢP THAM KHẢO
-seed vào DB, hiển thị rõ "không realtime", không tự cho là lãi suất chính thức của ngân hàng.
-Khi có nguồn chính thức (Giai đoạn 2) chỉ cần thay seed/import — không đổi API/UI.
+DỮ LIỆU: nguồn THẬT là 24HMoney (xem app/services/bank_rate_sync.py) — đồng bộ nền định kỳ, ghi đè bảng.
+Khi chưa đồng bộ được (chưa có mạng / nguồn lỗi) → giữ bộ dữ liệu MẪU tham khảo làm fallback để trang vẫn dùng được.
 """
 from datetime import datetime
 
@@ -17,7 +15,11 @@ from app.models import BankInterestRate
 TERMS = [1, 3, 6, 12, 18, 24]
 CHANNEL_LABELS = {"online": "Gửi Online", "counter": "Gửi tại quầy"}
 DEFAULT_CUSTOMER = "Khách hàng cá nhân"
-SOURCE = "Tổng hợp tham khảo (Giai đoạn 1)"
+# Nhãn hiển thị cho bộ dữ liệu MẪU khi CHƯA đồng bộ được nguồn thật (fallback).
+SOURCE = "Mẫu tham khảo (chưa đồng bộ nguồn)"
+# Nguồn thật (Giai đoạn 2) — 24HMoney. Sau khi đồng bộ thành công, meta() trả các giá trị này.
+SRC_24H_NAME = "24HMoney"
+SRC_24H_URL = "https://24hmoney.vn/lai-suat-gui-ngan-hang"
 
 # Dữ liệu tham khảo: (code, tên, online %, counter %) cho các kỳ hạn TERMS.
 # Bộ này CHỈ LÀ MẪU TỔNG HỢP để demo; khi có nguồn chính thức sẽ thay bằng dữ liệu import.
@@ -116,19 +118,32 @@ def meta(db: Session) -> dict:
     banks: list[dict] = []
     seen: set[str] = set()
     channels: set[str] = set()
+    terms: set[int] = set()
     last = None
     for r in rows:
         channels.add(r.channel)
+        terms.add(r.term_months)
         if r.bank_code not in seen:
             seen.add(r.bank_code)
             banks.append({"code": r.bank_code, "name": r.bank_name})
         if r.updated_at and (last is None or r.updated_at > last):
             last = r.updated_at
     banks.sort(key=lambda b: b["name"])
+    has_real = any(r.source == SRC_24H_NAME for r in rows)
+    if has_real:
+        source = SRC_24H_NAME
+        source_url = SRC_24H_URL
+    elif rows:
+        source = SOURCE
+        source_url = None
+    else:
+        source = None
+        source_url = None
     return {
-        "source": SOURCE,
+        "source": source,
+        "source_url": source_url,
         "updated_at": last.isoformat() if last else None,
-        "terms": list(TERMS),
+        "terms": sorted(terms) if terms else list(TERMS),
         "channels": sorted(channels),
         "customer_types": [DEFAULT_CUSTOMER],
         "banks": banks,

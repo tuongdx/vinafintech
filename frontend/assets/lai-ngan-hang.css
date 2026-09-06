@@ -159,6 +159,8 @@ body.dark-mode .lnh-best-row td { background: #0f2420 !important; }
 }
 body.dark-mode .lnh-note { background: #0f2420; color: #9fbfb8; border-color: rgba(77,182,182,.3); }
 .lnh-note i { color: #008080; margin-right: 4px; }
+.lnh-note .lnh-src-link { color: #008080; font-weight: 700; text-decoration: underline; }
+body.dark-mode .lnh-note .lnh-src-link { color: #4dd8c4; }
 
 /* Ẩn thanh cuộn nhưng vẫn cuộn được (toàn trang + mọi vùng cuộn nội bộ như bảng rộng) */
 html, body { scrollbar-width: none; -ms-overflow-style: none; }

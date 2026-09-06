@@ -62,11 +62,23 @@
     // ============ Meta + fill selects ============
     function fillMeta(m) {
         state.meta = m;
-        $('metaSource').textContent = m.source || '—';
-        $('noteSource').textContent = m.source || '—';
+        var srcTxt = m.source || '—';
+        $('metaSource').textContent = srcTxt;
+        // Nguồn thật (24HMoney...) → đoạn lưu ý có link tới trang nguồn để minh bạch.
+        if (m.source_url) {
+            try {
+                var host = new URL(m.source_url).host;
+                $('noteSource').innerHTML = esc(srcTxt) + ' (<a href="' + esc(m.source_url) + '" target="_blank" rel="noopener nofollow" class="lnh-src-link">' + esc(host) + '</a>)';
+            } catch (e) {
+                $('noteSource').textContent = srcTxt;
+            }
+        } else {
+            $('noteSource').textContent = srcTxt;
+        }
         var upd = m.updated_at ? new Date(m.updated_at) : null;
         $('metaUpdated').textContent = upd && !isNaN(upd)
             ? upd.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                + (m.source_url ? ' · ' + upd.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '')
             : '—';
 
         var terms = m.terms || [];

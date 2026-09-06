@@ -201,7 +201,7 @@ def on_startup() -> None:
             session.close()
     except Exception:  # noqa: BLE001 — không để lỗi seed làm hỏng startup
         pass
-    # Seed dữ liệu lãi suất ngân hàng (Giai đoạn 1 — dữ liệu tổng hợp tham khảo) nếu bảng trống.
+    # Seed dữ liệu lãi suất ngân hàng (dữ liệu MẪU tham khảo fallback) nếu bảng trống.
     try:
         from app.services import bank_rate_service
 
@@ -211,6 +211,14 @@ def on_startup() -> None:
         finally:
             session.close()
     except Exception:  # noqa: BLE001 — không để lỗi seed làm hỏng startup
+        pass
+    # Đồng bộ dữ liệu THẬT từ 24HMoney ở nền (chạy sau boot vài giây, TTL mặc định 24h,
+    # 1 request/kỳ — không chặn startup, không spam nguồn).
+    try:
+        from app.services import bank_rate_sync
+
+        bank_rate_sync.run_auto_sync()
+    except Exception:  # noqa: BLE001
         pass
     _warm_home_caches()
 
