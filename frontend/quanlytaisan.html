@@ -677,11 +677,13 @@
 
             // ---------- Tài sản ngoài cổ phiếu (Crypto / Tiền gửi NH / Vàng-bạc) ----------
             const ASSET_META = {
-                crypto: { title: 'Danh sách Crypto', icon: 'fa-coins', ph: 'VD: BTC', phAmt: 'VD: 20.000.000' },
-                deposit: { title: 'Tiền gửi ngân hàng', icon: 'fa-landmark', ph: 'VD: ACB – kỳ hạn 6 tháng', phAmt: 'VD: 100.000.000' },
-                gold: { title: 'Vàng/Bạc', icon: 'fa-coins', ph: 'VD: Vàng miếng SJC', phAmt: 'VD: 50.000.000' }
+                crypto: { title: 'Danh sách Crypto', name: 'Crypto', icon: 'fa-coins', ph: 'VD: BTC', phAmt: 'VD: 20.000.000', trade: true },
+                deposit: { title: 'Tiền gửi ngân hàng', name: 'Tiền gửi ngân hàng', icon: 'fa-landmark', ph: 'VD: ACB – kỳ hạn 6 tháng', phAmt: 'VD: 100.000.000', trade: false },
+                gold: { title: 'Vàng/Bạc', name: 'Vàng/Bạc', icon: 'fa-coins', ph: 'VD: Vàng miếng SJC', phAmt: 'VD: 50.000.000', trade: true }
             };
             const userAssets = { crypto: [], deposit: [], gold: [] };
+            // Crypto & Vàng/Bạc mua/bán gộp vị thế theo tên (giống cổ phiếu)
+            const assetMode = { crypto: 'buy', gold: 'buy' };
             function renderHoldingsTab() {
                 return renderTable() +
                     '<div id="assetWrap-crypto">' + assetCardInner('crypto') + '</div>' +
@@ -693,6 +695,9 @@
                 const m = ASSET_META[cls];
                 const list = userAssets[cls] || [];
                 const total = list.reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0);
+                const emptyText = m.trade
+                    ? 'Chưa có vị thế nào — Mua bên dưới để theo dõi.'
+                    : 'Chưa có khoản nào — nhập bên dưới để theo dõi.';
                 const rows = list.length ? list.map(function(x) {
                     return '<tr>' +
                         '<td><div class="td-sym">' + esc(x.label || 'Khoản') + '</div></td>' +
@@ -701,19 +706,55 @@
                         '<td>' + fmtMoney(x.amount) + '</td>' +
                         '<td><button type="button" class="act-btn del pa-del" data-cls="' + cls + '" data-id="' + x.id + '" title="Xóa"><i class="fas fa-trash"></i></button></td>' +
                     '</tr>';
-                }).join('') : '<tr><td colspan="5" class="pf-empty">Chưa có khoản nào — nhập bên dưới để theo dõi.</td></tr>';
+                }).join('') : '<tr><td colspan="5" class="pf-empty">' + esc(emptyText) + '</td></tr>';
                 return '<div class="pf-card">' +
                     '<div class="pf-ah"><h2><i class="fas ' + m.icon + '" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2><span class="pf-atotal">Tổng đầu tư: <b>' + fmtMoney(total) + ' đ</b></span></div>' +
                     '<div class="pf-table-wrap"><table><thead><tr>' +
-                        '<th>Tên khoản</th><th>Số lượng</th><th>Đơn giá (đ)</th><th>Số tiền đầu tư</th><th></th>' +
+                        '<th>Tên khoản</th><th>Số lượng</th><th>Giá vốn BQ (đ)</th><th>Số tiền đầu tư</th><th></th>' +
                     '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-                    '<div class="pf-asset-form pf-form-row">' +
-                        '<div class="pf-field" style="flex:1 1 200px;"><label>Tên khoản</label><input type="text" id="pa' + cls + 'Label" placeholder="' + esc(m.ph) + '" autocomplete="off" spellcheck="false" /></div>' +
-                        '<div class="pf-field"><label>Số lượng</label><input type="number" id="pa' + cls + 'Qty" min="0" step="any" placeholder="tuỳ chọn" /></div>' +
-                        '<div class="pf-field"><label>Đơn giá (đ)</label><input type="number" id="pa' + cls + 'Price" min="0" step="100" placeholder="tuỳ chọn" /></div>' +
-                        '<div class="pf-field"><label>Số tiền đầu tư (đ)</label><input type="number" id="pa' + cls + 'Amount" min="0" step="10000" placeholder="' + esc(m.phAmt) + '" /></div>' +
-                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-add" data-cls="' + cls + '"><i class="fas fa-plus"></i> Thêm</button></div>' +
+                    (m.trade ? assetTradeForm(cls, m) : assetDepositForm(cls, m)) +
+                '</div>';
+            }
+            // Form Mua/Bán cho Crypto & Vàng/Bạc — nhập Tên + Giá + Số lượng, tiền tự tính
+            function assetTradeForm(cls, m) {
+                const mode = assetMode[cls] === 'sell' ? 'sell' : 'buy';
+                const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
+                const subLabel = mode === 'sell' ? 'Bán' : 'Mua';
+                const ico = mode === 'sell' ? 'fa-cart-arrow-down' : 'fa-cart-plus';
+                const toggle = DEMO ? '' :
+                    '<div class="pf-trade-toggle">' +
+                        '<button type="button" class="pf-tt pa-tt' + (mode === 'buy' ? ' active' : '') + '" data-cls="' + cls + '" data-mode="buy"><i class="fas fa-cart-plus"></i> Mua</button>' +
+                        '<button type="button" class="pf-tt pa-tt' + (mode === 'sell' ? ' active' : '') + '" data-cls="' + cls + '" data-mode="sell"><i class="fas fa-cart-arrow-down"></i> Bán</button>' +
+                    '</div>';
+                const hint = mode === 'sell'
+                    ? '<div class="pf-price-hint">Bán sẽ giảm số lượng vị thế đang giữ; bán hết thì khoản tự được xoá.</div>'
+                    : '<div class="pf-price-hint">Số tiền đầu tư tự tính = Đơn giá × Số lượng. Mua trùng tên sẽ gộp vào vị thế hiện có (giá vốn bình quân).</div>';
+                return '<div class="pf-stock-form">' +
+                    '<div class="pf-form-head"><i class="fas ' + ico + '"></i> Mua/Bán ' + esc(m.name) + '</div>' +
+                    toggle +
+                    '<div class="pf-form-row">' +
+                        '<div class="pf-field" style="flex:1 1 200px;"><label>Tên khoản</label><input type="text" id="pa' + cls + 'Name" placeholder="' + esc(m.ph) + '" ' + disabled + ' autocomplete="off" spellcheck="false" /></div>' +
+                        '<div class="pf-field"><label>Đơn giá (đ)</label><input type="number" id="pa' + cls + 'Price" min="0" step="any" placeholder="' + esc(m.phPrice || 'VD: 25.000.000') + '" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>Số lượng</label><input type="number" id="pa' + cls + 'Qty" min="0" step="any" placeholder="VD: 0,5" ' + disabled + ' /></div>' +
+                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-submit" data-cls="' + cls + '" ' + (DEMO ? 'disabled' : '') + '><i class="fas ' + ico + '"></i> ' + subLabel + '</button></div>' +
                     '</div>' +
+                    hint +
+                    (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
+                '</div>';
+            }
+            // Form thêm khoản gửi (Tiền gửi ngân hàng) — nhập tay số tiền đầu tư
+            function assetDepositForm(cls, m) {
+                const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
+                return '<div class="pf-stock-form">' +
+                    '<div class="pf-form-head"><i class="fas fa-landmark"></i> Thêm khoản gửi</div>' +
+                    '<div class="pf-form-row">' +
+                        '<div class="pf-field" style="flex:1 1 200px;"><label>Tên khoản</label><input type="text" id="pa' + cls + 'Label" placeholder="' + esc(m.ph) + '" ' + disabled + ' autocomplete="off" spellcheck="false" /></div>' +
+                        '<div class="pf-field"><label>Số lượng</label><input type="number" id="pa' + cls + 'Qty" min="0" step="any" placeholder="tuỳ chọn" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>Đơn giá (đ)</label><input type="number" id="pa' + cls + 'Price" min="0" step="100" placeholder="tuỳ chọn" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>Số tiền đầu tư (đ)</label><input type="number" id="pa' + cls + 'Amount" min="0" step="10000" placeholder="' + esc(m.phAmt) + '" ' + disabled + ' /></div>' +
+                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-add" data-cls="' + cls + '" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-plus"></i> Thêm</button></div>' +
+                    '</div>' +
+                    (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                 '</div>';
             }
             function loadUserAssets(cb) {
@@ -734,12 +775,15 @@
                 notifyParentHeight();
             }
             function clearAssetInputs(cls) {
-                ['Label', 'Qty', 'Price', 'Amount'].forEach(function(s) {
+                const fields = ASSET_META[cls] && ASSET_META[cls].trade ? ['Name', 'Price', 'Qty'] : ['Label', 'Qty', 'Price', 'Amount'];
+                fields.forEach(function(s) {
                     const el = document.getElementById('pa' + cls + s);
                     if (el) el.value = '';
                 });
             }
+            // Thêm khoản gửi ngân hàng (deposit)
             function addAsset(cls) {
+                if (cls !== 'deposit') return;
                 const label = (document.getElementById('pa' + cls + 'Label').value || '').trim();
                 const amount = parseFloat(document.getElementById('pa' + cls + 'Amount').value);
                 if (!label) { toast('Nhập tên khoản.', true); return; }
@@ -753,11 +797,34 @@
                         if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
                         return r.json();
                     })
-                    .then(function() { toast('✅ Đã thêm khoản'); clearAssetInputs(cls); loadUserAssets(function() { refreshAssetCards(); }); })
+                    .then(function() { toast('✅ Đã thêm khoản gửi'); clearAssetInputs(cls); loadUserAssets(function() { refreshAssetCards(); }); })
                     .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không thêm được'), true); });
             }
+            // Mua / Bán Crypto & Vàng/Bạc (gộp vị thế theo tên)
+            function tradeAsset(cls) {
+                const mode = assetMode[cls] === 'sell' ? 'sell' : 'buy';
+                const label = (document.getElementById('pa' + cls + 'Name').value || '').trim();
+                if (!label) { toast('Nhập tên khoản.', true); return; }
+                const price = parseFloat(document.getElementById('pa' + cls + 'Price').value);
+                const qty = parseFloat(document.getElementById('pa' + cls + 'Qty').value);
+                if (!(price > 0)) { toast('Nhập Đơn giá (đ) > 0.', true); return; }
+                if (!(qty > 0)) { toast('Nhập Số lượng > 0.', true); return; }
+                const url = '/api/assets' + (mode === 'sell' ? '/sell' : '');
+                fetch(url, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: cls, label: label, quantity: qty, unit_price: price }) })
+                    .then(function(r) {
+                        if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
+                        return r.json();
+                    })
+                    .then(function(d) {
+                        if (mode === 'sell') toast('✅ ' + ((d && d.message) || ('Đã bán ' + label)));
+                        else toast('✅ Đã mua ' + label);
+                        clearAssetInputs(cls);
+                        loadUserAssets(function() { refreshAssetCards(); });
+                    })
+                    .catch(function(e) { toast('❌ ' + ((e && e.message) || (mode === 'sell' ? 'Không bán được' : 'Không mua được')), true); });
+            }
             function delAsset(cls, id) {
-                if (!window.confirm('Xóa khoản này khỏi ' + ASSET_META[cls].title + '?')) return;
+                if (!window.confirm('Xóa ' + (ASSET_META[cls].trade ? 'vị thế' : 'khoản') + ' này khỏi ' + ASSET_META[cls].title + '?')) return;
                 fetch('/api/assets/' + id, { method: 'DELETE', headers: authHeaders() })
                     .then(function(r) {
                         if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
@@ -773,6 +840,18 @@
                 document.addEventListener('click', function(e) {
                     const add = e.target.closest('.pa-add');
                     if (add) { e.preventDefault(); addAsset(add.getAttribute('data-cls')); return; }
+                    const tt = e.target.closest('.pa-tt');
+                    if (tt) {
+                        e.preventDefault();
+                        const c = tt.getAttribute('data-cls');
+                        if (!c) return;
+                        assetMode[c] = tt.getAttribute('data-mode') === 'sell' ? 'sell' : 'buy';
+                        const wrap = document.getElementById('assetWrap-' + c);
+                        if (wrap) { wrap.innerHTML = assetCardInner(c); notifyParentHeight(); }
+                        return;
+                    }
+                    const sub = e.target.closest('.pa-submit');
+                    if (sub) { e.preventDefault(); tradeAsset(sub.getAttribute('data-cls')); return; }
                     const del = e.target.closest('.pa-del');
                     if (del) { e.preventDefault(); delAsset(del.getAttribute('data-cls'), Number(del.getAttribute('data-id'))); }
                 });
@@ -1730,7 +1809,9 @@
                         t = setTimeout(function() { fetchPriceHint(cleaned); }, 350);
                     });
                 }
-                document.querySelectorAll('.pf-trade-toggle .pf-tt').forEach(function(b) {
+                // CHỈ bind toggle của form cổ phiếu (nằm trong #pfFormCard) — tránh va
+                // chạm với toggle Mua/Bán của block Crypto/Vàng-bạc (xử lý bằng delegation .pa-tt).
+                document.querySelectorAll('#pfFormCard .pf-trade-toggle .pf-tt').forEach(function(b) {
                     b.addEventListener('click', function() {
                         tradeMode = b.getAttribute('data-mode') === 'sell' ? 'sell' : 'buy';
                         render();

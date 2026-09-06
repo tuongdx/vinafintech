@@ -159,6 +159,15 @@ class UserAssetCreate(BaseModel):
     note: str | None = None
 
 
+class UserAssetSell(BaseModel):
+    """Bán một phần vị thế Crypto / Vàng-bạc (gộp theo tên)."""
+    asset_class: str  # crypto | gold
+    label: str
+    quantity: float
+    unit_price: float | None = None  # chỉ để tham khảo (giá bán) — không bắt buộc
+    note: str | None = None
+
+
 class UserAssetUpdate(BaseModel):
     label: str | None = None
     quantity: float | None = None
