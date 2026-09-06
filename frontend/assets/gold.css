@@ -104,6 +104,8 @@ body.dark-mode .gv-spread { color: #9ddcd2; }
 .gv-grid .gv-col > .gv-card > .gv-chart svg { width: 100%; height: 100%; }
 /* Khi 2 cột: để 2 card Vàng/Bạc dãn đều phần thừa (không để trống cuối card thế giới) */
 @media (min-width: 1001px) {
+    /* Cách đều block So sánh phía dưới như các block khác (card trong grid có mb 0) */
+    .gv-grid { margin-bottom: 16px; }
     .gv-grid .gv-col:first-child > .gv-card .gv-world { flex: 1 1 auto; display: flex; flex-direction: column; }
     .gv-grid .gv-col:first-child > .gv-card .gv-wcard { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
 }
