@@ -2652,6 +2652,8 @@
                 <span class="mm-sep"></span>
                 <a href="/lai-ngan-hang" class="mm-item" data-action="lai-ngan-hang">Lãi ngân hàng</a>
                 <span class="mm-sep"></span>
+                <a href="/crypto" class="mm-item" data-action="crypto">Crypto</a>
+                <span class="mm-sep"></span>
                 <a href="/kham-pha" class="mm-item" data-action="kham-pha">Khám phá</a>
                 <span class="mm-sep"></span>
                 <a href="/quan-ly-tai-san" class="mm-item" data-action="quan-ly-tai-san">Quản lý tài sản</a>
@@ -3230,7 +3232,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260906v';
+        const CACHE_VERSION = '20260906y';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3404,6 +3406,15 @@
             setHeaderContext(false);
         }
         window.openLaiNganHangPage = openLaiNganHangPage;
+        function openCryptoPage() {
+            // Mở trang "Crypto" trong shell — URL đẹp /crypto.
+            if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
+            if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
+            loadContent('/frontend/crypto.html');
+            window.history.replaceState({}, '', '/crypto');
+            setHeaderContext(false);
+        }
+        window.openCryptoPage = openCryptoPage;
         function openCoPhieuStock(symbol) {
             // Mở chi tiết cổ phiếu NHÚNG trong trang Cổ phiếu (breadcrumb ngành ... > MÃ) — dùng cho mọi trang list.
             const normalized = String(symbol || '').trim().toUpperCase();
@@ -3490,6 +3501,7 @@
             else if (/^\/thi-truong/.test(pg) || /ThiTruong\.html/.test(pg)) active = 'thi-truong';
             else if (/^\/co-phieu/.test(pg) || /CoPhieu\.html/.test(pg)) active = 'co-phieu';
             else if (/^\/lai-ngan-hang/.test(pg) || /lai-ngan-hang\.html/.test(pg)) active = 'lai-ngan-hang';
+            else if (/^\/crypto/.test(pg) || /crypto\.html/.test(pg)) active = 'crypto';
             else if (/^\/kham-pha/.test(pg) || /KhamPha\.html/.test(pg)) active = 'kham-pha';
             else if (/^\/tuniai/.test(pg) || /TuniAI\.html/.test(pg)) active = 'tuniai';
             else if (/^\/tien-ich(?:[?#].*)?$/.test(pg) || /tienich\.html/.test(pg)) active = 'tien-ich';
@@ -3521,6 +3533,8 @@
                     openCoPhieuPage();
                 } else if (action === 'lai-ngan-hang') {
                     openLaiNganHangPage();
+                } else if (action === 'crypto') {
+                    openCryptoPage();
                 } else if (action === 'kham-pha') {
                     openKhamPhaPage();
                 } else if (action === 'quan-ly-tai-san') {
@@ -3536,6 +3550,7 @@
                 'thi-truong': '/frontend/ThiTruong.html',
                 'co-phieu': '/frontend/CoPhieu.html',
                 'lai-ngan-hang': '/frontend/lai-ngan-hang.html',
+                'crypto': '/frontend/crypto.html',
                 'kham-pha': '/frontend/KhamPha.html',
                 'tuniai': '/frontend/TuniAI.html',
                 'quan-ly-tai-san': '/frontend/quanlytaisan.html',
@@ -3839,7 +3854,7 @@
             updateRightColumnForStock(relatedSymbol);
 
             // Home va StockDetail duoc nhung bang iframe de giu nguyen HTML/CSS/JS.
-            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/quan-ly-tai-san(?:[?#].*)?$/.test(page) || /^\/frontend\/quanlytaisan\.html(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/tuniai(?:[?#].*)?$/.test(page) || /^\/frontend\/TuniAI\.html(?:[?#].*)?$/.test(page) || /^\/tien-ich(?:[?#].*)?$/.test(page) || /^\/frontend\/tienich\.html(?:[?#].*)?$/.test(page) || /^\/lai-ngan-hang(?:[?#].*)?$/.test(page) || /^\/frontend\/lai-ngan-hang\.html(?:[?#].*)?$/.test(page);
+            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/quan-ly-tai-san(?:[?#].*)?$/.test(page) || /^\/frontend\/quanlytaisan\.html(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/tuniai(?:[?#].*)?$/.test(page) || /^\/frontend\/TuniAI\.html(?:[?#].*)?$/.test(page) || /^\/tien-ich(?:[?#].*)?$/.test(page) || /^\/frontend\/tienich\.html(?:[?#].*)?$/.test(page) || /^\/lai-ngan-hang(?:[?#].*)?$/.test(page) || /^\/frontend\/lai-ngan-hang\.html(?:[?#].*)?$/.test(page) || /^\/crypto(?:[?#].*)?$/.test(page) || /^\/frontend\/crypto\.html(?:[?#].*)?$/.test(page);
             // Ẩn thanh cuộn trang khi đang xem chi tiết bài viết
             const isArticlePage = /^\/tintuc(?:[?#].*)?$/.test(page);
             document.body.classList.toggle('article-mode', isArticlePage);
@@ -4363,6 +4378,7 @@
                 '/thi-truong': '/frontend/ThiTruong.html',
                 '/co-phieu': '/frontend/CoPhieu.html',
                 '/lai-ngan-hang': '/frontend/lai-ngan-hang.html',
+                '/crypto': '/frontend/crypto.html',
                 '/kham-pha': '/frontend/KhamPha.html',
                 '/tuniai': '/frontend/TuniAI.html',
                 '/tin-tuc': '/frontend/tin-tuc.html',
@@ -4541,6 +4557,10 @@
         } else if (pathPage === 'lai-ngan-hang' || initialPage === 'lai-ngan-hang') {
             // Trang Lãi ngân hàng: /lai-ngan-hang → nạp vào left-col.
             loadContent('/frontend/lai-ngan-hang.html');
+            setHeaderContext(false);
+        } else if (pathPage === 'crypto' || initialPage === 'crypto') {
+            // Trang Crypto: /crypto → nạp vào left-col.
+            loadContent('/frontend/crypto.html');
             setHeaderContext(false);
         } else if (pathPage === 'kham-pha' || initialPage === 'kham-pha') {
             // Trang khám phá: /kham-pha → nạp discovery vào left-col.

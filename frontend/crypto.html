@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
+    <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
+    <title>Crypto - TuniX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
+    <link rel="stylesheet" href="/static/crypto.css?v=20260906w" />
+</head>
+<body>
+    <div class="cr-page">
+        <!-- HERO -->
+        <header class="cr-hero">
+            <h1>Crypto</h1>
+            <p class="cr-sub">Theo dõi tài sản tiền mã hóa hàng đầu đang giao dịch trên Binance — dữ liệu mang tính tham khảo.</p>
+            <span class="cr-pill" id="crUpdated"><i class="far fa-clock"></i> Cập nhật: <b>…</b></span>
+        </header>
+
+        <!-- ============ DANH SÁCH ============ -->
+        <section id="crListView">
+            <div class="cr-card">
+                <div class="cr-toolbar">
+                    <div class="cr-search">
+                        <i class="fas fa-search"></i>
+                        <input id="crSearch" type="text" placeholder="Tìm kiếm Crypto (tên / mã)…" autocomplete="off" />
+                    </div>
+                    <div class="cr-chips" id="crChips">
+                        <button type="button" class="cr-chip on" data-filter="top">Top 50</button>
+                        <button type="button" class="cr-chip" data-filter="gainers"><i class="fas fa-arrow-up"></i> Tăng mạnh</button>
+                        <button type="button" class="cr-chip" data-filter="losers"><i class="fas fa-arrow-down"></i> Giảm mạnh</button>
+                        <button type="button" class="cr-chip" data-filter="volume">Volume lớn</button>
+                    </div>
+                    <div class="cr-sort">
+                        <span>Sắp xếp:</span>
+                        <div class="cr-sel"><select id="crSort">
+                            <option value="rank">Thứ hạng</option>
+                            <option value="price">Giá</option>
+                            <option value="change">% 24h</option>
+                            <option value="volume">Volume</option>
+                        </select></div>
+                    </div>
+                </div>
+                <div class="cr-note-line">Định giá theo <b>USDT</b> trên Binance · tự cập nhật định kỳ</div>
+                <div id="crMsg"></div>
+                <div class="cr-tblwrap">
+                    <table class="cr-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th class="left">Tên</th>
+                                <th>Mã</th>
+                                <th class="right">Giá (USDT)</th>
+                                <th class="right">% 24h</th>
+                                <th class="right">Cao 24h</th>
+                                <th class="right">Thấp 24h</th>
+                                <th class="right">Volume 24h</th>
+                                <th class="right">Vốn hóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="crBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ CHI TIẾT ============ -->
+        <section id="crDetailView" style="display:none;">
+            <button type="button" class="cr-btn ghost" id="crBack"><i class="fas fa-arrow-left"></i> Quay lại danh sách</button>
+
+            <div class="cr-card" id="crDetailInfo"></div>
+
+            <div class="cr-card">
+                <div class="cr-chart-head">
+                    <h3>Biểu đồ giá <span id="crChartSym"></span></h3>
+                    <div class="cr-periods" id="crPeriods"></div>
+                </div>
+                <div id="crChartMsg"></div>
+                <div class="cr-chart" id="crChart"></div>
+                <div class="cr-hint" id="crChartHint"></div>
+            </div>
+        </section>
+
+        <!-- Nguồn dữ liệu -->
+        <div class="cr-note">
+            <i class="fas fa-circle-info"></i> Dữ liệu lấy từ <b>Binance</b> (nền tảng bên thứ ba), chỉ mang tính <b>tham khảo</b>, có thể chậm trễ và không phải khuyến nghị mua/bán/đầu tư. Người dùng tự chịu trách nhiệm với quyết định của mình.
+        </div>
+    </div>
+
+    <script src="/static/crypto.js?v=20260906y"></script>
+    <script src="/static/context-menu.js?v=20260827a"></script>
+</body>
+</html>
