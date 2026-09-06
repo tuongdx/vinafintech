@@ -103,6 +103,16 @@
         return arr;
     }
 
+    function coinIconHtml(sym, big) {
+        var s = String(sym == null ? '' : sym).trim().toLowerCase();
+        var letter = String(sym == null ? '' : sym).trim().charAt(0).toUpperCase() || '?';
+        var b = big ? ' big' : '';
+        return '<span class="cr-ico-wrap' + b + '">' +
+            '<img class="cr-ico" loading="lazy" alt="' + esc(sym) + '" src="https://assets.coincap.io/assets/icons/' + s + '@2x.png" onerror="this.classList.add(\'broken\')">' +
+            '<span class="cr-ico-fb' + b + '">' + esc(letter) + '</span>' +
+            '</span>';
+    }
+
     function renderList() {
         var rows = filteredList();
         var msg = $('crMsg');
@@ -119,8 +129,9 @@
             var c = pctCls(x.change_pct);
             return '<tr data-symbol="' + esc(x.symbol) + '" data-pair="' + esc(x.pair) + '">' +
                 '<td class="rank">' + x.rank + '</td>' +
-                '<td class="left"><span class="sym">' + esc(x.name) + '</span><span class="nm">' + esc(x.symbol) + ' · ' + esc(x.pair) + '</span></td>' +
-                '<td class="sym">' + esc(x.symbol) + '</td>' +
+                '<td class="left"><div class="cr-symcell">' + coinIconHtml(x.symbol) +
+                '<div class="cr-symtxt"><span class="sym">' + esc(x.name) + '</span>' +
+                '<span class="nm">' + esc(x.symbol) + ' · ' + esc(x.pair) + '</span></div></div></td>' +
                 '<td class="right num">' + fmtPrice(x.price) + '</td>' +
                 '<td class="right num ' + c + '"><span class="cr-badge ' + c + '">' + pctTxt(x.change_pct) + '</span></td>' +
                 '<td class="right num">' + fmtPrice(x.high) + '</td>' +
@@ -203,11 +214,11 @@
         }
         var c = pctCls(item.change_pct);
         el.innerHTML =
-            '<div class="cr-detail-name"><h2>' + esc(item.name) + '</h2>' +
+            '<div class="cr-detail-name">' + coinIconHtml(item.symbol, true) +
+            '<div><div class="cr-dname-row"><h2>' + esc(item.name) + '</h2>' +
             '<span class="code">' + esc(item.symbol) + ' / ' + esc(item.pair) + '</span>' +
-            '<span class="rank-tag">#' + item.rank + ' · Top 50</span></div>' +
-            '<div class="cr-price-big ' + c + '">' + fmtPrice(item.price) + ' <small>USDT</small></div>' +
-            '<div class="cr-kpis">' +
+            '<span class="rank-tag">#' + item.rank + ' · Top 50</span></div></div></div>' +
+            '<div class="cr-price-big ' + c + '">' + fmtPrice(item.price) + ' <small>USDT</small></div>' +            '<div class="cr-kpis">' +
             '<div class="cr-kpi"><div class="k-label">Thay đổi 24h</div><div class="k-val ' + c + '">' + pctTxt(item.change_pct) + '</div></div>' +
             '<div class="cr-kpi"><div class="k-label">Cao 24h</div><div class="k-val">' + fmtPrice(item.high) + '</div></div>' +
             '<div class="cr-kpi"><div class="k-label">Thấp 24h</div><div class="k-val">' + fmtPrice(item.low) + '</div></div>' +
