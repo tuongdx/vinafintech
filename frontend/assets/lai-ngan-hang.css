@@ -103,9 +103,11 @@ body.dark-mode .lnh-kpi .lk-val { color: #e6edf3; }
     border: 1px solid #dbe4ec; background: #fff; color: #5a6b85; border-radius: 20px;
     padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s;
 }
-body.dark-mode .lnh-chip { background: #161b22; border-color: #30363d; color: #9fb0c7; }
+body.dark-mode .lnh-chip { background: #21262d; border-color: #3e4c61; color: #d3deeb; }
 .lnh-chip:hover { border-color: #008080; color: #008080; }
 .lnh-chip.on { background: #008080; color: #fff; border-color: #008080; }
+body.dark-mode .lnh-chip:hover { border-color: #4dd8c4; color: #4dd8c4; }
+body.dark-mode .lnh-chip.on { background: linear-gradient(135deg,#008080,#00a08a); border-color: #4dd8c4; color: #fff; box-shadow: 0 0 0 1px rgba(77,216,196,.4); }
 .lnh-mxctrl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .lnh-mxctrl .lnh-input-wrap { min-width: 120px; }
 .lnh-mxctrl .lnh-input-wrap:first-child { min-width: 150px; }
