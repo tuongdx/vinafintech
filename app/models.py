@@ -378,6 +378,37 @@ class PortfolioHolding(Base):
     __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_portfolio_user_symbol"),)
 
 
+class UserAssetClass(str, enum.Enum):
+    """Loại tài sản ngoài cổ phiếu mà người dùng tự khai báo (không có nguồn giá tự động)."""
+
+    crypto = "crypto"    # Danh sách Crypto
+    deposit = "deposit"  # Tiền gửi ngân hàng
+    gold = "gold"        # Vàng / Bạc
+
+
+class UserAsset(Base):
+    """Tài sản tự khai báo theo khoản (crypto / tiền gửi NH / vàng-bạc).
+
+    Mỗi dòng = 1 khoản đầu tư mà user nhập tay (nhiều dòng/loại cho phép).
+    - label: tên khoản (VD 'BTC', 'ACB – kỳ hạn 6 tháng', 'Vàng miếng SJC').
+    - quantity / unit_price: (tuỳ chọn) số lượng + đơn giá — chỉ để tham khảo.
+    - amount: SỐ TIỀN ĐẦU TƯ (VND) — giá trị chính.
+    """
+
+    __tablename__ = "user_assets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    asset_class: Mapped[UserAssetClass] = mapped_column(Enum(UserAssetClass), nullable=False, index=True)
+    label: Mapped[str] = mapped_column(String(160), default="")
+    quantity: Mapped[float | None] = mapped_column(Float, nullable=True)
+    unit_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    amount: Mapped[float] = mapped_column(Float, default=0.0)
+    note: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class NotificationRead(Base):
     """Tin/báo cáo người dùng đã xem trong thông báo (để không đếm lại)."""
 

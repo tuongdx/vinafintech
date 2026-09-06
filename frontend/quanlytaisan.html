@@ -116,6 +116,17 @@
 
         /* ===== Form ===== */
         .pf-form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; align-items: end; }
+        .pf-stock-form { margin-top: 18px; padding-top: 16px; border-top: 1px solid #eef1f5; }
+        body.dark-mode .pf-stock-form { border-top-color: #242b34; }
+        .pf-form-head { font-size: 15px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+        .pf-form-head i { color: #008080; }
+        .pf-ah { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+        .pf-ah h2 { margin: 0; }
+        .pf-atotal { font-size: 12.5px; color: #6b7a8f; font-weight: 600; }
+        .pf-atotal b { color: #008080; font-weight: 800; }
+        .pf-asset-form { margin-top: 12px; }
+        body.dark-mode .pf-atotal { color: #8b949e; }
+        body.dark-mode .pf-atotal b { color: #4dd8c4; }
         .pf-field { min-width: 0; }
         .pf-field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #4a5a72; }
         .pf-field input { width: 100%; padding: 10px 12px; border: 1px solid #e5eaf0; border-radius: 10px; font-size: 14px; font-family: inherit; color: #12203a; background: #fff; }
@@ -604,33 +615,36 @@
 
             // ---------- Table + form ----------
             function renderTable() {
-                if (!holdings.length) {
-                    return '<div class="pf-card"><h2>Danh sách cổ phiếu</h2><div class="pf-table-wrap"><div class="pf-empty"><i class="fas fa-briefcase" style="font-size:30px;color:#c3ccd8;"></i><br/>Danh mục tài sản của bạn đang trống.<br/>Hãy thêm cổ phiếu bạn đang nắm giữ ở phía trên.</div></div></div>';
-                }
                 const total = totals().totalValue || 1;
-                const rows = holdings.map(function(h) {
-                    const pnlCls = Number(h.pnl) >= 0 ? 'pos' : 'neg';
-                    const pctCls = Number(h.percent_change) >= 0 ? 'pos' : 'neg';
-                    const weight = (Number(h.market_value) || 0) / total * 100;
-                    return '<tr data-symbol="' + esc(h.symbol) + '">' +
-                        '<td><div class="td-sym">' + esc(h.symbol) + '<span class="name">' + esc(h.name) + '</span></div></td>' +
-                        '<td>' + fmtMoney(h.avg_price) + '</td>' +
-                        '<td>' + fmtMoney(h.price) + ' <span class="' + pctCls + '" style="font-size:11.5px;">' + fmtPct(h.percent_change) + '</span></td>' +
-                        '<td>' + fmtMoney(h.quantity) + '</td>' +
-                        '<td>' + fmtMoney(h.market_value) + '</td>' +
-                        '<td class="' + pnlCls + '">' + (Number(h.pnl) >= 0 ? '+' : '−') + fmtMoney(Math.abs(h.pnl)) + ' <span style="font-size:11.5px;">(' + fmtPct(h.pnl_pct) + ')</span></td>' +
-                        '<td>' + weight.toFixed(1) + '%</td>' +
-                        '<td><div class="td-actions">' +
-                            '<button type="button" class="act-btn" data-edit="' + h.id + '" title="Cập nhật"><i class="fas fa-pen"></i></button>' +
-                            '<button type="button" class="act-btn del" data-del="' + h.id + '" title="Xóa"><i class="fas fa-trash"></i></button>' +
-                        '</div></td>' +
-                    '</tr>';
-                }).join('');
-                return '<div class="pf-card"><h2>Danh sách cổ phiếu</h2><div class="pf-table-wrap"><table><thead><tr>' +
-                    '<th>Mã</th><th>Giá vốn</th><th>Giá hiện tại</th><th>Số lượng</th><th>Giá trị</th><th>Lãi/Lỗ</th><th>Tỷ trọng</th><th></th>' +
-                    '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+                const tableHtml = holdings.length
+                    ? '<div class="pf-table-wrap"><table><thead><tr>' +
+                        '<th>Mã</th><th>Giá vốn</th><th>Giá hiện tại</th><th>Số lượng</th><th>Giá trị</th><th>Lãi/Lỗ</th><th>Tỷ trọng</th><th></th>' +
+                      '</tr></thead><tbody>' +
+                        holdings.map(function(h) {
+                            const pnlCls = Number(h.pnl) >= 0 ? 'pos' : 'neg';
+                            const pctCls = Number(h.percent_change) >= 0 ? 'pos' : 'neg';
+                            const weight = (Number(h.market_value) || 0) / total * 100;
+                            return '<tr data-symbol="' + esc(h.symbol) + '">' +
+                                '<td><div class="td-sym">' + esc(h.symbol) + '<span class="name">' + esc(h.name) + '</span></div></td>' +
+                                '<td>' + fmtMoney(h.avg_price) + '</td>' +
+                                '<td>' + fmtMoney(h.price) + ' <span class="' + pctCls + '" style="font-size:11.5px;">' + fmtPct(h.percent_change) + '</span></td>' +
+                                '<td>' + fmtMoney(h.quantity) + '</td>' +
+                                '<td>' + fmtMoney(h.market_value) + '</td>' +
+                                '<td class="' + pnlCls + '">' + (Number(h.pnl) >= 0 ? '+' : '−') + fmtMoney(Math.abs(h.pnl)) + ' <span style="font-size:11.5px;">(' + fmtPct(h.pnl_pct) + ')</span></td>' +
+                                '<td>' + weight.toFixed(1) + '%</td>' +
+                                '<td><div class="td-actions">' +
+                                    '<button type="button" class="act-btn" data-edit="' + h.id + '" title="Cập nhật"><i class="fas fa-pen"></i></button>' +
+                                    '<button type="button" class="act-btn del" data-del="' + h.id + '" title="Xóa"><i class="fas fa-trash"></i></button>' +
+                                '</div></td>' +
+                            '</tr>';
+                        }).join('') +
+                      '</tbody></table></div>'
+                    : '<div class="pf-table-wrap"><div class="pf-empty"><i class="fas fa-briefcase" style="font-size:30px;color:#c3ccd8;"></i><br/>Danh mục tài sản của bạn đang trống.<br/>Hãy thêm cổ phiếu bạn đang nắm giữ ở form bên dưới.</div></div>';
+                return '<div class="pf-card"><h2>Danh sách cổ phiếu</h2>' + tableHtml +
+                    '<div class="pf-stock-form" id="pfFormCard">' + stockFormInner() + '</div>' +
+                '</div>';
             }
-            function renderForm() {
+            function stockFormInner() {
                 const editing = holdings.find(function(h) { return h.id === editId; });
                 const sym = editing ? editing.symbol : '';
                 const qty = editing ? editing.quantity : '';
@@ -650,7 +664,7 @@
                       '<div class="pf-field"><label>Số lượng mua/bán</label><input type="number" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1000" ' + disabled + ' /></div>' +
                       '<div class="pf-field"><label>Phí giao dịch (%)</label><input type="number" id="pfFee" min="0" max="10" step="0.01" placeholder="VD: 0.15" value="0.15" ' + disabled + ' /></div>';
                 const submitField = '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary" id="pfSubmit" ' + (DEMO ? 'disabled' : '') + '>' + submitLabel + '</button>' + (editing ? '<button type="button" class="btn" id="pfCancelEdit">Hủy</button>' : '') + '</div>';
-                return '<div class="pf-card" id="pfFormCard"><h2>' + title + '</h2>' +
+                return '<div class="pf-form-head"><i class="fas fa-exchange-alt"></i> ' + esc(title) + '</div>' +
                     toggle +
                     '<div class="pf-form-row">' +
                         '<div class="pf-field"><label>Mã</label><input type="text" id="pfSymbol" maxlength="3" placeholder="VD: HDB" value="' + esc(sym) + '" ' + (editing || DEMO ? 'disabled' : '') + ' autocomplete="off" spellcheck="false" /></div>' +
@@ -658,8 +672,110 @@
                         submitField +
                     '</div>' +
                     (editing ? '' : '<div class="pf-price-hint" id="pfPriceHint"></div>') +
-                    (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
+                    (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '');
+            }
+
+            // ---------- Tài sản ngoài cổ phiếu (Crypto / Tiền gửi NH / Vàng-bạc) ----------
+            const ASSET_META = {
+                crypto: { title: 'Danh sách Crypto', icon: 'fa-coins', ph: 'VD: BTC', phAmt: 'VD: 20.000.000' },
+                deposit: { title: 'Tiền gửi ngân hàng', icon: 'fa-landmark', ph: 'VD: ACB – kỳ hạn 6 tháng', phAmt: 'VD: 100.000.000' },
+                gold: { title: 'Vàng/Bạc', icon: 'fa-coins', ph: 'VD: Vàng miếng SJC', phAmt: 'VD: 50.000.000' }
+            };
+            const userAssets = { crypto: [], deposit: [], gold: [] };
+            function renderHoldingsTab() {
+                return renderTable() +
+                    '<div id="assetWrap-crypto">' + assetCardInner('crypto') + '</div>' +
+                    '<div id="assetWrap-deposit">' + assetCardInner('deposit') + '</div>' +
+                    '<div id="assetWrap-gold">' + assetCardInner('gold') + '</div>';
+            }
+            function assetNum(x) { const n = Number(x); return isFinite(n) && n ? fmtMoney(n) : '—'; }
+            function assetCardInner(cls) {
+                const m = ASSET_META[cls];
+                const list = userAssets[cls] || [];
+                const total = list.reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0);
+                const rows = list.length ? list.map(function(x) {
+                    return '<tr>' +
+                        '<td><div class="td-sym">' + esc(x.label || 'Khoản') + '</div></td>' +
+                        '<td>' + assetNum(x.quantity) + '</td>' +
+                        '<td>' + assetNum(x.unit_price) + '</td>' +
+                        '<td>' + fmtMoney(x.amount) + '</td>' +
+                        '<td><button type="button" class="act-btn del pa-del" data-cls="' + cls + '" data-id="' + x.id + '" title="Xóa"><i class="fas fa-trash"></i></button></td>' +
+                    '</tr>';
+                }).join('') : '<tr><td colspan="5" class="pf-empty">Chưa có khoản nào — nhập bên dưới để theo dõi.</td></tr>';
+                return '<div class="pf-card">' +
+                    '<div class="pf-ah"><h2><i class="fas ' + m.icon + '" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2><span class="pf-atotal">Tổng đầu tư: <b>' + fmtMoney(total) + ' đ</b></span></div>' +
+                    '<div class="pf-table-wrap"><table><thead><tr>' +
+                        '<th>Tên khoản</th><th>Số lượng</th><th>Đơn giá (đ)</th><th>Số tiền đầu tư</th><th></th>' +
+                    '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+                    '<div class="pf-asset-form pf-form-row">' +
+                        '<div class="pf-field" style="flex:1 1 200px;"><label>Tên khoản</label><input type="text" id="pa' + cls + 'Label" placeholder="' + esc(m.ph) + '" autocomplete="off" spellcheck="false" /></div>' +
+                        '<div class="pf-field"><label>Số lượng</label><input type="number" id="pa' + cls + 'Qty" min="0" step="any" placeholder="tuỳ chọn" /></div>' +
+                        '<div class="pf-field"><label>Đơn giá (đ)</label><input type="number" id="pa' + cls + 'Price" min="0" step="100" placeholder="tuỳ chọn" /></div>' +
+                        '<div class="pf-field"><label>Số tiền đầu tư (đ)</label><input type="number" id="pa' + cls + 'Amount" min="0" step="10000" placeholder="' + esc(m.phAmt) + '" /></div>' +
+                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-add" data-cls="' + cls + '"><i class="fas fa-plus"></i> Thêm</button></div>' +
+                    '</div>' +
                 '</div>';
+            }
+            function loadUserAssets(cb) {
+                Promise.all(['crypto', 'deposit', 'gold'].map(function(c) {
+                    return fetch('/api/assets?class=' + c, { headers: authHeaders() })
+                        .then(function(r) { return r.ok ? r.json() : []; })
+                        .catch(function() { return []; });
+                })).then(function(rs) {
+                    userAssets.crypto = rs[0]; userAssets.deposit = rs[1]; userAssets.gold = rs[2];
+                    if (cb) cb();
+                });
+            }
+            function refreshAssetCards() {
+                ['crypto', 'deposit', 'gold'].forEach(function(cls) {
+                    const wrap = document.getElementById('assetWrap-' + cls);
+                    if (wrap) wrap.innerHTML = assetCardInner(cls);
+                });
+                notifyParentHeight();
+            }
+            function clearAssetInputs(cls) {
+                ['Label', 'Qty', 'Price', 'Amount'].forEach(function(s) {
+                    const el = document.getElementById('pa' + cls + s);
+                    if (el) el.value = '';
+                });
+            }
+            function addAsset(cls) {
+                const label = (document.getElementById('pa' + cls + 'Label').value || '').trim();
+                const amount = parseFloat(document.getElementById('pa' + cls + 'Amount').value);
+                if (!label) { toast('Nhập tên khoản.', true); return; }
+                if (!(amount > 0)) { toast('Nhập số tiền đầu tư (đ).', true); return; }
+                const qv = (document.getElementById('pa' + cls + 'Qty').value || '').trim();
+                const pv = (document.getElementById('pa' + cls + 'Price').value || '').trim();
+                const qty = qv && isFinite(parseFloat(qv)) ? parseFloat(qv) : null;
+                const up = pv && isFinite(parseFloat(pv)) ? parseFloat(pv) : null;
+                fetch('/api/assets', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: cls, label: label, quantity: qty, unit_price: up, amount: amount }) })
+                    .then(function(r) {
+                        if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
+                        return r.json();
+                    })
+                    .then(function() { toast('✅ Đã thêm khoản'); clearAssetInputs(cls); loadUserAssets(function() { refreshAssetCards(); }); })
+                    .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không thêm được'), true); });
+            }
+            function delAsset(cls, id) {
+                if (!window.confirm('Xóa khoản này khỏi ' + ASSET_META[cls].title + '?')) return;
+                fetch('/api/assets/' + id, { method: 'DELETE', headers: authHeaders() })
+                    .then(function(r) {
+                        if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
+                        return r.json();
+                    })
+                    .then(function() { toast('🗑️ Đã xóa'); loadUserAssets(function() { refreshAssetCards(); }); })
+                    .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Xóa thất bại'), true); });
+            }
+            let assetBound = false;
+            function bindAssetForm() {
+                if (assetBound) return;
+                assetBound = true;
+                document.addEventListener('click', function(e) {
+                    const add = e.target.closest('.pa-add');
+                    if (add) { e.preventDefault(); addAsset(add.getAttribute('data-cls')); return; }
+                    const del = e.target.closest('.pa-del');
+                    if (del) { e.preventDefault(); delAsset(del.getAttribute('data-cls'), Number(del.getAttribute('data-id'))); }
+                });
             }
 
             // ---------- AI Review ----------
@@ -1475,7 +1591,7 @@
             // ---------- Tabs ----------
             const TAB_DEFS = {
                 overview: { label: 'Tổng quan', html: function() { return renderSummary() + renderPerformance() + renderChartCard() + renderAlloc(); }, mount: function() { bindChart(); loadChart(); loadPerformance(); } },
-                holdings: { label: 'Cổ phiếu đang nắm giữ', html: function() { return renderTable() + renderForm(); }, mount: function() { bindTable(); bindForm(); } },
+                holdings: { label: 'Danh mục đang nắm giữ', html: function() { return renderHoldingsTab(); }, mount: function() { bindTable(); bindForm(); bindAssetForm(); loadUserAssets(function() { refreshAssetCards(); }); } },
                 watchlist: { label: 'Cổ phiếu theo dõi', html: renderWatchlist, mount: function() { loadWatchlist(); bindWlAdd(); } },
                 portfolio: { label: 'Bảng danh mục', html: renderPortfolioTable, mount: function() { loadPortfolioTable(); } },
                 alerts: { label: 'Trung tâm cảnh báo', html: renderAlerts, mount: function() { mountAlerts(); } },

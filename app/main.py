@@ -14,7 +14,7 @@ from app.core.security import decode_token
 from app.db import SessionLocal
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, alerts, asset_events, auth, bank_rates, chart, contact, crypto, dashboard, faqs, features, feedback, gold, logs, membership, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, alerts, asset_events, assets, auth, bank_rates, chart, contact, crypto, dashboard, faqs, features, feedback, gold, logs, membership, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -141,11 +141,17 @@ async def cache_and_timing(request: Request, call_next):
         # (StaticFiles vẫn gửi ETag nên sau 1h chỉ cần revalidate 304, rẻ).
         if (path.startswith("/static/") or path.startswith("/frontend/assets/")) and not path.endswith(".html"):
             response.headers.setdefault("Cache-Control", "public, max-age=3600")
-        # API công khai ổn định: cache trình duyệt ngắn.
-        elif path.startswith("/api/") and not request.headers.get("authorization"):
-            max_age = _stable_api_max_age(path)
-            if max_age is not None:
-                response.headers.setdefault("Cache-Control", f"public, max-age={max_age}")
+        elif path.startswith("/api/"):
+            if request.headers.get("authorization"):
+                # API yêu cầu đăng nhập trả dữ liệu cá nhân (danh mục, watchlist,
+                # khoản tài sản...) → KHÔNG cache ở trình duyệt, tránh stale sau khi
+                # người dùng thêm/sửa/xoá (nếu không Chrome heuristic cache tới 60s).
+                response.headers["Cache-Control"] = "no-store"
+            else:
+                # API công khai ổn định: cache trình duyệt ngắn.
+                max_age = _stable_api_max_age(path)
+                if max_age is not None:
+                    response.headers.setdefault("Cache-Control", f"public, max-age={max_age}")
         else:
             # Trang HTML (shell + trang con): cache ngắn 60s → chuyển trang/load lại nhanh,
             # không phải tải lại toàn bộ HTML mỗi lần. Khi deploy bản mới, bump version
@@ -181,6 +187,7 @@ app.include_router(asset_events.router, prefix=api)
 app.include_router(bank_rates.router, prefix=api)
 app.include_router(crypto.router, prefix=api)
 app.include_router(gold.router, prefix=api)
+app.include_router(assets.router, prefix=api)
 
 frontend_path = Path(settings.frontend_dir)
 if frontend_path.exists():

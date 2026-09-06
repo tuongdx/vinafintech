@@ -149,6 +149,39 @@ class PortfolioHoldingOut(BaseModel):
         from_attributes = True
 
 
+# ---------- Tài sản tự khai báo (Crypto / Tiền gửi NH / Vàng-bạc) ----------
+class UserAssetCreate(BaseModel):
+    asset_class: str  # crypto | deposit | gold
+    label: str = ""
+    quantity: float | None = None
+    unit_price: float | None = None
+    amount: float = 0.0
+    note: str | None = None
+
+
+class UserAssetUpdate(BaseModel):
+    label: str | None = None
+    quantity: float | None = None
+    unit_price: float | None = None
+    amount: float | None = None
+    note: str | None = None
+
+
+class UserAssetOut(BaseModel):
+    id: int
+    asset_class: str
+    label: str = ""
+    quantity: float | None = None
+    unit_price: float | None = None
+    amount: float = 0.0
+    note: str | None = None
+    created_at: datetime
+    updated_at: datetime | None = None
+
+    class Config:
+        from_attributes = True
+
+
 class NewsCreate(BaseModel):
     title: str
     summary: str = ""
