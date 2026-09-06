@@ -135,39 +135,73 @@ def get_market_caps() -> dict[str, float]:
     return _cached("coingecko:caps", _CAP_TTL, _prod)
 
 
+def get_coingecko_top(per_page: int = 250) -> list[dict]:
+    """Top coin theo vốn hóa (CoinGecko, market_cap desc) — dùng để chọn ~100 mã có USDT trên Binance.
+    Lỗi → [] (frontend giữ trạng thái lỗi, không vỡ)."""
+    def _prod() -> list[dict]:
+        try:
+            with httpx.Client(base_url=_COINGECKO_BASE, headers=_UA, timeout=20.0) as client:
+                r = client.get(
+                    "/coins/markets",
+                    params={"vs_currency": "usd", "order": "market_cap_desc", "per_page": min(250, per_page), "page": 1, "sparkline": "false"},
+                )
+                r.raise_for_status()
+            out: list[dict] = []
+            for x in r.json():
+                sym = str(x.get("symbol") or "").upper()
+                if not sym:
+                    continue
+                cap = x.get("market_cap")
+                out.append(
+                    {
+                        "symbol": sym,
+                        "name": str(x.get("name") or sym),
+                        "cap": float(cap) if isinstance(cap, (int, float)) and cap > 0 else None,
+                    }
+                )
+            return out
+        except Exception:  # noqa: BLE001 — nguồn phụ lỗi không phá trang
+            return []
+
+    return _cached("coingecko:top", _CAP_TTL, _prod)
+
+
 def get_markets() -> dict:
-    """Top coin đã chọn với giá live Binance (1 request tổng, cache 6s)."""
+    """~100 mã TOP theo vốn hóa (thứ hạng từ CoinGecko) có USDT trên Binance — giá/volume Binance."""
     tickers = _all_tickers()
-    caps = get_market_caps()
+    top = get_coingecko_top()
     items: list[dict] = []
     seen: set[str] = set()
-    for rank, (base, name) in enumerate(TOP_COINS, start=1):
+    for entry in top:
+        base = str(entry.get("symbol") or "").upper()
         pair = base + _QUOTE
-        if pair in seen:
+        if not base or pair in seen or pair not in tickers:
             continue
         seen.add(pair)
-        t = tickers.get(pair)
-        if not t:
-            continue
+        t = tickers[pair]
         change = _f(t.get("priceChangePercent"))
         items.append(
             {
-                "rank": rank,
+                "rank": len(items) + 1,
                 "symbol": base,
                 "pair": pair,
-                "name": name,
+                "name": entry.get("name") or base,
                 "price": _f(t.get("lastPrice")),
                 "change_pct": round(change, 2),
                 "high": _f(t.get("highPrice")),
                 "low": _f(t.get("lowPrice")),
                 "volume": _f(t.get("quoteVolume")),  # Volume 24h quy đổi (USDT)
-                "market_cap": caps.get(base),  # USD — từ CoinGecko (Binance không cung cấp)
+                "market_cap": entry.get("cap"),  # USD — CoinGecko (Binance không cung cấp)
             }
         )
+        if len(items) >= 100:
+            break
     return {
         "quote": _QUOTE,
         "source": "binance",
+        "cap_source": "coingecko",
         "count": len(items),
+        "total": 100,
         "as_of": _now_utc().isoformat(),
         "items": items,
     }

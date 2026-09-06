@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
-    <link rel="stylesheet" href="/static/crypto.css?v=20260906ac" />
+    <link rel="stylesheet" href="/static/crypto.css?v=20260906ae" />
 </head>
 <body>
     <div class="cr-page">
@@ -34,7 +34,7 @@
                         <input id="crSearch" type="text" placeholder="Tìm kiếm Crypto (tên / mã)…" autocomplete="off" />
                     </div>
                     <div class="cr-chips" id="crChips">
-                        <button type="button" class="cr-chip on" data-filter="top">Top 50</button>
+                        <button type="button" class="cr-chip on" data-filter="top">Top vốn hóa</button>
                         <button type="button" class="cr-chip" data-filter="gainers"><i class="fas fa-arrow-up"></i> Tăng mạnh</button>
                         <button type="button" class="cr-chip" data-filter="losers"><i class="fas fa-arrow-down"></i> Giảm mạnh</button>
                         <button type="button" class="cr-chip" data-filter="volume">Volume lớn</button>
@@ -68,6 +68,9 @@
                         <tbody id="crBody"></tbody>
                     </table>
                 </div>
+                <div class="cr-more" id="crMoreWrap" style="display:none;">
+                    <button type="button" class="cr-btn primary" id="crMoreBtn"><i class="fas fa-chevron-down"></i> Xem thêm</button>
+                </div>
             </div>
         </section>
 
@@ -90,7 +93,7 @@
 
     </div>
 
-    <script src="/static/crypto.js?v=20260906ab"></script>
+    <script src="/static/crypto.js?v=20260906ae"></script>
     <script src="/static/context-menu.js?v=20260827a"></script>
 </body>
 </html>

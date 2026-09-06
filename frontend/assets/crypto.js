@@ -25,7 +25,8 @@
         q: '',
         sym: null,
         period: DEFAULT_PERIOD,
-        loading: false
+        loading: false,
+        visible: 50
     };
 
     function $(id) { return document.getElementById(id); }
@@ -125,7 +126,9 @@
         } else {
             msg.innerHTML = '';
         }
-        var body = rows.map(function (x) {
+        var allRows = rows;
+        var showRows = rows.slice(0, state.visible);
+        var body = showRows.map(function (x) {
             var c = pctCls(x.change_pct);
             return '<tr data-symbol="' + esc(x.symbol) + '" data-pair="' + esc(x.pair) + '">' +
                 '<td class="rank">' + x.rank + '</td>' +
@@ -141,6 +144,17 @@
                 '</tr>';
         }).join('');
         $('crBody').innerHTML = body;
+        var wrap = $('crMoreWrap');
+        if (wrap) {
+            var more = allRows.length - showRows.length;
+            if (more > 0) {
+                wrap.style.display = '';
+                var btn = $('crMoreBtn');
+                if (btn) btn.innerHTML = '<i class="fas fa-chevron-down"></i> Xem thêm (' + more + ' mã còn lại)';
+            } else {
+                wrap.style.display = 'none';
+            }
+        }
     }
 
     function syncSortSelect() {
@@ -217,7 +231,7 @@
             '<div class="cr-detail-name">' + coinIconHtml(item.symbol, true) +
             '<div><div class="cr-dname-row"><h2>' + esc(item.name) + '</h2>' +
             '<span class="code">' + esc(item.symbol) + ' / ' + esc(item.pair) + '</span>' +
-            '<span class="rank-tag">#' + item.rank + ' · Top 50</span></div></div></div>' +
+            '<span class="rank-tag">#' + item.rank + ' · Top vốn hóa</span></div></div></div>' +
             '<div class="cr-price-big ' + c + '">' + fmtPrice(item.price) + ' <small>USDT</small></div>' +            '<div class="cr-kpis">' +
             '<div class="cr-kpi"><div class="k-label">Thay đổi 24h</div><div class="k-val ' + c + '">' + pctTxt(item.change_pct) + '</div></div>' +
             '<div class="cr-kpi"><div class="k-label">Cao 24h</div><div class="k-val">' + fmtPrice(item.high) + '</div></div>' +
@@ -325,16 +339,19 @@
 
     // ================= Bind =================
     function bind() {
-        $('crSearch').addEventListener('input', function () { state.q = $('crSearch').value; renderList(); });
+        $('crSearch').addEventListener('input', function () { state.q = $('crSearch').value; state.visible = 50; renderList(); });
         Array.prototype.forEach.call(document.querySelectorAll('#crChips .cr-chip'), function (b) {
             b.addEventListener('click', function () {
                 state.filter = b.getAttribute('data-filter');
                 Array.prototype.forEach.call(document.querySelectorAll('#crChips .cr-chip'), function (x) { x.classList.toggle('on', x === b); });
+                state.visible = 50;
                 syncSortSelect();
                 renderList();
             });
         });
-        $('crSort').addEventListener('change', function () { state.sort = $('crSort').value; renderList(); });
+        $('crSort').addEventListener('change', function () { state.sort = $('crSort').value; state.visible = 50; renderList(); });
+        var moreBtn = $('crMoreBtn');
+        if (moreBtn) moreBtn.addEventListener('click', function () { state.visible += 50; renderList(); });
         $('crBody').addEventListener('click', function (e) {
             var tr = e.target.closest('tr[data-symbol]');
             if (tr) openDetail(tr.getAttribute('data-symbol'));

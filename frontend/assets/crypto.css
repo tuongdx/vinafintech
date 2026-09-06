@@ -106,6 +106,10 @@ body.dark-mode .cr-table tbody tr:hover td { background: #14211e; }
 .cr-btn.ghost { background: #fff; color: #008080; border: 1px solid #008080; margin-bottom: 12px; }
 body.dark-mode .cr-btn.ghost { background: #161b22; }
 .cr-btn.ghost:hover { background: #f0fbf9; }
+.cr-btn.primary { background: linear-gradient(135deg, #008080, #00a08a); color: #fff; box-shadow: 0 6px 16px rgba(0,128,128,0.22); }
+.cr-btn.primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.cr-more { display: flex; justify-content: center; padding: 14px 0 2px; }
+.cr-more .cr-btn { min-width: 200px; justify-content: center; padding: 11px 16px; }
 
 /* Detail */
 .cr-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 12px; }
