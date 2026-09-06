@@ -1,0 +1,159 @@
+/* TuniX — Giá Vàng/Bạc (trang gold.html) — phong cách TuniX, màu chủ đạo #008080 */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: transparent; color: #12203a; line-height: 1.5; font-size: 14px; }
+body.dark-mode { color: #e6edf3; }
+.gv-page { width: 100%; max-width: none; margin: 0; padding: 18px 18px 30px; }
+.embedded .gv-page { padding: 6px 0 30px; }
+
+/* Hero */
+.gv-hero {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #006b6b 0%, #008080 55%, #00a08a 100%);
+    border-radius: 18px; padding: 24px 26px; margin-bottom: 16px;
+    color: #fff; box-shadow: 0 2px 10px rgba(0, 60, 60, 0.10);
+}
+.gv-hero::after {
+    content: ''; position: absolute; right: -60px; top: -60px;
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%);
+    border-radius: 50%; pointer-events: none;
+}
+.gv-hero h1 { color: #fff; font-size: 25px; font-weight: 800; letter-spacing: -0.3px; position: relative; z-index: 1; }
+.gv-hero .gv-sub { color: rgba(255,255,255,0.92); font-size: 14px; margin-top: 6px; max-width: 760px; position: relative; z-index: 1; }
+.gv-hero .gv-pill {
+    display: inline-block; margin-top: 12px; position: relative; z-index: 1;
+    background: rgba(255,255,255,0.16); padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; color: #fff;
+}
+.gv-hero .gv-pill i { margin-right: 5px; }
+.gv-hero .gv-pill b { color: #fff; font-weight: 700; }
+
+/* Card */
+.gv-card { background: #fff; border: 1px solid #e9edf2; border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(15,23,42,0.04); }
+body.dark-mode .gv-card { background: #161b22; border-color: #30363d; }
+.gv-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.gv-card h3 { font-size: 15px; font-weight: 800; }
+.gv-meta { font-size: 12px; color: #8a99b1; font-weight: 600; }
+body.dark-mode .gv-meta { color: #8b949e; }
+
+/* Msg / trạng thái */
+.gv-msg { padding: 20px; text-align: center; color: #6b7a8f; font-size: 13.5px; }
+.gv-msg.err { color: #b02a44; background: #fdf1f3; border: 1px solid #f0c4cc; border-radius: 12px; margin-bottom: 10px; }
+body.dark-mode .gv-msg.err { background: #2a1218; border-color: #7a2c38; color: #ff9fb0; }
+.gv-msg .fa-spinner { margin-right: 6px; }
+.gv-retry { display: inline-block; margin-top: 10px; border: 1px solid #008080; color: #008080; background: #fff; border-radius: 8px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
+body.dark-mode .gv-retry { background: #21262d; color: #4dd8c4; border-color: #2aa79a; }
+.gv-retry:hover { background: #f0fbf9; }
+body.dark-mode .gv-retry:hover { background: #14211e; }
+
+/* ----- Bảng (domestic + compare) ----- */
+.gv-tblwrap { overflow-x: auto; border: 1px solid #e9edf2; border-radius: 12px; }
+body.dark-mode .gv-tblwrap { border-color: #30363d; }
+.gv-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 620px; }
+.gv-table th, .gv-table td { padding: 9px 11px; border-bottom: 1px solid #eef1f5; text-align: center; white-space: nowrap; }
+body.dark-mode .gv-table th, body.dark-mode .gv-table td { border-bottom-color: #242b34; }
+.gv-table thead th { background: #f6f8fb; color: #5a6b85; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .2px; }
+body.dark-mode .gv-table thead th { background: #10151c; color: #9fb0c7; }
+.gv-table .left { text-align: left; }
+.gv-table .right { text-align: right; }
+.gv-table tbody tr { transition: background .12s; }
+.gv-table tbody tr:hover td { background: #f2fbf9; }
+body.dark-mode .gv-table tbody tr:hover td { background: #14211e; }
+
+/* Brand header row */
+.gv-table tr.gv-brand td { background: #eef7f6; border-bottom: 1px solid #d9e9e6; padding: 6px 11px; }
+body.dark-mode .gv-table tr.gv-brand td { background: #0f2420; border-bottom-color: #1d3a35; }
+.gv-brand-row { display: flex; align-items: center; gap: 9px; }
+.gv-brand-row .gv-bname { font-weight: 800; font-size: 13.5px; color: #0b3b38; }
+body.dark-mode .gv-brand-row .gv-bname { color: #d9f2ee; }
+.gv-logo { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex: 0 0 auto; background: #eef4f2; }
+body.dark-mode .gv-logo { background: #1c2b28; }
+.gv-logo img { width: 100%; height: 100%; object-fit: contain; }
+.gv-logo .gv-lfb { display: none; align-items: center; justify-content: center; width: 100%; height: 100%; background: linear-gradient(135deg,#008080,#00a08a); color: #fff; font-weight: 800; font-size: 12px; }
+.gv-logo.broken img { display: none; }
+.gv-logo.broken .gv-lfb { display: inline-flex; }
+.gv-logo img.broken { display: none; }
+.gv-logo img.broken + .gv-lfb { display: inline-flex; }
+
+/* Product name cell */
+.gv-pname { font-weight: 700; font-size: 13px; }
+.gv-pkind { font-size: 11px; color: #8a99b1; margin-top: 1px; }
+body.dark-mode .gv-pkind { color: #8b949e; }
+
+/* giá + delta */
+.gv-price { font-weight: 800; font-variant-numeric: tabular-nums; }
+.gv-delta { display: block; font-size: 11.5px; font-weight: 700; margin-top: 1px; }
+.gv-delta.up { color: #00a08a; }
+.gv-delta.down { color: #d0314e; }
+.gv-delta.same { color: #8a99b1; }
+.gv-delta.none { color: #c3ccd9; font-weight: 600; }
+body.dark-mode .gv-delta.same { color: #8b949e; }
+.gv-spread { font-weight: 800; color: #0b3b38; font-variant-numeric: tabular-nums; }
+body.dark-mode .gv-spread { color: #9ddcd2; }
+
+/* ----- 2 cột thế giới | biểu đồ ----- */
+.gv-grid { display: grid; grid-template-columns: 360px minmax(0,1fr); gap: 16px; align-items: start; }
+.gv-grid .gv-col { min-width: 0; }
+.gv-grid .gv-card { margin-bottom: 0; }
+@media (max-width: 1000px) {
+    .gv-grid { grid-template-columns: 1fr; }
+    .gv-grid .gv-card { margin-bottom: 16px; }
+}
+.gv-world { display: grid; gap: 10px; }
+.gv-wcard { border: 1px solid #e9edf2; border-radius: 13px; padding: 13px 14px; background: #fbfdfd; }
+body.dark-mode .gv-wcard { background: #10151c; border-color: #30363d; }
+.gw-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gw-name { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13.5px; }
+.gw-ico { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; color: #fff; font-size: 12px; flex: 0 0 auto; }
+.gw-ico.gold { background: linear-gradient(135deg,#e6b23a,#d89a1e); }
+.gw-ico.silver { background: linear-gradient(135deg,#9aa7b8,#7b8a9d); }
+.gw-sym { font-size: 11px; font-weight: 700; color: #8a99b1; letter-spacing: .3px; }
+body.dark-mode .gw-sym { color: #8b949e; }
+.gw-price { font-size: 23px; font-weight: 800; margin-top: 7px; font-variant-numeric: tabular-nums; color: #0b3b38; }
+body.dark-mode .gw-price { color: #e6edf3; }
+.gw-price .gw-unit { font-size: 12px; font-weight: 600; color: #8a99b1; margin-left: 5px; }
+body.dark-mode .gw-price .gw-unit { color: #8b949e; }
+.gw-chg { font-size: 13px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.gw-chg.up { color: #00a08a; }
+.gw-chg.down { color: #d0314e; }
+.gw-chg.same { color: #8a99b1; }
+.gw-chg .gw-pct { font-weight: 700; font-size: 12px; }
+.gw-upd { font-size: 11px; color: #8a99b1; margin-top: 7px; display: flex; align-items: center; gap: 5px; }
+body.dark-mode .gw-upd { color: #8b949e; }
+.gw-upd i { color: #008080; }
+
+/* Period buttons */
+.gv-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.gv-periods { display: flex; gap: 5px; flex-wrap: wrap; }
+.gv-period { border: 1px solid #dbe4ec; background: #fff; color: #5a6b85; border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
+body.dark-mode .gv-period { background: #21262d; border-color: #3e4c61; color: #d3deeb; }
+.gv-period:hover { border-color: #008080; color: #008080; }
+.gv-period.on { background: #008080; color: #fff; border-color: #008080; }
+body.dark-mode .gv-period:hover { border-color: #4dd8c4; color: #4dd8c4; }
+body.dark-mode .gv-period.on { background: linear-gradient(135deg,#008080,#00a08a); border-color: #4dd8c4; color: #fff; }
+
+/* Chart */
+.gv-chart { position: relative; border: 1px solid #e9edf2; border-radius: 12px; background: #fff; padding: 6px; overflow: hidden; }
+body.dark-mode .gv-chart { background: #0d1117; border-color: #30363d; }
+.gv-chart svg { width: 100%; height: auto; display: block; }
+.gv-vline { position: absolute; top: 6px; bottom: 6px; left: -40px; width: 1px; background: rgba(0,128,128,0.5); pointer-events: none; display: none; }
+.gv-tip { position: absolute; z-index: 5; pointer-events: none; background: #12203a; color: #fff; border-radius: 8px; padding: 6px 9px; font-size: 11.5px; line-height: 1.45; box-shadow: 0 4px 12px rgba(0,0,0,0.18); white-space: nowrap; display: none; font-weight: 600; }
+body.dark-mode .gv-tip { background: #e6edf3; color: #12203a; }
+.gv-tip .tt-t { font-size: 10.5px; opacity: .75; }
+.gv-tip .tt-v { font-weight: 800; }
+.gv-hint { font-size: 12px; color: #8a99b1; margin-top: 8px; }
+body.dark-mode .gv-hint { color: #8b949e; }
+
+/* Compare */
+.gv-compare td.num { font-variant-numeric: tabular-nums; font-weight: 700; }
+.gv-compare .cmp-ratio { font-weight: 800; color: #008080; }
+.up { color: #00a08a; }
+.down { color: #d0314e; }
+.same { color: #8a99b1; }
+
+@media (max-width: 620px) {
+    .gv-hero { padding: 20px 18px; }
+    .gv-hero h1 { font-size: 22px; }
+    .gv-page { padding: 12px 10px 24px; }
+    .gv-table { min-width: 520px; }
+}

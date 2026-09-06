@@ -14,7 +14,7 @@ from app.core.security import decode_token
 from app.db import SessionLocal
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, alerts, asset_events, auth, bank_rates, chart, contact, crypto, dashboard, faqs, features, feedback, logs, membership, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, alerts, asset_events, auth, bank_rates, chart, contact, crypto, dashboard, faqs, features, feedback, gold, logs, membership, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -180,6 +180,7 @@ app.include_router(alerts.router, prefix=api)
 app.include_router(asset_events.router, prefix=api)
 app.include_router(bank_rates.router, prefix=api)
 app.include_router(crypto.router, prefix=api)
+app.include_router(gold.router, prefix=api)
 
 frontend_path = Path(settings.frontend_dir)
 if frontend_path.exists():
@@ -287,6 +288,8 @@ PAGE_MAP: dict[str, str] = {
     "co-phieu": "CoPhieu.html",
     # Trang Lãi ngân hàng: /lai-ngan-hang giữ nguyên shell, nội dung nạp vào iframe left-col.
     "lai-ngan-hang": "lai-ngan-hang.html",
+    # Trang Giá Vàng/Bạc: /gia-vang-bac giữ nguyên shell, nội dung nạp vào iframe left-col.
+    "gia-vang-bac": "gold.html",
     # Trang Crypto: /crypto giữ nguyên shell, nội dung nạp vào iframe left-col.
     "crypto": "crypto.html",
     "kham-pha": "KhamPha.html",
@@ -333,6 +336,8 @@ INDEX_SHELL_PAGES = {
     "co-phieu",
     # Trang Lãi ngân hàng: /lai-ngan-hang giữ nguyên shell, nội dung nạp vào iframe left-col.
     "lai-ngan-hang",
+    # Trang Giá Vàng/Bạc: /gia-vang-bac giữ nguyên shell, nội dung nạp vào iframe left-col.
+    "gia-vang-bac",
     # Trang Crypto: /crypto giữ nguyên shell, nội dung nạp vào iframe left-col.
     "crypto",
     # Trang khám phá: /kham-pha giữ nguyên shell, nội dung nạp vào left-col.

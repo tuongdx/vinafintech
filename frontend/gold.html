@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
+    <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
+    <title>Giá Vàng/Bạc - TuniX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
+    <link rel="stylesheet" href="/static/gold.css?v=20260906ai" />
+</head>
+<body>
+    <div class="gv-page">
+        <!-- HERO -->
+        <header class="gv-hero">
+            <h1>Giá Vàng/Bạc</h1>
+            <p class="gv-sub">Theo dõi giá vàng trong nước và giá vàng/bạc thế giới — dữ liệu mang tính tham khảo, chỉ để hiển thị.</p>
+            <span class="gv-pill" id="gvUpdated"><i class="far fa-clock"></i> Cập nhật: <b>…</b></span>
+        </header>
+
+        <!-- 1. BẢNG GIÁ VÀNG TRONG NƯỚC -->
+        <section>
+            <div class="gv-card">
+                <div class="gv-card-head">
+                    <h3>Bảng giá vàng trong nước</h3>
+                    <span class="gv-meta" id="gvVnMeta"></span>
+                </div>
+                <div id="gvVnMsg"></div>
+                <div class="gv-tblwrap" id="gvVnWrap" style="display:none;">
+                    <table class="gv-table gv-domestic">
+                        <thead>
+                            <tr>
+                                <th class="left">Thương hiệu &amp; Sản phẩm</th>
+                                <th class="right">Mua vào</th>
+                                <th class="right">Bán ra</th>
+                                <th class="right">Chênh lệch Mua - Bán</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gvDBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2 + 3. GIÁ THẾ GIỚI | BIỂU ĐỒ -->
+        <section class="gv-grid">
+            <div class="gv-col">
+                <div class="gv-card">
+                    <div class="gv-card-head"><h3>Giá vàng/bạc thế giới</h3><span class="gv-meta" id="gvWorldMeta"></span></div>
+                    <div id="gvWorldMsg"></div>
+                    <div id="gvWorld"></div>
+                </div>
+            </div>
+            <div class="gv-col">
+                <div class="gv-card">
+                    <div class="gv-chart-head">
+                        <h3>Biểu đồ giá vàng thế giới</h3>
+                        <div class="gv-periods" id="gvPeriods"></div>
+                    </div>
+                    <div id="gvChartMsg"></div>
+                    <div class="gv-chart" id="gvChartBox">
+                        <div class="gv-vline" id="gvVline"></div>
+                        <div class="gv-tip" id="gvTip"></div>
+                    </div>
+                    <div class="gv-hint" id="gvChartHint"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. SO SÁNH VÀNG VÀ BẠC -->
+        <section>
+            <div class="gv-card">
+                <div class="gv-card-head"><h3>So sánh vàng và bạc</h3><span class="gv-meta" id="gvCmpMeta"></span></div>
+                <div id="gvCmpMsg"></div>
+                <div id="gvCmpWrap" style="display:none;">
+                    <table class="gv-table gv-compare">
+                        <thead>
+                            <tr><th class="left">Chỉ số</th><th class="right">Vàng</th><th class="right">Bạc</th><th class="right">Tỷ lệ Vàng/Bạc</th></tr>
+                        </thead>
+                        <tbody id="gvCmpBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/gold.js?v=20260906ai"></script>
+    <script src="/static/context-menu.js?v=20260827a"></script>
+</body>
+</html>
