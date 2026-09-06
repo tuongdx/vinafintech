@@ -62,19 +62,6 @@
     // ============ Meta + fill selects ============
     function fillMeta(m) {
         state.meta = m;
-        var srcTxt = m.source || '—';
-        $('metaSource').textContent = srcTxt;
-        // Nguồn thật (24HMoney...) → đoạn lưu ý có link tới trang nguồn để minh bạch.
-        if (m.source_url) {
-            try {
-                var host = new URL(m.source_url).host;
-                $('noteSource').innerHTML = esc(srcTxt) + ' (<a href="' + esc(m.source_url) + '" target="_blank" rel="noopener nofollow" class="lnh-src-link">' + esc(host) + '</a>)';
-            } catch (e) {
-                $('noteSource').textContent = srcTxt;
-            }
-        } else {
-            $('noteSource').textContent = srcTxt;
-        }
         var upd = m.updated_at ? new Date(m.updated_at) : null;
         $('metaUpdated').textContent = upd && !isNaN(upd)
             ? upd.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -451,8 +438,6 @@
             syncTermSort(12);
             loadMatrix('online');
         }).catch(function () {
-            $('metaSource').textContent = 'Không tải được';
-            $('noteSource').textContent = 'Không tải được';
             $('metaUpdated').textContent = '—';
             $('lnhMxBody').innerHTML = '<tr><td colspan="20" class="lnh-empty">Không tải được dữ liệu. Vui lòng thử lại sau.</td></tr>';
             notifyParentHeight();
