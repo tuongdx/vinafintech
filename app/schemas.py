@@ -156,15 +156,25 @@ class UserAssetCreate(BaseModel):
     quantity: float | None = None
     unit_price: float | None = None
     amount: float = 0.0
+    fee: float = 0.0          # phí giao dịch (%) — Crypto dùng (mặc định FE 0.10)
+    currency: str = "USDT"    # stablecoin USDT | USDC — chỉ Crypto
     note: str | None = None
 
 
 class UserAssetSell(BaseModel):
-    """Bán một phần vị thế Crypto / Vàng-bạc (gộp theo tên)."""
+    """Bán một phần vị thế Crypto / Vàng-bạc (gộp theo tên).
+
+    - Crypto: `amount` = số USDT/USDC nhận về (sau phí), `unit_price` = giá bán 1 coin
+      → số coin bán được suy ra từ đó.
+    - Vàng/Bạc: `quantity` = số lượng (lượng/chỉ) muốn bán.
+    """
     asset_class: str  # crypto | gold
     label: str
-    quantity: float
-    unit_price: float | None = None  # chỉ để tham khảo (giá bán) — không bắt buộc
+    quantity: float | None = None
+    unit_price: float | None = None
+    amount: float | None = None
+    fee: float = 0.0
+    currency: str = "USDT"
     note: str | None = None
 
 
@@ -183,6 +193,10 @@ class UserAssetOut(BaseModel):
     quantity: float | None = None
     unit_price: float | None = None
     amount: float = 0.0
+    currency: str | None = None        # Crypto: USDT | USDC
+    vnd_amount: float | None = None    # Crypto: giá trị quy đổi VND (nếu lấy được tỷ giá)
+    fx_rate: float | None = None       # tỷ giá USD/VND đã dùng
+    fx_as_of: int | None = None
     note: str | None = None
     created_at: datetime
     updated_at: datetime | None = None

@@ -124,9 +124,20 @@
         .pf-ah h2 { margin: 0; }
         .pf-atotal { font-size: 12.5px; color: #6b7a8f; font-weight: 600; }
         .pf-atotal b { color: #008080; font-weight: 800; }
+        .pf-atotal .pf-vnd { color: #8a99b1; font-weight: 600; margin-left: 4px; }
         .pf-asset-form { margin-top: 12px; }
         body.dark-mode .pf-atotal { color: #8b949e; }
         body.dark-mode .pf-atotal b { color: #4dd8c4; }
+        /* Ô giá trị 2 dòng (stablecoin + VND) trong bảng tài sản */
+        .pf-money b { font-weight: 800; white-space: nowrap; }
+        .pf-money small { display: block; color: #8a99b1; font-size: 11px; font-weight: 600; margin-top: 3px; white-space: nowrap; }
+        body.dark-mode .pf-money small { color: #93a1b8; }
+        .pf-field select { width: 100%; padding: 10px 12px; border: 1px solid #e5eaf0; border-radius: 10px; font-size: 14px; font-family: inherit; color: #12203a; background: #fff; }
+        .pf-field select:focus { outline: none; border-color: #008080; }
+        body.dark-mode .pf-field select { background: #1b212b; color: #e6ebf2; border-color: #242b34; }
+        .pf-cr-ok { margin-top: 8px; font-size: 12px; color: #008080; font-weight: 700; }
+        .pf-cr-bad { margin-top: 8px; font-size: 12px; color: #d0314e; font-weight: 600; }
+        .pf-cr-empty { margin-top: 8px; font-size: 12px; color: #8a99b1; font-weight: 600; }
         .pf-field { min-width: 0; }
         .pf-field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #4a5a72; }
         .pf-field input { width: 100%; padding: 10px 12px; border: 1px solid #e5eaf0; border-radius: 10px; font-size: 14px; font-family: inherit; color: #12203a; background: #fff; }
@@ -677,13 +688,16 @@
 
             // ---------- Tài sản ngoài cổ phiếu (Crypto / Tiền gửi NH / Vàng-bạc) ----------
             const ASSET_META = {
-                crypto: { title: 'Danh sách Crypto', name: 'Crypto', icon: 'fa-coins', ph: 'VD: BTC', phAmt: 'VD: 20.000.000', trade: true },
+                crypto: { title: 'Danh sách Crypto', name: 'Crypto', icon: 'fa-coins', ph: 'VD: BTC', phAmt: 'VD: 1.000 USDT', trade: true },
                 deposit: { title: 'Tiền gửi ngân hàng', name: 'Tiền gửi ngân hàng', icon: 'fa-landmark', ph: 'VD: ACB – kỳ hạn 6 tháng', phAmt: 'VD: 100.000.000', trade: false },
                 gold: { title: 'Vàng/Bạc', name: 'Vàng/Bạc', icon: 'fa-coins', ph: 'VD: Vàng miếng SJC', phAmt: 'VD: 50.000.000', trade: true }
             };
             const userAssets = { crypto: [], deposit: [], gold: [] };
             // Crypto & Vàng/Bạc mua/bán gộp vị thế theo tên (giống cổ phiếu)
             const assetMode = { crypto: 'buy', gold: 'buy' };
+            let cryptoFx = null;      // { usd_vnd } — tỷ giá quy VND (lấy từ /api/assets/fx)
+            let cryptoList = [];      // 100 coin từ /api/crypto/markets (để check tên khi nhập)
+            const cryptoMap = {};     // symbol / sym:lo / n:lo → item
             function renderHoldingsTab() {
                 return renderTable() +
                     '<div id="assetWrap-crypto">' + assetCardInner('crypto') + '</div>' +
@@ -691,7 +705,46 @@
                     '<div id="assetWrap-gold">' + assetCardInner('gold') + '</div>';
             }
             function assetNum(x) { const n = Number(x); return isFinite(n) && n ? fmtMoney(n) : '—'; }
+            // Định dạng số crypto (nhiều chữ số thập phân, dấu chấm phân nhóm, bỏ số 0 thừa)
+            function fmtDec(n) {
+                if (n == null || !isFinite(Number(n))) return '—';
+                const num = Number(n), neg = num < 0 ? '-' : '', abs = Math.abs(num);
+                let dec = 4;
+                if (abs >= 1e6) dec = 2; else if (abs > 0 && abs < 1) dec = 8;
+                const s = abs.toFixed(dec).replace(/0+$/, '').replace(/\.$/, '');
+                const p = s.split('.');
+                p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                return neg + p.join(',');
+            }
+            function vndOf(usd) { return cryptoFx ? '≈ ' + fmtMoney(Number(usd || 0) * cryptoFx.usd_vnd) + ' đ' : ''; }
+            // Card Crypto: hiển thị stablecoin (USDT/USDC) + VND
+            function assetCryptoCardInner(m, list) {
+                const total = list.reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0);
+                const curs = [];
+                list.forEach(function(x) { const c = x.currency || 'USDT'; if (curs.indexOf(c) < 0) curs.push(c); });
+                const curLbl = curs.join('/') || 'USDT';
+                const rows = list.length ? list.map(function(x) {
+                    const c = x.currency || 'USDT';
+                    const nm = cryptoMap[x.label] ? '<span class="name">' + esc(cryptoMap[x.label].name) + '</span>' : '';
+                    return '<tr>' +
+                        '<td><div class="td-sym">' + esc(x.label || 'Khoản') + nm + '</div></td>' +
+                        '<td>' + fmtDec(x.quantity) + '</td>' +
+                        '<td class="pf-money"><b>' + fmtDec(x.unit_price) + ' ' + c + '</b>' + (cryptoFx ? '<small>' + vndOf(x.unit_price) + '</small>' : '') + '</td>' +
+                        '<td class="pf-money"><b>' + fmtDec(x.amount) + ' ' + c + '</b>' + (cryptoFx ? '<small>' + vndOf(x.amount) + '</small>' : '') + '</td>' +
+                        '<td><button type="button" class="act-btn del pa-del" data-cls="crypto" data-id="' + x.id + '" title="Xóa"><i class="fas fa-trash"></i></button></td>' +
+                    '</tr>';
+                }).join('') : '<tr><td colspan="5" class="pf-empty">Chưa có vị thế nào — Mua bên dưới để theo dõi.</td></tr>';
+                return '<div class="pf-card">' +
+                    '<div class="pf-ah"><h2><i class="fas fa-coins" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2>' +
+                    '<span class="pf-atotal">Tổng đầu tư: <b>' + fmtDec(total) + ' ' + curLbl + '</b>' + (cryptoFx ? '<span class="pf-vnd">≈ ' + fmtMoney(total * cryptoFx.usd_vnd) + ' đ</span>' : '') + '</span></div>' +
+                    '<div class="pf-table-wrap"><table><thead><tr>' +
+                        '<th>Tên</th><th>Số lượng</th><th>Giá vốn BQ (USDT/USDC)</th><th>Số tiền đầu tư (USDT/USDC)</th><th></th>' +
+                    '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+                    assetCryptoForm() +
+                '</div>';
+            }
             function assetCardInner(cls) {
+                if (cls === 'crypto') return assetCryptoCardInner(ASSET_META.crypto, userAssets.crypto || []);
                 const m = ASSET_META[cls];
                 const list = userAssets[cls] || [];
                 const total = list.reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0);
@@ -702,8 +755,8 @@
                     return '<tr>' +
                         '<td><div class="td-sym">' + esc(x.label || 'Khoản') + '</div></td>' +
                         '<td>' + assetNum(x.quantity) + '</td>' +
-                        '<td>' + assetNum(x.unit_price) + '</td>' +
-                        '<td>' + fmtMoney(x.amount) + '</td>' +
+                        '<td class="pf-money"><b>' + fmtMoney(x.unit_price) + ' đ</b></td>' +
+                        '<td class="pf-money"><b>' + fmtMoney(x.amount) + ' đ</b></td>' +
                         '<td><button type="button" class="act-btn del pa-del" data-cls="' + cls + '" data-id="' + x.id + '" title="Xóa"><i class="fas fa-trash"></i></button></td>' +
                     '</tr>';
                 }).join('') : '<tr><td colspan="5" class="pf-empty">' + esc(emptyText) + '</td></tr>';
@@ -713,6 +766,33 @@
                         '<th>Tên khoản</th><th>Số lượng</th><th>Giá vốn BQ (đ)</th><th>Số tiền đầu tư</th><th></th>' +
                     '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
                     (m.trade ? assetTradeForm(cls, m) : assetDepositForm(cls, m)) +
+                '</div>';
+            }
+            // Form Mua/Bán Crypto — giá & số tiền theo USDT/USDC, phí mặc định 0,10%
+            function assetCryptoForm() {
+                const mode = assetMode.crypto === 'sell' ? 'sell' : 'buy';
+                const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
+                const ico = mode === 'sell' ? 'fa-cart-arrow-down' : 'fa-cart-plus';
+                const toggle = DEMO ? '' :
+                    '<div class="pf-trade-toggle">' +
+                        '<button type="button" class="pf-tt pa-tt' + (mode === 'buy' ? ' active' : '') + '" data-cls="crypto" data-mode="buy"><i class="fas fa-cart-plus"></i> Mua</button>' +
+                        '<button type="button" class="pf-tt pa-tt' + (mode === 'sell' ? ' active' : '') + '" data-cls="crypto" data-mode="sell"><i class="fas fa-cart-arrow-down"></i> Bán</button>' +
+                    '</div>';
+                const amountLabel = mode === 'sell' ? 'Số tiền nhận về (USDT/USDC)' : 'Số tiền mua (USDT/USDC)';
+                const subLabel = mode === 'sell' ? 'Bán' : 'Mua';
+                return '<div class="pf-stock-form">' +
+                    '<div class="pf-form-head"><i class="fas ' + ico + '"></i> Mua/Bán Crypto (USDT/USDC)</div>' +
+                    toggle +
+                    '<div class="pf-form-row">' +
+                        '<div class="pf-field" style="flex:1 1 200px;"><label>Tên crypto</label><input type="text" id="pacryptoName" list="cryptoCoinList" placeholder="' + esc(ASSET_META.crypto.ph) + '" ' + disabled + ' autocomplete="off" spellcheck="false" /></div>' +
+                        '<div class="pf-field" style="flex:0 1 105px;"><label>Loại</label><select id="pacryptoCur"' + (DEMO ? ' disabled' : '') + '><option value="USDT">USDT</option><option value="USDC">USDC</option></select></div>' +
+                        '<div class="pf-field"><label>Giá (USDT/USDC)</label><input type="number" id="pacryptoPrice" min="0" step="any" placeholder="VD: 100.000" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>' + esc(amountLabel) + '</label><input type="number" id="pacryptoAmt" min="0" step="any" placeholder="VD: 1.000" ' + disabled + ' /></div>' +
+                        '<div class="pf-field" style="flex:0 1 110px;"><label>Phí (%)</label><input type="number" id="pacryptoFee" min="0" max="100" step="0.01" value="0.10" ' + disabled + ' /></div>' +
+                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-submit" data-cls="crypto" ' + (DEMO ? 'disabled' : '') + '><i class="fas ' + ico + '"></i> ' + subLabel + '</button></div>' +
+                    '</div>' +
+                    '<div id="pacryptoPreview" class="pf-cr-empty">Gõ tên crypto (VD: BTC) — kiểm tra trong danh sách Crypto…</div>' +
+                    (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                 '</div>';
             }
             // Form Mua/Bán cho Crypto & Vàng/Bạc — nhập Tên + Giá + Số lượng, tiền tự tính
@@ -757,6 +837,64 @@
                     (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                 '</div>';
             }
+            // Tải metadata crypto: 100 coin (check tên) + tỷ giá USD/VND
+            let cryptoMetaLoaded = false;
+            let cryptoMetaPromise = null;
+            function buildCryptoIndex() {
+                Object.keys(cryptoMap).forEach(function(k) { delete cryptoMap[k]; });
+                (cryptoList || []).forEach(function(it) {
+                    if (!it) return;
+                    const s = String(it.symbol || '').trim().toUpperCase();
+                    if (s) { cryptoMap[s] = it; cryptoMap['sym:' + s.toLowerCase()] = it; }
+                    const nm = String(it.name || '').trim().toLowerCase();
+                    if (nm) cryptoMap['n:' + nm] = it;
+                });
+            }
+            function buildCryptoDatalist() {
+                let dl = document.getElementById('cryptoCoinList');
+                if (!dl) { dl = document.createElement('datalist'); dl.id = 'cryptoCoinList'; document.body.appendChild(dl); }
+                dl.innerHTML = (cryptoList || []).map(function(it) {
+                    return '<option value="' + esc(it.symbol) + '">' + esc(it.name) + '</option>';
+                }).join('');
+            }
+            function cryptoFind(raw) {
+                const q = String(raw == null ? '' : raw).trim();
+                if (!q) return null;
+                const up = q.toUpperCase();
+                if (cryptoMap[up]) return cryptoMap[up];
+                const lo = q.toLowerCase();
+                if (cryptoMap['sym:' + lo]) return cryptoMap['sym:' + lo];
+                if (cryptoMap['n:' + lo]) return cryptoMap['n:' + lo];
+                for (let i = 0; i < cryptoList.length; i++) {
+                    const it = cryptoList[i];
+                    if (it && String(it.symbol || '').toLowerCase() === lo) return it;
+                }
+                for (let i = 0; i < cryptoList.length; i++) {
+                    const it = cryptoList[i];
+                    if (it && String(it.name || '').toLowerCase().indexOf(lo) === 0) return it;
+                }
+                return null;
+            }
+            function loadCryptoMeta() {
+                if (cryptoMetaLoaded) { refreshAssetCards(); return Promise.resolve(null); }
+                if (!cryptoMetaPromise) {
+                    cryptoMetaPromise = Promise.all([
+                        fetch('/api/crypto/markets', { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+                        fetch('/api/assets/fx', { headers: authHeaders() }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+                    ]).then(function(rs) {
+                        const d = rs[0];
+                        cryptoList = (d && Array.isArray(d.items)) ? d.items : [];
+                        buildCryptoIndex();
+                        buildCryptoDatalist();
+                        const f = rs[1];
+                        cryptoFx = (f && f.usd_vnd) ? { usd_vnd: Number(f.usd_vnd) } : null;
+                        cryptoMetaLoaded = true;
+                        refreshAssetCards();
+                        return null;
+                    });
+                }
+                return cryptoMetaPromise;
+            }
             function loadUserAssets(cb) {
                 Promise.all(['crypto', 'deposit', 'gold'].map(function(c) {
                     return fetch('/api/assets?class=' + c, { headers: authHeaders() })
@@ -775,11 +913,60 @@
                 notifyParentHeight();
             }
             function clearAssetInputs(cls) {
-                const fields = ASSET_META[cls] && ASSET_META[cls].trade ? ['Name', 'Price', 'Qty'] : ['Label', 'Qty', 'Price', 'Amount'];
+                if (cls === 'crypto') {
+                    ['Name', 'Price', 'Amt'].forEach(function(s) { const el = document.getElementById('pacrypto' + s); if (el) el.value = ''; });
+                    const f = document.getElementById('pacryptoFee'); if (f) f.value = '0.10';
+                    const c = document.getElementById('pacryptoCur'); if (c) c.value = 'USDT';
+                    updateCryptoPreview();
+                    return;
+                }
+                const fields = cls === 'deposit' ? ['Label', 'Qty', 'Price', 'Amount'] : ['Name', 'Price', 'Qty'];
                 fields.forEach(function(s) {
                     const el = document.getElementById('pa' + cls + s);
                     if (el) el.value = '';
                 });
+            }
+            // Preview + xác minh tên crypto ngay khi gõ
+            function updateCryptoPreview() {
+                const el = document.getElementById('pacryptoPreview');
+                if (!el) return;
+                const mode = assetMode.crypto === 'sell' ? 'sell' : 'buy';
+                const name = (document.getElementById('pacryptoName') ? document.getElementById('pacryptoName').value : '').trim();
+                const it = cryptoFind(name);
+                const price = parseFloat(document.getElementById('pacryptoPrice') ? document.getElementById('pacryptoPrice').value : '');
+                const amt = parseFloat(document.getElementById('pacryptoAmt') ? document.getElementById('pacryptoAmt').value : '');
+                const fee = document.getElementById('pacryptoFee') ? (parseFloat(document.getElementById('pacryptoFee').value) || 0) : 0;
+                const cur = (document.getElementById('pacryptoCur') && document.getElementById('pacryptoCur').value) || 'USDT';
+                const sym = it ? String(it.symbol).toUpperCase() : (name ? name.toUpperCase().replace(/[^A-Z0-9]/g, '') : '');
+                if (name && cryptoList.length && !it) {
+                    el.className = 'pf-cr-bad';
+                    el.innerHTML = '❌ Không tìm thấy "' + esc(name) + '" trong danh sách Crypto — vui lòng chọn đúng coin.';
+                    return;
+                }
+                if (!name) {
+                    el.className = 'pf-cr-empty';
+                    el.innerHTML = 'Gõ tên crypto (VD: BTC) — kiểm tra trong danh sách Crypto…';
+                    return;
+                }
+                if (it && !(price > 0) && !(amt > 0)) {
+                    el.className = 'pf-cr-ok';
+                    el.innerHTML = '✅ ' + esc(it.name) + ' (' + esc(sym) + ') · Giá ~' + fmtDec(it.price) + ' USDT';
+                    return;
+                }
+                if (mode === 'sell') {
+                    const pos = userAssets.crypto.find(function(p) { return String(p.label || '').toUpperCase() === sym; });
+                    if (!(price > 0) || !(amt > 0)) { el.className = 'pf-cr-empty'; el.innerHTML = 'Nhập Giá bán + Số tiền nhận về để xem ước tính.'; return; }
+                    if (!pos) { el.className = 'pf-cr-bad'; el.innerHTML = '⚠️ Bạn chưa có vị thế ' + esc(sym) + ' để bán.'; return; }
+                    const coin = (amt / (1 - fee / 100)) / price;
+                    el.className = 'pf-cr-ok';
+                    el.innerHTML = '💰 Bán ~' + fmtDec(coin) + ' ' + esc(sym) + ' (đang giữ ' + fmtDec(pos.quantity) + ') · nhận ~' + fmtDec(amt) + ' ' + cur + ' sau phí ' + fmtDec(fee) + '%';
+                    return;
+                }
+                if (!(price > 0) || !(amt > 0)) { el.className = 'pf-cr-empty'; el.innerHTML = 'Nhập Giá + Số tiền mua để xem ước tính.'; return; }
+                const coin = amt * (1 - fee / 100) / price;
+                const vnd = cryptoFx ? ' ≈ ' + fmtMoney(amt * cryptoFx.usd_vnd) + ' đ' : '';
+                el.className = 'pf-cr-ok';
+                el.innerHTML = '🛒 Mua ~' + fmtDec(coin) + ' ' + esc(sym) + ' · chi ' + fmtDec(amt) + ' ' + cur + ' (phí ' + fmtDec(fee) + '%)' + vnd;
             }
             // Thêm khoản gửi ngân hàng (deposit)
             function addAsset(cls) {
@@ -800,17 +987,48 @@
                     .then(function() { toast('✅ Đã thêm khoản gửi'); clearAssetInputs(cls); loadUserAssets(function() { refreshAssetCards(); }); })
                     .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không thêm được'), true); });
             }
-            // Mua / Bán Crypto & Vàng/Bạc (gộp vị thế theo tên)
+            // Mua / Bán — dispatch theo loại (crypto theo USDT/USDC, vàng/bạc theo lượng VNĐ)
             function tradeAsset(cls) {
-                const mode = assetMode[cls] === 'sell' ? 'sell' : 'buy';
-                const label = (document.getElementById('pa' + cls + 'Name').value || '').trim();
+                if (cls === 'crypto') { tradeCrypto(); return; }
+                tradeGold();
+            }
+            function tradeCrypto() {
+                const mode = assetMode.crypto === 'sell' ? 'sell' : 'buy';
+                const raw = (document.getElementById('pacryptoName').value || '').trim();
+                const it = cryptoFind(raw);
+                if (!raw) { toast('Nhập tên crypto.', true); return; }
+                if (cryptoList.length && !it) { toast('Không tìm thấy "' + raw + '" trong danh sách Crypto.', true); return; }
+                const sym = it ? String(it.symbol).toUpperCase() : raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (!sym) { toast('Tên crypto không hợp lệ.', true); return; }
+                const price = parseFloat(document.getElementById('pacryptoPrice').value);
+                const amt = parseFloat(document.getElementById('pacryptoAmt').value);
+                const fee = parseFloat(document.getElementById('pacryptoFee').value) || 0;
+                const cur = document.getElementById('pacryptoCur').value || 'USDT';
+                if (!(price > 0)) { toast('Nhập Giá (USDT/USDC) > 0.', true); return; }
+                if (!(amt > 0)) { toast(mode === 'sell' ? 'Nhập số tiền nhận về > 0.' : 'Nhập số tiền mua (USDT/USDC) > 0.', true); return; }
+                if (fee < 0 || fee > 100) { toast('Phí giao dịch không hợp lệ.', true); return; }
+                fetch('/api/assets' + (mode === 'sell' ? '/sell' : ''), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: 'crypto', label: sym, unit_price: price, amount: amt, fee: fee, currency: cur }) })
+                    .then(function(r) {
+                        if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
+                        return r.json();
+                    })
+                    .then(function(d) {
+                        if (mode === 'sell') toast('✅ ' + ((d && d.message) || ('Đã bán ' + sym)));
+                        else toast('✅ Đã mua ' + sym);
+                        clearAssetInputs('crypto');
+                        loadUserAssets(function() { refreshAssetCards(); });
+                    })
+                    .catch(function(e) { toast('❌ ' + ((e && e.message) || (mode === 'sell' ? 'Không bán được' : 'Không mua được')), true); });
+            }
+            function tradeGold() {
+                const mode = assetMode.gold === 'sell' ? 'sell' : 'buy';
+                const label = (document.getElementById('pagoldName').value || '').trim();
                 if (!label) { toast('Nhập tên khoản.', true); return; }
-                const price = parseFloat(document.getElementById('pa' + cls + 'Price').value);
-                const qty = parseFloat(document.getElementById('pa' + cls + 'Qty').value);
+                const price = parseFloat(document.getElementById('pagoldPrice').value);
+                const qty = parseFloat(document.getElementById('pagoldQty').value);
                 if (!(price > 0)) { toast('Nhập Đơn giá (đ) > 0.', true); return; }
                 if (!(qty > 0)) { toast('Nhập Số lượng > 0.', true); return; }
-                const url = '/api/assets' + (mode === 'sell' ? '/sell' : '');
-                fetch(url, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: cls, label: label, quantity: qty, unit_price: price }) })
+                fetch('/api/assets' + (mode === 'sell' ? '/sell' : ''), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: 'gold', label: label, quantity: qty, unit_price: price }) })
                     .then(function(r) {
                         if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
                         return r.json();
@@ -818,7 +1036,7 @@
                     .then(function(d) {
                         if (mode === 'sell') toast('✅ ' + ((d && d.message) || ('Đã bán ' + label)));
                         else toast('✅ Đã mua ' + label);
-                        clearAssetInputs(cls);
+                        clearAssetInputs('gold');
                         loadUserAssets(function() { refreshAssetCards(); });
                     })
                     .catch(function(e) { toast('❌ ' + ((e && e.message) || (mode === 'sell' ? 'Không bán được' : 'Không mua được')), true); });
@@ -854,6 +1072,19 @@
                     if (sub) { e.preventDefault(); tradeAsset(sub.getAttribute('data-cls')); return; }
                     const del = e.target.closest('.pa-del');
                     if (del) { e.preventDefault(); delAsset(del.getAttribute('data-cls'), Number(del.getAttribute('data-id'))); }
+                });
+                // Nhập tên/giá/số tiền crypto → xác minh tên + ước tính; tự điền giá hiện tại khi chọn coin
+                document.addEventListener('input', function(e) {
+                    const t = e.target;
+                    if (!t || !t.id || t.id.indexOf('pacrypto') !== 0) return;
+                    if (t.id === 'pacryptoName') {
+                        const it = cryptoFind((t.value || '').trim());
+                        if (it && it.price > 0) {
+                            const pEl = document.getElementById('pacryptoPrice');
+                            if (pEl && !(parseFloat(pEl.value) > 0)) pEl.value = it.price;
+                        }
+                    }
+                    updateCryptoPreview();
                 });
             }
 
@@ -1670,7 +1901,7 @@
             // ---------- Tabs ----------
             const TAB_DEFS = {
                 overview: { label: 'Tổng quan', html: function() { return renderSummary() + renderPerformance() + renderChartCard() + renderAlloc(); }, mount: function() { bindChart(); loadChart(); loadPerformance(); } },
-                holdings: { label: 'Danh mục đang nắm giữ', html: function() { return renderHoldingsTab(); }, mount: function() { bindTable(); bindForm(); bindAssetForm(); loadUserAssets(function() { refreshAssetCards(); }); } },
+                holdings: { label: 'Danh mục đang nắm giữ', html: function() { return renderHoldingsTab(); }, mount: function() { bindTable(); bindForm(); bindAssetForm(); loadCryptoMeta(); loadUserAssets(function() { refreshAssetCards(); }); } },
                 watchlist: { label: 'Cổ phiếu theo dõi', html: renderWatchlist, mount: function() { loadWatchlist(); bindWlAdd(); } },
                 portfolio: { label: 'Bảng danh mục', html: renderPortfolioTable, mount: function() { loadPortfolioTable(); } },
                 alerts: { label: 'Trung tâm cảnh báo', html: renderAlerts, mount: function() { mountAlerts(); } },
