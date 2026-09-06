@@ -95,26 +95,24 @@ body.dark-mode .gv-spread { color: #9ddcd2; }
 .gv-grid { display: grid; grid-template-columns: 360px minmax(0,1fr); gap: 16px; align-items: stretch; }
 .gv-grid .gv-col { min-width: 0; display: flex; flex-direction: column; }
 .gv-grid .gv-col > .gv-card { margin-bottom: 0; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-/* Căn KẾT THÚC block Biểu đồ ngang bằng với block Giá vàng/bạc thế giới:
-   card co giãn đúng cột (chiều cao = cột cao nhất), biểu đồ fill phần còn lại. */
+/* Căn KẾT THÚC block Biểu đồ ngang bằng với block Giá vàng/bạc thế giới. */
 .gv-grid .gv-col > .gv-card > .gv-card-head,
 .gv-grid .gv-col > .gv-card > .gv-msg,
 .gv-grid .gv-col > .gv-card > .gv-hint { flex: 0 0 auto; }
-.gv-grid .gv-col > .gv-card > .gv-chart { flex: 1 1 auto; min-height: 180px; display: flex; flex-direction: column; }
-.gv-grid .gv-col > .gv-card > .gv-chart svg { width: 100%; height: 100%; }
-/* Khi 2 cột: để 2 card Vàng/Bạc dãn đều phần thừa (không để trống cuối card thế giới) */
 @media (min-width: 1001px) {
     /* Cách đều block So sánh phía dưới như các block khác (card trong grid có mb 0) */
     .gv-grid { margin-bottom: 16px; }
     .gv-grid .gv-col:first-child > .gv-card .gv-world { flex: 1 1 auto; display: flex; flex-direction: column; }
     .gv-grid .gv-col:first-child > .gv-card .gv-wcard { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
+    /* Biểu đồ fill vùng còn lại nhưng KHÔNG tạo intrinsic height (svg absolute) →
+       hàng grid = chiều cao tự nhiên của khối thế giới → không còn khoảng trống, vẫn bằng nhau. */
+    .gv-grid .gv-col:nth-child(2) > .gv-card > .gv-chart { flex: 1 1 auto; min-height: 180px; position: relative; }
+    .gv-grid .gv-col:nth-child(2) > .gv-card > .gv-chart svg { position: absolute; top: 6px; left: 6px; width: calc(100% - 12px); height: calc(100% - 12px); }
 }
 @media (max-width: 1000px) {
     .gv-grid { grid-template-columns: 1fr; }
     .gv-grid .gv-col { display: block; }
     .gv-grid .gv-col > .gv-card { flex: none; display: block; margin-bottom: 16px; }
-    .gv-grid .gv-col > .gv-card > .gv-chart { flex: none; min-height: 0; }
-    .gv-grid .gv-col > .gv-card > .gv-chart svg { height: auto; }
 }
 .gv-world { display: grid; gap: 10px; }
 .gv-wcard { border: 1px solid #e9edf2; border-radius: 13px; padding: 13px 14px; background: #fbfdfd; }
