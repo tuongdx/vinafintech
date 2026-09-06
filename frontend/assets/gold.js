@@ -258,7 +258,13 @@
         });
         var span = (maxP - minP) || 1;
         minP -= span * 0.06; maxP += span * 0.06;
-        var iw = CHART_W - CH_PAD.l - CH_PAD.r, ih = CHART_H - CH_PAD.t - CH_PAD.b;
+        // Đo kích thước THẬT của vùng biểu đồ để SVG fill đúng toàn block (không letterbox ngang).
+        var W = CHART_W, H = CHART_H;
+        try {
+            var bw = box.clientWidth, bh = box.clientHeight;
+            if (bw >= 380 && bh >= 150) { W = bw - 12; H = bh - 12; }
+        } catch (e) {}
+        var iw = W - CH_PAD.l - CH_PAD.r, ih = H - CH_PAD.t - CH_PAD.b;
         function X(i) { return CH_PAD.l + (n <= 1 ? 0 : (i / (n - 1)) * iw); }
         function Y(v) { return CH_PAD.t + ((maxP - v) / (maxP - minP)) * ih; }
         var up = Number(pts[n - 1].v) >= Number(pts[0].v);
@@ -269,13 +275,13 @@
             line += (i ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
             area += (i ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
         });
-        area += ' L' + X(n - 1).toFixed(1) + ' ' + (CHART_H - CH_PAD.b) + ' L' + X(0).toFixed(1) + ' ' + (CHART_H - CH_PAD.b) + ' Z';
+        area += ' L' + X(n - 1).toFixed(1) + ' ' + (H - CH_PAD.b) + ' L' + X(0).toFixed(1) + ' ' + (H - CH_PAD.b) + ' Z';
         // grid + nhãn trục giá
         var gHtml = '';
         for (var g = 0; g <= 4; g++) {
             var v = maxP - ((maxP - minP) * g / 4);
             var yv = Y(v);
-            gHtml += '<line x1="' + CH_PAD.l + '" y1="' + yv + '" x2="' + (CHART_W - CH_PAD.r) + '" y2="' + yv + '" stroke="#eef1f5" stroke-width="1"/>';
+            gHtml += '<line x1="' + CH_PAD.l + '" y1="' + yv + '" x2="' + (W - CH_PAD.r) + '" y2="' + yv + '" stroke="#eef1f5" stroke-width="1"/>';
             gHtml += '<text x="' + (CH_PAD.l - 6) + '" y="' + (yv + 4) + '" text-anchor="end" font-size="10" fill="#8a99b1">' + esc(fmtAxis(v)) + '</text>';
         }
         // nhãn thời gian
@@ -284,18 +290,18 @@
         for (var k = 0; k < n; k += step) {
             var xt = X(k), vn2 = new Date(pts[k].t);
             if (isNaN(vn2)) continue;
-            gHtml += '<text x="' + xt + '" y="' + (CHART_H - 8) + '" text-anchor="middle" font-size="10" fill="#8a99b1">' + esc(fmtAxisT(pts[k].t, d.period)) + '</text>';
+            gHtml += '<text x="' + xt + '" y="' + (H - 8) + '" text-anchor="middle" font-size="10" fill="#8a99b1">' + esc(fmtAxisT(pts[k].t, d.period)) + '</text>';
         }
         var last = Number(pts[n - 1].v);
         var oldSvg = box.querySelector('svg');
         if (oldSvg) oldSvg.remove();
         box.insertAdjacentHTML('afterbegin',
-            '<svg viewBox="0 0 ' + CHART_W + ' ' + CHART_H + '" role="img" aria-label="Biểu đồ giá vàng thế giới">' +
-            '<rect x="0" y="0" width="' + CHART_W + '" height="' + CHART_H + '" fill="transparent"/>' +
+            '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Biểu đồ giá vàng thế giới">' +
+            '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="transparent"/>' +
             gHtml +
             '<path d="' + area + '" fill="' + col + '" opacity="0.10"/>' +
             '<path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
-            '<text x="' + (CHART_W - CH_PAD.r) + '" y="' + (CH_PAD.t + 4) + '" text-anchor="end" font-size="12" font-weight="700" fill="' + col + '">' + esc(fmtUsd(last)) + '</text>' +
+            '<text x="' + (W - CH_PAD.r) + '" y="' + (CH_PAD.t + 4) + '" text-anchor="end" font-size="12" font-weight="700" fill="' + col + '">' + esc(fmtUsd(last)) + '</text>' +
             '</svg>');
         var vline = $('gvVline'), tip = $('gvTip');
         // tooltip
@@ -322,6 +328,13 @@
             ' · Giá cuối ' + fmtUsd(last) + ' USD/oz';
         state.chartData = d;
     }
+    // Vẽ lại khi đổi kích thước → biểu đồ luôn fill đúng bề rộng của block.
+    var _chartResizeT = null;
+    window.addEventListener('resize', function () {
+        if (!state.chartData || !$('gvChartBox')) return;
+        clearTimeout(_chartResizeT);
+        _chartResizeT = setTimeout(function () { drawChart(state.chartData); }, 250);
+    });
 
     // ================= Bind =================
     function bindPeriods() {
