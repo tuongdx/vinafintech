@@ -103,7 +103,6 @@
         });
         body.innerHTML = html;
         $('gvVnWrap').style.display = '';
-        $('gvVnMeta').textContent = 'Cập nhật lần cuối: ' + fmtTimeFull(d.as_of);
         setPill();
     }
     function setPill() {
@@ -111,7 +110,7 @@
         if (state.world && state.world.as_of) times.push(state.world.as_of);
         if (state.domestic && state.domestic.as_of) times.push(state.domestic.as_of);
         var mx = times.length ? Math.max.apply(null, times) : null;
-        $('gvUpdated').innerHTML = '<i class="far fa-clock"></i> Cập nhật: <b>' + (mx ? fmtTimeFull(mx) : '…') + '</b>';
+        $('gvUpdated').innerHTML = '<i class="far fa-clock"></i> Cập nhật lần cuối: <b>' + (mx ? fmtTimeFull(mx) : '…') + '</b>';
     }
     function loadDomestic(silent) {
         var msg = $('gvVnMsg');
@@ -152,12 +151,10 @@
                 '<div class="gw-top"><span class="gw-name">' + worldIconHtml(it.key) + esc(it.name) + '</span><span class="gw-sym">' + esc(it.symbol) + '</span></div>' +
                 '<div class="gw-price">' + fmtUsd(it.price) + '<span class="gw-unit">' + esc(it.unit) + '</span></div>' +
                 chg +
-                '<div class="gw-upd"><i class="far fa-clock"></i> Cập nhật: ' + fmtTimeFull(it.time || d.as_of) + '</div>' +
                 '</div>';
         });
         html += '</div>';
         box.innerHTML = html;
-        $('gvWorldMeta').textContent = items.length ? 'Cập nhật: ' + fmtTimeFull(d.as_of) : '';
         renderCompare(d);
         setPill();
     }
@@ -301,7 +298,7 @@
         };
         box.onmouseleave = function () { vline.style.display = 'none'; tip.style.display = 'none'; };
         $('gvChartHint').innerHTML = 'Khoảng: ' + fmtAxisT(pts[0].t, d.period) + ' → ' + fmtAxisT(pts[n - 1].t, d.period) +
-            ' · Giá cuối ' + fmtUsd(last) + ' USD/oz · Cập nhật: ' + fmtTimeFull(d.as_of);
+            ' · Giá cuối ' + fmtUsd(last) + ' USD/oz';
         state.chartData = d;
     }
 
