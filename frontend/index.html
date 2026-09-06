@@ -3232,7 +3232,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260906ab';
+        const CACHE_VERSION = '20260906ac';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3818,10 +3818,11 @@
         }
         window.updateRightColumnForStock = updateRightColumnForStock;
 
-        // Bật/tắt ẩn thanh cuộn shell theo trang công cụ đang xem (Tiện ích / Lãi ngân hàng).
+        // Bật/tắt ẩn thanh cuộn shell theo trang công cụ đang xem (Tiện ích / Lãi ngân hàng / Crypto).
         function updateScrollBarMode(page) {
             const isTool = /^\/tien-ich/.test(page) || /tienich\.html/.test(page)
-                || /^\/lai-ngan-hang/.test(page) || /lai-ngan-hang\.html/.test(page);
+                || /^\/lai-ngan-hang/.test(page) || /lai-ngan-hang\.html/.test(page)
+                || /^\/crypto/.test(page) || /crypto\.html/.test(page);
             document.documentElement.classList.toggle('tx-hide-scroll', !!isTool);
             document.body.classList.toggle('tx-hide-scroll', !!isTool);
         }

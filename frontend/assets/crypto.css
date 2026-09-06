@@ -149,3 +149,9 @@ body.dark-mode .cr-note { background: #0f2420; color: #9fbfb8; border-color: rgb
 /* Detail: icon cạnh tên */
 .cr-detail-name { align-items: center; }
 .cr-dname-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
+/* Ẩn thanh cuộn nhưng vẫn cuộn được (toàn trang + mọi vùng cuộn nội bộ) */
+html, body { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+.cr-page, .cr-page * { scrollbar-width: none; -ms-overflow-style: none; }
+.cr-page *::-webkit-scrollbar { width: 0; height: 0; display: none; }
