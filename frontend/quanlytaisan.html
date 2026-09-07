@@ -150,6 +150,7 @@
         .pf-cr-ok { margin-top: 8px; font-size: 12px; color: #008080; font-weight: 700; }
         .pf-cr-bad { margin-top: 8px; font-size: 12px; color: #d0314e; font-weight: 600; }
         .pf-cr-empty { margin-top: 8px; font-size: 12px; color: #8a99b1; font-weight: 600; }
+        .pf-cr-empty:empty { display: none; }
         .pf-field { min-width: 0; }
         .pf-field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #4a5a72; }
         .pf-field input { width: 100%; padding: 10px 12px; border: 1px solid #e5eaf0; border-radius: 10px; font-size: 14px; font-family: inherit; color: #12203a; background: #fff; }
@@ -886,7 +887,6 @@
                         '<div class="pf-price-hint" id="paCashBalHint">' + (cashCur === 'USDT'
                             ? 'Quỹ USDT/USDC đang có: ' + fmtDec(cashUsdt) + ' USDT' + (fmtUsdtVnd(cashUsdt) ? ' (' + fmtUsdtVnd(cashUsdt) + ')' : '')
                             : 'Quỹ VND đang có: ' + fmtMoney(cashVnd) + ' đ') + '</div>' +
-                        '<div class="pf-price-hint">Mua cổ phiếu / vàng-bạc / mở tiền gửi trừ quỹ <b>VND</b>; mua crypto trừ quỹ <b>USDT/USDC</b>. Bán tài sản / đáo hạn khoản gửi sẽ tự cộng tiền về vào đây. Rút quá số dư sẽ bị chặn.</div>' +
                         (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                     '</div>' +
                     '<div id="cashHistory" class="cash-history" style="display:none;"></div>' +
@@ -1041,7 +1041,7 @@
                         '<div class="pf-field" style="flex:0 1 110px;"><label>Phí (%)</label><input type="number" id="pacryptoFee" min="0" max="100" step="0.01" value="0.10" ' + disabled + ' /></div>' +
                         '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-submit" data-cls="crypto" ' + (DEMO ? 'disabled' : '') + '><i class="fas ' + ico + '"></i> ' + subLabel + '</button></div>' +
                     '</div>' +
-                    '<div id="pacryptoPreview" class="pf-cr-empty">Gõ tên crypto (VD: BTC) — kiểm tra trong danh sách Crypto…</div>' +
+                    '<div id="pacryptoPreview" class="pf-cr-empty"></div>' +
                     (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                 '</div>';
             }
@@ -1058,7 +1058,7 @@
                     '</div>';
                 const hint = mode === 'sell'
                     ? '<div class="pf-price-hint">Bán sẽ giảm số lượng vị thế đang giữ; bán hết thì khoản tự được xoá.</div>'
-                    : '<div class="pf-price-hint">Số tiền đầu tư tự tính = Đơn giá × Số lượng. Mua trùng tên sẽ gộp vào vị thế hiện có (giá vốn bình quân).</div>';
+                    : '';
                 return '<div class="pf-stock-form">' +
                     '<div class="pf-form-head"><i class="fas ' + ico + '"></i> Mua/Bán ' + esc(m.name) + '</div>' +
                     toggle +
@@ -1137,7 +1137,6 @@
                         '<div class="pf-field"><label>Thời gian gửi (tháng)</label><input type="number" id="paDepositTerm" min="1" step="1" placeholder="VD: 6" ' + disabled + ' /></div>' +
                         '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-add" data-cls="deposit" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-plus"></i> Thêm</button></div>' +
                     '</div>' +
-                    '<div class="pf-price-hint">Lãi ước tính theo lãi đơn: lãi = tiền gửi × lãi suất%/năm × số tháng / 12.</div>' +
                     (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                 '</div>';
             }
@@ -1249,7 +1248,7 @@
                 }
                 if (!name) {
                     el.className = 'pf-cr-empty';
-                    el.innerHTML = 'Gõ tên crypto (VD: BTC) — kiểm tra trong danh sách Crypto…';
+                    el.innerHTML = '';
                     return;
                 }
                 if (it && !(price > 0) && !(amt > 0)) {
