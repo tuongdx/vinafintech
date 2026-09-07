@@ -3245,7 +3245,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260907q';
+        const CACHE_VERSION = '20260907r';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3648,7 +3648,7 @@
                 window.addEventListener('resize', function() { if (mmTiSub.classList.contains('open')) placeTiSub(); });
             }
 
-            // ---- Menu con "Quản lý tài sản": hover hiển thị các menu con; rê xuống mục nào hiện trang đó ----
+            // ---- Menu con "Quản lý tài sản": hover hiển thị danh sách; CLICK mục con mới chuyển trang ----
             const mmQltsWrap = mainMenu.querySelector('#mmQlts');
             const mmQltsSub = mainMenu.querySelector('#mmQltsSub');
             if (mmQltsWrap && mmQltsSub) {
@@ -3676,13 +3676,12 @@
                     const f = document.getElementById('contentEmbedFrame');
                     if (f && f.contentWindow) { try { f.contentWindow.postMessage({ type: 'tunix-qlts-tab', tab: tab }, '*'); } catch (e) {} }
                 }
-                let qltsHoverTimer = null;
-                function qltsGo(tab, forceNav) {
-                    if (forceNav || !qltsFrameLoaded()) {
-                        loadContent('/frontend/quanlytaisan.html?tab=' + tab);
+                function qltsGo(tab) {
+                    if (qltsFrameLoaded()) {
+                        qltsSend(tab);
                         window.history.replaceState({}, '', '/quan-ly-tai-san?tab=' + tab);
                     } else {
-                        qltsSend(tab);
+                        loadContent('/frontend/quanlytaisan.html?tab=' + tab);
                         window.history.replaceState({}, '', '/quan-ly-tai-san?tab=' + tab);
                     }
                 }
@@ -3698,26 +3697,14 @@
                         qltsOutTimer = setTimeout(hideQltsSub, 200);
                     }
                 });
-                mmQltsSub.querySelectorAll('.mm-sub-item').forEach(function(it) {
-                    const tab = it.getAttribute('data-qlts-sub');
-                    if (!tab) return;
-                    it.addEventListener('mouseenter', function () {
-                        if (qltsHoverTimer) { clearTimeout(qltsHoverTimer); }
-                        qltsHoverTimer = setTimeout(function () { qltsGo(tab, false); }, 240);
-                    });
-                    it.addEventListener('mouseleave', function () {
-                        if (qltsHoverTimer) { clearTimeout(qltsHoverTimer); qltsHoverTimer = null; }
-                    });
-                });
                 mmQltsWrap.addEventListener('click', function(e) {
                     const it = e.target.closest('.mm-sub-item');
                     if (!it) return;
                     if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
                     e.preventDefault();
                     const tab = it.getAttribute('data-qlts-sub') || 'analysis';
-                    if (qltsHoverTimer) { clearTimeout(qltsHoverTimer); qltsHoverTimer = null; }
                     hideQltsSub();
-                    qltsGo(tab, true);
+                    qltsGo(tab);
                 });
                 window.addEventListener('scroll', function() { if (mmQltsSub.classList.contains('open')) placeQltsSub(); }, { passive: true });
                 window.addEventListener('resize', function() { if (mmQltsSub.classList.contains('open')) placeQltsSub(); });
