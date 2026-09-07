@@ -14,8 +14,10 @@ from datetime import datetime, timezone
 
 import httpx
 
-_BASE = "https://api.binance.com"
-_UA = {"User-Agent": "Mozilla/5.0 (TuniX/1.0)"}
+_BINANCE_HOSTS = ("https://data-api.binance.vision", "https://api.binance.com")
+# data-api.binance.vision là mirror market-data CHÍNH THỨC của Binance — KHÔNG geo-
+# restrict, dùng được từ Mỹ / Render (api.binance.com bị geo-block ở Mỹ, trả 451).
+_UA = {"User-Agent": "Mozilla/5.0 (TuniX/1.0)", "Accept": "application/json"}
 
 # Bộ Top coin (thứ hạng theo vốn hóa tham khảo) — CHỈ là danh sách lựa chọn/cặp giao dịch,
 # KHÔNG phải dữ liệu giá hard-code (giá luôn lấy live từ Binance).
@@ -84,10 +86,23 @@ def _cached(key: str, ttl: float, producer) -> object:
 
 
 def _get(path: str, params: dict | None = None) -> object:
-    with httpx.Client(base_url=_BASE, headers=_UA, timeout=15.0) as client:
-        r = client.get(path, params=params)
-        r.raise_for_status()
-        return r.json()
+    """GET Binance với fail-over giữa các host (vision → api).
+
+    Cùng 1 endpoint/path trên cả 2 host; host trước lỗi (geo-block/timeout/…) thì
+    tự thử host kế tiếp — trang không phụ thuộc vào 1 IP/region của máy chủ.
+    """
+    last: Exception | None = None
+    for base in _BINANCE_HOSTS:
+        try:
+            with httpx.Client(base_url=base, headers=_UA, timeout=15.0) as client:
+                r = client.get(path, params=params)
+                r.raise_for_status()
+                return r.json()
+        except Exception as e:  # noqa: BLE001 — host lỗi → thử host kế tiếp
+            last = e
+    if last is not None:
+        raise last
+    return {}
 
 
 def _f(v: str | None):
@@ -166,10 +181,52 @@ def get_coingecko_top(per_page: int = 250) -> list[dict]:
     return _cached("coingecko:top", _CAP_TTL, _prod)
 
 
+def _volume_ranking(tickers: dict[str, dict]) -> list[dict]:
+    """Xếp hạng dự phòng: lấy theo THANH KHOẢN Binance (quoteVolume 24h giảm dần)
+    — dùng khi CoinGecko bị chặn/rate-limit để trang vẫn hiển thị được list.
+    Chỉ lấy base không chứa chữ số (loại token nhân như 1000SATS/…UP/…DOWN)."""
+    ranked = sorted(tickers.values(), key=lambda t: _f(t.get("quoteVolume")), reverse=True)
+    out: list[dict] = []
+    for t in ranked:
+        sym = str(t.get("symbol") or "")
+        if not sym.endswith(_QUOTE) or len(sym) <= len(_QUOTE):
+            continue
+        base = sym[: -len(_QUOTE)]
+        if not base or any(ch.isdigit() for ch in base):
+            continue
+        out.append({"symbol": base, "name": base, "cap": None})
+        if len(out) >= 250:
+            break
+    return out
+
+
 def get_markets() -> dict:
-    """~100 mã TOP theo vốn hóa (thứ hạng từ CoinGecko) có USDT trên Binance — giá/volume Binance."""
-    tickers = _all_tickers()
+    """~100 mã TOP theo vốn hóa có USDT trên Binance — giá/volume Binance.
+
+    - Giá/volume/Cao-Thấp 24h: Binance (host vision → api, cache 6s).
+    - Thứ hạng + vốn hóa: CoinGecko top (cache 1h); nếu CoinGecko bị chặn/rate-limit
+      → tự xếp theo thanh khoản Binance (vốn hóa hiển thị '—') để trang không trống.
+    """
+    try:
+        tickers = _all_tickers()
+    except Exception as e:  # noqa: BLE001 — Binance cả 2 host đều lỗi
+        return {
+            "quote": _QUOTE,
+            "source": "binance",
+            "count": 0,
+            "total": 100,
+            "error": str(e),
+            "message": "Không lấy được dữ liệu từ Binance. Vui lòng thử lại sau.",
+            "items": [],
+        }
+
     top = get_coingecko_top()
+    cap_source = "coingecko"
+    if not top:
+        # CoinGecko chặn/rate-limit → xếp theo thanh khoản Binance
+        cap_source = "binance-volume"
+        top = _volume_ranking(tickers)
+
     items: list[dict] = []
     seen: set[str] = set()
     for entry in top:
@@ -199,7 +256,7 @@ def get_markets() -> dict:
     return {
         "quote": _QUOTE,
         "source": "binance",
-        "cap_source": "coingecko",
+        "cap_source": cap_source,
         "count": len(items),
         "total": 100,
         "as_of": _now_utc().isoformat(),
@@ -214,7 +271,10 @@ def get_klines(symbol: str, interval: str = "1d", limit: int = 90) -> dict:
         pair = pair + _QUOTE
 
     def _prod() -> dict:
-        rows = _get("/api/v3/klines", {"symbol": pair, "interval": interval, "limit": int(limit)})
+        try:
+            rows = _get("/api/v3/klines", {"symbol": pair, "interval": interval, "limit": int(limit)})
+        except Exception:  # noqa: BLE001 — Binance cả 2 host lỗi → không làm 500
+            return {"symbol": pair, "interval": interval, "items": [], "error": "Không lấy được dữ liệu biểu đồ từ Binance."}
         out: list[dict] = []
         if isinstance(rows, list):
             for row in rows:

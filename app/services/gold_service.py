@@ -103,14 +103,50 @@ def _key_lock(key: str) -> threading.Lock:
         return _key_locks.setdefault(key, threading.Lock())
 
 
+def _store(key: str, ttl: float, value) -> None:
+    """Ghi cache (chỉ ghi nếu chưa có giá trị tươi hơn — tránh ghi đè bản mới hơn)."""
+    with _lock:
+        ent = _cache.get(key)
+        if ent and ent[0] > _now():
+            return
+        _cache[key] = (_now() + ttl, value)
+        if len(_cache) > 512:
+            for k in [k for k, v in _cache.items() if v[0] < _now()]:
+                _cache.pop(k, None)
+
+
 def _cached(key: str, ttl: float, producer):
-    """Cache + single-flight THEO KEY. Chỉ khoá đúng key đang fetch (không khoá global)
-    → domestic/world/chart/fx fetch song song; cùng 1 key không gọi mạng trùng lặp."""
+    """Cache + single-flight + STALE-WHILE-REVALIDATE (theo key).
+
+    - Còn hạn            → trả dữ liệu tươi NGAY (không gọi nguồn).
+    - Hết hạn nhưng còn giá trị cũ → trả NGAY giá trị cũ + refresh nền (single-flight
+      theo key). Trang mở / poll trả về tức thì kể cả khi nguồn ngoài chậm hoặc đang
+      lỗi — lần gọi sau sẽ có dữ liệu mới. KHÔNG chặn request chờ nguồn.
+    - Chưa có bất kỳ giá trị nào (lần đầu / server vừa khởi động) → fetch đồng bộ
+      (bắt buộc phải chờ nguồn vì không có gì để hiển thị).
+    """
     now = _now()
     with _lock:
         ent = _cache.get(key)
-        if ent and now < ent[0]:
-            return ent[1]
+    if ent is not None:
+        if now < ent[0]:
+            return ent[1]  # tươi
+        # Hết hạn → có giá trị cũ → trả ngay, refresh nền
+        kl = _key_lock(key)
+        if kl.acquire(blocking=False):
+            def _refresh():
+                try:
+                    value = producer()
+                    _store(key, ttl, value)
+                except Exception:  # noqa: BLE001 — nguồn lỗi → giữ giá trị cũ
+                    pass
+                finally:
+                    kl.release()
+            threading.Thread(
+                target=_refresh, name=f"gold-swr-{key}", daemon=True
+            ).start()
+        return ent[1]
+    # Không có cache (lạnh thực sự) → chờ nguồn (blocking, single-flight)
     kl = _key_lock(key)
     if kl.acquire(timeout=min(max(ttl, 5.0), 120.0) + 10.0):
         try:
@@ -119,14 +155,8 @@ def _cached(key: str, ttl: float, producer):
                 if ent and _now() < ent[0]:
                     return ent[1]
             value = producer()
-            with _lock:
-                ent = _cache.get(key)
-                if not (ent and ent[0] > _now()):
-                    _cache[key] = (_now() + ttl, value)
-                    if len(_cache) > 512:
-                        for k in [k for k, v in _cache.items() if v[0] < _now()]:
-                            _cache.pop(k, None)
-                return value
+            _store(key, ttl, value)
+            return value
         finally:
             kl.release()
     # không giành được lock (thread khác đang fetch lâu) → chờ nó xong rồi đọc cache
@@ -137,11 +167,26 @@ def _cached(key: str, ttl: float, producer):
     return producer()
 
 
+_HTTP_CLIENT: httpx.Client | None = None
+
+
 def _http_get(url: str, timeout: float = 20.0) -> str:
-    with httpx.Client(headers=_UA, timeout=timeout, follow_redirects=True) as client:
-        r = client.get(url)
-        r.raise_for_status()
-        return r.text
+    """GET text với HTTP client DÙNG CHUNG (keep-alive / connection pool).
+
+    Tạo client 1 lần rồi tái sử dụng → không phải mở TLS mỗi request (tiết kiệm
+    ~50-150ms/request; đáng kể khi vàng trong nước fetch 8 trang thương hiệu)."""
+    global _HTTP_CLIENT
+    if _HTTP_CLIENT is None:
+        with _lock:
+            if _HTTP_CLIENT is None:
+                _HTTP_CLIENT = httpx.Client(
+                    headers=_UA,
+                    timeout=httpx.Timeout(20.0, connect=6.0),
+                    follow_redirects=True,
+                )
+    r = _HTTP_CLIENT.get(url, timeout=timeout)
+    r.raise_for_status()
+    return r.text
 
 
 def _num(text: str | None) -> float | None:

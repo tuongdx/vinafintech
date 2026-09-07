@@ -208,7 +208,6 @@
             state.world = d;
             msg.innerHTML = '';
             renderWorld(d);
-            renderDomestic(state.domestic || { brands: [], as_of: null });
             notifyHeight();
         }).catch(function () {
             msg.innerHTML = '<div class="gv-msg err"><i class="fas fa-exclamation-triangle"></i> Không tải được giá vàng/bạc thế giới.<br><button type="button" class="gv-retry" onclick="window.tunixReloadWorld()"><i class="fas fa-sync-alt"></i> Thử lại</button></div>';
@@ -377,11 +376,20 @@
 
     function init() {
         bindPeriods();
+        // Tải song song 3 khu vực (không chờ nhau) → mỗi block hiện ngay khi có dữ liệu.
+        // Backend trả cache NGAY (stale-while-revalidate) và tự refresh nền, nên lần gọi
+        // đầu có thể là bản cũ → gọi lại MỘT lần sau ~2.5s (khi nền đã refresh xong) để
+        // hiện giá mới nhất mà không phải chờ chu kỳ poll dài (world 30s / domestic 120s).
         loadWorld(false);
         loadDomestic(false);
         loadChart(false);
         setInterval(function () { loadWorld(true); }, WORLD_POLL_MS);
         setInterval(function () { loadDomestic(true); }, DOMESTIC_POLL_MS);
+        setTimeout(function () {
+            loadWorld(true);
+            loadDomestic(true);
+            loadChart(true);
+        }, 2500);
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);

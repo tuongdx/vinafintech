@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 import functools
 import json
@@ -497,7 +497,10 @@ _KBS_BASE_URL = "https://kbbuddywts.kbsec.com.vn/iis-server/investment"
 _KBS_INTERVAL_SUFFIX = {"1D": "day", "1W": "week", "1M": "month", "1H": "60P"}
 _KBS_TIMEOUT_SECONDS = 15
 _KBS_DATA_TTL = 60        # cache dữ liệu KBS ngắn (tránh spam khi lazy-load)
-_KBS_EARLIEST_TTL = 3600  # cache mốc lịch sử xa nhất (1 giờ)
+# KBS TỪ CHỐI mọi request span > ~1 năm ("Vượt quá range timeFrame") -> phải chia
+# request thành từng lát ≤ giới hạn này rồi ghép để lấy được ~10 năm daily.
+_KBS_MAX_RANGE_DAYS = 350
+_KBS_EARLIEST_TTL = 21600  # cache mốc lịch sử xa nhất (6 giờ)
 
 
 def _kbs_chart(symbol: str, interval: str, from_ts: int = 0, to_ts: int = 0) -> list[dict[str, Any]]:
@@ -507,6 +510,11 @@ def _kbs_chart(symbol: str, interval: str, from_ts: int = 0, to_ts: int = 0) -> 
     - from_ts = 0 -> từ 01-01-2000.
     - to_ts   = 0 -> đến hôm nay.
     - Timestamp KBS theo giờ VN (Asia/Ho_Chi_Minh); daily 07:00 ICT = 00:00 UTC.
+
+    LƯU Ý: KBS server CHỈ chấp nhận request span ≤ ~1 năm (trả lỗi "Vượt quá range
+    timeFrame" nếu lâu hơn). Vì vậy khi yêu cầu dài hơn _KBS_MAX_RANGE_DAYS, hàm tự
+    chia thành nhiều lát ≤ giới hạn rồi ghép lại (mỗi lát 1 request riêng, có cache)
+    → lấy được TOÀN BỘ lịch sử (~10 năm daily) thay vì bị chặn như trước.
     """
     interval = str(interval or "").upper()
     suffix = _KBS_INTERVAL_SUFFIX.get(interval)
@@ -514,13 +522,34 @@ def _kbs_chart(symbol: str, interval: str, from_ts: int = 0, to_ts: int = 0) -> 
         return []
     symbol = str(symbol or "").upper()
 
-    sdate = "01-01-2000" if not from_ts else datetime.fromtimestamp(int(from_ts), _VN_TZ).strftime("%d-%m-%Y")
-    edate = datetime.now(_VN_TZ).strftime("%d-%m-%Y") if not to_ts else datetime.fromtimestamp(int(to_ts), _VN_TZ).strftime("%d-%m-%Y")
+    start_dt = datetime(2000, 1, 1, tzinfo=_VN_TZ) if not from_ts else datetime.fromtimestamp(int(from_ts), _VN_TZ)
+    end_dt = datetime.now(_VN_TZ) if not to_ts else datetime.fromtimestamp(int(to_ts), _VN_TZ)
+    if end_dt < start_dt:
+        return []
+    sdate = start_dt.strftime("%d-%m-%Y")
+    edate = end_dt.strftime("%d-%m-%Y")
 
     cache_key = f"kbs-chart:{symbol}:{interval}:{sdate}:{edate}"
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
+
+    # Khoảng quá dài so với giới hạn 1 request của KBS -> chia lát rồi ghép.
+    if (end_dt - start_dt).days > _KBS_MAX_RANGE_DAYS:
+        merged: dict[int, dict[str, Any]] = {}
+        cursor = start_dt
+        while cursor < end_dt:
+            chunk_end = min(end_dt, cursor + timedelta(days=_KBS_MAX_RANGE_DAYS))
+            part = _kbs_chart(symbol, interval, int(cursor.timestamp()), int(chunk_end.timestamp()))
+            for bar in part:
+                merged[int(bar["time"])] = bar
+            cursor = chunk_end
+            if len(merged) > 9000:  # an toàn chống loop; ~2500 bar/năm là quá đủ
+                break
+        out = sorted(merged.values(), key=lambda b: b["time"])
+        if out:
+            cache.set(cache_key, out, ttl_seconds=_KBS_DATA_TTL)
+        return out
 
     url = f"{_KBS_BASE_URL}/stocks/{symbol}/data_{suffix}?sdate={sdate}&edate={edate}"
     response = _get_http_client().get(
@@ -575,17 +604,32 @@ def _kbs_chart(symbol: str, interval: str, from_ts: int = 0, to_ts: int = 0) -> 
 
 
 def _kbs_earliest_time(symbol: str) -> int | None:
-    """Mốc lịch sử xa nhất KBS có cho symbol (probe 1D từ 2000, cache 1 giờ).
+    """Mốc lịch sử xa nhất KBS có cho symbol (cache 6 giờ).
 
-    Dùng chung cho mọi timeframe (dữ liệu KBS của 1 mã bắt đầu cùng một mốc).
+    Do KBS chỉ nhận range ≤ ~1 năm/request nên KHÔNG thể probe 2000→nay trong 1 lần
+    (bị lỗi "Vượt quá range timeFrame"). Thay vào đó quét NGƯỢC từ hiện tại theo
+    từng lát ~350 ngày cho tới khi gặp lát TRỐNG (trước ngày niêm yết) — bar đầu
+    của lát cuối không rỗng chính là mốc sớm nhất. Dùng chung cho mọi timeframe
+    (dữ liệu KBS của 1 mã bắt đầu cùng một mốc).
     """
     symbol = str(symbol or "").upper()
     key = f"kbs-earliest:{symbol}"
     cached = cache.get(key)
     if cached is not None:
         return cached
-    rows = _kbs_chart(symbol, "1D", 0, 0)
-    earliest = rows[0]["time"] if rows else None
+
+    earliest: int | None = None
+    cursor = datetime.now(_VN_TZ)
+    for _ in range(40):  # 40 × 350 ngày ≈ 38 năm — đủ phủ 2000→nay
+        start = cursor - timedelta(days=_KBS_MAX_RANGE_DAYS)
+        rows = _kbs_chart(symbol, "1D", int(start.timestamp()), int(cursor.timestamp()))
+        if not rows:
+            break
+        earliest = rows[0]["time"]
+        if start.year <= 2000:
+            break
+        cursor = start
+
     if earliest:
         cache.set(key, earliest, ttl_seconds=_KBS_EARLIEST_TTL)
     return earliest

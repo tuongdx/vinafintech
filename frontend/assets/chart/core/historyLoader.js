@@ -104,6 +104,9 @@ export class HistoryLoader {
         const t1 = cache.candles[n - 1].time;
         const avgSpan = n > 1 ? (t1 - t0) / (n - 1) : 86400;
         const span = vr.to - vr.from;
+        // Người dùng đang xem (gần như) TOÀN BỘ lịch sử đã tải (zoom-out hết cỡ)?
+        const loadedSpan = cache.latest - cache.earliest;
+        const wasZoomedOut = loadedSpan > 0 && span >= loadedSpan * 0.9;
         // Preload buffer: ~30% chiều rộng visible (hoặc tối thiểu 30 ngày).
         const bufferTime = Math.max(30 * 86400, Math.floor(span * 0.3));
         // Mép trái visible còn cách đầu dữ liệu > buffer → chưa cần tải.
@@ -134,6 +137,15 @@ export class HistoryLoader {
                 this._log('No older data → stop loading at', this._fmt(updated.earliest));
             }
             if (this.onDataUpdate && updated) this.onDataUpdate(updated.candles);
+            // Cascade toàn bộ: nếu người dùng đang zoom-out hết cỡ (nhìn toàn bộ lịch sử
+            // đã tải) và vừa tải thêm dữ liệu CŨ HƠN → mở rộng khung nhìn sang biên mới
+            // để hiện phần vừa tải, tự tải tiếp cho tới khi hết biên lịch sử — không cần
+            // bấm zoom-out lặp lại nhiều lần để xem hết dữ liệu 1 cổ phiếu.
+            if (updated && wasZoomedOut && !updated.complete &&
+                updated.earliest && updated.earliest < prevEarliest) {
+                try { ts.setVisibleRange({ from: updated.earliest, to: updated.latest }); }
+                catch (e) { /* ignore: LWC không đặt được → dừng cascade tự nhiên */ }
+            }
             // Có thể vẫn chưa đủ (vừa tải chạm biên) → kiểm tra tiếp.
             setTimeout(() => this.check().catch(() => {}), 0);
         } catch (err) {
