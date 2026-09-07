@@ -339,7 +339,13 @@
     }
     window.addEventListener('message', function (event) {
         const data = event.data;
-        if (!data || data.type !== 'tunix-theme') return;
+        if (!data) return;
+        // Shell báo đổi công cụ (đã mở sẵn trang Tiện ích) → hiển thị đúng màn hình.
+        if (data.type === 'tunix-ti-tool' && (data.tool === 'adj' || data.tool === 'dep')) {
+            showTool(data.tool);
+            return;
+        }
+        if (data.type !== 'tunix-theme') return;
         const mode = data.mode === 'dark' ? 'dark' : 'light';
         localStorage.setItem('theme', mode);
         applyEmbedTheme(mode);
