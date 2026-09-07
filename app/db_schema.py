@@ -42,6 +42,10 @@ _FAQ_COLUMNS: list[tuple[str, str, str]] = [
     ("faqs", "category", "VARCHAR(50) DEFAULT ''"),
 ]
 
+_CASH_COLUMNS: list[tuple[str, str, str]] = [
+    ("cash_transactions", "currency", "VARCHAR(10) DEFAULT 'VND'"),
+]
+
 
 def ensure_schema() -> None:
     """Tạo bảng mới + thêm cột còn thiếu. Gọi 1 lần lúc startup."""
@@ -56,7 +60,7 @@ def ensure_schema() -> None:
 
 def _ensure_sqlite_columns() -> None:
     with engine.begin() as conn:
-        for table, column, ddl in (_USER_COLUMNS + _NEWS_COLUMNS + _FAQ_COLUMNS):
+        for table, column, ddl in (_USER_COLUMNS + _NEWS_COLUMNS + _FAQ_COLUMNS + _CASH_COLUMNS):
             existing = {row["name"] for row in conn.execute(text(f"PRAGMA table_info({table})")).mappings()}
             if column not in existing:
                 conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
@@ -65,7 +69,7 @@ def _ensure_sqlite_columns() -> None:
 def _ensure_generic_columns() -> None:
     insp = inspect(engine)
     with engine.begin() as conn:
-        for table, column, ddl in (_USER_COLUMNS + _NEWS_COLUMNS + _FAQ_COLUMNS):
+        for table, column, ddl in (_USER_COLUMNS + _NEWS_COLUMNS + _FAQ_COLUMNS + _CASH_COLUMNS):
             try:
                 existing = {c["name"] for c in insp.get_columns(table)}
             except Exception:

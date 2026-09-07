@@ -412,9 +412,10 @@ class UserAsset(Base):
 class CashTransaction(Base):
     """Sổ ghi TIỀN VÀO / RA của khoản Tiền mặt.
 
-    - kind: sell_stock | sell_gold | mature_deposit | adjust
+    - kind: sell_stock | sell_gold | mature_deposit | adjust | buy_stock | buy_gold | buy_deposit | buy_crypto | sell_crypto | deposit | withdraw
+    - currency: 'VND' | 'USDT' (quỹ tiền mặt bị tác động; USDT gộp chung USDT/USDC 1:1)
     - change: dương = TIỀN VÀO (+), âm = TIỀN RA (−)
-    - balance_after: số dư Tiền mặt sau giao dịch (đ).
+    - balance_after: số dư quỹ (currency) sau giao dịch.
     """
 
     __tablename__ = "cash_transactions"
@@ -422,6 +423,7 @@ class CashTransaction(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     kind: Mapped[str] = mapped_column(String(40), default="adjust")
+    currency: Mapped[str] = mapped_column(String(10), default="VND")
     change: Mapped[float] = mapped_column(Float, default=0.0)
     balance_after: Mapped[float] = mapped_column(Float, default=0.0)
     label: Mapped[str] = mapped_column(String(255), default="")

@@ -135,6 +135,22 @@ def add_holding(
     fee_pct = max(0.0, float(payload.fee or 0)) / 100.0
     # Giá mua hiệu dụng đã gồm phí giao dịch → giá vốn bình quân phản ánh chi phí thực.
     effective_price = buy_price * (1 + fee_pct) if buy_price > 0 else 0.0
+    # Tiền thực chi = số lượng × giá hiệu dụng (gồm phí) — trừ vào quỹ tiền mặt VND.
+    cost = round(qty * effective_price, 0)
+    if cost > 0:
+        have_vnd = cash_service.get_balance(db, user.id, cash_service.CUR_VND)
+        new_vnd = cash_service.debit(
+            db, user.id, cash_service.CUR_VND, cost,
+            kind="buy_stock", label=f"Mua cổ phiếu {symbol} ({qty:g} cp)",
+        )
+        if new_vnd is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Quỹ VND không đủ {cost:,.0f} đ để mua {qty:g} {symbol} "
+                    f"(đang có {have_vnd:,.0f} đ). Hãy Nạp tiền mặt trước."
+                ),
+            )
 
     existing = (
         db.query(PortfolioHolding)
@@ -251,17 +267,17 @@ def sell_holding(
     if new_qty == 0:
         db.delete(row)
         db.commit()
-        cash_service.add_cash(db, user.id, proceeds, kind="sell_stock", label=f"Bán hết cổ phiếu {symbol} ({qty:g} cp)")
+        cash_service.credit(db, user.id, cash_service.CUR_VND, proceeds, kind="sell_stock", label=f"Bán hết cổ phiếu {symbol} ({qty:g} cp)")
         # Đã bán hết → dọn cảnh báo nếu mã không còn được theo dõi.
         alert_service.prune_untracked(db, user.id)
         return {
-            "message": f"Đã bán hết {symbol}. Vị thế đã đóng · nhận ~{proceeds:,.0f} đ vào Tiền mặt",
+            "message": f"Đã bán hết {symbol}. Vị thế đã đóng · nhận ~{proceeds:,.0f} đ vào Tiền mặt VND",
             "symbol": symbol, "quantity": 0, "deleted": True, "received": proceeds,
         }
     row.quantity = new_qty
     db.commit()
-    cash_service.add_cash(db, user.id, proceeds, kind="sell_stock", label=f"Bán cổ phiếu {symbol} ({qty:g} cp)")
+    cash_service.credit(db, user.id, cash_service.CUR_VND, proceeds, kind="sell_stock", label=f"Bán cổ phiếu {symbol} ({qty:g} cp)")
     return {
-        "message": f"Đã bán {qty:g} {symbol}. Còn lại {new_qty:g} cổ phiếu · nhận ~{proceeds:,.0f} đ vào Tiền mặt",
+        "message": f"Đã bán {qty:g} {symbol}. Còn lại {new_qty:g} cổ phiếu · nhận ~{proceeds:,.0f} đ vào Tiền mặt VND",
         "symbol": symbol, "quantity": new_qty, "deleted": False, "received": proceeds,
     }

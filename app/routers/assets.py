@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user
 from app.db import get_db
 from app.models import User, UserAsset, UserAssetClass
-from app.schemas import CashAmount, UserAssetCreate, UserAssetOut, UserAssetSell, UserAssetUpdate
+from app.schemas import CashAmount, CashMove, UserAssetCreate, UserAssetOut, UserAssetSell, UserAssetUpdate
 from app.services import cash_service
 from app.services.gold_service import _get_usd_vnd
 
@@ -33,6 +33,32 @@ router = APIRouter(prefix="/assets", tags=["assets"])
 
 _CLASSES = {"crypto", "deposit", "gold"}
 _STABLES = {"USDT", "USDC"}
+_CASH_POOL_STABLE = "USDT"  # USDT & USDC gộp chung 1 quỹ (1:1)
+
+
+def _cash_payload(db: Session, user: User) -> dict:
+    """Trạng thái 2 quỹ tiền mặt + quy đổi USDT→VND theo tỷ giá hiện tại.
+
+    Trả: {vnd, usdt, fx_rate, fx_as_of, total_vnd} (total_vnd = vnd + usdt×fx; None nếu chưa có tỷ giá).
+    """
+    fx = _get_usd_vnd() or {}
+    rate = fx.get("usd_vnd")
+    b = cash_service.get_balances(db, user.id)
+    vnd = round(float(b.get("VND") or 0), 0)
+    usdt = round(float(b.get("USDT") or 0), 6)
+    total_vnd = round(vnd + usdt * float(rate), 0) if rate else None
+    return {
+        "vnd": vnd,
+        "usdt": usdt,
+        "fx_rate": float(rate) if rate else None,
+        "fx_as_of": fx.get("as_of"),
+        "total_vnd": total_vnd,
+    }
+
+
+def _norm_cur(cur: str) -> str:
+    cur = (cur or "").strip().upper()
+    return cur if cur in ("VND", "USDT") else "VND"
 
 
 def _currency_of(row: UserAsset) -> str:
@@ -122,6 +148,20 @@ def create_asset(payload: UserAssetCreate, db: Session = Depends(get_db), user: 
         cur = (payload.currency or "USDT").strip().upper()
         if cur not in _STABLES:
             cur = "USDT"
+        # Trừ quỹ USDT/USDC trước khi mua — thiếu thì báo lỗi yêu cầu Nạp tiền trước.
+        have_usdt = cash_service.get_balance(db, user.id, cash_service.CUR_USDT)
+        new_usdt = cash_service.debit(
+            db, user.id, cash_service.CUR_USDT, float(spend),
+            kind="buy_crypto", label=f"Mua crypto {label}",
+        )
+        if new_usdt is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Quỹ USDT/USDC không đủ {_fmt_num(float(spend))} để mua {label} "
+                    f"(đang có ~{_fmt_num(have_usdt)}). Hãy Nạp tiền mặt USDT/USDC trước."
+                ),
+            )
         qty_in = float(spend) * (1 - fee / 100.0) / float(price)  # coin nhận sau phí
         ex = _find_position(db, user, "crypto", label)
         if ex:
@@ -154,6 +194,20 @@ def create_asset(payload: UserAssetCreate, db: Session = Depends(get_db), user: 
         if not (qty and qty > 0 and price and price > 0):
             raise HTTPException(status_code=400, detail="Mua cần Số lượng và Đơn giá (đ) > 0")
         amount = round(float(qty) * float(price), 2)
+        # Trừ quỹ VND trước khi mua.
+        have_vnd = cash_service.get_balance(db, user.id, cash_service.CUR_VND)
+        new_vnd = cash_service.debit(
+            db, user.id, cash_service.CUR_VND, amount,
+            kind="buy_gold", label=f"Mua vàng/bạc {label}",
+        )
+        if new_vnd is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Quỹ VND không đủ {amount:,.0f} đ để mua {label} "
+                    f"(đang có {have_vnd:,.0f} đ). Hãy Nạp tiền mặt trước."
+                ),
+            )
         ex = _find_position(db, user, "gold", label)
         if ex:
             new_qty = float(ex.quantity or 0) + float(qty)
@@ -181,6 +235,20 @@ def create_asset(payload: UserAssetCreate, db: Session = Depends(get_db), user: 
     amount = float(payload.amount or 0)
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Nhập số tiền gửi > 0")
+    # Trừ quỹ VND (chính là khoản tiền gửi) trước khi mở sổ.
+    have_vnd = cash_service.get_balance(db, user.id, cash_service.CUR_VND)
+    new_vnd = cash_service.debit(
+        db, user.id, cash_service.CUR_VND, amount,
+        kind="buy_deposit", label=f"Gửi tiết kiệm {label}",
+    )
+    if new_vnd is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Quỹ VND không đủ {amount:,.0f} đ để gửi tiết kiệm {label} "
+                f"(đang có {have_vnd:,.0f} đ). Hãy Nạp tiền mặt trước."
+            ),
+        )
     row = UserAsset(
         user_id=user.id,
         asset_class=UserAssetClass(payload.asset_class),
@@ -226,6 +294,11 @@ def sell_asset(payload: UserAssetSell, db: Session = Depends(get_db), user: User
             actual_receive = actual_gross * (1 - fee / 100.0)
             db.delete(row)
             db.commit()
+            # Tiền bán crypto quy về quỹ USDT/USDC.
+            cash_service.credit(
+                db, user.id, cash_service.CUR_USDT, float(actual_receive),
+                kind="sell_crypto", label=f"Bán hết crypto {label}",
+            )
             return {
                 "ok": True, "removed": True, "coins_sold": cur_qty, "received_usdt": actual_receive,
                 "message": f"Đã bán hết {label} · nhận ~{_fmt_num(actual_receive)} {cur} (sau phí {fee:g}%)",
@@ -237,6 +310,11 @@ def sell_asset(payload: UserAssetSell, db: Session = Depends(get_db), user: User
         row.amount = round(max(0.0, amt - coins_sold * avg), 8)
         row.unit_price = round(row.amount / new_qty, 12) if new_qty else row.unit_price
         db.commit()
+        # Tiền bán crypto quy về quỹ USDT/USDC.
+        cash_service.credit(
+            db, user.id, cash_service.CUR_USDT, float(receive),
+            kind="sell_crypto", label=f"Bán crypto {label}",
+        )
         return {
             "ok": True, "removed": False, "coins_sold": coins_sold, "remaining_qty": new_qty,
             "received_usdt": float(receive),
@@ -263,19 +341,19 @@ def sell_asset(payload: UserAssetSell, db: Session = Depends(get_db), user: User
     if remaining < 1e-6:
         db.delete(row)
         db.commit()
-        cash_service.add_cash(db, user.id, proceeds, kind="sell_gold", label=f"Bán hết vàng/bạc {label}")
+        cash_service.credit(db, user.id, cash_service.CUR_VND, proceeds, kind="sell_gold", label=f"Bán hết vàng/bạc {label}")
         return {
             "ok": True, "removed": True, "received": proceeds,
-            "message": f"Đã bán hết {label} · nhận ~{proceeds:,.0f} đ vào Tiền mặt",
+            "message": f"Đã bán hết {label} · nhận ~{proceeds:,.0f} đ vào Tiền mặt VND",
         }
     row.quantity = remaining
     row.amount = round(max(0.0, amt - float(qty) * avg), 2)
     row.unit_price = round(row.amount / remaining, 2)
     db.commit()
-    cash_service.add_cash(db, user.id, proceeds, kind="sell_gold", label=f"Bán vàng/bạc {label} ({qty:g})")
+    cash_service.credit(db, user.id, cash_service.CUR_VND, proceeds, kind="sell_gold", label=f"Bán vàng/bạc {label} ({qty:g})")
     return {
         "ok": True, "removed": False, "remaining_qty": remaining, "received": proceeds,
-        "message": f"Đã bán {qty:g} {label} · nhận ~{proceeds:,.0f} đ vào Tiền mặt",
+        "message": f"Đã bán {qty:g} {label} · nhận ~{proceeds:,.0f} đ vào Tiền mặt VND",
     }
 
 
@@ -327,15 +405,53 @@ def delete_asset(asset_id: int, db: Session = Depends(get_db), user: User = Depe
 
 @router.get("/cash")
 def get_cash(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """Số tiền mặt đang có (đ)."""
-    return {"amount": cash_service.get_cash(db, user.id)}
+    """Trạng thái 2 quỹ tiền mặt: VND + USDT/USDC (kèm quy đổi VND)."""
+    return _cash_payload(db, user)
 
 
 @router.post("/cash")
-def set_cash(payload: CashAmount, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """Lưu số tiền mặt (chênh tăng = TIỀN VÀO, giảm = TIỀN RA — được ghi vào lịch sử)."""
-    amount = cash_service.set_cash(db, user.id, float(payload.amount or 0), kind="adjust", label="Điều chỉnh tiền mặt")
-    return {"amount": amount}
+def cash_deposit_legacy(payload: CashAmount, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """[Tương thích cũ] POST /cash = Nạp `amount` vào quỹ VND (không còn đặt số tuyệt đối)."""
+    amt = float(payload.amount or 0)
+    if amt <= 0:
+        raise HTTPException(status_code=400, detail="Số tiền nạp phải lớn hơn 0.")
+    cash_service.credit(db, user.id, cash_service.CUR_VND, amt, kind="deposit", label="Nạp tiền mặt VND")
+    return _cash_payload(db, user)
+
+
+@router.post("/cash/deposit")
+def cash_deposit(payload: CashMove, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Nạp tiền mặt vào 1 quỹ (VND hoặc USDT)."""
+    cur = _norm_cur(payload.currency)
+    amt = float(payload.amount or 0)
+    if amt <= 0:
+        raise HTTPException(status_code=400, detail="Số tiền nạp phải lớn hơn 0.")
+    note = (payload.note or "").strip()
+    label = f"Nạp tiền mặt {cur}" if not note else note
+    cash_service.credit(db, user.id, cur, amt, kind="deposit", label=label)
+    return _cash_payload(db, user)
+
+
+@router.post("/cash/withdraw")
+def cash_withdraw(payload: CashMove, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Rút tiền mặt khỏi 1 quỹ — rút quá số dư sẽ bị chặn (400)."""
+    cur = _norm_cur(payload.currency)
+    amt = float(payload.amount or 0)
+    if amt <= 0:
+        raise HTTPException(status_code=400, detail="Số tiền rút phải lớn hơn 0.")
+    have = cash_service.get_balance(db, user.id, cur)
+    note = (payload.note or "").strip()
+    label = f"Rút tiền mặt {cur}" if not note else note
+    new_bal = cash_service.debit(db, user.id, cur, amt, kind="withdraw", label=label)
+    if new_bal is None:
+        cur_lbl = "VND (đ)" if cur == "VND" else "USDT"
+        amt_txt = f"{amt:,.0f}" if cur == "VND" else _fmt_num(amt)
+        have_txt = f"{have:,.0f}" if cur == "VND" else _fmt_num(have)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Quỹ {cur_lbl} không đủ {amt_txt} để rút (đang có {have_txt}). Vui lòng giảm số tiền rút.",
+        )
+    return _cash_payload(db, user)
 
 
 @router.get("/cash/history")
@@ -344,11 +460,10 @@ def cash_history(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Lịch sử tiền VÀO / RA của khoản Tiền mặt (mới nhất trước)."""
-    return {
-        "amount": cash_service.get_cash(db, user.id),
-        "items": cash_service.list_transactions(db, user.id, limit),
-    }
+    """Sổ tiền VÀO / RA (mọi quỹ), mới nhất trước + trạng thái số dư."""
+    payload = _cash_payload(db, user)
+    payload["items"] = cash_service.list_transactions(db, user.id, limit)
+    return payload
 
 
 @router.post("/deposit/{deposit_id}/mature")
@@ -379,16 +494,18 @@ def mature_deposit(deposit_id: int, db: Session = Depends(get_db), user: User = 
     total = principal + interest
     db.delete(row)
     db.commit()
-    cash_service.add_cash(
-        db, user.id, total,
+    # Đáo hạn: gốc + lãi dự kiến (VND) cộng về quỹ tiền mặt VND.
+    cash_service.credit(
+        db, user.id, cash_service.CUR_VND, total,
         kind="mature_deposit",
         label=f"Đáo hạn khoản tiền gửi{dep_label and ' ' or ''}{dep_label}",
     )
-    return {
-        "cash": cash_service.get_cash(db, user.id),
+    payload = _cash_payload(db, user)
+    payload.update({
         "principal": round(principal, 0),
         "interest": round(interest, 0),
         "total": round(total, 0),
         "removed_deposit": dep_id,
-        "message": f"Đáo hạn: nhận ~{round(total, 0):,.0f} đ vào Tiền mặt",
-    }
+        "message": f"Đáo hạn: nhận ~{round(total, 0):,.0f} đ vào Tiền mặt VND",
+    })
+    return payload

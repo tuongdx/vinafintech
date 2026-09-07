@@ -187,8 +187,15 @@ class UserAssetUpdate(BaseModel):
 
 
 class CashAmount(BaseModel):
-    """Số tiền mặt hiện có (đ) — 1 con số tổng theo tài khoản."""
+    """Số tiền mặt hiện có (đ) — tương thích cũ (POST /cash = Nạp VND)."""
     amount: float = 0.0
+
+
+class CashMove(BaseModel):
+    """Nạp / Rút tiền mặt theo quỹ: VND (đ) hoặc USDT (USDT/USDC gộp chung, 1:1)."""
+    currency: str = "VND"   # VND | USDT
+    amount: float = 0.0
+    note: str | None = None
 
 
 class UserAssetOut(BaseModel):

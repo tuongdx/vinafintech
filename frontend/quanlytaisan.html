@@ -182,6 +182,24 @@
         .pf-tab-body .nowrap { white-space: nowrap; }
         .cash-hist-btn { margin-left: 12px; border: 1px solid #c7d2e0; background: #fff; color: #008080; padding: 5px 12px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; }
         .cash-hist-btn:hover { background: #eef7f6; }
+        .cash-bals { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+        .cash-bal { flex: 1 1 220px; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; background: #f7fafb; }
+        .cash-bal .cash-cur { display: block; font-size: 11px; color: #8a99b1; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+        .cash-bal b { font-size: 17px; color: #16324f; }
+        .cash-bal small { display: block; font-size: 11.5px; color: #00a08a; margin-top: 2px; }
+        .cash-cur-seg { display: inline-flex; background: #eef1f5; border-radius: 10px; padding: 3px; gap: 2px; }
+        .cash-cur-btn { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; color: #5b6b81; cursor: pointer; }
+        .cash-cur-btn.active { background: #008080; color: #fff; }
+        .btn-warn { background: #fff; color: #d0314e; border: 1px solid #e8aab4; }
+        .btn-warn:hover { background: #fdeef0; }
+        .cash-table th.center, .cash-table td.center { text-align: center; }
+        body.dark-mode .cash-bal { background: #161b22; border-color: #2b333e; }
+        body.dark-mode .cash-bal b { color: #e6edf3; }
+        body.dark-mode .cash-cur-seg { background: #1c2128; }
+        body.dark-mode .cash-cur-btn { color: #9fb0c3; }
+        body.dark-mode .cash-cur-btn.active { background: #00a08a; }
+        body.dark-mode .btn-warn { background: #201317; border-color: #4a2430; color: #ff8fa3; }
+        body.dark-mode .btn-warn:hover { background: #2b1920; }
         .cash-tblwrap { margin-top: 10px; max-height: 280px; overflow: auto; border: 1px solid #e8edf3; border-radius: 10px; }
         .cash-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         .cash-table th, .cash-table td { padding: 7px 10px; border-bottom: 1px solid #eef1f5; text-align: right; white-space: nowrap; }
@@ -505,7 +523,7 @@
             // ---------- Summary ----------
             function renderSummary() {
                 const t = totals();
-                const cash = Number(cashAmount) || 0;
+                const cash = cashTotalVnd();
                 const assetValue = (Number(t.totalValue) || 0) + cash;
                 return '<div class="pf-summary">' +
                     '<div class="pf-sum-card acc"><div class="pf-sum-label">Tổng giá trị</div><div class="pf-sum-value">' + fmtMoney(assetValue) + ' <span style="font-size:13px;font-weight:600;">đ</span></div><div class="pf-sum-sub">' + holdings.length + ' vị thế' + (cash > 0 ? ' · Tiền mặt ' + fmtMoney(cash) : '') + '</div></div>' +
@@ -719,8 +737,15 @@
             let cryptoFx = null;      // { usd_vnd } — tỷ giá quy VND (lấy từ /api/assets/fx)
             let cryptoList = [];      // 100 coin từ /api/crypto/markets (để check tên khi nhập)
             const cryptoMap = {};     // symbol / sym:lo / n:lo → item
-            // ---------- Tiền mặt (1 con số tổng theo tài khoản) ----------
-            let cashAmount = 0;   // số tiền mặt đang có (đ) — đáo hạn khoản gửi sẽ cộng vào đây
+            // ---------- Tiền mặt 2 quỹ: VND + USDT/USDC (gộp 1:1, quy đổi VND theo tỷ giá) ----------
+            let cashVnd = 0;        // quỹ VND (đ)
+            let cashUsdt = 0;       // quỹ USDT/USDC (gộp chung, 1:1)
+            let cashFxRate = null;  // tỷ giá USD/VND để quy đổi
+            let cashCur = 'VND';    // quỹ đang chọn khi Nạp/Rút
+            function cashTotalVnd() {
+                if (cashFxRate > 0) return Math.round(cashVnd + cashUsdt * cashFxRate);
+                return cashVnd;
+            }
             function fmtVnDate(d) {
                 try {
                     if (!d || isNaN(new Date(d))) return '';
@@ -736,25 +761,71 @@
                 dt.setMonth(dt.getMonth() + mo);
                 return fmtVnDate(dt);
             }
+            function applyCashState(d) {
+                if (!d) return;
+                if (typeof d.vnd === 'number') cashVnd = Number(d.vnd) || 0;
+                if (typeof d.usdt === 'number') cashUsdt = Number(d.usdt) || 0;
+                if (d.fx_rate > 0) cashFxRate = Number(d.fx_rate);
+                if (!cryptoFx && cashFxRate > 0) cryptoFx = { usd_vnd: cashFxRate };
+            }
             function loadCash(cb) {
                 fetch('/api/assets/cash', { headers: authHeaders() })
-                    .then(function(r) { return r.ok ? r.json() : { amount: 0 }; })
-                    .then(function(d) { cashAmount = Number(d && d.amount) || 0; if (cb) cb(); })
-                    .catch(function() { cashAmount = 0; if (cb) cb(); });
+                    .then(function(r) { return r.ok ? r.json() : null; })
+                    .then(function(d) { applyCashState(d); if (cb) cb(); })
+                    .catch(function() { if (cb) cb(); });
+            }
+            function moneyOf(cur, v) {
+                return (cur === 'USDT' || cur === 'USDC') ? fmtDec(v) + ' USDT' : fmtMoney(v) + ' đ';
+            }
+            function fmtUsdtVnd(usdt) {
+                return (cashFxRate > 0) ? '≈ ' + fmtMoney(Number(usdt || 0) * cashFxRate) + ' đ' : '';
             }
             function applyCashUI() {
-                const lbl = document.getElementById('cashValLbl');
-                if (lbl) lbl.textContent = fmtMoney(cashAmount) + ' đ';
+                const tEl = document.getElementById('cashTotalLbl');
+                if (tEl) tEl.textContent = fmtMoney(cashTotalVnd()) + ' đ';
+                const vEl = document.getElementById('cashVndLbl');
+                if (vEl) vEl.textContent = fmtMoney(cashVnd) + ' đ';
+                const uEl = document.getElementById('cashUsdtLbl');
+                if (uEl) uEl.textContent = fmtDec(cashUsdt) + ' USDT';
+                const uv = document.getElementById('cashUsdtVndLbl');
+                if (uv) { uv.textContent = fmtUsdtVnd(cashUsdt); uv.style.display = cashFxRate > 0 ? '' : 'none'; }
                 const inp = document.getElementById('paCash');
                 if (inp) inp.value = '';
+                const hint = document.getElementById('paCashBalHint');
+                if (hint) hint.textContent = cashCur === 'USDT'
+                    ? 'Quỹ USDT/USDC đang có: ' + fmtDec(cashUsdt) + ' USDT' + (fmtUsdtVnd(cashUsdt) ? ' (' + fmtUsdtVnd(cashUsdt) + ')' : '')
+                    : 'Quỹ VND đang có: ' + fmtMoney(cashVnd) + ' đ';
             }
-            function saveCash() {
-                const v = parseFloat(document.getElementById('paCash') ? document.getElementById('paCash').value : '');
-                if (!isFinite(v) || v < 0) { toast('Nhập số tiền mặt hợp lệ (đ).', true); return; }
-                fetch('/api/assets/cash', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ amount: v || 0 }) })
+            function setCashCur(cur) {
+                cashCur = cur === 'USDT' ? 'USDT' : 'VND';
+                document.querySelectorAll('.cash-cur-btn').forEach(function(b) {
+                    b.classList.toggle('active', b.getAttribute('data-ccur') === cashCur);
+                });
+                const inp = document.getElementById('paCash');
+                if (inp) {
+                    inp.step = cashCur === 'USDT' ? 'any' : '10000';
+                    inp.placeholder = cashCur === 'USDT' ? 'VD: 500 USDT' : 'VD: 50.000.000';
+                }
+                const hint = document.getElementById('paCashBalHint');
+                if (hint) hint.textContent = cashCur === 'USDT'
+                    ? 'Quỹ USDT/USDC đang có: ' + fmtDec(cashUsdt) + ' USDT' + (fmtUsdtVnd(cashUsdt) ? ' (' + fmtUsdtVnd(cashUsdt) + ')' : '')
+                    : 'Quỹ VND đang có: ' + fmtMoney(cashVnd) + ' đ';
+            }
+            function cashMove(op) {
+                const amtEl = document.getElementById('paCash');
+                const amt = parseFloat(amtEl ? amtEl.value : '');
+                if (!isFinite(amt) || amt <= 0) { toast('Nhập số tiền hợp lệ.', true); return; }
+                const url = op === 'out' ? '/api/assets/cash/withdraw' : '/api/assets/cash/deposit';
+                const isUsdt = cashCur === 'USDT';
+                const amtTxt = isUsdt ? fmtDec(amt) + ' USDT' : fmtMoney(amt) + ' đ';
+                fetch(url, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ currency: cashCur, amount: amt }) })
                     .then(function(r) { if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); }); return r.json(); })
-                    .then(function(d) { cashAmount = Number(d && d.amount) || 0; toast('✅ Đã lưu tiền mặt'); applyCashUI(); notifyParentHeight(); })
-                    .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không lưu được'), true); });
+                    .then(function(d) {
+                        applyCashState(d);
+                        toast('✅ ' + (op === 'out' ? 'Đã rút ' : 'Đã nạp ') + amtTxt);
+                        applyCashUI(); notifyParentHeight();
+                    })
+                    .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không thực hiện được'), true); });
             }
             function matureDeposit(id) {
                 const row = (userAssets.deposit || []).find(function(x) { return x.id === id; });
@@ -763,7 +834,7 @@
                 fetch('/api/assets/deposit/' + id + '/mature', { method: 'POST', headers: authHeaders() })
                     .then(function(r) { if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); }); return r.json(); })
                     .then(function(d) {
-                        cashAmount = Number(d && d.cash) || 0;
+                        applyCashState(d);
                         toast('✅ ' + ((d && d.message) || 'Đã đáo hạn vào Tiền mặt'));
                         applyCashUI();
                         loadUserAssets(function() { refreshAssetCards(); });
@@ -774,15 +845,29 @@
                 const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
                 return '<div class="pf-card">' +
                     '<div class="pf-ah"><h2><i class="fas fa-money-bill-wave" style="color:#00a08a;font-size:14px;margin-right:6px;"></i>Tiền mặt</h2>' +
-                    '<span class="pf-atotal">Số tiền mặt hiện có: <b id="cashValLbl">' + fmtMoney(cashAmount) + ' đ</b>' +
+                    '<span class="pf-atotal">Tổng quy VND: <b id="cashTotalLbl">' + fmtMoney(cashTotalVnd()) + ' đ</b>' +
                         '<button type="button" class="cash-hist-btn" id="paCashHistBtn" ' + (DEMO ? 'disabled' : '') + ' title="Lịch sử tiền vào/ra"><i class="fas fa-clock-rotate-left"></i> Lịch sử vào/ra</button></span></div>' +
+                    '<div class="cash-bals">' +
+                        '<div class="cash-bal"><span class="cash-cur">VND</span><b id="cashVndLbl">' + fmtMoney(cashVnd) + ' đ</b></div>' +
+                        '<div class="cash-bal"><span class="cash-cur">USDT / USDC</span><b id="cashUsdtLbl">' + fmtDec(cashUsdt) + ' USDT</b><small id="cashUsdtVndLbl"' + (cashFxRate > 0 ? '' : ' style="display:none;"') + '>' + fmtUsdtVnd(cashUsdt) + '</small></div>' +
+                    '</div>' +
                     '<div class="pf-stock-form">' +
-                        '<div class="pf-form-head"><i class="fas fa-money-bill-wave"></i> Cập nhật tiền mặt</div>' +
+                        '<div class="pf-form-head"><i class="fas fa-money-bill-wave"></i> Nạp / Rút tiền mặt</div>' +
                         '<div class="pf-form-row">' +
-                            '<div class="pf-field" style="flex:1 1 300px;"><label>Số tiền mặt đang có (đ)</label><input type="number" id="paCash" min="0" step="10000" placeholder="VD: 50.000.000" ' + disabled + ' /></div>' +
-                            '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary" id="paCashSave" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-save"></i> Lưu</button></div>' +
+                            '<div class="pf-field" style="flex:0 1 220px;"><label>Quỹ</label><div class="cash-cur-seg">' +
+                                '<button type="button" class="cash-cur-btn' + (cashCur === 'VND' ? ' active' : '') + '" data-ccur="VND" ' + (DEMO ? 'disabled' : '') + '>VND</button>' +
+                                '<button type="button" class="cash-cur-btn' + (cashCur === 'USDT' ? ' active' : '') + '" data-ccur="USDT" ' + (DEMO ? 'disabled' : '') + '>USDT/USDC</button>' +
+                            '</div></div>' +
+                            '<div class="pf-field" style="flex:1 1 260px;"><label>Số tiền (theo quỹ)</label><input type="number" id="paCash" min="0" step="' + (cashCur === 'USDT' ? 'any' : '10000') + '" placeholder="' + (cashCur === 'USDT' ? 'VD: 500 USDT' : 'VD: 50.000.000') + '" ' + disabled + ' /></div>' +
+                            '<div class="pf-field pf-submit" style="flex:0 1 auto;">' +
+                                '<button type="button" class="btn btn-primary" id="paCashIn" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-arrow-down"></i> Nạp</button>' +
+                                '<button type="button" class="btn btn-warn" id="paCashOut" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-arrow-up"></i> Rút</button>' +
+                            '</div>' +
                         '</div>' +
-                        '<div class="pf-price-hint">Tiền mặt nhập tay (VD: số tiền nhận khi khoản gửi đáo hạn). Bán cổ phiếu / vàng-bạc hoặc Đáo hạn khoản gửi sẽ tự cộng tiền nhận về vào đây.</div>' +
+                        '<div class="pf-price-hint" id="paCashBalHint">' + (cashCur === 'USDT'
+                            ? 'Quỹ USDT/USDC đang có: ' + fmtDec(cashUsdt) + ' USDT' + (fmtUsdtVnd(cashUsdt) ? ' (' + fmtUsdtVnd(cashUsdt) + ')' : '')
+                            : 'Quỹ VND đang có: ' + fmtMoney(cashVnd) + ' đ') + '</div>' +
+                        '<div class="pf-price-hint">Mua cổ phiếu / vàng-bạc / mở tiền gửi trừ quỹ <b>VND</b>; mua crypto trừ quỹ <b>USDT/USDC</b>. Bán tài sản / đáo hạn khoản gửi sẽ tự cộng tiền về vào đây. Rút quá số dư sẽ bị chặn.</div>' +
                         (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                     '</div>' +
                     '<div id="cashHistory" class="cash-history" style="display:none;"></div>' +
@@ -802,15 +887,17 @@
                     const isIn = chg >= 0;
                     const cls = isIn ? 'up' : 'down';
                     const sign = isIn ? '+' : '−';
+                    const cur = (t.currency === 'USDT' || t.currency === 'USDC') ? 'USDT' : 'VND';
                     return '<tr>' +
                         '<td class="left">' + esc(t.label || '—') + '</td>' +
-                        '<td class="right ' + cls + '"><b>' + sign + fmtMoney(Math.abs(chg)) + ' đ</b></td>' +
-                        '<td class="right">' + fmtMoney(t.balance_after) + ' đ</td>' +
+                        '<td class="center">' + cur + '</td>' +
+                        '<td class="right ' + cls + '"><b>' + sign + moneyOf(cur, Math.abs(chg)) + '</b></td>' +
+                        '<td class="right">' + moneyOf(cur, t.balance_after) + '</td>' +
                         '<td class="right">' + esc(cashTxTime(t.created_at)) + '</td>' +
                     '</tr>';
                 }).join('');
                 return '<div class="pf-tblwrap cash-tblwrap"><table class="cash-table"><thead><tr>' +
-                    '<th class="left">Nội dung</th><th class="right">Vào / Ra</th><th class="right">Số dư sau GD</th><th class="right">Thời gian</th>' +
+                    '<th class="left">Nội dung</th><th class="center">Loại tiền</th><th class="right">Vào / Ra</th><th class="right">Số dư sau GD</th><th class="right">Thời gian</th>' +
                     '</tr></thead><tbody>' + rows + '</tbody></table></div>';
             }
             function toggleCashHistory() {
@@ -1156,12 +1243,21 @@
                 if (!(rate > 0)) { toast('Nhập Lãi suất (%/năm) > 0.', true); return; }
                 if (!(term > 0)) { toast('Nhập Thời gian gửi (tháng) > 0.', true); return; }
                 const label = 'Tiền gửi ' + term + ' tháng · ' + fmtRatePct(rate);
+                if (amount > cashVnd) {
+                    toast('Quỹ VND không đủ ' + fmtMoney(amount) + ' đ để gửi (đang có ' + fmtMoney(cashVnd) + ' đ). Hãy Nạp tiền mặt VND trước.', true);
+                    return;
+                }
                 fetch('/api/assets', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: cls, label: label, quantity: term, unit_price: rate, amount: amount }) })
                     .then(function(r) {
                         if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
                         return r.json();
                     })
-                    .then(function() { toast('✅ Đã thêm khoản tiền gửi'); clearAssetInputs(cls); loadUserAssets(function() { refreshAssetCards(); }); })
+                    .then(function() {
+                        toast('✅ Đã thêm khoản tiền gửi');
+                        clearAssetInputs(cls);
+                        loadUserAssets(function() { refreshAssetCards(); });
+                        loadCash(function() { applyCashUI(); });
+                    })
                     .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không thêm được'), true); });
             }
             // Mua / Bán — dispatch theo loại (crypto theo USDT/USDC, vàng/bạc theo lượng VNĐ)
@@ -1184,6 +1280,10 @@
                 if (!(price > 0)) { toast('Nhập Giá (USDT/USDC) > 0.', true); return; }
                 if (!(amt > 0)) { toast(mode === 'sell' ? 'Nhập số tiền nhận về > 0.' : 'Nhập số tiền mua (USDT/USDC) > 0.', true); return; }
                 if (fee < 0 || fee > 100) { toast('Phí giao dịch không hợp lệ.', true); return; }
+                if (mode === 'buy' && amt > cashUsdt + 1e-6) {
+                    toast('Quỹ USDT/USDC không đủ ' + fmtDec(amt) + ' USDT để mua (đang có ' + fmtDec(cashUsdt) + ' USDT). Hãy Nạp tiền mặt USDT/USDC trước.', true);
+                    return;
+                }
                 fetch('/api/assets' + (mode === 'sell' ? '/sell' : ''), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: 'crypto', label: sym, unit_price: price, amount: amt, fee: fee, currency: cur }) })
                     .then(function(r) {
                         if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
@@ -1194,6 +1294,7 @@
                         else toast('✅ Đã mua ' + sym);
                         clearAssetInputs('crypto');
                         loadUserAssets(function() { refreshAssetCards(); });
+                        loadCash(function() { applyCashUI(); });
                     })
                     .catch(function(e) { toast('❌ ' + ((e && e.message) || (mode === 'sell' ? 'Không bán được' : 'Không mua được')), true); });
             }
@@ -1205,16 +1306,24 @@
                 const qty = parseFloat(document.getElementById('pagoldQty').value);
                 if (!(price > 0)) { toast('Nhập Đơn giá (đ) > 0.', true); return; }
                 if (!(qty > 0)) { toast('Nhập Số lượng > 0.', true); return; }
+                if (mode === 'buy') {
+                    const need = qty * price;
+                    if (need > cashVnd) {
+                        toast('Quỹ VND không đủ ' + fmtMoney(need) + ' đ để mua (đang có ' + fmtMoney(cashVnd) + ' đ). Hãy Nạp tiền mặt VND trước.', true);
+                        return;
+                    }
+                }
                 fetch('/api/assets' + (mode === 'sell' ? '/sell' : ''), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: 'gold', label: label, quantity: qty, unit_price: price }) })
                     .then(function(r) {
                         if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
                         return r.json();
                     })
                     .then(function(d) {
-                        if (mode === 'sell') { toast('✅ ' + ((d && d.message) || ('Đã bán ' + label))); loadCash(function() { applyCashUI(); }); }
+                        if (mode === 'sell') toast('✅ ' + ((d && d.message) || ('Đã bán ' + label)));
                         else toast('✅ Đã mua ' + label);
                         clearAssetInputs('gold');
                         loadUserAssets(function() { refreshAssetCards(); });
+                        loadCash(function() { applyCashUI(); });
                     })
                     .catch(function(e) { toast('❌ ' + ((e && e.message) || (mode === 'sell' ? 'Không bán được' : 'Không mua được')), true); });
             }
@@ -1249,10 +1358,14 @@
                     if (sub) { e.preventDefault(); tradeAsset(sub.getAttribute('data-cls')); return; }
                     const mat = e.target.closest('.pa-mature');
                     if (mat) { e.preventDefault(); matureDeposit(Number(mat.getAttribute('data-id'))); return; }
-                    const cs = e.target.closest('#paCashSave');
-                    if (cs) { e.preventDefault(); saveCash(); return; }
                     const hist = e.target.closest('#paCashHistBtn');
                     if (hist) { e.preventDefault(); toggleCashHistory(); return; }
+                    const cc = e.target.closest('.cash-cur-btn');
+                    if (cc) { e.preventDefault(); setCashCur(cc.getAttribute('data-ccur')); return; }
+                    const ci = e.target.closest('#paCashIn');
+                    if (ci) { e.preventDefault(); cashMove('in'); return; }
+                    const co = e.target.closest('#paCashOut');
+                    if (co) { e.preventDefault(); cashMove('out'); return; }
                     const del = e.target.closest('.pa-del');
                     if (del) { e.preventDefault(); delAsset(del.getAttribute('data-cls'), Number(del.getAttribute('data-id'))); }
                 });
@@ -1364,7 +1477,7 @@
                 // Cổ phiếu (PortfolioHolding) + Tiền mặt (nhập ở tab Danh mục đang nắm giữ).
                 // ETF/Quỹ/Trái phiếu/Tài sản khác chưa hỗ trợ → hiển thị 0% (không tạo dữ liệu ảo).
                 const stockValue = holdings.length ? (totals().totalValue || 0) : 0;
-                const cashValue = Number(cashAmount) || 0;
+                const cashValue = cashTotalVnd();
                 return ASSET_CLASSES.map(function(c) {
                     let v = 0;
                     if (c.key === 'stock') v = stockValue;
@@ -1373,7 +1486,7 @@
                 });
             }
             function renderAssetAlloc() {
-                if (!holdings.length && !(Number(cashAmount) || 0)) return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-empty">Chưa có dữ liệu.</div></div>';
+                if (!holdings.length && !cashTotalVnd()) return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-empty">Chưa có dữ liệu.</div></div>';
                 return hbarCard('Phân bổ tài sản', assetAllocation(),
                     '<div class="pf-alloc-note"><i class="fas fa-info-circle"></i> Gồm Cổ phiếu và Tiền mặt (nhập ở tab Danh mục đang nắm giữ). ETF, Quỹ, Trái phiếu, Tài sản khác đang ở 0% cho tới khi được hỗ trợ.</div>');
             }
@@ -2304,6 +2417,11 @@
                     const h = holdings.find(function(x) { return x.symbol === symbol; });
                     if (!h) { toast('Mã ' + symbol + ' không có trong danh mục.', true); return; }
                     send('/api/portfolio/' + h.id + '/sell', 'POST', { quantity: quantity, fee: fee });
+                    return;
+                }
+                const needVnd = quantity * price * (1 + fee / 100);
+                if (needVnd > cashVnd) {
+                    toast('Quỹ VND không đủ ' + fmtMoney(needVnd) + ' đ để mua (đang có ' + fmtMoney(cashVnd) + ' đ). Hãy Nạp tiền mặt VND trước.', true);
                     return;
                 }
                 send('/api/portfolio', 'POST', { symbol: symbol, quantity: quantity, avg_price: price, fee: fee });
