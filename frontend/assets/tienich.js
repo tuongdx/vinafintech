@@ -47,7 +47,14 @@
         setTimeout(notifyParentHeight, 60);
     }
     document.querySelectorAll('.ti-chip').forEach(function (el) {
-        el.addEventListener('click', function () { showTool(el.getAttribute('data-tool')); });
+        el.addEventListener('click', function () {
+            const t = el.getAttribute('data-tool');
+            showTool(t);
+            // Báo shell đổi công cụ → cập nhật link URL đẹp /tien-ich/{slug} (không reload iframe).
+            if (window.parent && window.parent !== window) {
+                try { window.parent.postMessage({ type: 'tunix-ti-nav', tool: t }, '*'); } catch (e) {}
+            }
+        });
     });
 
     // ================= Tool 1: Giá điều chỉnh =================

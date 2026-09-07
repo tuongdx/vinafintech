@@ -3244,7 +3244,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260907w';
+        const CACHE_VERSION = '20260907x';
         // Slug URL đẹp cho các section Quản lý tài sản
         window.__QLTS_SLUGS = {
             overview: 'phan-tich-tai-san',
@@ -4559,6 +4559,14 @@
             if (!data) return;
             if (data.type === 'tunix-go-back') {
                 goBackInApp();
+                return;
+            }
+            if (data.type === 'tunix-ti-nav' && (data.tool === 'adj' || data.tool === 'dep')) {
+                // Trang Tiện ích báo bấm chip đổi công cụ → cập nhật URL đẹp /tien-ich/{slug} (không reload iframe).
+                if (/^\/tien-ich(?:\/|$)/.test(window.location.pathname)) {
+                    const p = window.tiPathFromTool ? window.tiPathFromTool(data.tool) : ('/tien-ich?tool=' + data.tool);
+                    if (window.location.pathname !== p) window.history.replaceState({}, '', p);
+                }
                 return;
             }
             if (data.type === 'tunix-go-forward') {
