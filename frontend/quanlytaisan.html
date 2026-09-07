@@ -1505,43 +1505,79 @@
             }
 
             // ---------- Biểu đồ thanh ngang (dùng chung) ----------
-            function hbarCard(title, list, note) {
+            function hbarRowsHtml(list) {
                 const total = list.reduce(function(a, s) { return a + s.value; }, 0) || 1;
-                const rows = list.map(function(s, i) {
+                return list.map(function(s, i) {
                     const pct = s.value / total * 100;
                     return '<div class="hb-row">' +
                         '<div class="hb-top"><span class="hb-name">' + esc(s.name) + '</span><span class="hb-pct">' + pct.toFixed(0) + '%</span><span class="hb-val">' + fmtMoney(s.value) + ' đ</span></div>' +
                         '<div class="hb-track"><div class="hb-fill" style="width:' + pct.toFixed(1) + '%;background:' + PALETTE[i % PALETTE.length] + ';"></div></div>' +
                     '</div>';
                 }).join('');
-                return '<div class="pf-card"><h3>' + esc(title) + '</h3><div class="pf-hbar">' + rows + '</div>' + (note || '') + '</div>';
+            }
+            function hbarCard(title, list, note) {
+                return '<div class="pf-card"><h3>' + esc(title) + '</h3><div class="pf-hbar">' + hbarRowsHtml(list) + '</div>' + (note || '') + '</div>';
             }
 
-            // ---------- Phân bổ tài sản (theo loại tài sản — biểu đồ thanh ngang) ----------
-            const ASSET_CLASSES = [
-                { key: 'stock', label: 'Cổ phiếu' },
-                { key: 'cash', label: 'Tiền mặt' },
-                { key: 'etf', label: 'ETF' },
-                { key: 'fund', label: 'Quỹ' },
-                { key: 'bond', label: 'Trái phiếu' },
-                { key: 'other', label: 'Tài sản khác' }
-            ];
+            // ---------- Phân bổ tài sản (theo tài sản thật trong Danh mục đang nắm giữ) ----------
+            function fxVnd() {
+                if (cryptoFx && cryptoFx.usd_vnd > 0) return Number(cryptoFx.usd_vnd);
+                if (cashFxRate > 0) return Number(cashFxRate);
+                return 0;
+            }
+            function goldTotalVnd() { return (userAssets.gold || []).reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0); }
+            function depositTotalVnd() { return (userAssets.deposit || []).reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0); }
+            function cryptoTotalVnd() {
+                const fx = fxVnd();
+                if (!(fx > 0)) return 0;
+                const usdt = (userAssets.crypto || []).reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0);
+                return Math.round(usdt * fx);
+            }
             function assetAllocation() {
-                // Cổ phiếu (PortfolioHolding) + Tiền mặt (nhập ở tab Danh mục đang nắm giữ).
-                // ETF/Quỹ/Trái phiếu/Tài sản khác chưa hỗ trợ → hiển thị 0% (không tạo dữ liệu ảo).
+                // Các loại tài sản người dùng thật sự nhập ở tab "Danh mục đang nắm giữ", quy về VND.
                 const stockValue = holdings.length ? (totals().totalValue || 0) : 0;
                 const cashValue = cashTotalVnd();
-                return ASSET_CLASSES.map(function(c) {
-                    let v = 0;
-                    if (c.key === 'stock') v = stockValue;
-                    else if (c.key === 'cash') v = cashValue;
-                    return { name: c.label, value: v };
-                });
+                const goldValue = goldTotalVnd();
+                const depValue = depositTotalVnd();
+                const cryValue = cryptoTotalVnd();
+                const rows = [
+                    { name: 'Cổ phiếu', value: stockValue },
+                    { name: 'Tiền mặt', value: cashValue },
+                    { name: 'Vàng/Bạc', value: goldValue },
+                    { name: 'Crypto', value: cryValue },
+                    { name: 'Tiền gửi ngân hàng', value: depValue }
+                ];
+                // Chỉ hiển thị các loại đang thực sự nắm giữ (bỏ hàng 0% vô nghĩa).
+                return rows.filter(function(r) { return r.value > 0; });
             }
             function renderAssetAlloc() {
-                if (!holdings.length && !cashTotalVnd()) return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-empty">Chưa có dữ liệu.</div></div>';
-                return hbarCard('Phân bổ tài sản', assetAllocation(),
-                    '<div class="pf-alloc-note"><i class="fas fa-info-circle"></i> Gồm Cổ phiếu và Tiền mặt (nhập ở tab Danh mục đang nắm giữ). ETF, Quỹ, Trái phiếu, Tài sản khác đang ở 0% cho tới khi được hỗ trợ.</div>');
+                const list = assetAllocation();
+                if (!list.length) return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-empty">Chưa có dữ liệu — nhập tài sản ở tab Danh mục đang nắm giữ.</div></div>';
+                return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-hbar" id="pfAssetAllocBody">' + hbarRowsHtml(list) + '</div>' +
+                    '<div class="pf-alloc-note"><i class="fas fa-info-circle"></i> Tính theo tài sản đang nắm giữ: Cổ phiếu, Tiền mặt, Vàng/Bạc, Crypto, Tiền gửi ngân hàng (quy VND).</div>' +
+                '</div>';
+            }
+            // Làm mới riêng vùng "Phân bổ tài sản" sau khi nạp xong cash / tài sản ngoài cổ phiếu.
+            function refreshAssetAlloc() {
+                if (currentTab !== 'overview') return;
+                const body = document.getElementById('pfAssetAllocBody');
+                if (!body) return;
+                const card = body.closest('.pf-card');
+                if (!card) return;
+                const list = assetAllocation();
+                if (!list.length) {
+                    card.innerHTML = '<h3>Phân bổ tài sản</h3><div class="pf-empty">Chưa có dữ liệu — nhập tài sản ở tab Danh mục đang nắm giữ.</div>';
+                } else {
+                    body.innerHTML = hbarRowsHtml(list);
+                }
+                notifyParentHeight();
+            }
+            // Nạp dữ liệu cần cho Phân bổ tài sản khi đang ở tab Phân tích tài sản (overview):
+            // Tiền mặt + Vàng/Bạc + Crypto + Tiền gửi ngân hàng + tỷ giá (fx).
+            function loadOverviewAssets() {
+                loadCash(function() { refreshAssetAlloc(); });
+                loadUserAssets(function() { refreshAssetAlloc(); });
+                loadCryptoMeta().then(function() { refreshAssetAlloc(); });
             }
 
             // ---------- Phân bổ theo ngành (taxonomy ngành thống nhất của hệ thống) ----------
@@ -2253,7 +2289,7 @@
 
             // ---------- Tabs ----------
             const TAB_DEFS = {
-                overview: { label: 'Phân tích tài sản', icon: 'fa-chart-pie', html: function() { return renderSummary() + renderPerformance() + renderChartCard() + renderAssetAlloc() + '<div class="pf-duo">' + renderReview() + renderAlloc() + '</div>'; }, mount: function() { bindChart(); loadChart(); loadPerformance(); } },
+                overview: { label: 'Phân tích tài sản', icon: 'fa-chart-pie', html: function() { return renderSummary() + renderPerformance() + renderChartCard() + renderAssetAlloc() + '<div class="pf-duo">' + renderReview() + renderAlloc() + '</div>'; }, mount: function() { bindChart(); loadChart(); loadPerformance(); loadOverviewAssets(); } },
                 holdings: { label: 'Danh mục đang nắm giữ', icon: 'fa-briefcase', html: function() { return renderHoldingsTab(); }, mount: function() { bindTable(); bindForm(); bindAssetForm(); loadCryptoMeta(); loadUserAssets(function() { refreshAssetCards(); }); } },
                 watchlist: { label: 'Cổ phiếu theo dõi', icon: 'fa-eye', html: renderWatchlist, mount: function() { loadWatchlist(); bindWlAdd(); } },
                 portfolio: { label: 'Bảng danh mục', icon: 'fa-table', html: renderPortfolioTable, mount: function() { loadPortfolioTable(); } },
