@@ -582,8 +582,7 @@
 
         /* Menu con "Tiện ích" (dropdown khi hover — canh bằng JS để không bị cắt bởi overflow-x của nav) */
         .main-menu .mm-dd { position: relative; display: inline-flex; align-items: center; }
-        .main-menu .mm-dd > .mm-item { cursor: default; } /* mục cha Tiện ích không click được — chỉ hover mở menu con */
-        #mmQlts > .mm-item { cursor: pointer; } /* mục cha Quản lý tài sản VẪN bấm được để mở trang */
+        .main-menu .mm-dd > .mm-item { cursor: default; } /* mục cha Tiện ích & Quản lý tài sản không click được — chỉ hover mở menu con */
         .main-menu .mm-dd .mm-item { padding-right: 8px; }
         .mm-dd .mm-caret { font-size: 10px; opacity: .7; transition: transform .15s; margin-left: 2px; }
         .main-menu .mm-dd:hover .mm-caret { transform: rotate(180deg); }
@@ -3245,7 +3244,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260907t';
+        const CACHE_VERSION = '20260907u';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3700,12 +3699,17 @@
                 mmQltsWrap.addEventListener('click', function(e) {
                     const par = e.target.closest('#mmQlts > .mm-item');
                     const sub = e.target.closest('.mm-sub-item');
-                    if (!par && !sub) return;
+                    if (par && !sub) {
+                        // Mục cha "Quản lý tài sản" giống "Tiện ích": CHẶN click — chỉ hover để hiện menu con.
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+                    if (!sub) return;
                     if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
                     e.preventDefault();
                     e.stopPropagation();
-                    // Mục cha "Quản lý tài sản" mở mặc định "Phân tích tài sản" (tab overview).
-                    const tab = sub ? (sub.getAttribute('data-qlts-sub') || 'overview') : 'overview';
+                    const tab = sub.getAttribute('data-qlts-sub') || 'overview';
                     hideQltsSub();
                     qltsGo(tab);
                 });
