@@ -2611,7 +2611,8 @@
                 const data = event.data;
                 if (!data) return;
                 if (data.type === 'tunix-qlts-tab' && data.tab && TAB_DEFS[data.tab]) {
-                    if (currentTab !== data.tab) { showTab(data.tab); setTimeout(notifyParentHeight, 60); }
+                    showTab(data.tab);
+                    setTimeout(notifyParentHeight, 60);
                     return;
                 }
                 if (data.type !== 'tunix-theme') return;

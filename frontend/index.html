@@ -2662,7 +2662,7 @@
                 <span class="mm-dd" id="mmQlts">
                     <a href="/quan-ly-tai-san" class="mm-item" data-action="quan-ly-tai-san">Quản lý tài sản <i class="fas fa-chevron-down mm-caret"></i></a>
                     <span class="mm-sub" id="mmQltsSub" role="menu">
-                        <a role="menuitem" href="/quan-ly-tai-san?tab=analysis" class="mm-sub-item" data-qlts-sub="analysis"><i class="fas fa-chart-pie"></i> Phân tích tài sản</a>
+                        <a role="menuitem" href="/quan-ly-tai-san?tab=overview" class="mm-sub-item" data-qlts-sub="overview"><i class="fas fa-chart-pie"></i> Phân tích tài sản</a>
                         <a role="menuitem" href="/quan-ly-tai-san?tab=holdings" class="mm-sub-item" data-qlts-sub="holdings"><i class="fas fa-briefcase"></i> Danh mục đang nắm giữ</a>
                         <a role="menuitem" href="/quan-ly-tai-san?tab=watchlist" class="mm-sub-item" data-qlts-sub="watchlist"><i class="fas fa-eye"></i> Cổ phiếu theo dõi</a>
                         <a role="menuitem" href="/quan-ly-tai-san?tab=portfolio" class="mm-sub-item" data-qlts-sub="portfolio"><i class="fas fa-table"></i> Bảng danh mục</a>
@@ -3245,7 +3245,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260907s';
+        const CACHE_VERSION = '20260907t';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3689,18 +3689,6 @@
                     if (qltsOutTimer) { clearTimeout(qltsOutTimer); qltsOutTimer = null; }
                     showQltsSub();
                 });
-                // Mục cha "Quản lý tài sản": CLICK luôn mở trang (độc lập với delegated click của menu chính).
-                const mmQltsParent = mmQltsWrap.querySelector('.mm-item');
-                if (mmQltsParent) {
-                    mmQltsParent.addEventListener('click', function(e) {
-                        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-                        e.preventDefault();
-                        e.stopPropagation();
-                        hideQltsSub();
-                        loadContent('/frontend/quanlytaisan.html');
-                        window.history.replaceState({}, '', '/quan-ly-tai-san');
-                    });
-                }
                 document.addEventListener('mousemove', function (e) {
                     if (!mmQltsSub.classList.contains('open')) return;
                     if (qltsInside(e.clientX, e.clientY)) {
@@ -3710,11 +3698,14 @@
                     }
                 });
                 mmQltsWrap.addEventListener('click', function(e) {
-                    const it = e.target.closest('.mm-sub-item');
-                    if (!it) return;
+                    const par = e.target.closest('#mmQlts > .mm-item');
+                    const sub = e.target.closest('.mm-sub-item');
+                    if (!par && !sub) return;
                     if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
                     e.preventDefault();
-                    const tab = it.getAttribute('data-qlts-sub') || 'analysis';
+                    e.stopPropagation();
+                    // Mục cha "Quản lý tài sản" mở mặc định "Phân tích tài sản" (tab overview).
+                    const tab = sub ? (sub.getAttribute('data-qlts-sub') || 'overview') : 'overview';
                     hideQltsSub();
                     qltsGo(tab);
                 });
