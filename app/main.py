@@ -438,6 +438,15 @@ def stock_page(symbol: str):
     raise HTTPException(status_code=404, detail="Index file not found")
 
 
+@app.get("/quan-ly-tai-san/{section}")
+def qlts_section_page(section: str):
+    """URL đẹp section Quản lý tài sản: /quan-ly-tai-san/phan-tich-tai-san (giữ shell)."""
+    index_file = frontend_path / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
+    raise HTTPException(status_code=404, detail="Index file not found")
+
+
 @app.get("/{page_name}")
 def frontend_page(page_name: str):
     # URL bài viết dạng đẹp: /{slug}-{id}.html → mở trang chủ với bài trong left-col

@@ -2661,12 +2661,12 @@
                 <span class="mm-dd" id="mmQlts">
                     <a href="/quan-ly-tai-san" class="mm-item" data-action="quan-ly-tai-san">Quản lý tài sản <i class="fas fa-chevron-down mm-caret"></i></a>
                     <span class="mm-sub" id="mmQltsSub" role="menu">
-                        <a role="menuitem" href="/quan-ly-tai-san?tab=overview" class="mm-sub-item" data-qlts-sub="overview"><i class="fas fa-chart-pie"></i> Phân tích tài sản</a>
-                        <a role="menuitem" href="/quan-ly-tai-san?tab=holdings" class="mm-sub-item" data-qlts-sub="holdings"><i class="fas fa-briefcase"></i> Danh mục đang nắm giữ</a>
-                        <a role="menuitem" href="/quan-ly-tai-san?tab=watchlist" class="mm-sub-item" data-qlts-sub="watchlist"><i class="fas fa-eye"></i> Cổ phiếu theo dõi</a>
-                        <a role="menuitem" href="/quan-ly-tai-san?tab=portfolio" class="mm-sub-item" data-qlts-sub="portfolio"><i class="fas fa-table"></i> Bảng danh mục</a>
-                        <a role="menuitem" href="/quan-ly-tai-san?tab=alerts" class="mm-sub-item" data-qlts-sub="alerts"><i class="fas fa-bell"></i> Trung tâm cảnh báo</a>
-                        <a role="menuitem" href="/quan-ly-tai-san?tab=events" class="mm-sub-item" data-qlts-sub="events"><i class="fas fa-calendar-day"></i> Sự kiện liên quan</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/phan-tich-tai-san" class="mm-sub-item" data-qlts-sub="overview"><i class="fas fa-chart-pie"></i> Phân tích tài sản</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/danh-muc-dang-nam-giu" class="mm-sub-item" data-qlts-sub="holdings"><i class="fas fa-briefcase"></i> Danh mục đang nắm giữ</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/co-phieu-theo-doi" class="mm-sub-item" data-qlts-sub="watchlist"><i class="fas fa-eye"></i> Cổ phiếu theo dõi</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/bang-danh-muc" class="mm-sub-item" data-qlts-sub="portfolio"><i class="fas fa-table"></i> Bảng danh mục</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/trung-tam-canh-bao" class="mm-sub-item" data-qlts-sub="alerts"><i class="fas fa-bell"></i> Trung tâm cảnh báo</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/su-kien-lien-quan" class="mm-sub-item" data-qlts-sub="events"><i class="fas fa-calendar-day"></i> Sự kiện liên quan</a>
                     </span>
                 </span>
                 <span class="mm-sep"></span>
@@ -3244,7 +3244,19 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260907u';
+        const CACHE_VERSION = '20260907v';
+        // Slug URL đẹp cho các section Quản lý tài sản
+        window.__QLTS_SLUGS = {
+            overview: 'phan-tich-tai-san',
+            holdings: 'danh-muc-dang-nam-giu',
+            watchlist: 'co-phieu-theo-doi',
+            portfolio: 'bang-danh-muc',
+            alerts: 'trung-tam-canh-bao',
+            events: 'su-kien-lien-quan'
+        };
+        window.__QLTS_SLUG_TO_TAB = {};
+        Object.keys(window.__QLTS_SLUGS).forEach(function(k) { window.__QLTS_SLUG_TO_TAB[window.__QLTS_SLUGS[k]] = k; });
+        window.qltsPathFromTab = function(tab) { return '/quan-ly-tai-san/' + (window.__QLTS_SLUGS[tab] || 'phan-tich-tai-san'); };
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3527,7 +3539,7 @@
             else if (/^\/kham-pha/.test(pg) || /KhamPha\.html/.test(pg)) active = 'kham-pha';
             else if (/^\/tuniai/.test(pg) || /TuniAI\.html/.test(pg)) active = 'tuniai';
             else if (/^\/tien-ich(?:[?#].*)?$/.test(pg) || /tienich\.html/.test(pg)) active = 'tien-ich';
-            else if (/^\/quan-ly-tai-san(?:[?#].*)?$/.test(pg) || /quanlytaisan\.html/.test(pg)) active = 'quan-ly-tai-san';
+            else if (/^\/quan-ly-tai-san(?:\/|$|[?#])/.test(pg) || /quanlytaisan\.html/.test(pg)) active = 'quan-ly-tai-san';
             else if (/tintuc|tin-tuc/.test(pg)) active = '';
             items.forEach(function(it) {
                 it.classList.toggle('active', it.getAttribute('data-action') === active);
@@ -3676,12 +3688,13 @@
                     if (f && f.contentWindow) { try { f.contentWindow.postMessage({ type: 'tunix-qlts-tab', tab: tab }, '*'); } catch (e) {} }
                 }
                 function qltsGo(tab) {
+                    const path = window.qltsPathFromTab ? window.qltsPathFromTab(tab) : ('/quan-ly-tai-san?tab=' + tab);
                     if (qltsFrameLoaded()) {
                         qltsSend(tab);
-                        window.history.replaceState({}, '', '/quan-ly-tai-san?tab=' + tab);
+                        window.history.replaceState({}, '', path);
                     } else {
                         loadContent('/frontend/quanlytaisan.html?tab=' + tab);
-                        window.history.replaceState({}, '', '/quan-ly-tai-san?tab=' + tab);
+                        window.history.replaceState({}, '', path);
                     }
                 }
                 mmQltsWrap.addEventListener('mouseenter', function () {
@@ -4467,6 +4480,13 @@
             const qIdx = u.indexOf('?');
             const path = qIdx >= 0 ? u.slice(0, qIdx) : u;
             const qs = qIdx >= 0 ? u.slice(qIdx) : '';
+            // URL đẹp các section Quản lý tài sản: /quan-ly-tai-san/{slug} → file nhúng kèm ?tab=
+            const qltsSlugMatch = path.match(/^\/quan-ly-tai-san\/([a-z0-9-]+)$/i);
+            if (qltsSlugMatch) {
+                const slugTab = (window.__QLTS_SLUG_TO_TAB || {})[String(qltsSlugMatch[1]).toLowerCase()];
+                if (slugTab) return '/frontend/quanlytaisan.html?tab=' + slugTab;
+                return '/frontend/quanlytaisan.html';
+            }
             const MAP = {
                 '/quan-ly-tai-san': '/frontend/quanlytaisan.html',
                 '/tien-ich': '/frontend/tienich.html',
@@ -4676,6 +4696,11 @@
             loadContent('/taikhoan');
         } else if (initialPage === 'doimatkhau') {
             loadContent('/doimatkhau');
+        } else if (/^quan-ly-tai-san\/[a-z0-9-]+$/.test(pathPage)) {
+            // URL đẹp section Quản lý tài sản: /quan-ly-tai-san/{slug} → nạp trang đúng section, giữ URL.
+            const slugPart = String(pathPage).split('/')[1].toLowerCase();
+            const slugTab = (window.__QLTS_SLUG_TO_TAB || {})[slugPart] || 'overview';
+            loadContent('/frontend/quanlytaisan.html?tab=' + slugTab);
         } else if (pathPage === 'quan-ly-tai-san' || initialPage === 'quan-ly-tai-san') {
             loadContent('/frontend/quanlytaisan.html');
             window.history.replaceState({}, '', '/quan-ly-tai-san');
