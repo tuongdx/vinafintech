@@ -2263,20 +2263,7 @@
                 if (headRight) headRight.innerHTML = DEMO
                     ? '<a href="/Login" style="text-decoration:none;background:#008080;color:#fff;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px;">Đăng nhập</a>'
                     : '<span style="font-size:12px;color:#8a99b1;"><i class="fas fa-sync-alt"></i> Tự cập nhật theo phiên</span>';
-                body.innerHTML =
-                    '<div class="pf-submenu-wrap">' +
-                        '<div class="pf-submenu">' +
-                            Object.keys(TAB_DEFS).map(function(k) {
-                                const d = TAB_DEFS[k];
-                                return '<button type="button" class="pf-sub-btn' + (k === currentTab ? ' active' : '') + '" data-tab="' + k + '" title="' + esc(d.label) + '">' +
-                                    '<i class="fas ' + (d.icon || 'fa-circle-dot') + '"></i><span>' + esc(d.label) + '</span></button>';
-                            }).join('') +
-                        '</div>' +
-                        '<div class="pf-tab-body" id="pfTabBody"></div>' +
-                    '</div>';
-                document.querySelectorAll('.pf-sub-btn').forEach(function(b) {
-                    b.addEventListener('click', function() { showTab(b.getAttribute('data-tab')); });
-                });
+                body.innerHTML = '<div class="pf-tab-body" id="pfTabBody"></div>';
                 showTab(currentTab);
             }
             function showTab(name) {
