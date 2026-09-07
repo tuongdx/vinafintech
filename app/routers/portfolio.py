@@ -16,6 +16,7 @@ from app.core.dependencies import get_current_user
 from app.db import get_db
 from app.models import PortfolioHolding, User
 from app.schemas import PortfolioHoldingCreate, PortfolioHoldingOut, PortfolioHoldingUpdate, PortfolioSell
+from app.services import cash_service
 from app.services import portfolio_performance as pps
 from app.services import vnstock_service as vns
 from app.services.alert_service import alert_service
@@ -218,7 +219,10 @@ def sell_holding(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Bán cổ phiếu: trừ khối lượng, giữ nguyên giá vốn. Về 0 → đóng vị thế."""
+    """Bán cổ phiếu: trừ khối lượng, giữ nguyên giá vốn. Về 0 → đóng vị thế.
+
+    Tiền nhận về (qty × giá thị trường, trừ phí bán) được CỘNG VÀO Tiền mặt + ghi lịch sử.
+    """
     row = (
         db.query(PortfolioHolding)
         .filter(PortfolioHolding.id == holding_id, PortfolioHolding.user_id == user.id)
@@ -236,12 +240,28 @@ def sell_holding(
     new_qty = float(row.quantity or 0) - qty
     if new_qty < 0:
         raise HTTPException(status_code=400, detail=f"Không đủ {symbol} để bán (đang giữ {row.quantity:g}).")
+
+    # Tiền nhận về = qty × giá bán (giá thị trường) × (1 − phí).
+    price = float(_quote_parts(symbol).get("price") or 0)
+    if not (price > 0):
+        price = float(row.avg_price or 0)
+    fee_pct = max(0.0, float(payload.fee or 0)) / 100.0
+    proceeds = round(qty * price * (1 - fee_pct), 0)
+
     if new_qty == 0:
         db.delete(row)
         db.commit()
+        cash_service.add_cash(db, user.id, proceeds, kind="sell_stock", label=f"Bán hết cổ phiếu {symbol} ({qty:g} cp)")
         # Đã bán hết → dọn cảnh báo nếu mã không còn được theo dõi.
         alert_service.prune_untracked(db, user.id)
-        return {"message": f"Đã bán hết {symbol}. Vị thế đã đóng.", "symbol": symbol, "quantity": 0, "deleted": True}
+        return {
+            "message": f"Đã bán hết {symbol}. Vị thế đã đóng · nhận ~{proceeds:,.0f} đ vào Tiền mặt",
+            "symbol": symbol, "quantity": 0, "deleted": True, "received": proceeds,
+        }
     row.quantity = new_qty
     db.commit()
-    return {"message": f"Đã bán {qty:g} {symbol}. Còn lại {new_qty:g} cổ phiếu.", "symbol": symbol, "quantity": new_qty, "deleted": False}
+    cash_service.add_cash(db, user.id, proceeds, kind="sell_stock", label=f"Bán cổ phiếu {symbol} ({qty:g} cp)")
+    return {
+        "message": f"Đã bán {qty:g} {symbol}. Còn lại {new_qty:g} cổ phiếu · nhận ~{proceeds:,.0f} đ vào Tiền mặt",
+        "symbol": symbol, "quantity": new_qty, "deleted": False, "received": proceeds,
+    }

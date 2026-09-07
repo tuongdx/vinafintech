@@ -409,6 +409,25 @@ class UserAsset(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class CashTransaction(Base):
+    """Sổ ghi TIỀN VÀO / RA của khoản Tiền mặt.
+
+    - kind: sell_stock | sell_gold | mature_deposit | adjust
+    - change: dương = TIỀN VÀO (+), âm = TIỀN RA (−)
+    - balance_after: số dư Tiền mặt sau giao dịch (đ).
+    """
+
+    __tablename__ = "cash_transactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(40), default="adjust")
+    change: Mapped[float] = mapped_column(Float, default=0.0)
+    balance_after: Mapped[float] = mapped_column(Float, default=0.0)
+    label: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class NotificationRead(Base):
     """Tin/báo cáo người dùng đã xem trong thông báo (để không đếm lại)."""
 

@@ -25,7 +25,8 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user
 from app.db import get_db
 from app.models import User, UserAsset, UserAssetClass
-from app.schemas import UserAssetCreate, UserAssetOut, UserAssetSell, UserAssetUpdate
+from app.schemas import CashAmount, UserAssetCreate, UserAssetOut, UserAssetSell, UserAssetUpdate
+from app.services import cash_service
 from app.services.gold_service import _get_usd_vnd
 
 router = APIRouter(prefix="/assets", tags=["assets"])
@@ -242,28 +243,40 @@ def sell_asset(payload: UserAssetSell, db: Session = Depends(get_db), user: User
             "message": f"Đã bán {_fmt_num(coins_sold)} {label} · nhận ~{_fmt_num(float(receive))} {cur}",
         }
 
-    # ----- Vàng/Bạc: BÁN theo số lượng (lượng/chỉ) -----
+    # ----- Vàng/Bạc: BÁN theo số lượng (lượng/chỉ) — doanh thu được cộng vào Tiền mặt -----
     qty = payload.quantity
+    sell_price = payload.unit_price
     if not (qty and qty > 0):
         raise HTTPException(status_code=400, detail="Số lượng bán phải > 0")
+    if not (sell_price and sell_price > 0):
+        raise HTTPException(status_code=400, detail="Nhập Giá bán (đ) > 0 để tính tiền nhận về")
     row = _find_position(db, user, "gold", label)
     if not row:
         raise HTTPException(status_code=404, detail=f"Không có {label} trong Vàng/Bạc để bán")
     cur_qty = float(row.quantity or 0)
     if qty > cur_qty + 1e-6:
         raise HTTPException(status_code=400, detail=f"Chỉ còn {cur_qty:g} để bán")
+    proceeds = round(float(qty) * float(sell_price), 0)
     amt = float(row.amount or 0)
     avg = amt / cur_qty if cur_qty > 0 else 0.0
     remaining = cur_qty - float(qty)
     if remaining < 1e-6:
         db.delete(row)
         db.commit()
-        return {"ok": True, "removed": True, "message": f"Đã bán hết {label}"}
+        cash_service.add_cash(db, user.id, proceeds, kind="sell_gold", label=f"Bán hết vàng/bạc {label}")
+        return {
+            "ok": True, "removed": True, "received": proceeds,
+            "message": f"Đã bán hết {label} · nhận ~{proceeds:,.0f} đ vào Tiền mặt",
+        }
     row.quantity = remaining
     row.amount = round(max(0.0, amt - float(qty) * avg), 2)
     row.unit_price = round(row.amount / remaining, 2)
     db.commit()
-    return {"ok": True, "removed": False, "remaining_qty": remaining, "message": f"Đã bán {qty:g} {label}"}
+    cash_service.add_cash(db, user.id, proceeds, kind="sell_gold", label=f"Bán vàng/bạc {label} ({qty:g})")
+    return {
+        "ok": True, "removed": False, "remaining_qty": remaining, "received": proceeds,
+        "message": f"Đã bán {qty:g} {label} · nhận ~{proceeds:,.0f} đ vào Tiền mặt",
+    }
 
 
 def _fmt_num(n: float) -> str:
@@ -310,3 +323,72 @@ def delete_asset(asset_id: int, db: Session = Depends(get_db), user: User = Depe
     db.delete(row)
     db.commit()
     return {"ok": True}
+
+
+@router.get("/cash")
+def get_cash(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Số tiền mặt đang có (đ)."""
+    return {"amount": cash_service.get_cash(db, user.id)}
+
+
+@router.post("/cash")
+def set_cash(payload: CashAmount, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Lưu số tiền mặt (chênh tăng = TIỀN VÀO, giảm = TIỀN RA — được ghi vào lịch sử)."""
+    amount = cash_service.set_cash(db, user.id, float(payload.amount or 0), kind="adjust", label="Điều chỉnh tiền mặt")
+    return {"amount": amount}
+
+
+@router.get("/cash/history")
+def cash_history(
+    limit: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Lịch sử tiền VÀO / RA của khoản Tiền mặt (mới nhất trước)."""
+    return {
+        "amount": cash_service.get_cash(db, user.id),
+        "items": cash_service.list_transactions(db, user.id, limit),
+    }
+
+
+@router.post("/deposit/{deposit_id}/mature")
+def mature_deposit(deposit_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Đáo hạn 1 khoản tiền gửi → gộp cả gốc + lãi dự kiến vào Tiền mặt, tự xoá khoản gửi.
+
+    Lãi ước tính theo lãi đơn: gốc × lãi suất%/năm × số tháng / 12.
+    """
+    row = (
+        db.query(UserAsset)
+        .filter(
+            UserAsset.id == int(deposit_id),
+            UserAsset.user_id == user.id,
+            UserAsset.asset_class == UserAssetClass.deposit,
+        )
+        .first()
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Không tìm thấy khoản tiền gửi này")
+    dep_id = row.id
+    dep_label = row.label or ""
+    principal = float(row.amount or 0)
+    rate = float(row.unit_price or 0)
+    months = int(row.quantity or 0)
+    interest = 0.0
+    if principal > 0 and rate > 0 and months > 0:
+        interest = principal * (rate / 100.0) * (months / 12.0)
+    total = principal + interest
+    db.delete(row)
+    db.commit()
+    cash_service.add_cash(
+        db, user.id, total,
+        kind="mature_deposit",
+        label=f"Đáo hạn khoản tiền gửi{dep_label and ' ' or ''}{dep_label}",
+    )
+    return {
+        "cash": cash_service.get_cash(db, user.id),
+        "principal": round(principal, 0),
+        "interest": round(interest, 0),
+        "total": round(total, 0),
+        "removed_deposit": dep_id,
+        "message": f"Đáo hạn: nhận ~{round(total, 0):,.0f} đ vào Tiền mặt",
+    }

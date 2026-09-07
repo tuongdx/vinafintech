@@ -177,6 +177,23 @@
         .act-btn:hover { background: #eef2f7; }
         .act-btn.del { color: #d0314e; }
         .act-btn.del:hover { background: #fde9e9; }
+        .act-btn.ok { color: #00a08a; }
+        .act-btn.ok:hover { background: #e2f5f1; }
+        .pf-tab-body .nowrap { white-space: nowrap; }
+        .cash-hist-btn { margin-left: 12px; border: 1px solid #c7d2e0; background: #fff; color: #008080; padding: 5px 12px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; }
+        .cash-hist-btn:hover { background: #eef7f6; }
+        .cash-tblwrap { margin-top: 10px; max-height: 280px; overflow: auto; border: 1px solid #e8edf3; border-radius: 10px; }
+        .cash-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+        .cash-table th, .cash-table td { padding: 7px 10px; border-bottom: 1px solid #eef1f5; text-align: right; white-space: nowrap; }
+        .cash-table th { background: #f5f8fb; color: #5b6b81; font-weight: 600; }
+        .cash-table td.left, .cash-table th.left { text-align: left; }
+        .cash-table .up { color: #00a08a; }
+        .cash-table .down { color: #d0314e; }
+        body.dark-mode .cash-hist-btn { background: #161b22; border-color: #3a4a5f; color: #4dd8c4; }
+        body.dark-mode .cash-hist-btn:hover { background: #122a28; }
+        body.dark-mode .cash-tblwrap { border-color: #2b333e; }
+        body.dark-mode .cash-table th { background: #1c2128; color: #adbac7; }
+        body.dark-mode .cash-table th, body.dark-mode .cash-table td { border-bottom-color: #2b333e; }
         .pf-empty { text-align: center; color: #6b7a8f; padding: 30px 20px; font-size: 13.5px; }
         .pf-loading { text-align: center; color: #6b7a8f; padding: 30px 20px; }
 
@@ -346,6 +363,8 @@
         body.dark-mode .act-btn:hover { background: #21262d; }
         body.dark-mode .act-btn.del { color: #f87171; }
         body.dark-mode .act-btn.del:hover { background: #2b1518; }
+        body.dark-mode .act-btn.ok { color: #4dd8c4; }
+        body.dark-mode .act-btn.ok:hover { background: #122a28; }
         body.dark-mode .pf-review { background: #161b22; border-color: rgba(0,128,128,0.4); }
         body.dark-mode .pf-list li { color: #e6edf3; }
         body.dark-mode .pf-alert { background: #10151c; border-color: #21262d; }
@@ -486,8 +505,10 @@
             // ---------- Summary ----------
             function renderSummary() {
                 const t = totals();
+                const cash = Number(cashAmount) || 0;
+                const assetValue = (Number(t.totalValue) || 0) + cash;
                 return '<div class="pf-summary">' +
-                    '<div class="pf-sum-card acc"><div class="pf-sum-label">Tổng giá trị</div><div class="pf-sum-value">' + fmtMoney(t.totalValue) + ' <span style="font-size:13px;font-weight:600;">đ</span></div><div class="pf-sum-sub">' + holdings.length + ' vị thế</div></div>' +
+                    '<div class="pf-sum-card acc"><div class="pf-sum-label">Tổng giá trị</div><div class="pf-sum-value">' + fmtMoney(assetValue) + ' <span style="font-size:13px;font-weight:600;">đ</span></div><div class="pf-sum-sub">' + holdings.length + ' vị thế' + (cash > 0 ? ' · Tiền mặt ' + fmtMoney(cash) : '') + '</div></div>' +
                     '<div class="pf-sum-card"><div class="pf-sum-label">Lợi nhuận</div><div class="pf-sum-value ' + (t.totalPnl >= 0 ? 'pos' : 'neg') + '">' + (t.totalPnl >= 0 ? '+' : '−') + fmtMoney(Math.abs(t.totalPnl)) + '</div><div class="pf-sum-sub ' + (t.pnlPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(t.pnlPct) + '</div></div>' +
                     '<div class="pf-sum-card"><div class="pf-sum-label">Lợi nhuận hôm nay</div><div class="pf-sum-value ' + (t.todayPnl >= 0 ? 'pos' : 'neg') + '">' + (t.todayPnl >= 0 ? '+' : '−') + fmtMoney(Math.abs(t.todayPnl)) + '</div><div class="pf-sum-sub ' + (t.todayPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(t.todayPct) + '</div></div>' +
                     '<div class="pf-sum-card"><div class="pf-sum-label">Tổng vốn đầu tư</div><div class="pf-sum-value">' + fmtMoney(t.totalCost) + ' <span style="font-size:13px;font-weight:600;">đ</span></div><div class="pf-sum-sub">' + fmtPct(t.pnlPct) + ' so vốn</div></div>' +
@@ -698,8 +719,114 @@
             let cryptoFx = null;      // { usd_vnd } — tỷ giá quy VND (lấy từ /api/assets/fx)
             let cryptoList = [];      // 100 coin từ /api/crypto/markets (để check tên khi nhập)
             const cryptoMap = {};     // symbol / sym:lo / n:lo → item
+            // ---------- Tiền mặt (1 con số tổng theo tài khoản) ----------
+            let cashAmount = 0;   // số tiền mặt đang có (đ) — đáo hạn khoản gửi sẽ cộng vào đây
+            function fmtVnDate(d) {
+                try {
+                    if (!d || isNaN(new Date(d))) return '';
+                    const dt = new Date(d);
+                    return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '/' + dt.getFullYear();
+                } catch (e) { return ''; }
+            }
+            function depositMaturityText(x) {
+                const mo = Math.round(Number(x && x.quantity) || 0);
+                if (!(mo > 0) || !x || !x.created_at) return '';
+                const dt = new Date(x.created_at);
+                if (isNaN(dt)) return '';
+                dt.setMonth(dt.getMonth() + mo);
+                return fmtVnDate(dt);
+            }
+            function loadCash(cb) {
+                fetch('/api/assets/cash', { headers: authHeaders() })
+                    .then(function(r) { return r.ok ? r.json() : { amount: 0 }; })
+                    .then(function(d) { cashAmount = Number(d && d.amount) || 0; if (cb) cb(); })
+                    .catch(function() { cashAmount = 0; if (cb) cb(); });
+            }
+            function applyCashUI() {
+                const lbl = document.getElementById('cashValLbl');
+                if (lbl) lbl.textContent = fmtMoney(cashAmount) + ' đ';
+                const inp = document.getElementById('paCash');
+                if (inp) inp.value = '';
+            }
+            function saveCash() {
+                const v = parseFloat(document.getElementById('paCash') ? document.getElementById('paCash').value : '');
+                if (!isFinite(v) || v < 0) { toast('Nhập số tiền mặt hợp lệ (đ).', true); return; }
+                fetch('/api/assets/cash', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ amount: v || 0 }) })
+                    .then(function(r) { if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); }); return r.json(); })
+                    .then(function(d) { cashAmount = Number(d && d.amount) || 0; toast('✅ Đã lưu tiền mặt'); applyCashUI(); notifyParentHeight(); })
+                    .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không lưu được'), true); });
+            }
+            function matureDeposit(id) {
+                const row = (userAssets.deposit || []).find(function(x) { return x.id === id; });
+                const lbl = row && row.label ? (' "' + row.label + '"') : '';
+                if (!window.confirm('Đáo hạn khoản tiền gửi' + lbl + '? Gốc + lãi dự kiến sẽ được cộng vào Tiền mặt và khoản gửi bị xoá.')) return;
+                fetch('/api/assets/deposit/' + id + '/mature', { method: 'POST', headers: authHeaders() })
+                    .then(function(r) { if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); }); return r.json(); })
+                    .then(function(d) {
+                        cashAmount = Number(d && d.cash) || 0;
+                        toast('✅ ' + ((d && d.message) || 'Đã đáo hạn vào Tiền mặt'));
+                        applyCashUI();
+                        loadUserAssets(function() { refreshAssetCards(); });
+                    })
+                    .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không đáo hạn được'), true); });
+            }
+            function cashCardHtml() {
+                const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
+                return '<div class="pf-card">' +
+                    '<div class="pf-ah"><h2><i class="fas fa-money-bill-wave" style="color:#00a08a;font-size:14px;margin-right:6px;"></i>Tiền mặt</h2>' +
+                    '<span class="pf-atotal">Số tiền mặt hiện có: <b id="cashValLbl">' + fmtMoney(cashAmount) + ' đ</b>' +
+                        '<button type="button" class="cash-hist-btn" id="paCashHistBtn" ' + (DEMO ? 'disabled' : '') + ' title="Lịch sử tiền vào/ra"><i class="fas fa-clock-rotate-left"></i> Lịch sử vào/ra</button></span></div>' +
+                    '<div class="pf-stock-form">' +
+                        '<div class="pf-form-head"><i class="fas fa-money-bill-wave"></i> Cập nhật tiền mặt</div>' +
+                        '<div class="pf-form-row">' +
+                            '<div class="pf-field" style="flex:1 1 300px;"><label>Số tiền mặt đang có (đ)</label><input type="number" id="paCash" min="0" step="10000" placeholder="VD: 50.000.000" ' + disabled + ' /></div>' +
+                            '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary" id="paCashSave" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-save"></i> Lưu</button></div>' +
+                        '</div>' +
+                        '<div class="pf-price-hint">Tiền mặt nhập tay (VD: số tiền nhận khi khoản gửi đáo hạn). Bán cổ phiếu / vàng-bạc hoặc Đáo hạn khoản gửi sẽ tự cộng tiền nhận về vào đây.</div>' +
+                        (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
+                    '</div>' +
+                    '<div id="cashHistory" class="cash-history" style="display:none;"></div>' +
+                '</div>';
+            }
+            function cashTxTime(iso) {
+                if (!iso) return '';
+                const d = new Date(iso);
+                if (isNaN(d)) return '';
+                return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
+                    d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            }
+            function renderCashHistory(items) {
+                if (!items || !items.length) return '<div class="pf-empty">Chưa có giao dịch tiền vào/ra.</div>';
+                const rows = items.map(function(t) {
+                    const chg = Number(t.change) || 0;
+                    const isIn = chg >= 0;
+                    const cls = isIn ? 'up' : 'down';
+                    const sign = isIn ? '+' : '−';
+                    return '<tr>' +
+                        '<td class="left">' + esc(t.label || '—') + '</td>' +
+                        '<td class="right ' + cls + '"><b>' + sign + fmtMoney(Math.abs(chg)) + ' đ</b></td>' +
+                        '<td class="right">' + fmtMoney(t.balance_after) + ' đ</td>' +
+                        '<td class="right">' + esc(cashTxTime(t.created_at)) + '</td>' +
+                    '</tr>';
+                }).join('');
+                return '<div class="pf-tblwrap cash-tblwrap"><table class="cash-table"><thead><tr>' +
+                    '<th class="left">Nội dung</th><th class="right">Vào / Ra</th><th class="right">Số dư sau GD</th><th class="right">Thời gian</th>' +
+                    '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+            }
+            function toggleCashHistory() {
+                const el = document.getElementById('cashHistory');
+                if (!el) return;
+                if (el.style.display !== 'none') { el.style.display = 'none'; return; }
+                el.style.display = '';
+                el.innerHTML = '<div class="pf-loading">Đang tải lịch sử…</div>';
+                fetch('/api/assets/cash/history', { headers: authHeaders() })
+                    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(function(d) { el.innerHTML = renderCashHistory((d && d.items) || []); notifyParentHeight(); })
+                    .catch(function() { el.innerHTML = '<div class="pf-empty">Không tải được lịch sử.</div>'; notifyParentHeight(); });
+            }
             function renderHoldingsTab() {
                 return renderTable() +
+                    cashCardHtml() +
                     '<div id="assetWrap-crypto">' + assetCardInner('crypto') + '</div>' +
                     '<div id="assetWrap-deposit">' + assetCardInner('deposit') + '</div>' +
                     '<div id="assetWrap-gold">' + assetCardInner('gold') + '</div>';
@@ -745,6 +872,7 @@
             }
             function assetCardInner(cls) {
                 if (cls === 'crypto') return assetCryptoCardInner(ASSET_META.crypto, userAssets.crypto || []);
+                if (cls === 'deposit') return assetDepositCardInner(ASSET_META.deposit, userAssets.deposit || []);
                 const m = ASSET_META[cls];
                 const list = userAssets[cls] || [];
                 const total = list.reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0);
@@ -765,7 +893,7 @@
                     '<div class="pf-table-wrap"><table><thead><tr>' +
                         '<th>Tên khoản</th><th>Số lượng</th><th>Giá vốn BQ (đ)</th><th>Số tiền đầu tư</th><th></th>' +
                     '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-                    (m.trade ? assetTradeForm(cls, m) : assetDepositForm(cls, m)) +
+                    (m.trade ? assetTradeForm(cls, m) : assetDepositForm()) +
                 '</div>';
             }
             // Form Mua/Bán Crypto — giá & số tiền theo USDT/USDC, phí mặc định 0,10%
@@ -822,18 +950,68 @@
                     (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                 '</div>';
             }
-            // Form thêm khoản gửi (Tiền gửi ngân hàng) — nhập tay số tiền đầu tư
-            function assetDepositForm(cls, m) {
+            // ================= Tiền gửi ngân hàng (sổ tiết kiệm) =================
+            // Lưu: amount = Số tiền gửi (đ), unit_price = Lãi suất (%/năm), quantity = Thời gian gửi (tháng).
+            // Lãi ước tính theo lãi đơn: lãi = tiền × lãi suất%/năm × số tháng / 12.
+            function depositInterest(amount, ratePct, months) {
+                const a = Number(amount) || 0, r = Number(ratePct) || 0, mo = Math.round(Number(months) || 0);
+                if (a <= 0 || r <= 0 || mo <= 0) return null;
+                const interest = a * (r / 100) * (mo / 12);
+                return { interest: interest, total: a + interest };
+            }
+            function fmtRatePct(v) {
+                const n = Number(v);
+                return (isFinite(n) && n > 0) ? n.toLocaleString('vi-VN', { maximumFractionDigits: 2, minimumFractionDigits: 2 }) + '%' : '—';
+            }
+            function termOfMonths(mo) {
+                const n = Math.round(Number(mo) || 0);
+                return n > 0 ? n + ' tháng' : '—';
+            }
+            function assetDepositCardInner(m, list) {
+                const total = list.reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0);
+                const totalInt = list.reduce(function(s, x) {
+                    const d = depositInterest(x.amount, x.unit_price, x.quantity);
+                    return s + (d ? d.interest : 0);
+                }, 0);
+                const rows = list.length ? list.map(function(x) {
+                    const d = depositInterest(x.amount, x.unit_price, x.quantity);
+                    const mDate = depositMaturityText(x);
+                    const name = x.label ? '<div class="nm">' + esc(x.label) + '</div>' : '';
+                    const intHtml = d
+                        ? '<div class="pf-money"><b>' + fmtMoney(d.interest) + ' đ</b><small>Tổng nhận ~' + fmtMoney(d.total) + ' đ</small></div>'
+                        : '<span>—</span>';
+                    return '<tr>' +
+                        '<td><div class="td-sym">' + fmtMoney(x.amount) + ' đ</div>' + name + '</td>' +
+                        '<td>' + fmtRatePct(x.unit_price) + '</td>' +
+                        '<td>' + termOfMonths(x.quantity) + (mDate ? '<div class="nm">Đáo hạn: ' + mDate + '</div>' : '') + '</td>' +
+                        '<td>' + intHtml + '</td>' +
+                        '<td class="nowrap">' +
+                            '<button type="button" class="act-btn ok pa-mature" data-id="' + x.id + '" title="Đáo hạn → Tiền mặt"><i class="fas fa-money-bill-transfer"></i></button>' +
+                            '<button type="button" class="act-btn del pa-del" data-cls="deposit" data-id="' + x.id + '" title="Xóa"><i class="fas fa-trash"></i></button>' +
+                        '</td>' +
+                    '</tr>';
+                }).join('') : '<tr><td colspan="5" class="pf-empty">Chưa có khoản tiền gửi nào — nhập bên dưới để theo dõi.</td></tr>';
+                return '<div class="pf-card">' +
+                    '<div class="pf-ah"><h2><i class="fas fa-landmark" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2>' +
+                    '<span class="pf-atotal">Tổng tiền gửi: <b>' + fmtMoney(total) + ' đ</b>' + (totalInt > 0 ? '<span class="pf-vnd">Lãi dự kiến ~' + fmtMoney(totalInt) + ' đ</span>' : '') + '</span></div>' +
+                    '<div class="pf-table-wrap"><table><thead><tr>' +
+                        '<th>Số tiền gửi</th><th>Lãi suất (%/năm)</th><th>Thời gian gửi</th><th>Tiền lãi dự kiến</th><th></th>' +
+                    '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+                    assetDepositForm() +
+                '</div>';
+            }
+            // Form thêm khoản tiền gửi — chỉ 3 ô: Số tiền gửi · Lãi suất (%/năm) · Thời gian gửi (tháng)
+            function assetDepositForm() {
                 const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
                 return '<div class="pf-stock-form">' +
-                    '<div class="pf-form-head"><i class="fas fa-landmark"></i> Thêm khoản gửi</div>' +
+                    '<div class="pf-form-head"><i class="fas fa-landmark"></i> Thêm khoản tiền gửi</div>' +
                     '<div class="pf-form-row">' +
-                        '<div class="pf-field" style="flex:1 1 200px;"><label>Tên khoản</label><input type="text" id="pa' + cls + 'Label" placeholder="' + esc(m.ph) + '" ' + disabled + ' autocomplete="off" spellcheck="false" /></div>' +
-                        '<div class="pf-field"><label>Số lượng</label><input type="number" id="pa' + cls + 'Qty" min="0" step="any" placeholder="tuỳ chọn" ' + disabled + ' /></div>' +
-                        '<div class="pf-field"><label>Đơn giá (đ)</label><input type="number" id="pa' + cls + 'Price" min="0" step="100" placeholder="tuỳ chọn" ' + disabled + ' /></div>' +
-                        '<div class="pf-field"><label>Số tiền đầu tư (đ)</label><input type="number" id="pa' + cls + 'Amount" min="0" step="10000" placeholder="' + esc(m.phAmt) + '" ' + disabled + ' /></div>' +
-                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-add" data-cls="' + cls + '" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-plus"></i> Thêm</button></div>' +
+                        '<div class="pf-field"><label>Số tiền gửi (đ)</label><input type="number" id="paDepositAmount" min="0" step="10000" placeholder="VD: 100.000.000" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>Lãi suất (%/năm)</label><input type="number" id="paDepositRate" min="0" step="0.01" placeholder="VD: 4,80" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>Thời gian gửi (tháng)</label><input type="number" id="paDepositTerm" min="1" step="1" placeholder="VD: 6" ' + disabled + ' /></div>' +
+                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-add" data-cls="deposit" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-plus"></i> Thêm</button></div>' +
                     '</div>' +
+                    '<div class="pf-price-hint">Lãi ước tính theo lãi đơn: lãi = tiền gửi × lãi suất%/năm × số tháng / 12.</div>' +
                     (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                 '</div>';
             }
@@ -920,7 +1098,7 @@
                     updateCryptoPreview();
                     return;
                 }
-                const fields = cls === 'deposit' ? ['Label', 'Qty', 'Price', 'Amount'] : ['Name', 'Price', 'Qty'];
+                const fields = cls === 'deposit' ? ['Amount', 'Rate', 'Term'] : ['Name', 'Price', 'Qty'];
                 fields.forEach(function(s) {
                     const el = document.getElementById('pa' + cls + s);
                     if (el) el.value = '';
@@ -968,23 +1146,22 @@
                 el.className = 'pf-cr-ok';
                 el.innerHTML = '🛒 Mua ~' + fmtDec(coin) + ' ' + esc(sym) + ' · chi ' + fmtDec(amt) + ' ' + cur + ' (phí ' + fmtDec(fee) + '%)' + vnd;
             }
-            // Thêm khoản gửi ngân hàng (deposit)
+            // Thêm khoản tiền gửi ngân hàng (deposit) — Số tiền gửi · Lãi suất (%/năm) · Thời gian (tháng)
             function addAsset(cls) {
                 if (cls !== 'deposit') return;
-                const label = (document.getElementById('pa' + cls + 'Label').value || '').trim();
-                const amount = parseFloat(document.getElementById('pa' + cls + 'Amount').value);
-                if (!label) { toast('Nhập tên khoản.', true); return; }
-                if (!(amount > 0)) { toast('Nhập số tiền đầu tư (đ).', true); return; }
-                const qv = (document.getElementById('pa' + cls + 'Qty').value || '').trim();
-                const pv = (document.getElementById('pa' + cls + 'Price').value || '').trim();
-                const qty = qv && isFinite(parseFloat(qv)) ? parseFloat(qv) : null;
-                const up = pv && isFinite(parseFloat(pv)) ? parseFloat(pv) : null;
-                fetch('/api/assets', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: cls, label: label, quantity: qty, unit_price: up, amount: amount }) })
+                const amount = parseFloat(document.getElementById('paDepositAmount').value);
+                const rate = parseFloat(document.getElementById('paDepositRate').value);
+                const term = Math.round(parseFloat(document.getElementById('paDepositTerm').value));
+                if (!(amount > 0)) { toast('Nhập Số tiền gửi (đ) > 0.', true); return; }
+                if (!(rate > 0)) { toast('Nhập Lãi suất (%/năm) > 0.', true); return; }
+                if (!(term > 0)) { toast('Nhập Thời gian gửi (tháng) > 0.', true); return; }
+                const label = 'Tiền gửi ' + term + ' tháng · ' + fmtRatePct(rate);
+                fetch('/api/assets', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: cls, label: label, quantity: term, unit_price: rate, amount: amount }) })
                     .then(function(r) {
                         if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); });
                         return r.json();
                     })
-                    .then(function() { toast('✅ Đã thêm khoản gửi'); clearAssetInputs(cls); loadUserAssets(function() { refreshAssetCards(); }); })
+                    .then(function() { toast('✅ Đã thêm khoản tiền gửi'); clearAssetInputs(cls); loadUserAssets(function() { refreshAssetCards(); }); })
                     .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không thêm được'), true); });
             }
             // Mua / Bán — dispatch theo loại (crypto theo USDT/USDC, vàng/bạc theo lượng VNĐ)
@@ -1034,7 +1211,7 @@
                         return r.json();
                     })
                     .then(function(d) {
-                        if (mode === 'sell') toast('✅ ' + ((d && d.message) || ('Đã bán ' + label)));
+                        if (mode === 'sell') { toast('✅ ' + ((d && d.message) || ('Đã bán ' + label))); loadCash(function() { applyCashUI(); }); }
                         else toast('✅ Đã mua ' + label);
                         clearAssetInputs('gold');
                         loadUserAssets(function() { refreshAssetCards(); });
@@ -1070,6 +1247,12 @@
                     }
                     const sub = e.target.closest('.pa-submit');
                     if (sub) { e.preventDefault(); tradeAsset(sub.getAttribute('data-cls')); return; }
+                    const mat = e.target.closest('.pa-mature');
+                    if (mat) { e.preventDefault(); matureDeposit(Number(mat.getAttribute('data-id'))); return; }
+                    const cs = e.target.closest('#paCashSave');
+                    if (cs) { e.preventDefault(); saveCash(); return; }
+                    const hist = e.target.closest('#paCashHistBtn');
+                    if (hist) { e.preventDefault(); toggleCashHistory(); return; }
                     const del = e.target.closest('.pa-del');
                     if (del) { e.preventDefault(); delAsset(del.getAttribute('data-cls'), Number(del.getAttribute('data-id'))); }
                 });
@@ -1178,17 +1361,21 @@
                 { key: 'other', label: 'Tài sản khác' }
             ];
             function assetAllocation() {
-                // TuniX hiện chỉ theo dõi cổ phiếu (PortfolioHolding); các hạng mục khác
-                // chưa có dữ liệu → hiển thị 0% một cách trung thực (không tạo dữ liệu ảo).
-                const stockValue = holdings.length ? totals().totalValue || 0 : 0;
+                // Cổ phiếu (PortfolioHolding) + Tiền mặt (nhập ở tab Danh mục đang nắm giữ).
+                // ETF/Quỹ/Trái phiếu/Tài sản khác chưa hỗ trợ → hiển thị 0% (không tạo dữ liệu ảo).
+                const stockValue = holdings.length ? (totals().totalValue || 0) : 0;
+                const cashValue = Number(cashAmount) || 0;
                 return ASSET_CLASSES.map(function(c) {
-                    return { name: c.label, value: c.key === 'stock' ? stockValue : 0 };
+                    let v = 0;
+                    if (c.key === 'stock') v = stockValue;
+                    else if (c.key === 'cash') v = cashValue;
+                    return { name: c.label, value: v };
                 });
             }
             function renderAssetAlloc() {
-                if (!holdings.length) return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-empty">Chưa có dữ liệu.</div></div>';
+                if (!holdings.length && !(Number(cashAmount) || 0)) return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-empty">Chưa có dữ liệu.</div></div>';
                 return hbarCard('Phân bổ tài sản', assetAllocation(),
-                    '<div class="pf-alloc-note"><i class="fas fa-info-circle"></i> TuniX hiện chỉ theo dõi cổ phiếu — các hạng mục Tiền mặt, ETF, Quỹ, Trái phiếu, Tài sản khác đang ở 0% cho tới khi được hỗ trợ.</div>');
+                    '<div class="pf-alloc-note"><i class="fas fa-info-circle"></i> Gồm Cổ phiếu và Tiền mặt (nhập ở tab Danh mục đang nắm giữ). ETF, Quỹ, Trái phiếu, Tài sản khác đang ở 0% cho tới khi được hỗ trợ.</div>');
             }
 
             // ---------- Phân bổ theo ngành (taxonomy ngành thống nhất của hệ thống) ----------
@@ -2202,12 +2389,15 @@
                     .then(function(list) {
                         if (list === null) return;
                         holdings = Array.isArray(list) ? list : [];
-                        render();
-                        loadWatchlist();
-                        // Screener về SAU khi tab đã render → cập nhật đúng ngành cho
-                        // vùng "Phân bổ theo ngành" (không dựng lại toàn bộ tab).
-                        screenerDone.then(function(ok) {
-                            if (ok && currentTab === 'overview') refreshAlloc();
+                        // Tải số tiền mặt trước khi render để Tổng giá trị / Phân bổ chính xác.
+                        loadCash(function() {
+                            render();
+                            loadWatchlist();
+                            // Screener về SAU khi tab đã render → cập nhật đúng ngành cho
+                            // vùng "Phân bổ theo ngành" (không dựng lại toàn bộ tab).
+                            screenerDone.then(function(ok) {
+                                if (ok && currentTab === 'overview') refreshAlloc();
+                            });
                         });
                     })
                     .catch(function(e) { if (e && e.message) { body.innerHTML = '<div class="pf-loading">Không tải được danh mục. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>'; notifyParentHeight(); } });

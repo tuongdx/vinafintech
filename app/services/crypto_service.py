@@ -1,12 +1,12 @@
 """Crypto — service lấy dữ liệu từ Binance (tách tầng khỏi giao diện).
 
 Kiến trúc: Binance → TuniX Backend → Frontend (frontend KHÔNG gọi Binance trực tiếp).
-- Danh sách: 1 request `GET /api/v3/ticker/24hr` (trả ~3000+ ticker) rồi lọc theo bộ
-  Top coin đã chọn — KHÔNG bắn N request/coin.
+- Danh sách: 1 request `GET /api/v3/ticker/24hr` (~3000+ ticker) → lọc ~100 mã có
+  thanh khoản (quoteVolume 24h) cao nhất — KHÔNG bắn N request/coin.
 - Klines (biểu đồ): `GET /api/v3/klines` theo từng cặp.
 - Cache ngắn + single-flight theo luồng để polling hợp lý, không tạo tải API thừa.
-- Binance KHÔNG cung cấp Market Cap → trường market_cap để null, frontend hiển thị '—'.
-Chưa tích hợp CMC/CoinGecko, không mua/bán, không khuyến nghị.
+- Không hiển thị vốn hóa (Binance không cung cấp market cap).
+Không mua/bán, không khuyến nghị.
 """
 import threading
 import time
@@ -19,50 +19,11 @@ _BINANCE_HOSTS = ("https://data-api.binance.vision", "https://api.binance.com")
 # restrict, dùng được từ Mỹ / Render (api.binance.com bị geo-block ở Mỹ, trả 451).
 _UA = {"User-Agent": "Mozilla/5.0 (TuniX/1.0)", "Accept": "application/json"}
 
-# Bộ Top coin (thứ hạng theo vốn hóa tham khảo) — CHỈ là danh sách lựa chọn/cặp giao dịch,
-# KHÔNG phải dữ liệu giá hard-code (giá luôn lấy live từ Binance).
-TOP_COINS: list[tuple[str, str]] = [
-    ("BTC", "Bitcoin"), ("ETH", "Ethereum"), ("BNB", "BNB"), ("XRP", "XRP"), ("SOL", "Solana"),
-    ("USDC", "USD Coin"), ("ADA", "Cardano"), ("DOGE", "Dogecoin"), ("TRX", "TRON"),
-    ("TON", "Toncoin"), ("AVAX", "Avalanche"), ("LINK", "Chainlink"), ("XLM", "Stellar"),
-    ("SHIB", "Shiba Inu"), ("DOT", "Polkadot"), ("LTC", "Litecoin"), ("BCH", "Bitcoin Cash"),
-    ("NEAR", "NEAR Protocol"), ("UNI", "Uniswap"), ("PEPE", "Pepe"), ("SUI", "Sui"),
-    ("ICP", "Internet Computer"), ("APT", "Aptos"), ("XMR", "Monero"), ("HBAR", "Hedera"),
-    ("ETC", "Ethereum Classic"), ("ATOM", "Cosmos"), ("OP", "Optimism"), ("ARB", "Arbitrum"),
-    ("FIL", "Filecoin"), ("INJ", "Injective"), ("IMX", "Immutable"), ("VET", "VeChain"),
-    ("TAO", "Bittensor"), ("STX", "Stacks"), ("RENDER", "Render"), ("SEI", "Sei"),
-    ("ALGO", "Algorand"), ("TIA", "Celestia"), ("FLOW", "Flow"), ("GRT", "The Graph"),
-    ("AAVE", "Aave"), ("RUNE", "THORChain"), ("ENA", "Ethena"), ("JUP", "Jupiter"),
-    ("WIF", "dogwifhat"), ("BONK", "Bonk"), ("CRV", "Curve DAO"),
-    ("LDO", "Lido DAO"), ("PYTH", "Pyth Network"),
-]
-_TOP_SET = {base for base, _ in TOP_COINS}
-
 _QUOTE = "USDT"
 _cache: dict[str, tuple[float, object]] = {}
 _lock = threading.Lock()
 _TICK_TTL = 6.0
 _KLINES_TTL = 20.0
-_CAP_TTL = 3600.0  # market cap đổi chậm → cache 1h, ít tải nguồn phụ
-
-# Market cap: Binance KHÔNG cung cấp → lấy từ CoinGecko (chỉ để hiển thị vốn hóa;
-# giá vẫn luôn từ Binance). CoinGecko id theo symbol của TOP_COINS.
-_COINGECKO_BASE = "https://api.coingecko.com/api/v3"
-_CG_IDS: dict[str, str] = {
-    "BTC": "bitcoin", "ETH": "ethereum", "BNB": "binancecoin", "XRP": "ripple",
-    "SOL": "solana", "USDC": "usd-coin", "ADA": "cardano", "DOGE": "dogecoin",
-    "TRX": "tron", "TON": "the-open-network", "AVAX": "avalanche-2", "LINK": "chainlink",
-    "XLM": "stellar", "SHIB": "shiba-inu", "DOT": "polkadot", "LTC": "litecoin",
-    "BCH": "bitcoin-cash", "NEAR": "near", "UNI": "uniswap", "PEPE": "pepe",
-    "SUI": "sui", "ICP": "internet-computer", "APT": "aptos", "XMR": "monero",
-    "HBAR": "hedera-hashgraph", "ETC": "ethereum-classic", "ATOM": "cosmos", "OP": "optimism",
-    "ARB": "arbitrum", "FIL": "filecoin", "INJ": "injective-protocol", "IMX": "immutable-x",
-    "VET": "vechain", "TAO": "bittensor", "STX": "stacks", "RENDER": "render-token",
-    "SEI": "sei-network", "ALGO": "algorand", "TIA": "celestia", "FLOW": "flow",
-    "GRT": "the-graph", "AAVE": "aave", "RUNE": "thorchain", "ENA": "ethena",
-    "JUP": "jupiter-exchange-solana", "WIF": "dogwifcoin", "BONK": "bonk",
-    "CRV": "curve-dao-token", "LDO": "lido-dao", "PYTH": "pyth-network",
-}
 
 
 def _now_utc() -> datetime:
@@ -125,65 +86,8 @@ def _all_tickers() -> dict[str, dict]:
     return _cached("tickers:24hr", _TICK_TTL, _prod)
 
 
-def get_market_caps() -> dict[str, float]:
-    """Vốn hóa (USD) theo CoinGecko — 1 request cho toàn bộ danh sách, cache 1h.
-    Lỗi/hết id → trả {} để vẫn còn dữ liệu Binance (hiển thị '—')."""
-    def _prod() -> dict[str, float]:
-        ids = [cid for sym, cid in _CG_IDS.items() if sym in _TOP_SET]
-        if not ids:
-            return {}
-        try:
-            with httpx.Client(base_url=_COINGECKO_BASE, headers=_UA, timeout=15.0) as client:
-                r = client.get("/coins/markets", params={"vs_currency": "usd", "ids": ",".join(ids), "per_page": 250})
-                r.raise_for_status()
-            by_id: dict[str, float] = {}
-            for row in r.json():
-                cap = row.get("market_cap")
-                if isinstance(cap, (int, float)) and cap > 0:
-                    by_id[str(row.get("id") or "")] = float(cap)
-            # map symbol theo id
-            id_to_sym = {cid: sym for sym, cid in _CG_IDS.items()}
-            return {id_to_sym[k]: v for k, v in by_id.items() if k in id_to_sym}
-        except Exception:  # noqa: BLE001 — nguồn phụ lỗi không được phá trang
-            return {}
-
-    return _cached("coingecko:caps", _CAP_TTL, _prod)
-
-
-def get_coingecko_top(per_page: int = 250) -> list[dict]:
-    """Top coin theo vốn hóa (CoinGecko, market_cap desc) — dùng để chọn ~100 mã có USDT trên Binance.
-    Lỗi → [] (frontend giữ trạng thái lỗi, không vỡ)."""
-    def _prod() -> list[dict]:
-        try:
-            with httpx.Client(base_url=_COINGECKO_BASE, headers=_UA, timeout=20.0) as client:
-                r = client.get(
-                    "/coins/markets",
-                    params={"vs_currency": "usd", "order": "market_cap_desc", "per_page": min(250, per_page), "page": 1, "sparkline": "false"},
-                )
-                r.raise_for_status()
-            out: list[dict] = []
-            for x in r.json():
-                sym = str(x.get("symbol") or "").upper()
-                if not sym:
-                    continue
-                cap = x.get("market_cap")
-                out.append(
-                    {
-                        "symbol": sym,
-                        "name": str(x.get("name") or sym),
-                        "cap": float(cap) if isinstance(cap, (int, float)) and cap > 0 else None,
-                    }
-                )
-            return out
-        except Exception:  # noqa: BLE001 — nguồn phụ lỗi không phá trang
-            return []
-
-    return _cached("coingecko:top", _CAP_TTL, _prod)
-
-
 def _volume_ranking(tickers: dict[str, dict]) -> list[dict]:
-    """Xếp hạng dự phòng: lấy theo THANH KHOẢN Binance (quoteVolume 24h giảm dần)
-    — dùng khi CoinGecko bị chặn/rate-limit để trang vẫn hiển thị được list.
+    """~250 mã có thanh khoản cao nhất (quoteVolume 24h giảm dần) — nguồn xếp hạng chính.
     Chỉ lấy base không chứa chữ số (loại token nhân như 1000SATS/…UP/…DOWN)."""
     ranked = sorted(tickers.values(), key=lambda t: _f(t.get("quoteVolume")), reverse=True)
     out: list[dict] = []
@@ -194,18 +98,17 @@ def _volume_ranking(tickers: dict[str, dict]) -> list[dict]:
         base = sym[: -len(_QUOTE)]
         if not base or any(ch.isdigit() for ch in base):
             continue
-        out.append({"symbol": base, "name": base, "cap": None})
+        out.append({"symbol": base, "name": base})
         if len(out) >= 250:
             break
     return out
 
 
 def get_markets() -> dict:
-    """~100 mã TOP theo vốn hóa có USDT trên Binance — giá/volume Binance.
+    """~100 mã thanh khoản cao nhất có USDT trên Binance — xếp theo Volume 24h.
 
-    - Giá/volume/Cao-Thấp 24h: Binance (host vision → api, cache 6s).
-    - Thứ hạng + vốn hóa: CoinGecko top (cache 1h); nếu CoinGecko bị chặn/rate-limit
-      → tự xếp theo thanh khoản Binance (vốn hóa hiển thị '—') để trang không trống.
+    - Giá/Cao-Thấp/Volume 24h: Binance (host vision → api, cache 6s).
+    - Thứ hạng theo thanh khoản Binance — không hiển thị vốn hóa.
     """
     try:
         tickers = _all_tickers()
@@ -220,13 +123,7 @@ def get_markets() -> dict:
             "items": [],
         }
 
-    top = get_coingecko_top()
-    cap_source = "coingecko"
-    if not top:
-        # CoinGecko chặn/rate-limit → xếp theo thanh khoản Binance
-        cap_source = "binance-volume"
-        top = _volume_ranking(tickers)
-
+    top = _volume_ranking(tickers)
     items: list[dict] = []
     seen: set[str] = set()
     for entry in top:
@@ -248,7 +145,6 @@ def get_markets() -> dict:
                 "high": _f(t.get("highPrice")),
                 "low": _f(t.get("lowPrice")),
                 "volume": _f(t.get("quoteVolume")),  # Volume 24h quy đổi (USDT)
-                "market_cap": entry.get("cap"),  # USD — CoinGecko (Binance không cung cấp)
             }
         )
         if len(items) >= 100:
@@ -256,7 +152,6 @@ def get_markets() -> dict:
     return {
         "quote": _QUOTE,
         "source": "binance",
-        "cap_source": cap_source,
         "count": len(items),
         "total": 100,
         "as_of": _now_utc().isoformat(),

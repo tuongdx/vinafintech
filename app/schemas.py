@@ -186,6 +186,11 @@ class UserAssetUpdate(BaseModel):
     note: str | None = None
 
 
+class CashAmount(BaseModel):
+    """Số tiền mặt hiện có (đ) — 1 con số tổng theo tài khoản."""
+    amount: float = 0.0
+
+
 class UserAssetOut(BaseModel):
     id: int
     asset_class: str

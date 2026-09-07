@@ -140,7 +140,6 @@
                 '<td class="right num">' + fmtPrice(x.high) + '</td>' +
                 '<td class="right num">' + fmtPrice(x.low) + '</td>' +
                 '<td class="right num">' + fmtBig(x.volume) + '</td>' +
-                '<td class="right num">' + (x.market_cap ? '$' + fmtBig(x.market_cap) : '<span class="na">—</span>') + '</td>' +
                 '</tr>';
         }).join('');
         $('crBody').innerHTML = body;
@@ -231,13 +230,12 @@
             '<div class="cr-detail-name">' + coinIconHtml(item.symbol, true) +
             '<div><div class="cr-dname-row"><h2>' + esc(item.name) + '</h2>' +
             '<span class="code">' + esc(item.symbol) + ' / ' + esc(item.pair) + '</span>' +
-            '<span class="rank-tag">#' + item.rank + ' · Top vốn hóa</span></div></div></div>' +
+            '<span class="rank-tag">#' + item.rank + ' · Top thanh khoản</span></div></div></div>' +
             '<div class="cr-price-big ' + c + '">' + fmtPrice(item.price) + ' <small>USDT</small></div>' +            '<div class="cr-kpis">' +
             '<div class="cr-kpi"><div class="k-label">Thay đổi 24h</div><div class="k-val ' + c + '">' + pctTxt(item.change_pct) + '</div></div>' +
             '<div class="cr-kpi"><div class="k-label">Cao 24h</div><div class="k-val">' + fmtPrice(item.high) + '</div></div>' +
             '<div class="cr-kpi"><div class="k-label">Thấp 24h</div><div class="k-val">' + fmtPrice(item.low) + '</div></div>' +
             '<div class="cr-kpi"><div class="k-label">Volume 24h (USDT)</div><div class="k-val">' + fmtBig(item.volume) + '</div></div>' +
-            '<div class="cr-kpi"><div class="k-label">Vốn hóa (USD)</div><div class="k-val">' + (item.market_cap ? '$' + fmtBig(item.market_cap) : '<span class="na">—</span>') + '</div></div>' +
             '</div>';
         notifyParentHeight();
     }

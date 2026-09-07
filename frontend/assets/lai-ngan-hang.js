@@ -45,6 +45,23 @@
     }
     function termLabel(t) { return t + ' tháng'; }
 
+    // ---- Logo ngân hàng (VietQR — CDN công khai, logo chính thức) ----
+    // key = bank_code TuniX → value = mã logo trên cdn.vietqr.io/img/{code}.png
+    var BANK_LOGO = {
+        'VCB': 'VCB', 'BID': 'BIDV', 'CTG': 'ICB', 'AGB': 'VBA', 'TCB': 'TCB', 'MBB': 'MB', 'ACB': 'ACB',
+        'VPB': 'VPB', 'SHB': 'SHB', 'HDB': 'HDB', 'SGB': 'SGICB', 'PGB': 'PGB', 'LPB': 'LPB', 'OCB': 'OCB',
+        'BVB': 'BVB', 'CIM': 'CIMB', 'MSB': 'MSB', 'VIB': 'VIB', 'NCB': 'NCB', 'NAB': 'NAB', 'ABB': 'ABB',
+        'VBB': 'VIETBANK', 'STB': 'STB', 'SHR': 'SHBVN', 'WRB': 'WVN', 'BAV': 'BVB', 'BAB': 'BAB', 'UOB': 'UOB',
+        'TPB': 'TPB', 'KLB': 'KLB', 'VAB': 'VAB', 'PVC': 'PVCB', 'GPB': 'GPB', 'EIB': 'EIB', 'SSB': 'SEAB',
+        'STC': 'SCVN', 'SCB': 'SCB', 'HSB': 'HSBC'
+    };
+    var BANK_LOGO_CDN = 'https://cdn.vietqr.io/img/';
+    function bankLogoHtml(code, size) {
+        var vq = BANK_LOGO[String(code == null ? '' : code).toUpperCase()];
+        if (!vq) return '';
+        return '<img class="lnh-bank-logo' + (size === 'sm' ? ' sm' : '') + '" loading="lazy" alt="" src="' + BANK_LOGO_CDN + vq + '.png" onerror="this.style.display=\'none\'">';
+    }
+
     function api(path, params) {
         var url = API + path;
         if (params) {
@@ -208,7 +225,7 @@
             var tr = document.createElement('tr');
             var td0 = document.createElement('td');
             td0.className = 'sticky';
-            td0.textContent = b.name;
+            td0.innerHTML = '<span class="lnh-bcell">' + bankLogoHtml(b.code) + '<span class="lnh-bname">' + esc(b.name) + '</span></span>';
             tr.appendChild(td0);
             terms.forEach(function (t) {
                 var td = document.createElement('td');
@@ -266,7 +283,7 @@
             var rate = fmtRate(r.interest_rate);
             var html = '';
             html += '<div class="lnh-rate-line"><i class="fas fa-percent"></i> Lãi suất áp dụng: <span class="rr">' + esc(rate) + '</span>';
-            html += '<span style="color:#6b7a8f;font-size:12.5px;">' + esc(r.bank_name) + ' (' + esc(r.bank_code) + ') · ' + esc(r.channel_label) + ' · ' + termLabel(r.term) + '</span></div>';
+            html += '<span class="lnh-rate-bank">' + bankLogoHtml(r.bank_code, 'sm') + '<span>' + esc(r.bank_name) + ' (' + esc(r.bank_code) + ') · ' + esc(r.channel_label) + ' · ' + termLabel(r.term) + '</span></span></div>';
             if (r.min_amount) html += '<div class="lnh-hint">Số tiền tối thiểu: ' + fmtMoney(r.min_amount) + '</div>';
             if (r.conditions) html += '<div class="lnh-hint">' + esc(r.conditions) + '</div>';
             html += '<div class="lnh-kpis">';
@@ -312,7 +329,7 @@
             items.forEach(function (it, idx) {
                 var best = it.interest_rate === bestRate;
                 html += '<tr' + (best ? ' class="lnh-best-row"' : '') + '>';
-                html += '<td style="text-align:left">' + esc(it.bank_name) + (best ? '<span class="lnh-badge">Lãi cao nhất</span>' : '') + '</td>';
+                html += '<td style="text-align:left"><span class="lnh-bcell">' + bankLogoHtml(it.bank_code) + '<span class="lnh-bname">' + esc(it.bank_name) + '</span></span>' + (best ? '<span class="lnh-badge">Lãi cao nhất</span>' : '') + '</td>';
                 html += '<td>' + esc(it.channel_label) + '</td>';
                 html += '<td><b>' + fmtRateShort(it.interest_rate) + '</b></td>';
                 html += '<td class="num">' + fmtMoney(it.expected_interest) + '</td>';
