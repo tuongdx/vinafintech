@@ -507,6 +507,7 @@
             let screenerMap = {};   // symbol -> {sectorName, volume_ratio, risk, ...}
             let chartPeriod = '1M';
             let currentTab = 'overview';
+            const INIT_TAB = (new URLSearchParams(window.location.search || '')).get('tab') || null;
             let watchlistSyms = [];
             let tradeMode = 'buy';
             let alertData = [];     // dữ liệu Trung tâm cảnh báo
@@ -2563,6 +2564,7 @@
                         loadCash(function() {
                             render();
                             loadWatchlist();
+                            if (INIT_TAB && TAB_DEFS[INIT_TAB] && INIT_TAB !== currentTab) showTab(INIT_TAB);
                             // Screener về SAU khi tab đã render → cập nhật đúng ngành cho
                             // vùng "Phân bổ theo ngành" (không dựng lại toàn bộ tab).
                             screenerDone.then(function(ok) {
@@ -2620,7 +2622,12 @@
             }
             window.addEventListener('message', function(event) {
                 const data = event.data;
-                if (!data || data.type !== 'tunix-theme') return;
+                if (!data) return;
+                if (data.type === 'tunix-qlts-tab' && data.tab && TAB_DEFS[data.tab]) {
+                    if (currentTab !== data.tab) { showTab(data.tab); setTimeout(notifyParentHeight, 60); }
+                    return;
+                }
+                if (data.type !== 'tunix-theme') return;
                 const mode = data.mode === 'dark' ? 'dark' : 'light';
                 localStorage.setItem('theme', mode);
                 applyEmbedTheme(mode);

@@ -2658,7 +2658,17 @@
                 <span class="mm-sep"></span>
                 <a href="/kham-pha" class="mm-item" data-action="kham-pha">Khám phá</a>
                 <span class="mm-sep"></span>
-                <a href="/quan-ly-tai-san" class="mm-item" data-action="quan-ly-tai-san">Quản lý tài sản</a>
+                <span class="mm-dd" id="mmQlts">
+                    <a href="/quan-ly-tai-san" class="mm-item" data-action="quan-ly-tai-san">Quản lý tài sản <i class="fas fa-chevron-down mm-caret"></i></a>
+                    <span class="mm-sub" id="mmQltsSub" role="menu">
+                        <a role="menuitem" href="/quan-ly-tai-san?tab=analysis" class="mm-sub-item" data-qlts-sub="analysis"><i class="fas fa-chart-pie"></i> Phân tích tài sản</a>
+                        <a role="menuitem" href="/quan-ly-tai-san?tab=holdings" class="mm-sub-item" data-qlts-sub="holdings"><i class="fas fa-briefcase"></i> Danh mục đang nắm giữ</a>
+                        <a role="menuitem" href="/quan-ly-tai-san?tab=watchlist" class="mm-sub-item" data-qlts-sub="watchlist"><i class="fas fa-eye"></i> Cổ phiếu theo dõi</a>
+                        <a role="menuitem" href="/quan-ly-tai-san?tab=portfolio" class="mm-sub-item" data-qlts-sub="portfolio"><i class="fas fa-table"></i> Bảng danh mục</a>
+                        <a role="menuitem" href="/quan-ly-tai-san?tab=alerts" class="mm-sub-item" data-qlts-sub="alerts"><i class="fas fa-bell"></i> Trung tâm cảnh báo</a>
+                        <a role="menuitem" href="/quan-ly-tai-san?tab=events" class="mm-sub-item" data-qlts-sub="events"><i class="fas fa-calendar-day"></i> Sự kiện liên quan</a>
+                    </span>
+                </span>
                 <span class="mm-sep"></span>
                 <span class="mm-dd" id="mmTienIch">
                     <a href="/tien-ich" class="mm-item" data-action="tien-ich">Tiện ích <i class="fas fa-chevron-down mm-caret"></i></a>
@@ -3234,7 +3244,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260907o';
+        const CACHE_VERSION = '20260907p';
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -3635,6 +3645,81 @@
                 });
                 window.addEventListener('scroll', function() { if (mmTiSub.classList.contains('open')) placeTiSub(); }, { passive: true });
                 window.addEventListener('resize', function() { if (mmTiSub.classList.contains('open')) placeTiSub(); });
+            }
+
+            // ---- Menu con "Quản lý tài sản": hover hiển thị các menu con; rê xuống mục nào hiện trang đó ----
+            const mmQltsWrap = mainMenu.querySelector('#mmQlts');
+            const mmQltsSub = mainMenu.querySelector('#mmQltsSub');
+            if (mmQltsWrap && mmQltsSub) {
+                function placeQltsSub() {
+                    try {
+                        const r = mmQltsWrap.getBoundingClientRect();
+                        mmQltsSub.style.top = Math.round(r.bottom + 6) + 'px';
+                        mmQltsSub.style.left = Math.round(r.left) + 'px';
+                    } catch (e) {}
+                }
+                function showQltsSub() { placeQltsSub(); mmQltsSub.classList.add('open'); }
+                function hideQltsSub() { mmQltsSub.classList.remove('open'); }
+                let qltsOutTimer = null;
+                function qltsInside(x, y) {
+                    try {
+                        const el = document.elementFromPoint(x, y);
+                        return !!el && (el === mmQltsWrap || mmQltsWrap.contains(el));
+                    } catch (e) { return false; }
+                }
+                function qltsFrameLoaded() {
+                    const f = document.getElementById('contentEmbedFrame');
+                    return !!f && /quanlytaisan\.html/.test(f.getAttribute('src') || '');
+                }
+                function qltsSend(tab) {
+                    const f = document.getElementById('contentEmbedFrame');
+                    if (f && f.contentWindow) { try { f.contentWindow.postMessage({ type: 'tunix-qlts-tab', tab: tab }, '*'); } catch (e) {} }
+                }
+                let qltsHoverTimer = null;
+                function qltsGo(tab, forceNav) {
+                    if (forceNav || !qltsFrameLoaded()) {
+                        loadContent('/frontend/quanlytaisan.html?tab=' + tab);
+                        window.history.replaceState({}, '', '/quan-ly-tai-san?tab=' + tab);
+                    } else {
+                        qltsSend(tab);
+                        window.history.replaceState({}, '', '/quan-ly-tai-san?tab=' + tab);
+                    }
+                }
+                mmQltsWrap.addEventListener('mouseenter', function () {
+                    if (qltsOutTimer) { clearTimeout(qltsOutTimer); qltsOutTimer = null; }
+                    showQltsSub();
+                });
+                document.addEventListener('mousemove', function (e) {
+                    if (!mmQltsSub.classList.contains('open')) return;
+                    if (qltsInside(e.clientX, e.clientY)) {
+                        if (qltsOutTimer) { clearTimeout(qltsOutTimer); qltsOutTimer = null; }
+                    } else if (!qltsOutTimer) {
+                        qltsOutTimer = setTimeout(hideQltsSub, 200);
+                    }
+                });
+                mmQltsSub.querySelectorAll('.mm-sub-item').forEach(function(it) {
+                    const tab = it.getAttribute('data-qlts-sub');
+                    if (!tab) return;
+                    it.addEventListener('mouseenter', function () {
+                        if (qltsHoverTimer) { clearTimeout(qltsHoverTimer); }
+                        qltsHoverTimer = setTimeout(function () { qltsGo(tab, false); }, 240);
+                    });
+                    it.addEventListener('mouseleave', function () {
+                        if (qltsHoverTimer) { clearTimeout(qltsHoverTimer); qltsHoverTimer = null; }
+                    });
+                });
+                mmQltsWrap.addEventListener('click', function(e) {
+                    const it = e.target.closest('.mm-sub-item');
+                    if (!it) return;
+                    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                    e.preventDefault();
+                    const tab = it.getAttribute('data-qlts-sub') || 'analysis';
+                    if (qltsHoverTimer) { clearTimeout(qltsHoverTimer); qltsHoverTimer = null; }
+                    hideQltsSub();
+                    qltsGo(tab, true);
+                });
+                window.addEventListener('scroll', function() { if (mmQltsSub.classList.contains('open')) placeQltsSub(); }, { passive: true });
+                window.addEventListener('resize', function() { if (mmQltsSub.classList.contains('open')) placeQltsSub(); });
             }
         }
 
