@@ -825,11 +825,11 @@
                     .catch(function() { el.innerHTML = '<div class="pf-empty">Không tải được lịch sử.</div>'; notifyParentHeight(); });
             }
             function renderHoldingsTab() {
-                return renderTable() +
-                    cashCardHtml() +
-                    '<div id="assetWrap-crypto">' + assetCardInner('crypto') + '</div>' +
+                return cashCardHtml() +
+                    renderTable() +
+                    '<div id="assetWrap-gold">' + assetCardInner('gold') + '</div>' +
                     '<div id="assetWrap-deposit">' + assetCardInner('deposit') + '</div>' +
-                    '<div id="assetWrap-gold">' + assetCardInner('gold') + '</div>';
+                    '<div id="assetWrap-crypto">' + assetCardInner('crypto') + '</div>';
             }
             function assetNum(x) { const n = Number(x); return isFinite(n) && n ? fmtMoney(n) : '—'; }
             // Định dạng số crypto (nhiều chữ số thập phân, dấu chấm phân nhóm, bỏ số 0 thừa)
