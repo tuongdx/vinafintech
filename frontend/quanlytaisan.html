@@ -125,6 +125,18 @@
         .pf-atotal { font-size: 12.5px; color: #6b7a8f; font-weight: 600; }
         .pf-atotal b { color: #008080; font-weight: 800; }
         .pf-atotal .pf-vnd { color: #8a99b1; font-weight: 600; margin-left: 4px; }
+        .pf-astats { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; }
+        .pf-astat { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: #6b7a8f; font-weight: 600; }
+        .pf-astat .pf-albl { font-size: 11px; color: #8a99b1; font-weight: 600; }
+        .pf-astat b { color: #008080; font-weight: 800; }
+        .pf-astat .pf-vnd { color: #8a99b1; font-weight: 600; font-size: 11.5px; }
+        .pf-astat.note b { font-size: 12px; color: #f5a623; }
+        body.dark-mode .pf-atotal b { color: #4dd8c4; }
+        body.dark-mode .pf-astat { color: #8b949e; }
+        body.dark-mode .pf-astat b { color: #4dd8c4; }
+        body.dark-mode .pf-astat .pf-albl { color: #6e7681; }
+        body.dark-mode .pf-astat .pf-vnd { color: #8b949e; }
+        body.dark-mode .pf-astat.note b { color: #e0b04d; }
         .pf-asset-form { margin-top: 12px; }
         body.dark-mode .pf-atotal { color: #8b949e; }
         body.dark-mode .pf-atotal b { color: #4dd8c4; }
@@ -665,7 +677,8 @@
 
             // ---------- Table + form ----------
             function renderTable() {
-                const total = totals().totalValue || 1;
+                const tt = totals();
+                const total = tt.totalValue || 1;
                 const tableHtml = holdings.length
                     ? '<div class="pf-table-wrap"><table><thead><tr>' +
                         '<th>Mã</th><th>Giá vốn</th><th>Giá hiện tại</th><th>Số lượng</th><th>Giá trị</th><th>Lãi/Lỗ</th><th>Tỷ trọng</th><th></th>' +
@@ -692,7 +705,10 @@
                     : '<div class="pf-table-wrap"><div class="pf-empty"><i class="fas fa-briefcase" style="font-size:30px;color:#c3ccd8;"></i><br/>Danh mục tài sản của bạn đang trống.<br/>Hãy thêm cổ phiếu bạn đang nắm giữ ở form bên dưới.</div></div>';
                 return '<div class="pf-card">' +
                     '<div class="pf-ah"><h2><i class="fas fa-chart-line" style="color:#008080;font-size:14px;margin-right:6px;"></i>Danh sách cổ phiếu</h2>' +
-                    '<span class="pf-atotal">Tổng đầu tư: <b>' + fmtMoney(totals().totalCost) + ' đ</b></span></div>' +
+                    '<div class="pf-astats">' +
+                        '<div class="pf-astat"><span class="pf-albl">Tổng đầu tư</span><b>' + fmtMoney(tt.totalCost) + ' đ</b></div>' +
+                        '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtMoney(tt.totalValue) + ' đ</b></div>' +
+                    '</div></div>' +
                     tableHtml +
                     '<div class="pf-stock-form" id="pfFormCard">' + stockFormInner() + '</div>' +
                 '</div>';
@@ -951,9 +967,21 @@
                         '<td><button type="button" class="act-btn del pa-del" data-cls="crypto" data-id="' + x.id + '" title="Xóa"><i class="fas fa-trash"></i></button></td>' +
                     '</tr>';
                 }).join('') : '<tr><td colspan="5" class="pf-empty">Chưa có vị thế nào — Mua bên dưới để theo dõi.</td></tr>';
+                // Giá trị hiện tại = số lượng × giá coin hiện tại (nếu có trong 100 coin); còn lại dùng vốn đầu tư.
+                let curVal = 0;
+                list.forEach(function(x) {
+                    const q = Number(x.quantity) || 0;
+                    const sym = String(x.label || '').trim().toUpperCase();
+                    const mk = cryptoMap[sym];
+                    const px = mk ? Number(mk.price) : 0;
+                    curVal += (px > 0 ? q * px : Number(x.amount) || 0);
+                });
                 return '<div class="pf-card">' +
                     '<div class="pf-ah"><h2><i class="fas fa-coins" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2>' +
-                    '<span class="pf-atotal">Tổng đầu tư: <b>' + fmtDec(total) + ' ' + curLbl + '</b>' + (cryptoFx ? '<span class="pf-vnd">≈ ' + fmtMoney(total * cryptoFx.usd_vnd) + ' đ</span>' : '') + '</span></div>' +
+                    '<div class="pf-astats">' +
+                        '<div class="pf-astat"><span class="pf-albl">Tổng đầu tư</span><b>' + fmtDec(total) + ' ' + curLbl + '</b>' + (cryptoFx ? '<span class="pf-vnd">≈ ' + fmtMoney(total * cryptoFx.usd_vnd) + ' đ</span>' : '') + '</div>' +
+                        '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtDec(curVal) + ' ' + curLbl + '</b>' + (cryptoFx ? '<span class="pf-vnd">≈ ' + fmtMoney(curVal * cryptoFx.usd_vnd) + ' đ</span>' : '') + '</div>' +
+                    '</div></div>' +
                     '<div class="pf-table-wrap"><table><thead><tr>' +
                         '<th>Tên</th><th>Số lượng</th><th>Giá vốn BQ (USDT/USDC)</th><th>Số tiền đầu tư (USDT/USDC)</th><th></th>' +
                     '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
@@ -979,7 +1007,11 @@
                     '</tr>';
                 }).join('') : '<tr><td colspan="5" class="pf-empty">' + esc(emptyText) + '</td></tr>';
                 return '<div class="pf-card">' +
-                    '<div class="pf-ah"><h2><i class="fas ' + m.icon + '" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2><span class="pf-atotal">Tổng đầu tư: <b>' + fmtMoney(total) + ' đ</b></span></div>' +
+                    '<div class="pf-ah"><h2><i class="fas ' + m.icon + '" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2>' +
+                    '<div class="pf-astats">' +
+                        '<div class="pf-astat"><span class="pf-albl">Tổng đầu tư</span><b>' + fmtMoney(total) + ' đ</b></div>' +
+                        '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtMoney(total) + ' đ</b></div>' +
+                    '</div></div>' +
                     '<div class="pf-table-wrap"><table><thead><tr>' +
                         '<th>Tên khoản</th><th>Số lượng</th><th>Giá vốn BQ (đ)</th><th>Số tiền đầu tư</th><th></th>' +
                     '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
@@ -1083,7 +1115,11 @@
                 }).join('') : '<tr><td colspan="5" class="pf-empty">Chưa có khoản tiền gửi nào — nhập bên dưới để theo dõi.</td></tr>';
                 return '<div class="pf-card">' +
                     '<div class="pf-ah"><h2><i class="fas fa-landmark" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2>' +
-                    '<span class="pf-atotal">Tổng tiền gửi: <b>' + fmtMoney(total) + ' đ</b>' + (totalInt > 0 ? '<span class="pf-vnd">Lãi dự kiến ~' + fmtMoney(totalInt) + ' đ</span>' : '') + '</span></div>' +
+                    '<div class="pf-astats">' +
+                        '<div class="pf-astat"><span class="pf-albl">Tổng tiền gửi</span><b>' + fmtMoney(total) + ' đ</b></div>' +
+                        '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtMoney(total) + ' đ</b></div>' +
+                        (totalInt > 0 ? '<div class="pf-astat note"><span class="pf-albl">Lãi dự kiến</span><b>' + fmtMoney(totalInt) + ' đ</b></div>' : '') +
+                    '</div></div>' +
                     '<div class="pf-table-wrap"><table><thead><tr>' +
                         '<th>Số tiền gửi</th><th>Lãi suất (%/năm)</th><th>Thời gian gửi</th><th>Tiền lãi dự kiến</th><th></th>' +
                     '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
