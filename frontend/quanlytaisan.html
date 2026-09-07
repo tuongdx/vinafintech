@@ -295,14 +295,28 @@
         .pf-wl-item .wl-rm { border: none; background: transparent; color: #d0314e; cursor: pointer; font-size: 13px; padding: 3px 6px; border-radius: 6px; }
         .pf-wl-item .wl-rm:hover { background: #fde9e9; }
 
-        /* ===== Tabs ===== */
-        .pf-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; border-bottom: 2px solid #e9edf2; }
-        .pf-tab { border: 1px solid #e5eaf0; border-bottom: none; background: #fff; color: #4a5a72; font-weight: 700; font-size: 13px; padding: 9px 16px; border-radius: 10px 10px 0 0; cursor: pointer; font-family: inherit; transition: all 0.2s; }
-        .pf-tab:hover { border-color: #008080; color: #008080; }
-        .pf-tab.active { background: #008080; border-color: #008080; color: #fff; }
-        .pf-tab-body { display: flex; flex-direction: column; gap: 18px; }
+        /* ===== Menu con (giống menu con Tiện ích) ===== */
+        .pf-submenu-wrap { display: grid; grid-template-columns: 236px 1fr; gap: 20px; align-items: start; margin-bottom: 18px; }
+        .pf-submenu { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 12px; }
+        .pf-submenu .pf-sub-btn { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 11px 13px; border: 1px solid #e9edf2; background: #fff; color: #4a5a72; font-weight: 600; font-size: 13px; border-radius: 10px; cursor: pointer; font-family: inherit; transition: all .16s; }
+        .pf-submenu .pf-sub-btn i { width: 18px; text-align: center; color: #008080; font-size: 13px; flex: 0 0 auto; }
+        .pf-submenu .pf-sub-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pf-submenu .pf-sub-btn:hover { background: #f0fbf9; color: #008080; border-color: #bfe2de; }
+        .pf-submenu .pf-sub-btn.active { background: #008080; border-color: #008080; color: #fff; }
+        .pf-submenu .pf-sub-btn.active i { color: #fff; }
+        .pf-tab-body { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
         .pf-tab-body .pf-summary { margin-bottom: 0; }
         .pf-tab-body .pf-perf { margin-bottom: 0; }
+        body.dark-mode .pf-submenu .pf-sub-btn { background: #161b22; border-color: #21262d; color: #e6edf3; }
+        body.dark-mode .pf-submenu .pf-sub-btn i { color: #4fb3b3; }
+        body.dark-mode .pf-submenu .pf-sub-btn:hover { background: #10151c; color: #4fb3b3; border-color: #2c4a46; }
+        body.dark-mode .pf-submenu .pf-sub-btn.active { background: #008080; border-color: #008080; color: #fff; }
+        body.dark-mode .pf-submenu .pf-sub-btn.active i { color: #fff; }
+        @media (max-width: 980px) {
+            .pf-submenu-wrap { grid-template-columns: 1fr; gap: 12px; }
+            .pf-submenu { position: static; flex-direction: row; flex-wrap: wrap; }
+            .pf-submenu .pf-sub-btn { width: auto; flex: 1 1 100%; }
+        }
 
         /* ===== Sự kiện liên quan ===== */
         .pf-ev-note { font-size: 12px; color: #6b7a8f; margin-bottom: 12px; line-height: 1.5; }
@@ -413,9 +427,6 @@
         body.dark-mode .pf-alert-block-head { color: #e6edf3; border-bottom-color: #21262d; }
         body.dark-mode .pf-wl-item { background: #10151c; border-color: #21262d; }
         body.dark-mode .pf-wl-item .wl-name, body.dark-mode .pf-wl-item .wl-vol { color: #8b949e; }
-        body.dark-mode .pf-tabs { border-color: #21262d; }
-        body.dark-mode .pf-tab { background: #161b22; border-color: #21262d; color: #e6edf3; }
-        body.dark-mode .pf-tab.active { background: #008080; border-color: #008080; color: #fff; }
         body.dark-mode .pf-ev-item { background: #10151c; border-color: #21262d; }
         body.dark-mode .pf-ev-item .pf-ev-title { color: #e6edf3; }
         body.dark-mode .pf-ev-item .pf-ev-desc { color: #adbac7; }
@@ -2238,12 +2249,12 @@
 
             // ---------- Tabs ----------
             const TAB_DEFS = {
-                overview: { label: 'Phân tích tài sản', html: function() { return renderSummary() + renderPerformance() + renderChartCard() + renderReview() + renderAssetAlloc() + renderAlloc(); }, mount: function() { bindChart(); loadChart(); loadPerformance(); } },
-                holdings: { label: 'Danh mục đang nắm giữ', html: function() { return renderHoldingsTab(); }, mount: function() { bindTable(); bindForm(); bindAssetForm(); loadCryptoMeta(); loadUserAssets(function() { refreshAssetCards(); }); } },
-                watchlist: { label: 'Cổ phiếu theo dõi', html: renderWatchlist, mount: function() { loadWatchlist(); bindWlAdd(); } },
-                portfolio: { label: 'Bảng danh mục', html: renderPortfolioTable, mount: function() { loadPortfolioTable(); } },
-                alerts: { label: 'Trung tâm cảnh báo', html: renderAlerts, mount: function() { mountAlerts(); } },
-                events: { label: 'Sự kiện liên quan', html: renderEvents, mount: function() { loadEvents(); } },
+                overview: { label: 'Phân tích tài sản', icon: 'fa-chart-pie', html: function() { return renderSummary() + renderPerformance() + renderChartCard() + renderReview() + renderAssetAlloc() + renderAlloc(); }, mount: function() { bindChart(); loadChart(); loadPerformance(); } },
+                holdings: { label: 'Danh mục đang nắm giữ', icon: 'fa-briefcase', html: function() { return renderHoldingsTab(); }, mount: function() { bindTable(); bindForm(); bindAssetForm(); loadCryptoMeta(); loadUserAssets(function() { refreshAssetCards(); }); } },
+                watchlist: { label: 'Cổ phiếu theo dõi', icon: 'fa-eye', html: renderWatchlist, mount: function() { loadWatchlist(); bindWlAdd(); } },
+                portfolio: { label: 'Bảng danh mục', icon: 'fa-table', html: renderPortfolioTable, mount: function() { loadPortfolioTable(); } },
+                alerts: { label: 'Trung tâm cảnh báo', icon: 'fa-bell', html: renderAlerts, mount: function() { mountAlerts(); } },
+                events: { label: 'Sự kiện liên quan', icon: 'fa-calendar-day', html: renderEvents, mount: function() { loadEvents(); } },
             };
             // ---------- Main render ----------
             function render() {
@@ -2252,13 +2263,17 @@
                     ? '<a href="/Login" style="text-decoration:none;background:#008080;color:#fff;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px;">Đăng nhập</a>'
                     : '<span style="font-size:12px;color:#8a99b1;"><i class="fas fa-sync-alt"></i> Tự cập nhật theo phiên</span>';
                 body.innerHTML =
-                    '<div class="pf-tabs">' +
-                        Object.keys(TAB_DEFS).map(function(k) {
-                            return '<button type="button" class="pf-tab' + (k === currentTab ? ' active' : '') + '" data-tab="' + k + '">' + TAB_DEFS[k].label + '</button>';
-                        }).join('') +
-                    '</div>' +
-                    '<div class="pf-tab-body" id="pfTabBody"></div>';
-                document.querySelectorAll('.pf-tab').forEach(function(b) {
+                    '<div class="pf-submenu-wrap">' +
+                        '<div class="pf-submenu">' +
+                            Object.keys(TAB_DEFS).map(function(k) {
+                                const d = TAB_DEFS[k];
+                                return '<button type="button" class="pf-sub-btn' + (k === currentTab ? ' active' : '') + '" data-tab="' + k + '" title="' + esc(d.label) + '">' +
+                                    '<i class="fas ' + (d.icon || 'fa-circle-dot') + '"></i><span>' + esc(d.label) + '</span></button>';
+                            }).join('') +
+                        '</div>' +
+                        '<div class="pf-tab-body" id="pfTabBody"></div>' +
+                    '</div>';
+                document.querySelectorAll('.pf-sub-btn').forEach(function(b) {
                     b.addEventListener('click', function() { showTab(b.getAttribute('data-tab')); });
                 });
                 showTab(currentTab);
@@ -2267,7 +2282,7 @@
                 const def = TAB_DEFS[name];
                 if (!def) return;
                 currentTab = name;
-                document.querySelectorAll('.pf-tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === name); });
+                document.querySelectorAll('.pf-sub-btn').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === name); });
                 const content = document.getElementById('pfTabBody');
                 if (!content) return;
                 content.innerHTML = def.html();
