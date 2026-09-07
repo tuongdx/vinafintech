@@ -2238,13 +2238,12 @@
 
             // ---------- Tabs ----------
             const TAB_DEFS = {
-                overview: { label: 'Tổng quan', html: function() { return renderSummary() + renderPerformance() + renderChartCard() + renderAlloc(); }, mount: function() { bindChart(); loadChart(); loadPerformance(); } },
+                overview: { label: 'Phân tích tài sản', html: function() { return renderSummary() + renderPerformance() + renderChartCard() + renderReview() + renderAssetAlloc() + renderAlloc(); }, mount: function() { bindChart(); loadChart(); loadPerformance(); } },
                 holdings: { label: 'Danh mục đang nắm giữ', html: function() { return renderHoldingsTab(); }, mount: function() { bindTable(); bindForm(); bindAssetForm(); loadCryptoMeta(); loadUserAssets(function() { refreshAssetCards(); }); } },
                 watchlist: { label: 'Cổ phiếu theo dõi', html: renderWatchlist, mount: function() { loadWatchlist(); bindWlAdd(); } },
                 portfolio: { label: 'Bảng danh mục', html: renderPortfolioTable, mount: function() { loadPortfolioTable(); } },
                 alerts: { label: 'Trung tâm cảnh báo', html: renderAlerts, mount: function() { mountAlerts(); } },
                 events: { label: 'Sự kiện liên quan', html: renderEvents, mount: function() { loadEvents(); } },
-                analysis: { label: 'Phân tích tài sản', html: function() { return renderReview() + renderAssetAlloc() + renderSectorAlloc(); }, mount: function() {} },
             };
             // ---------- Main render ----------
             function render() {
