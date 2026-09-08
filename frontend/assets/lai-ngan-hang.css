@@ -6,9 +6,9 @@ body.dark-mode { color: #e6edf3; }
 .lnh-page { width: 100%; max-width: none; margin: 0; padding: 18px 18px 30px; }
 .embedded .lnh-page { padding: 6px 0 30px; }
 
-.lnh-head h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; color: #0b3b38; }
+.lnh-head h1 { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; color: #0b3b38; }
 body.dark-mode .lnh-head h1 { color: #e6edf3; }
-.lnh-head .lnh-sub { color: #6b7a8f; font-size: 13.5px; margin-top: 4px; }
+.lnh-head .lnh-sub { color: #6b7a8f; font-size: 13px; margin-top: 6px; }
 body.dark-mode .lnh-head .lnh-sub { color: #8b949e; }
 
 .lnh-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
@@ -189,7 +189,7 @@ body.dark-mode .lnh-input-wrap select option:hover, body.dark-mode .lnh-input-wr
 .lnh-head {
     position: relative; overflow: hidden;
     background: linear-gradient(135deg, #006b6b 0%, #008080 55%, #00a08a 100%);
-    border-radius: 18px; padding: 24px 26px; margin-bottom: 16px;
+    border-radius: 18px; padding: 22px 26px; margin-bottom: 18px;
     color: #fff; box-shadow: 0 2px 10px rgba(0, 60, 60, 0.10);
 }
 .lnh-head::after {
@@ -199,10 +199,10 @@ body.dark-mode .lnh-input-wrap select option:hover, body.dark-mode .lnh-input-wr
     border-radius: 50%; pointer-events: none;
 }
 .lnh-head h1, .lnh-head .lnh-sub, .lnh-head .lnh-meta { position: relative; z-index: 1; }
-.lnh-head h1 { color: #fff !important; font-size: 25px; }
+.lnh-head h1 { color: #fff !important; font-size: 21px; }
 .lnh-head .lnh-sub { color: rgba(255,255,255,0.92) !important; max-width: 680px; }
-.lnh-head .lnh-meta { margin-top: 12px; }
-.lnh-head .lnh-pill { background: rgba(255,255,255,0.16) !important; border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+.lnh-head .lnh-meta { margin-top: 10px; }
+.lnh-head .lnh-pill { background: rgba(255,255,255,0.16) !important; border-color: rgba(255,255,255,0.3) !important; color: #fff !important; font-size: 12px; }
 .lnh-head .lnh-pill b { color: #fff !important; }
 .lnh-head .lnh-pill i { color: rgba(255,255,255,0.92) !important; }
 @media (max-width: 560px) {

@@ -18,7 +18,8 @@ import httpx
 
 from app.core.config import settings
 from app.db import SessionLocal
-from app.models import News, NewsStatusEnum, PortfolioHolding
+from app.models import CryptoWatchlist, News, NewsStatusEnum, PortfolioHolding, Setting, UserAsset, UserAssetClass
+from app.services import crypto_service
 from app.services import vnstock_service as vns
 from app.services.support_resistance import SupportResistanceService
 
@@ -516,6 +517,128 @@ def _portfolio_holdings() -> dict[str, Any]:
         "total_pnl_pct": round(total_pnl / total_cost * 100, 2) if total_cost else 0.0,
         "holdings": holdings_out,
     }
+
+
+@_tool(
+    "get_crypto_context",
+    "Lấy dữ liệu CRYPTO của người dùng: danh sách coin đang theo dõi (watchlist), vị thế crypto đang nắm (số lượng, giá vốn, lãi/lỗ), giá thị trường hiện tại, VÀ các tín hiệu mới nhất từ Trung tâm cảnh báo (crypto_signals + stock_signals). BẮT BUỘC gọi tool này trước khi trả lời MỌI câu hỏi về crypto/coin/tài sản số/token, 'coin nào đáng chú ý', 'có gì mới', phân tích vị thế crypto của tôi, hoặc về cảnh báo tài sản của người dùng.",
+    {"type": "object", "properties": {}},
+)
+def _crypto_context() -> dict[str, Any]:
+    user_id = _current_user_id.get()
+    if user_id is None:
+        return {"error": "Chưa xác định được người dùng."}
+    db = SessionLocal()
+    try:
+        watch_syms: list[str] = []
+        for (s,) in db.query(CryptoWatchlist.symbol).filter(CryptoWatchlist.user_id == user_id).all():
+            s = str(s or "").strip().upper()
+            if s and s not in watch_syms:
+                watch_syms.append(s)
+        pos_rows = (
+            db.query(UserAsset)
+            .filter(UserAsset.user_id == user_id, UserAsset.asset_class == UserAssetClass("crypto"))
+            .order_by(UserAsset.updated_at.desc())
+            .all()
+        )
+
+        def _signals(key: str):
+            row = db.query(Setting).filter(Setting.key == key).first()
+            if not row or not row.value:
+                return None
+            try:
+                d = json.loads(row.value)
+            except Exception:  # noqa: BLE001
+                return None
+            if not isinstance(d, dict):
+                return None
+            return {
+                "scanned_at": d.get("scanned_at"),
+                "symbols": d.get("symbols") or [],
+                "in_position": d.get("in_position") or [],
+                "opportunities": d.get("opportunities") or [],
+                "alerts": d.get("alerts") or [],
+                "trends": d.get("trends") or [],
+            }
+
+        crypto_signals = _signals(f"crypto_signals:{user_id}")
+        stock_signals = _signals(f"stock_signals:{user_id}")
+    finally:
+        db.close()
+
+    # Giá thị trường hiện tại (best-effort, từ nguồn Binance đã cache 6s)
+    live: dict[str, dict] = {}
+    try:
+        mkt = crypto_service.get_markets()
+        for it in (mkt.get("items") or []):
+            sym = str(it.get("symbol") or "").upper()
+            if sym:
+                live[sym] = it
+    except Exception:  # noqa: BLE001
+        pass
+
+    symbols: list[str] = list(watch_syms)
+    positions_out: list[dict[str, Any]] = []
+    for r in pos_rows:
+        sym = str(r.label or "").strip().upper()
+        if not sym:
+            continue
+        if sym not in symbols:
+            symbols.append(sym)
+        qty = float(r.quantity or 0)
+        amount = float(r.amount or 0)  # tổng stablecoin đã bỏ ra
+        currency = r.note if (r.note in ("USDT", "USDC")) else "USDT"
+        it = live.get(sym)
+        cur = float(it.get("price") or 0) if it else 0.0
+        val = round(qty * cur, 2) if cur else None
+        pnl = round(val - amount, 2) if val is not None else None
+        pnl_pct = round((val / amount - 1) * 100, 2) if (val is not None and amount) else None
+        positions_out.append(
+            {
+                "symbol": sym,
+                "quantity": qty,
+                "currency": currency,
+                "cost_usdt": round(amount, 2),
+                "current_price_usdt": cur if cur else None,
+                "value_usdt": val,
+                "pnl_usdt": pnl,
+                "pnl_pct": pnl_pct,
+            }
+        )
+
+    market_snapshot: list[dict[str, Any]] = []
+    for sym in symbols:
+        it = live.get(sym)
+        if it:
+            market_snapshot.append(
+                {
+                    "symbol": sym,
+                    "price": it.get("price"),
+                    "change_24h_pct": it.get("change_pct"),
+                    "high_24h": it.get("high"),
+                    "low_24h": it.get("low"),
+                    "volume_24h_usdt": it.get("volume"),
+                }
+            )
+
+    if not symbols and not positions_out:
+        return {
+            "empty": True,
+            "message": "Bạn chưa có coin nào trong danh sách theo dõi / vị thế crypto. Hãy thêm Crypto đang theo dõi hoặc vị thế ở trang Quản lý tài sản để TuniAI phân tích.",
+        }
+    # Trả PHẲNG (không lồng quá sâu) để giữ đủ text khi giới hạn kích thước.
+    return _cap(
+        {
+            "watchlist": symbols,
+            "positions": positions_out,
+            "positions_count": len(positions_out),
+            "market_snapshot": market_snapshot,
+            "crypto_signals": crypto_signals,  # tín hiệu mới nhất của Tín hiệu Crypto (Trung tâm cảnh báo)
+            "stock_signals": stock_signals,    # tín hiệu mới nhất của Cảnh báo Cổ phiếu (Trung tâm cảnh báo)
+        },
+        max_str=260,
+        max_items=30,
+    )
 
 
 # ===========================================================================
@@ -1097,7 +1220,13 @@ QUY TẮC BẮT BUỘC:
    Số liệu trong biểu đồ PHẢI khớp dữ liệu tool đã lấy (không tự bịa).
 12. ẢNH CHART CỔ PHIẾU: Khi bạn dùng analyze_chart để phân tích chart của một mã X (VD 'phân tích chart FPT'), ngay SAU phần phân tích kỹ thuật hãy chèn MỘT dòng ảnh (Markdown image) đúng dạng:
 ![Biểu đồ X 3 tháng](/api/stocks/X/chart-svg?period=3m)
-   Trong đó X là MÃ CỔ PHIẾU IN HOA. KHÔNG tự bịa URL khác, KHÔNG chèn cho mã chỉ số (VNINDEX...). Nếu không chắc có dữ liệu thì vẫn chèn — hệ thống tự bỏ qua khi không vẽ được."""
+   Trong đó X là MÃ CỔ PHIẾU IN HOA. KHÔNG tự bịa URL khác, KHÔNG chèn cho mã chỉ số (VNINDEX...). Nếu không chắc có dữ liệu thì vẫn chèn — hệ thống tự bỏ qua khi không vẽ được.
+13. HỖ TRỢ CRYPTO + TRUNG TÂM CẢNH BÁO:
+   Bạn là TuniAI — trợ lý phân tích Crypto của TuniX: giúp người dùng hiểu trạng thái thị trường, các tài sản họ đang theo dõi và các vị thế họ đang nắm giữ. LUÔN lấy danh sách tài sản từ dữ liệu người dùng (watchlist/positions) được cung cấp; không cố định bất kỳ mã coin nào.
+   - Khi người dùng hỏi về CRYPTO / coin / token / altcoin (BTC, ETH...), 'coin nào đáng chú ý', 'có gì mới', 'phân tích vị thế crypto / coin của tôi', hoặc về CẢNH BÁO tài sản → BẮT BUỘC gọi get_crypto_context trước. Tool này trả: watchlist (coin đang theo dõi), positions (vị thế crypto: số lượng, giá vốn, lãi/lỗ), market_snapshot (giá hiện tại, %24h), và crypto_signals + stock_signals (tín hiệu mới nhất của Trung tâm cảnh báo: CƠ HỘI/CẢNH BÁO/XU HƯỚNG cho Crypto và Cổ phiếu).
+   - CÁC BƯỚC KHI TRẢ LỜI CRYPTO: (1) Xác định tài sản liên quan từ WATCHLIST và POSITIONS. (2) Kiểm tra trạng thái thị trường chung (market_snapshot). (3) Sử dụng các cảnh báo/cơ hội/xu hướng từ crypto_signals/stock_signals (Trung tâm cảnh báo) làm context. (4) Kết hợp dữ liệu thị trường/kỹ thuật được cung cấp. (5) Giải thích ngắn gọn, dễ hiểu, có cơ sở. (6) Nếu người dùng hỏi về một tài sản ĐANG CÓ VỊ THẾ: ưu tiên phân tích vị thế — giá vốn, PnL, drawdown, trend, support/resistance, rủi ro. (7) Nếu hỏi 'coin nào đáng chú ý': CHỈ so sánh các tài sản trong WATCHLIST và POSITIONS. (8) Nếu hỏi 'có gì mới': ưu tiên các tín hiệu mới hoặc vừa thay đổi (dựa vào crypto_signals/stock_signals). (9) Nếu hỏi về một cảnh báo: giải thích vì sao hệ thống tạo cảnh báo và dữ liệu nào dẫn tới cảnh báo đó. (10) Không được tự tạo dữ liệu không có trong input.
+   - NGUYÊN TẮC PHÂN TÍCH: Không khẳng định chắc chắn về giá tương lai. KHÔNG nói 'Coin này chắc chắn sẽ tăng', 'Bạn nên mua', 'Bạn nên bán'. Thay vào đó dùng: 'Tín hiệu hiện tại đang nghiêng về…', 'Đang hình thành…', 'Đáng theo dõi…', 'Rủi ro cần chú ý là…', 'Điều kiện xác nhận là…', 'Điều kiện làm mất hiệu lực kịch bản là…'. Nếu dữ liệu chưa đủ để kết luận, hãy nói rõ dữ liệu chưa đủ.
+   - CÁCH TRẢ LỜI: Ưu tiên cấu trúc: (1) Kết luận ngắn → (2) Các tín hiệu chính → (3) Dữ liệu hỗ trợ → (4) Rủi ro → (5) Điều cần theo dõi tiếp theo. KHÔNG hiển thị toàn bộ indicator nếu không liên quan. Trả lời ngắn nếu câu hỏi đơn giản; phân tích chi tiết nếu người dùng yêu cầu sâu. Có thể phân tích crypto khi hỏi crypto VÀ vẫn trả lời cổ phiếu khi hỏi cổ phiếu (áp dụng các quy tắc cổ phiếu/danh mục ở trên)."""
 
 
 def _build_system(memory: str = "") -> str:

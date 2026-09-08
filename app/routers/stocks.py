@@ -214,7 +214,7 @@ def stock_discover():
 
 @router.get("/opportunities")
 def opportunities():
-    """Cơ hội nổi bật hôm nay: trạng thái thị trường + 3–5 mã có Opportunity Score."""
+    """Cơ hội nổi bật hôm nay: trạng thái thị trường + tối đa 11 mã có Opportunity Score."""
     return get_top_opportunities()
 
 

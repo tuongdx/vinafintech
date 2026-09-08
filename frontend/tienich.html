@@ -15,7 +15,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
-    <link rel="stylesheet" href="/static/tienich.css?v=20260906i" />
+    <link rel="stylesheet" href="/static/tienich.css?v=20260908au" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260908t" />
+    <link rel="stylesheet" href="/static/exchange.css?v=20260908au" />
 </head>
 <body>
     <div class="ti-page">
@@ -27,10 +29,11 @@
         <!-- Vùng công cụ: hiển thị thẳng 1 trong 2 màn hình (Giá điều chỉnh / Lợi nhuận tiền gửi) -->
         <div id="toolBody">
             <div class="ti-toolbar">
-                <div class="tt-name" id="toolTitle"><i class="fas fa-wrench"></i><span></span></div>
+                <div class="tt-name" id="toolTitle"><span></span></div>
                 <div class="ti-switch">
                     <button type="button" class="ti-chip" data-tool="adj"><i class="fas fa-chart-line"></i> Giá điều chỉnh</button>
                     <button type="button" class="ti-chip" data-tool="dep"><i class="fas fa-piggy-bank"></i> Lợi nhuận tiền gửi</button>
+                    <button type="button" class="ti-chip" data-tool="ex"><i class="fas fa-coins"></i> Tỷ giá ngoại tệ</button>
                 </div>
             </div>
 
@@ -114,6 +117,64 @@
                 </div>
                 <div id="depResult"></div>
             </div>
+
+            <!-- Tool 3: Tỷ giá ngoại tệ -->
+            <div id="panelEx" style="display:none;">
+                <div class="fx-card">
+                    <div class="fx-card-head">
+                        <h3>TỶ GIÁ NGOẠI TỆ <span class="fx-hint">(quy ra VND)</span></h3>
+                        <button type="button" class="fx-refresh" id="fxRefresh" title="Làm mới tỷ giá"><i class="fas fa-sync-alt"></i> Làm mới</button>
+                    </div>
+                    <div class="fx-msg" id="fxRatesMsg"></div>
+                    <div class="fx-grid" id="fxGrid"></div>
+                </div>
+
+                <div class="fx-card">
+                    <div class="fx-card-head">
+                        <h3>HOÁN ĐỔI NGOẠI TỆ</h3>
+                    </div>
+                    <div class="fx-conv">
+                        <div class="fx-crow">
+                            <label class="fx-clabel" for="fxFrom">Từ</label>
+                            <div class="fx-pick">
+                                <img id="fxFromFlag" class="fx-sel-flag" alt="" />
+                                <select id="fxFrom" class="fx-sel"></select>
+                                <input id="fxAmt" class="fx-input" type="text" inputmode="decimal" autocomplete="off" placeholder="0" />
+                            </div>
+                        </div>
+                        <div class="fx-swapwrap">
+                            <button type="button" id="fxSwap" class="fx-swap" title="Đảo chiều">
+                                <i class="fas fa-arrows-up-down"></i>
+                            </button>
+                        </div>
+                        <div class="fx-crow">
+                            <label class="fx-clabel" for="fxTo">Thành</label>
+                            <div class="fx-pick">
+                                <img id="fxToFlag" class="fx-sel-flag" alt="" />
+                                <select id="fxTo" class="fx-sel"></select>
+                                <input id="fxOut" class="fx-input fx-out" type="text" readonly placeholder="0" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fx-fee">
+                        <label class="fx-fee-toggle">
+                            <input type="checkbox" id="fxFeeOn" />
+                            <span>Trừ phí khi chuyển đổi</span>
+                        </label>
+                        <div class="fx-fee-ctrl" id="fxFeeCtrl" style="display:none;">
+                            <span class="fx-flabel">Loại phí:</span>
+                            <div class="fx-chips" id="fxFeeChips"></div>
+                            <span class="fx-flabel">Phí (%):</span>
+                            <input id="fxFeePct" class="fx-input fx-fee-in" type="text" inputmode="decimal" value="0.5" autocomplete="off" />
+                        </div>
+                    </div>
+
+                    <div class="fx-res" id="fxRes">
+                        <div class="fx-res-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải tỷ giá…</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="ti-note" style="margin-top:18px;">
@@ -121,7 +182,8 @@
         </div>
     </div>
 
-    <script src="/static/tienich.js?v=20260907x"></script>
+    <script src="/static/tienich.js?v=20260908c"></script>
+    <script src="/static/exchange.js?v=20260908e"></script>
     <script src="/static/context-menu.js?v=20260827a"></script>
 </body>
 </html>

@@ -23,8 +23,8 @@
 
         /* ===== Header ===== */
         .pf-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
-        .pf-head h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
-        .pf-head .pf-sub { font-size: 14px; color: #6b7a8f; margin-top: 4px; }
+        .pf-head h1 { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; }
+        .pf-head .pf-sub { font-size: 13px; color: #6b7a8f; margin-top: 6px; }
         .pf-demo-banner { margin-bottom: 16px; background: #fff8e8; border: 1px solid #f2d9a0; color: #8a6d1a; border-radius: 12px; padding: 10px 16px; font-size: 13px; display: flex; align-items: center; gap: 10px; }
         .pf-demo-banner a { color: #008080; font-weight: 700; text-decoration: none; }
 
@@ -97,9 +97,10 @@
         .pf-alloc-legend { display: flex; flex-direction: column; gap: 9px; }
         .pf-alloc-legend .al-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
         .pf-alloc-legend .al-dot { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
-        .pf-alloc-legend .al-name { flex: 1; color: #4a5a72; font-weight: 600; }
-        .pf-alloc-legend .al-pct { font-weight: 800; }
-        .pf-alloc-legend .al-val { color: #8a99b1; font-size: 12px; width: 74px; text-align: right; }
+        .pf-alloc-legend .al-name { flex: 1; color: #4a5a72; font-weight: 600; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; }
+        .pf-alloc-legend .al-sub { font-size: 10.5px; color: #8a99b1; font-weight: 500; }
+        .pf-alloc-legend .al-pct { font-weight: 800; min-width: 46px; text-align: right; }
+        .pf-alloc-legend .al-val { color: #8a99b1; font-size: 12px; width: 108px; text-align: right; }
         .pf-donut-center { fill: #fff; }
         .pf-donut-num { fill: #12203a; }
         .pf-alloc-note { display: flex; gap: 8px; align-items: center; font-size: 12px; color: #8a99b1; margin-top: 10px; line-height: 1.5; }
@@ -113,6 +114,12 @@
         .hb-val { color: #8a99b1; font-size: 12px; width: 116px; text-align: right; }
         .hb-track { height: 11px; background: #eef1f5; border-radius: 6px; overflow: hidden; }
         .hb-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+        /* Nhãn trạng thái coin trên Bảng danh mục crypto */
+        .pf-bt { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+        .pf-bt.hold { background: rgba(0,128,128,0.12); color: #006e6e; }
+        .pf-bt.watch { background: rgba(74,127,196,0.14); color: #3b67a3; }
+        body.dark-mode .pf-bt.hold { background: rgba(0,128,128,0.28); color: #4dd8c4; }
+        body.dark-mode .pf-bt.watch { background: rgba(74,127,196,0.3); color: #9fc0ea; }
 
         /* ===== Form ===== */
         .pf-form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; align-items: end; }
@@ -275,6 +282,32 @@
         .pf-alert-block-head .pf-alert-block-count { font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 20px; }
         .pf-alert-block > .pf-empty { padding: 18px 12px; }
 
+        /* ===== Tín hiệu Crypto (AI) — trong Trung tâm cảnh báo ===== */
+        .ca-sect { display: flex; flex-direction: column; }
+        .pf-ca-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .pf-ca-hinfo { min-width: 0; }
+        .pf-ca-head h3 { display: flex; align-items: center; flex-wrap: wrap; }
+        .pf-ca-sub { font-size: 12px; color: #6b7a8f; margin-top: 4px; line-height: 1.55; }
+        .ca-ai { display: inline-block; margin-left: 9px; background: linear-gradient(135deg, #7b61c4, #4a7fc4); color: #fff; font-size: 9.5px; font-weight: 800; letter-spacing: .5px; padding: 2px 8px; border-radius: 6px; vertical-align: 2px; }
+        .ca-scan { margin: 2px 0 0; }
+        .pf-ca-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11.5px; color: #6b7a8f; background: #f8fafc; border: 1px solid #e9edf2; border-radius: 10px; padding: 8px 12px; margin: 4px 0 14px; line-height: 1.6; }
+        .pf-ca-meta b { color: #12203a; }
+        .ca-card .ca-tag { display: inline-flex; align-items: center; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; padding: 2px 7px; border-radius: 6px; }
+        .ca-tag.ca-pos { background: rgba(124, 97, 196, .13); color: #7b61c4; }
+        .ca-str { font-size: 10.5px; color: #8a99b1; font-weight: 700; margin-left: auto; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
+        .ca-str b { color: #12203a; }
+        .ca-price { font-size: 11px; color: #6b7a8f; margin: 3px 0 2px; }
+        .ca-price b { color: #12203a; }
+        .ca-zone { margin-top: 8px; font-size: 12px; color: #006666; background: rgba(0, 128, 128, .08); border: 1px solid rgba(0, 128, 128, .25); border-radius: 8px; padding: 5px 9px; line-height: 1.5; }
+        .ca-confirm { margin-top: 6px; font-size: 11.5px; color: #5a6b3f; background: rgba(126, 158, 60, .09); border: 1px dashed rgba(126, 158, 60, .4); border-radius: 8px; padding: 5px 9px; line-height: 1.5; }
+        .ca-trend-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 7px 0 5px; }
+        .ca-chip { font-size: 10px; font-weight: 800; letter-spacing: .2px; padding: 3px 9px; border-radius: 20px; }
+        body.dark-mode .pf-ca-sub { color: #8b949e; }
+        body.dark-mode .pf-ca-meta { background: #10151c; border-color: #21262d; color: #8b949e; }
+        body.dark-mode .pf-ca-meta b, body.dark-mode .ca-str b, body.dark-mode .ca-price b { color: #e6edf3; }
+        body.dark-mode .ca-zone { color: #5fd6cf; background: rgba(0, 128, 128, .14); border-color: rgba(0, 128, 128, .35); }
+        body.dark-mode .ca-confirm { color: #aec57a; background: rgba(126, 158, 60, .12); border-color: rgba(126, 158, 60, .35); }
+
         /* ===== Watchlist ===== */
         .pf-wl-add { display: flex; gap: 8px; margin-bottom: 12px; }
         .pf-wl-add input { flex: 1; padding: 9px 12px; border: 1px solid #e5eaf0; border-radius: 10px; font-size: 13px; font-family: inherit; color: #12203a; background: #fff; }
@@ -307,9 +340,13 @@
         .pf-tab-body { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
         .pf-tab-body .pf-summary { margin-bottom: 0; }
         .pf-tab-body .pf-perf { margin-bottom: 0; }
-        /* Cặp block đặt cạnh nhau — mỗi block chiếm 1 nửa chiều ngang (Review ⏐ Phân bổ theo ngành). */
+        /* Cặp block đặt cạnh nhau — mỗi block chiếm 1 nửa chiều ngang. */
         .pf-duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
         .pf-duo > .pf-card { margin: 0; min-width: 0; }
+        /* Hàng 2 (Crypto ⏐ Ngành): cột crypto tự giãn theo card bên cạnh; không có crypto → chỉ còn ngành full-width. */
+        .pf-duo.pf-rowb > #pfCryptoAllocCard { display: flex; flex-direction: column; min-width: 0; }
+        .pf-duo.pf-rowb > #pfCryptoAllocCard .pf-card { flex: 1; margin: 0; min-width: 0; }
+        .pf-duo.pf-rowb.sole { grid-template-columns: 1fr; }
         body.dark-mode .pf-submenu .pf-sub-btn { background: #161b22; border-color: #21262d; color: #e6edf3; }
         body.dark-mode .pf-submenu .pf-sub-btn i { color: #4fb3b3; }
         body.dark-mode .pf-submenu .pf-sub-btn:hover { background: #10151c; color: #4fb3b3; border-color: #2c4a46; }
@@ -353,7 +390,7 @@
         .pf-perf-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; position: relative; }
         .pf-perf-head h2 { margin-bottom: 0; }
         .pf-perf-tag { font-size: 12.5px; color: #008080; font-weight: 700; background: rgba(0,128,128,0.08); padding: 5px 12px; border-radius: 20px; white-space: nowrap; }
-        .pf-perf-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 1.7fr); gap: 14px; align-items: stretch; margin-bottom: 14px; position: relative; }
+        .pf-perf-main { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.6fr); gap: 14px; align-items: stretch; margin-bottom: 14px; position: relative; }
         .pf-perf-stat { background: #fff; border: 1px solid #e9edf2; border-radius: 14px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(15,23,42,0.04); position: relative; display: flex; flex-direction: column; justify-content: center; }
         .pf-perf-stat.hero { background: linear-gradient(135deg, #008080, #00a08a); border-color: transparent; color: #fff; }
         .pf-perf-stat.hero .pf-stat-label { color: rgba(255,255,255,0.92); }
@@ -378,6 +415,19 @@
         .pf-perf-empty .pe-desc { margin: 6px auto 0; font-size: 13px; max-width: 380px; }
         .pf-perf-warn { font-size: 11.5px; color: #c98a16; margin-top: 8px; position: relative; }
 
+        /* ===== Cảnh báo thiếu tiền khi Mua (yêu cầu nạp VND / USDT) ===== */
+        .pf-needcash { margin: 0 0 16px; }
+        .pf-needcash-in { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: #fff8ec; border: 1px solid #f2cf87; border-left: 4px solid #e6a23c; color: #6b4a12; border-radius: 12px; padding: 11px 13px; font-size: 13px; line-height: 1.5; }
+        .pf-needcash-in > i { color: #e6a23c; font-size: 16px; }
+        .pf-needcash-in .pf-nc-txt { flex: 1; min-width: 200px; }
+        .pf-needcash-in .pf-nc-txt b { color: #a05e00; }
+        .pf-needcash-in .pf-nc-btn { border: none; background: #e6a23c; color: #fff; font-weight: 700; font-family: inherit; padding: 8px 16px; border-radius: 9px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+        .pf-needcash-in .pf-nc-btn:hover { background: #cf8c20; }
+        .pf-needcash-in .pf-nc-x { border: none; background: transparent; color: #c98a16; cursor: pointer; font-size: 16px; padding: 2px 6px; }
+        body.dark-mode .pf-needcash-in { background: #2b2410; border-color: #4a3d1a; border-left-color: #e6a23c; color: #e0c26a; }
+        body.dark-mode .pf-needcash-in .pf-nc-txt b { color: #f0c36d; }
+        body.dark-mode .pf-needcash-in .pf-nc-x { color: #e0c26a; }
+
         /* Tooltip ⓘ */
         .pf-tip { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: rgba(0,128,128,0.14); color: #008080; font-size: 10px; font-weight: 800; cursor: help; user-select: none; line-height: 1; }
         .pf-tip::after { content: attr(data-tip); position: absolute; bottom: 150%; left: 50%; transform: translateX(-50%); width: 250px; background: #1e2b41; color: #fff; font-size: 11.5px; font-weight: 500; line-height: 1.5; padding: 9px 11px; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); opacity: 0; visibility: hidden; transition: opacity 0.15s, visibility 0.15s; z-index: 40; text-align: left; pointer-events: none; }
@@ -392,6 +442,7 @@
         body.dark-mode .pf-chart-tabs button { background: #161b22; border-color: #30363d; color: #adbac7; }
         body.dark-mode .pf-chart-tabs button.active { background: #008080; border-color: #008080; color: #fff; }
         body.dark-mode .pf-alloc-legend .al-name { color: #adbac7; }
+        body.dark-mode .pf-alloc-legend .al-sub { color: #768390; }
         body.dark-mode .pf-donut-center { fill: #161b22; }
         body.dark-mode .pf-donut-num { fill: #e6edf3; }
         body.dark-mode .pf-alloc-note { color: #8b949e; }
@@ -482,13 +533,14 @@
             .pf-head h1 { font-size: 21px; }
         }
     </style>
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260908t" />
 </head>
 <body>
     <div class="app-wrapper">
         <div class="pf-head">
             <div>
-                <h1>Quản lý tài sản</h1>
-                <div class="pf-sub">Theo dõi hiệu suất, phân bổ và lãi/lỗ tài sản theo thời gian thực</div>
+                <h1 id="pfHeadTitle">Quản lý tài sản</h1>
+                <div class="pf-sub" id="pfHeadSub">Theo dõi hiệu suất, phân bổ và lãi/lỗ tài sản theo thời gian thực</div>
                 <div class="pf-asof"><i class="far fa-clock"></i> Cập nhật lần cuối: <b>06/09/2026 · 11:24</b></div>
             </div>
             <div id="pfHeadRight"></div>
@@ -512,8 +564,11 @@
             let currentTab = 'overview';
             const INIT_TAB = (new URLSearchParams(window.location.search || '')).get('tab') || null;
             let watchlistSyms = [];
+            let cwSyms = [];          // coin crypto đang theo dõi
+            const CW_DEMO = ['BTC', 'ETH', 'BNB', 'SOL'];
             let tradeMode = 'buy';
-            let alertData = [];     // dữ liệu Trung tâm cảnh báo
+            let cryptoSignalsData = null; // kết quả quét tín hiệu Crypto (AI)
+            let stockSignalsData = null;  // kết quả quét cảnh báo Cổ phiếu (AI)
             const chartCache = {};
             const TIP_PNL = 'Tổng lãi/lỗ = Giá trị hiện tại của danh mục − Tổng vốn đã đầu tư. TuniX tính theo giá thị trường realtime so với giá vốn các vị thế đang nắm giữ.';
             const TIP_INVESTED = 'Tổng vốn đã dùng để mua cổ phiếu đang nắm giữ (số lượng × giá vốn bình quân).';
@@ -525,6 +580,19 @@
             function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem(TOKEN_KEY) }; }
             function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
             function fmtMoney(v) { const n = Number(v) || 0; return new Intl.NumberFormat('vi-VN').format(Math.round(n)); }
+            // Rút gọn số VND lớn cho giữa donut: 1,23 tỷ / 850 triệu / 120 nghìn.
+            function fmtCompactVnd(v) {
+                const n = Number(v) || 0;
+                if (n >= 1e9) {
+                    const t = n / 1e9;
+                    // Trường hợp phi thực tế (>= 1 triệu tỷ) → dạng khoa học ngắn cho khỏi tràn giữa donut.
+                    if (t >= 1e6) return t.toExponential(1).replace('.', ',') + ' tỷ';
+                    return t.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' tỷ';
+                }
+                if (n >= 1e6) return (n / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' triệu';
+                if (n >= 1e3) return (n / 1e3).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' nghìn';
+                return fmtMoney(n);
+            }
             function fmtPct(v) { const n = Number(v) || 0; return (n >= 0 ? '+' : '') + n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%'; }
             function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*'); }
 
@@ -534,6 +602,119 @@
                 t.textContent = msg; t.style.background = isErr ? '#8a2333' : '#1e2b41'; t.style.opacity = '1';
                 clearTimeout(t._t); t._t = setTimeout(function() { t.style.opacity = '0'; }, 2200);
             }
+
+            // ---------- Hướng dẫn Nạp tiền khi quỹ không đủ để Mua ----------
+            function goTopUp(cur) {
+                setCashCur(cur === 'USDT' ? 'USDT' : 'VND');
+                const card = document.getElementById('pfCashCard');
+                const target = card || document.body;
+                if (window.self !== window.top && window.frameElement) {
+                    try {
+                        const fr = window.frameElement;
+                        const top = fr.getBoundingClientRect().top + window.parent.scrollY;
+                        window.parent.scrollTo({ top: Math.max(0, top + target.getBoundingClientRect().top - 90), behavior: 'smooth' });
+                    } catch (e) { target.scrollIntoView({ behavior: 'smooth' }); }
+                } else {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+                const inp = document.getElementById('paCash');
+                if (inp) setTimeout(function() { inp.focus(); }, 400);
+            }
+            function needTopUp(cur, needTxt) {
+                const label = cur === 'USDT' ? 'USDT/USDC' : 'VND';
+                let box = document.getElementById('pfNeedCash');
+                if (!box) {
+                    box = document.createElement('div');
+                    box.id = 'pfNeedCash';
+                    box.className = 'pf-needcash';
+                    const wrap = document.querySelector('.app-wrapper') || document.body;
+                    wrap.insertBefore(box, wrap.firstChild);
+                }
+                box.innerHTML =
+                    '<div class="pf-needcash-in">' +
+                        '<i class="fas fa-circle-exclamation"></i>' +
+                        '<div class="pf-nc-txt">Quỹ tiền mặt <b>' + label + '</b> không đủ' + (needTxt ? ' để thanh toán <b>' + esc(String(needTxt)) + '</b>' : '') + '.<br/>Vui lòng <b>Nạp thêm tiền ' + label + '</b> tại mục <b>Tiền mặt</b> để thực hiện giao dịch.</div>' +
+                        '<button type="button" class="pf-nc-btn" data-cur="' + cur + '">Nạp tiền ' + label + '</button>' +
+                        '<button type="button" class="pf-nc-x" title="Đóng"><i class="fas fa-xmark"></i></button>' +
+                    '</div>';
+                box.style.display = '';
+                const btn = box.querySelector('.pf-nc-btn');
+                if (btn) btn.addEventListener('click', function() { goTopUp(cur); });
+                const x = box.querySelector('.pf-nc-x');
+                if (x) x.addEventListener('click', function() { box.style.display = 'none'; });
+                box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
+            }
+
+            // ---------- Format số tiền khi gõ (tự chèn dấu chấm ngàn, dễ nhìn) ----------
+            // Quy ước hiển thị kiểu VN: '.' = phân tách NGÀN, ',' = phân tách THẬP PHÂN.
+            // Bộ nhớ chuẩn (dataset.raw) luôn dùng '.' cho thập phân & không có dấu ngàn
+            // để moneyNum() parse chính xác. '.' khi gõ sẽ tự đổi thành ',' (đánh dấu thập phân).
+            const MONEY_IDS = ['pfAvg', 'pfQty', 'paCash', 'paDepositAmount', 'pagoldPrice', 'pagoldQty', 'pacryptoPrice', 'pacryptoAmt'];
+            function setMoney(el, raw) {
+                if (!el) return;
+                let r = String(raw == null ? '' : raw).replace(/,/g, '.');
+                const neg = r.charAt(0) === '-'; if (neg) r = r.slice(1);
+                const dm = r.match(/[.]/);
+                let intPart = dm ? r.slice(0, dm.index) : r;
+                let decPart = dm ? r.slice(dm.index + 1) : '';
+                intPart = intPart.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+                decPart = decPart.replace(/[^0-9]/g, '').slice(0, 8);
+                el.value = (neg ? '-' : '') + intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (decPart ? ',' + decPart : '');
+                el.dataset.raw = (neg ? '-' : '') + (intPart || '0') + (decPart ? '.' + decPart : '');
+            }
+            function fmtMoneyInput(el) {
+                if (!el) return;
+                let v = String(el.value || '');
+                const neg = v.charAt(0) === '-';
+                if (neg) v = v.slice(1);
+                // Chỉ ',' mới là thập phân; mọi '.' trong phần nguyên là dấu ngàn (bỏ hết).
+                // Dấu thập phân đang gõ dở (giá trị kết thúc bằng '.' hoặc ',') được giữ lại.
+                let intPart = v, decPart = '', pendingDec = false;
+                const ci = v.lastIndexOf(',');
+                if (ci !== -1) {
+                    intPart = v.slice(0, ci); decPart = v.slice(ci + 1);
+                    if (/[.,]$/.test(v)) pendingDec = true;
+                } else if (/[.,]$/.test(v)) {
+                    intPart = v.slice(0, -1); pendingDec = true;
+                }
+                intPart = intPart.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+                decPart = decPart.replace(/[^0-9]/g, '').slice(0, 8);
+                const out = (neg ? '-' : '') + intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (decPart ? ',' + decPart : (pendingDec ? ',' : ''));
+                if (out !== el.value) {
+                    el.value = out;
+                    try { el.setSelectionRange(out.length, out.length); } catch (e) {}
+                }
+                el.dataset.raw = (neg ? '-' : '') + (intPart || '0') + (decPart ? '.' + decPart : '');
+            }
+            function moneyNum(x) {
+                const el = (typeof x === 'string') ? document.getElementById(x) : x;
+                if (!el) return NaN;
+                let s;
+                if (el.dataset && el.dataset.raw != null && el.dataset.raw !== '') {
+                    s = el.dataset.raw; // chuẩn: không dấu ngàn, '.' thập phân
+                } else {
+                    s = String(el.value || '').replace(/\./g, '').replace(/,/g, '.');
+                }
+                return parseFloat(s);
+            }
+            // Nhấn '.' (hoặc ',') trong ô số tiền → chèn ',' để đánh dấu thập phân
+            // (tránh nhầm '.' với dấu ngàn khi gõ số nguyên dài).
+            document.addEventListener('keydown', function(e) {
+                const t = e.target;
+                if (!t || !t.id || MONEY_IDS.indexOf(t.id) === -1) return;
+                if (e.key !== '.' && e.key !== ',') return;
+                if (String(t.value || '').indexOf(',') !== -1) { e.preventDefault(); return; }
+                e.preventDefault();
+                try { document.execCommand('insertText', false, ','); } catch (err) {
+                    t.value += ',';
+                    fmtMoneyInput(t);
+                }
+            });
+            document.addEventListener('input', function(e) {
+                const t = e.target;
+                if (t && t.id && MONEY_IDS.indexOf(t.id) > -1) fmtMoneyInput(t);
+            });
 
             // ---------- Totals ----------
             function totals() {
@@ -563,7 +744,8 @@
 
             // ---------- Chart ----------
             function renderChartCard() {
-                return '<div class="pf-card">' +
+                // pf-perf: cùng nền gradient + viền teal nhạt + glow như block "Tổng lãi/lỗ tài sản".
+                return '<div class="pf-card pf-perf">' +
                     '<h2>Hiệu suất tài sản</h2>' +
                     '<div class="pf-chart-tabs">' + Object.keys(PERIODS).map(function(p) {
                         return '<button data-per="' + p + '" class="' + (p === chartPeriod ? 'active' : '') + '">' + p + '</button>';
@@ -668,7 +850,7 @@
                 if (!inner || !holdings.length) return;
                 inner.innerHTML = allocBodyHtml();
             }
-            function donutSvg(list, w, h, centerLabel) {
+            function donutSvg(list, w, h, centerLabel, centerNum) {
                 const cx = w / 2, cy = h / 2, r = w / 2 - 6, ir = r * 0.62;
                 const total = list.reduce(function(a, s) { return a + s.value; }, 0) || 1;
                 let angle = -90, arcs = '';
@@ -686,7 +868,7 @@
                 });
                 return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%">' + arcs +
                     '<circle cx="' + cx + '" cy="' + cy + '" r="' + ir + '" class="pf-donut-center"/>' +
-                    '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="16" font-weight="800" class="pf-donut-num" font-family="Inter">' + list.length + '</text>' +
+                    '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="16" font-weight="800" class="pf-donut-num" font-family="Inter">' + (centerNum == null ? list.length : centerNum) + '</text>' +
                     '<text x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" font-size="10.5" fill="#8a99b1" font-family="Inter">' + esc(centerLabel || 'ngành') + '</text>' +
                 '</svg>';
             }
@@ -743,10 +925,10 @@
                         '<button type="button" class="pf-tt' + (tradeMode === 'sell' ? ' active' : '') + '" data-mode="sell"><i class="fas fa-cart-arrow-down"></i> Bán</button>' +
                     '</div>';
                 const fields = editing
-                    ? '<div class="pf-field"><label>Giá vốn (đ)</label><input type="number" id="pfAvg" min="0" max="1000000" step="100" placeholder="VD: 26500" value="' + esc(avg) + '" ' + disabled + ' /></div>' +
-                      '<div class="pf-field"><label>Số lượng</label><input type="number" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1000" value="' + esc(qty) + '" ' + disabled + ' /></div>'
-                    : '<div class="pf-field"><label>Giá mua/bán (đ)</label><input type="number" id="pfAvg" min="0" max="1000000" step="100" placeholder="VD: 26500" ' + disabled + ' /></div>' +
-                      '<div class="pf-field"><label>Số lượng mua/bán</label><input type="number" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1000" ' + disabled + ' /></div>' +
+                    ? '<div class="pf-field"><label>Giá vốn (đ)</label><input type="text" inputmode="numeric" autocomplete="off" id="pfAvg" min="0" max="1000000" step="100" placeholder="VD: 26.500" value="' + esc(avg) + '" ' + disabled + ' /></div>' +
+                      '<div class="pf-field"><label>Số lượng</label><input type="text" inputmode="numeric" autocomplete="off" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1.000" value="' + esc(qty) + '" ' + disabled + ' /></div>'
+                    : '<div class="pf-field"><label>Giá mua/bán (đ)</label><input type="text" inputmode="numeric" autocomplete="off" id="pfAvg" min="0" max="1000000" step="100" placeholder="VD: 26.500" ' + disabled + ' /></div>' +
+                      '<div class="pf-field"><label>Số lượng mua/bán</label><input type="text" inputmode="numeric" autocomplete="off" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1.000" ' + disabled + ' /></div>' +
                       '<div class="pf-field"><label>Phí giao dịch (%)</label><input type="number" id="pfFee" min="0" max="10" step="0.01" placeholder="VD: 0.15" value="0.15" ' + disabled + ' /></div>';
                 const submitField = '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary" id="pfSubmit" ' + (DEMO ? 'disabled' : '') + '>' + submitLabel + '</button>' + (editing ? '<button type="button" class="btn" id="pfCancelEdit">Hủy</button>' : '') + '</div>';
                 return '<div class="pf-form-head"><i class="fas fa-exchange-alt"></i> ' + esc(title) + '</div>' +
@@ -825,7 +1007,7 @@
                 const uv = document.getElementById('cashUsdtVndLbl');
                 if (uv) { uv.textContent = fmtUsdtVnd(cashUsdt); uv.style.display = cashFxRate > 0 ? '' : 'none'; }
                 const inp = document.getElementById('paCash');
-                if (inp) inp.value = '';
+                if (inp) { inp.value = ''; if (inp.dataset) inp.dataset.raw = ''; }
                 const hint = document.getElementById('paCashBalHint');
                 if (hint) hint.textContent = cashCur === 'USDT'
                     ? 'Quỹ USDT/USDC đang có: ' + fmtDec(cashUsdt) + ' USDT' + (fmtUsdtVnd(cashUsdt) ? ' (' + fmtUsdtVnd(cashUsdt) + ')' : '')
@@ -848,7 +1030,7 @@
             }
             function cashMove(op) {
                 const amtEl = document.getElementById('paCash');
-                const amt = parseFloat(amtEl ? amtEl.value : '');
+                const amt = moneyNum(amtEl);
                 if (!isFinite(amt) || amt <= 0) { toast('Nhập số tiền hợp lệ.', true); return; }
                 const url = op === 'out' ? '/api/assets/cash/withdraw' : '/api/assets/cash/deposit';
                 const isUsdt = cashCur === 'USDT';
@@ -859,6 +1041,9 @@
                         applyCashState(d);
                         toast('✅ ' + (op === 'out' ? 'Đã rút ' : 'Đã nạp ') + amtTxt);
                         applyCashUI(); notifyParentHeight();
+                        // Sau khi nạp tiền xong thì đóng cảnh báo "thiếu quỹ" (nếu đang hiện).
+                        const nc = document.getElementById('pfNeedCash');
+                        if (nc) nc.style.display = 'none';
                     })
                     .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không thực hiện được'), true); });
             }
@@ -878,7 +1063,7 @@
             }
             function cashCardHtml() {
                 const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
-                return '<div class="pf-card">' +
+                return '<div class="pf-card" id="pfCashCard">' +
                     '<div class="pf-ah"><h2><i class="fas fa-money-bill-wave" style="color:#00a08a;font-size:14px;margin-right:6px;"></i>Tiền mặt</h2>' +
                     '<span class="pf-atotal">Tổng quy VND: <b id="cashTotalLbl">' + fmtMoney(cashTotalVnd()) + ' đ</b>' +
                         '<button type="button" class="cash-hist-btn" id="paCashHistBtn" ' + (DEMO ? 'disabled' : '') + ' title="Lịch sử tiền vào/ra"><i class="fas fa-clock-rotate-left"></i> Lịch sử vào/ra</button></span></div>' +
@@ -893,7 +1078,7 @@
                                 '<button type="button" class="cash-cur-btn' + (cashCur === 'VND' ? ' active' : '') + '" data-ccur="VND" ' + (DEMO ? 'disabled' : '') + '>VND</button>' +
                                 '<button type="button" class="cash-cur-btn' + (cashCur === 'USDT' ? ' active' : '') + '" data-ccur="USDT" ' + (DEMO ? 'disabled' : '') + '>USDT/USDC</button>' +
                             '</div></div>' +
-                            '<div class="pf-field" style="flex:1 1 260px;"><label>Số tiền (theo quỹ)</label><input type="number" id="paCash" min="0" step="' + (cashCur === 'USDT' ? 'any' : '10000') + '" placeholder="' + (cashCur === 'USDT' ? 'VD: 500 USDT' : 'VD: 50.000.000') + '" ' + disabled + ' /></div>' +
+                            '<div class="pf-field" style="flex:1 1 260px;"><label>Số tiền (theo quỹ)</label><input type="text" inputmode="numeric" autocomplete="off" id="paCash" min="0" step="' + (cashCur === 'USDT' ? 'any' : '10000') + '" placeholder="' + (cashCur === 'USDT' ? 'VD: 500 USDT' : 'VD: 50.000.000') + '" ' + disabled + ' /></div>' +
                             '<div class="pf-field pf-submit" style="flex:0 1 auto;">' +
                                 '<button type="button" class="btn btn-primary" id="paCashIn" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-arrow-down"></i> Nạp</button>' +
                                 '<button type="button" class="btn btn-warn" id="paCashOut" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-arrow-up"></i> Rút</button>' +
@@ -967,40 +1152,53 @@
             function vndOf(usd) { return cryptoFx ? '≈ ' + fmtMoney(Number(usd || 0) * cryptoFx.usd_vnd) + ' đ' : ''; }
             // Card Crypto: hiển thị stablecoin (USDT/USDC) + VND
             function assetCryptoCardInner(m, list) {
-                const total = list.reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0);
                 const curs = [];
                 list.forEach(function(x) { const c = x.currency || 'USDT'; if (curs.indexOf(c) < 0) curs.push(c); });
                 const curLbl = curs.join('/') || 'USDT';
-                const rows = list.length ? list.map(function(x) {
+                const enriched = list.map(function(x) {
                     const c = x.currency || 'USDT';
-                    const nm = cryptoMap[x.label] ? '<span class="name">' + esc(cryptoMap[x.label].name) + '</span>' : '';
-                    return '<tr>' +
-                        '<td><div class="td-sym">' + esc(x.label || 'Khoản') + nm + '</div></td>' +
-                        '<td>' + fmtDec(x.quantity) + '</td>' +
-                        '<td class="pf-money"><b>' + fmtDec(x.unit_price) + ' ' + c + '</b>' + (cryptoFx ? '<small>' + vndOf(x.unit_price) + '</small>' : '') + '</td>' +
-                        '<td class="pf-money"><b>' + fmtDec(x.amount) + ' ' + c + '</b>' + (cryptoFx ? '<small>' + vndOf(x.amount) + '</small>' : '') + '</td>' +
-                        '<td><button type="button" class="act-btn del pa-del" data-cls="crypto" data-id="' + x.id + '" title="Xóa"><i class="fas fa-trash"></i></button></td>' +
-                    '</tr>';
-                }).join('') : '<tr><td colspan="5" class="pf-empty">Chưa có vị thế nào — Mua bên dưới để theo dõi.</td></tr>';
-                // Giá trị hiện tại = số lượng × giá coin hiện tại (nếu có trong 100 coin); còn lại dùng vốn đầu tư.
-                let curVal = 0;
-                list.forEach(function(x) {
-                    const q = Number(x.quantity) || 0;
                     const sym = String(x.label || '').trim().toUpperCase();
-                    const mk = cryptoMap[sym];
-                    const px = mk ? Number(mk.price) : 0;
-                    curVal += (px > 0 ? q * px : Number(x.amount) || 0);
+                    const mk = cryptoMap[sym] || null;
+                    const px = mk ? (Number(mk.price) || 0) : 0;
+                    const qty = Number(x.quantity) || 0;
+                    const cost = Number(x.amount) || 0;
+                    const avg = (Number(x.unit_price) || 0) || (qty > 0 ? cost / qty : 0);
+                    const cur = px > 0 ? qty * px : cost;
+                    const pnl = px > 0 ? cur - cost : null;
+                    return {
+                        x: x, c: c, sym: sym, px: px, qty: qty, cost: cost, avg: avg, cur: cur, pnl: pnl,
+                        name: (mk && mk.name && String(mk.name).toUpperCase() !== sym) ? mk.name : ''
+                    };
                 });
+                const totalCost = enriched.reduce(function(s, r) { return s + r.cost; }, 0);
+                const totalCur = enriched.reduce(function(s, r) { return s + r.cur; }, 0);
+                const rows = enriched.length ? enriched.map(function(r) {
+                    const pnlPos = (r.pnl || 0) >= 0;
+                    const pnlTxt = r.pnl == null ? '<span>—</span>' :
+                        '<div class="pf-money"><b class="' + (pnlPos ? 'pos' : 'neg') + '">' + (r.pnl >= 0 ? '+' : '−') + fmtDec(Math.abs(r.pnl)) + ' ' + r.c + '</b>' +
+                        (r.cost > 0 ? '<small class="' + (pnlPos ? 'pos' : 'neg') + '">(' + (r.pnl >= 0 ? '+' : '−') + Math.abs(r.pnl / r.cost * 100).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%)</small>' : '') + '</div>';
+                    const curCell = '<div class="pf-money"><b>' + fmtDec(r.cur) + ' ' + r.c + '</b>' + (cryptoFx ? '<small>' + vndOf(r.cur) + '</small>' : '') + '</div>';
+                    return '<tr>' +
+                        '<td><div class="td-sym">' + esc(r.sym || 'Khoản') + (r.name ? '<span class="name">' + esc(r.name) + '</span>' : '') + '</div></td>' +
+                        '<td><div class="pf-money"><b>' + fmtDec(r.avg) + ' ' + r.c + '</b>' + (cryptoFx ? '<small>' + vndOf(r.avg) + '</small>' : '') + '</div></td>' +
+                        '<td>' + (r.px > 0 ? '<div class="pf-money"><b>' + fmtDec(r.px) + '</b>' + (cryptoFx ? '<small>' + vndOf(r.px) + '</small>' : '') + '</div>' : '—') + '</td>' +
+                        '<td>' + fmtDec(r.qty) + '</td>' +
+                        '<td>' + curCell + '</td>' +
+                        '<td>' + pnlTxt + '</td>' +
+                        '<td style="font-weight:800;">' + (totalCur > 0 ? (r.cur / totalCur * 100).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + '%' : '—') + '</td>' +
+                        '<td><div class="td-actions" style="justify-content:flex-end;">' + editBtnHtml('crypto', r.x.id) + '<button type="button" class="act-btn del pa-del" data-cls="crypto" data-id="' + r.x.id + '" title="Xóa"><i class="fas fa-trash"></i></button></div></td>' +
+                    '</tr>';
+                }).join('') : '<tr><td colspan="8" class="pf-empty">Chưa có vị thế nào — Mua bên dưới để theo dõi.</td></tr>';
                 return '<div class="pf-card">' +
                     '<div class="pf-ah"><h2><i class="fas fa-coins" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2>' +
                     '<div class="pf-astats">' +
-                        '<div class="pf-astat"><span class="pf-albl">Tổng đầu tư</span><b>' + fmtDec(total) + ' ' + curLbl + '</b>' + (cryptoFx ? '<span class="pf-vnd">≈ ' + fmtMoney(total * cryptoFx.usd_vnd) + ' đ</span>' : '') + '</div>' +
-                        '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtDec(curVal) + ' ' + curLbl + '</b>' + (cryptoFx ? '<span class="pf-vnd">≈ ' + fmtMoney(curVal * cryptoFx.usd_vnd) + ' đ</span>' : '') + '</div>' +
+                        '<div class="pf-astat"><span class="pf-albl">Tổng đầu tư</span><b>' + fmtDec(totalCost) + ' ' + curLbl + '</b>' + (cryptoFx ? '<span class="pf-vnd">≈ ' + fmtMoney(totalCost * cryptoFx.usd_vnd) + ' đ</span>' : '') + '</div>' +
+                        '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtDec(totalCur) + ' ' + curLbl + '</b>' + (cryptoFx ? '<span class="pf-vnd">≈ ' + fmtMoney(totalCur * cryptoFx.usd_vnd) + ' đ</span>' : '') + '</div>' +
                     '</div></div>' +
                     '<div class="pf-table-wrap"><table><thead><tr>' +
-                        '<th>Tên</th><th>Số lượng</th><th>Giá vốn BQ (USDT/USDC)</th><th>Số tiền đầu tư (USDT/USDC)</th><th></th>' +
+                        '<th>Tên</th><th>Giá vốn (USDT/USDC)</th><th>Giá hiện tại</th><th>Số lượng</th><th>Giá trị (USDT/USDC)</th><th>Lãi/Lỗ</th><th>Tỷ trọng</th><th></th>' +
                     '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-                    assetCryptoForm() +
+                    (editingAssetRow('crypto') ? cryptoEditPanel(editingAssetRow('crypto')) : assetCryptoForm()) +
                 '</div>';
             }
             function assetCardInner(cls) {
@@ -1018,7 +1216,8 @@
                         '<td>' + assetNum(x.quantity) + '</td>' +
                         '<td class="pf-money"><b>' + fmtMoney(x.unit_price) + ' đ</b></td>' +
                         '<td class="pf-money"><b>' + fmtMoney(x.amount) + ' đ</b></td>' +
-                        '<td><button type="button" class="act-btn del pa-del" data-cls="' + cls + '" data-id="' + x.id + '" title="Xóa"><i class="fas fa-trash"></i></button></td>' +
+                        '<td><div class="td-actions" style="justify-content:flex-end;">' + editBtnHtml(cls, x.id) +
+                            '<button type="button" class="act-btn del pa-del" data-cls="' + cls + '" data-id="' + x.id + '" title="Xóa"><i class="fas fa-trash"></i></button></div></td>' +
                     '</tr>';
                 }).join('') : '<tr><td colspan="5" class="pf-empty">' + esc(emptyText) + '</td></tr>';
                 return '<div class="pf-card">' +
@@ -1030,7 +1229,7 @@
                     '<div class="pf-table-wrap"><table><thead><tr>' +
                         '<th>Tên khoản</th><th>Số lượng</th><th>Giá vốn BQ (đ)</th><th>Số tiền đầu tư</th><th></th>' +
                     '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-                    (m.trade ? assetTradeForm(cls, m) : assetDepositForm()) +
+                    (editingAssetRow(cls) ? goldEditPanel(editingAssetRow(cls)) : assetTradeForm(cls, m)) +
                 '</div>';
             }
             // Form Mua/Bán Crypto — giá & số tiền theo USDT/USDC, phí mặc định 0,10%
@@ -1051,8 +1250,8 @@
                     '<div class="pf-form-row">' +
                         '<div class="pf-field" style="flex:1 1 200px;"><label>Tên crypto</label><input type="text" id="pacryptoName" list="cryptoCoinList" placeholder="' + esc(ASSET_META.crypto.ph) + '" ' + disabled + ' autocomplete="off" spellcheck="false" /></div>' +
                         '<div class="pf-field" style="flex:0 1 105px;"><label>Loại</label><select id="pacryptoCur"' + (DEMO ? ' disabled' : '') + '><option value="USDT">USDT</option><option value="USDC">USDC</option></select></div>' +
-                        '<div class="pf-field"><label>Giá (USDT/USDC)</label><input type="number" id="pacryptoPrice" min="0" step="any" placeholder="VD: 100.000" ' + disabled + ' /></div>' +
-                        '<div class="pf-field"><label>' + esc(amountLabel) + '</label><input type="number" id="pacryptoAmt" min="0" step="any" placeholder="VD: 1.000" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>Giá (USDT/USDC)</label><input type="text" inputmode="numeric" autocomplete="off" id="pacryptoPrice" min="0" step="any" placeholder="VD: 100.000" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>' + esc(amountLabel) + '</label><input type="text" inputmode="numeric" autocomplete="off" id="pacryptoAmt" min="0" step="any" placeholder="VD: 1.000" ' + disabled + ' /></div>' +
                         '<div class="pf-field" style="flex:0 1 110px;"><label>Phí (%)</label><input type="number" id="pacryptoFee" min="0" max="100" step="0.01" value="0.10" ' + disabled + ' /></div>' +
                         '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-submit" data-cls="crypto" ' + (DEMO ? 'disabled' : '') + '><i class="fas ' + ico + '"></i> ' + subLabel + '</button></div>' +
                     '</div>' +
@@ -1071,19 +1270,15 @@
                         '<button type="button" class="pf-tt pa-tt' + (mode === 'buy' ? ' active' : '') + '" data-cls="' + cls + '" data-mode="buy"><i class="fas fa-cart-plus"></i> Mua</button>' +
                         '<button type="button" class="pf-tt pa-tt' + (mode === 'sell' ? ' active' : '') + '" data-cls="' + cls + '" data-mode="sell"><i class="fas fa-cart-arrow-down"></i> Bán</button>' +
                     '</div>';
-                const hint = mode === 'sell'
-                    ? '<div class="pf-price-hint">Bán sẽ giảm số lượng vị thế đang giữ; bán hết thì khoản tự được xoá.</div>'
-                    : '';
                 return '<div class="pf-stock-form">' +
                     '<div class="pf-form-head"><i class="fas ' + ico + '"></i> Mua/Bán ' + esc(m.name) + '</div>' +
                     toggle +
                     '<div class="pf-form-row">' +
                         '<div class="pf-field" style="flex:1 1 200px;"><label>Tên khoản</label><input type="text" id="pa' + cls + 'Name" placeholder="' + esc(m.ph) + '" ' + disabled + ' autocomplete="off" spellcheck="false" /></div>' +
-                        '<div class="pf-field"><label>Đơn giá (đ)</label><input type="number" id="pa' + cls + 'Price" min="0" step="any" placeholder="' + esc(m.phPrice || 'VD: 25.000.000') + '" ' + disabled + ' /></div>' +
-                        '<div class="pf-field"><label>Số lượng</label><input type="number" id="pa' + cls + 'Qty" min="0" step="any" placeholder="VD: 0,5" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>Đơn giá (đ)</label><input type="text" inputmode="numeric" autocomplete="off" id="pa' + cls + 'Price" min="0" step="any" placeholder="' + esc(m.phPrice || 'VD: 25.000.000') + '" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>Số lượng</label><input type="text" inputmode="numeric" autocomplete="off" id="pa' + cls + 'Qty" min="0" step="any" placeholder="VD: 0,5" ' + disabled + ' /></div>' +
                         '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-submit" data-cls="' + cls + '" ' + (DEMO ? 'disabled' : '') + '><i class="fas ' + ico + '"></i> ' + subLabel + '</button></div>' +
                     '</div>' +
-                    hint +
                     (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                 '</div>';
             }
@@ -1123,6 +1318,7 @@
                         '<td>' + termOfMonths(x.quantity) + (mDate ? '<div class="nm">Đáo hạn: ' + mDate + '</div>' : '') + '</td>' +
                         '<td>' + intHtml + '</td>' +
                         '<td class="nowrap">' +
+                            editBtnHtml('deposit', x.id) +
                             '<button type="button" class="act-btn ok pa-mature" data-id="' + x.id + '" title="Đáo hạn → Tiền mặt"><i class="fas fa-money-bill-transfer"></i></button>' +
                             '<button type="button" class="act-btn del pa-del" data-cls="deposit" data-id="' + x.id + '" title="Xóa"><i class="fas fa-trash"></i></button>' +
                         '</td>' +
@@ -1138,7 +1334,7 @@
                     '<div class="pf-table-wrap"><table><thead><tr>' +
                         '<th>Số tiền gửi</th><th>Lãi suất (%/năm)</th><th>Thời gian gửi</th><th>Tiền lãi dự kiến</th><th></th>' +
                     '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-                    assetDepositForm() +
+                    (editingAssetRow('deposit') ? depositEditPanel(editingAssetRow('deposit')) : assetDepositForm()) +
                 '</div>';
             }
             // Form thêm khoản tiền gửi — chỉ 3 ô: Số tiền gửi · Lãi suất (%/năm) · Thời gian gửi (tháng)
@@ -1147,7 +1343,7 @@
                 return '<div class="pf-stock-form">' +
                     '<div class="pf-form-head"><i class="fas fa-landmark"></i> Thêm khoản tiền gửi</div>' +
                     '<div class="pf-form-row">' +
-                        '<div class="pf-field"><label>Số tiền gửi (đ)</label><input type="number" id="paDepositAmount" min="0" step="10000" placeholder="VD: 100.000.000" ' + disabled + ' /></div>' +
+                        '<div class="pf-field"><label>Số tiền gửi (đ)</label><input type="text" inputmode="numeric" autocomplete="off" id="paDepositAmount" min="0" step="10000" placeholder="VD: 100.000.000" ' + disabled + ' /></div>' +
                         '<div class="pf-field"><label>Lãi suất (%/năm)</label><input type="number" id="paDepositRate" min="0" step="0.01" placeholder="VD: 4,80" ' + disabled + ' /></div>' +
                         '<div class="pf-field"><label>Thời gian gửi (tháng)</label><input type="number" id="paDepositTerm" min="1" step="1" placeholder="VD: 6" ' + disabled + ' /></div>' +
                         '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-add" data-cls="deposit" ' + (DEMO ? 'disabled' : '') + '><i class="fas fa-plus"></i> Thêm</button></div>' +
@@ -1232,7 +1428,7 @@
             }
             function clearAssetInputs(cls) {
                 if (cls === 'crypto') {
-                    ['Name', 'Price', 'Amt'].forEach(function(s) { const el = document.getElementById('pacrypto' + s); if (el) el.value = ''; });
+                    ['Name', 'Price', 'Amt'].forEach(function(s) { const el = document.getElementById('pacrypto' + s); if (el) { el.value = ''; if (el.dataset) el.dataset.raw = ''; } });
                     const f = document.getElementById('pacryptoFee'); if (f) f.value = '0.10';
                     const c = document.getElementById('pacryptoCur'); if (c) c.value = 'USDT';
                     updateCryptoPreview();
@@ -1241,7 +1437,7 @@
                 const fields = cls === 'deposit' ? ['Amount', 'Rate', 'Term'] : ['Name', 'Price', 'Qty'];
                 fields.forEach(function(s) {
                     const el = document.getElementById('pa' + cls + s);
-                    if (el) el.value = '';
+                    if (el) { el.value = ''; if (el.dataset) el.dataset.raw = ''; }
                 });
             }
             // Preview + xác minh tên crypto ngay khi gõ
@@ -1251,8 +1447,8 @@
                 const mode = assetMode.crypto === 'sell' ? 'sell' : 'buy';
                 const name = (document.getElementById('pacryptoName') ? document.getElementById('pacryptoName').value : '').trim();
                 const it = cryptoFind(name);
-                const price = parseFloat(document.getElementById('pacryptoPrice') ? document.getElementById('pacryptoPrice').value : '');
-                const amt = parseFloat(document.getElementById('pacryptoAmt') ? document.getElementById('pacryptoAmt').value : '');
+                const price = moneyNum('pacryptoPrice');
+                const amt = moneyNum('pacryptoAmt');
                 const fee = document.getElementById('pacryptoFee') ? (parseFloat(document.getElementById('pacryptoFee').value) || 0) : 0;
                 const cur = (document.getElementById('pacryptoCur') && document.getElementById('pacryptoCur').value) || 'USDT';
                 const sym = it ? String(it.symbol).toUpperCase() : (name ? name.toUpperCase().replace(/[^A-Z0-9]/g, '') : '');
@@ -1289,7 +1485,7 @@
             // Thêm khoản tiền gửi ngân hàng (deposit) — Số tiền gửi · Lãi suất (%/năm) · Thời gian (tháng)
             function addAsset(cls) {
                 if (cls !== 'deposit') return;
-                const amount = parseFloat(document.getElementById('paDepositAmount').value);
+                const amount = moneyNum('paDepositAmount');
                 const rate = parseFloat(document.getElementById('paDepositRate').value);
                 const term = Math.round(parseFloat(document.getElementById('paDepositTerm').value));
                 if (!(amount > 0)) { toast('Nhập Số tiền gửi (đ) > 0.', true); return; }
@@ -1297,8 +1493,7 @@
                 if (!(term > 0)) { toast('Nhập Thời gian gửi (tháng) > 0.', true); return; }
                 const label = 'Tiền gửi ' + term + ' tháng · ' + fmtRatePct(rate);
                 if (amount > cashVnd) {
-                    toast('Quỹ VND không đủ ' + fmtMoney(amount) + ' đ để gửi (đang có ' + fmtMoney(cashVnd) + ' đ). Hãy Nạp tiền mặt VND trước.', true);
-                    return;
+                    return needTopUp('VND', fmtMoney(amount) + ' đ');
                 }
                 fetch('/api/assets', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: cls, label: label, quantity: term, unit_price: rate, amount: amount }) })
                     .then(function(r) {
@@ -1326,16 +1521,15 @@
                 if (cryptoList.length && !it) { toast('Không tìm thấy "' + raw + '" trong danh sách Crypto.', true); return; }
                 const sym = it ? String(it.symbol).toUpperCase() : raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
                 if (!sym) { toast('Tên crypto không hợp lệ.', true); return; }
-                const price = parseFloat(document.getElementById('pacryptoPrice').value);
-                const amt = parseFloat(document.getElementById('pacryptoAmt').value);
+                const price = moneyNum('pacryptoPrice');
+                const amt = moneyNum('pacryptoAmt');
                 const fee = parseFloat(document.getElementById('pacryptoFee').value) || 0;
                 const cur = document.getElementById('pacryptoCur').value || 'USDT';
                 if (!(price > 0)) { toast('Nhập Giá (USDT/USDC) > 0.', true); return; }
                 if (!(amt > 0)) { toast(mode === 'sell' ? 'Nhập số tiền nhận về > 0.' : 'Nhập số tiền mua (USDT/USDC) > 0.', true); return; }
                 if (fee < 0 || fee > 100) { toast('Phí giao dịch không hợp lệ.', true); return; }
                 if (mode === 'buy' && amt > cashUsdt + 1e-6) {
-                    toast('Quỹ USDT/USDC không đủ ' + fmtDec(amt) + ' USDT để mua (đang có ' + fmtDec(cashUsdt) + ' USDT). Hãy Nạp tiền mặt USDT/USDC trước.', true);
-                    return;
+                    return needTopUp('USDT', fmtDec(amt) + ' USDT');
                 }
                 fetch('/api/assets' + (mode === 'sell' ? '/sell' : ''), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: 'crypto', label: sym, unit_price: price, amount: amt, fee: fee, currency: cur }) })
                     .then(function(r) {
@@ -1355,15 +1549,14 @@
                 const mode = assetMode.gold === 'sell' ? 'sell' : 'buy';
                 const label = (document.getElementById('pagoldName').value || '').trim();
                 if (!label) { toast('Nhập tên khoản.', true); return; }
-                const price = parseFloat(document.getElementById('pagoldPrice').value);
-                const qty = parseFloat(document.getElementById('pagoldQty').value);
+                const price = moneyNum('pagoldPrice');
+                const qty = moneyNum('pagoldQty');
                 if (!(price > 0)) { toast('Nhập Đơn giá (đ) > 0.', true); return; }
                 if (!(qty > 0)) { toast('Nhập Số lượng > 0.', true); return; }
                 if (mode === 'buy') {
                     const need = qty * price;
                     if (need > cashVnd) {
-                        toast('Quỹ VND không đủ ' + fmtMoney(need) + ' đ để mua (đang có ' + fmtMoney(cashVnd) + ' đ). Hãy Nạp tiền mặt VND trước.', true);
-                        return;
+                        return needTopUp('VND', fmtMoney(need) + ' đ');
                     }
                 }
                 fetch('/api/assets' + (mode === 'sell' ? '/sell' : ''), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ asset_class: 'gold', label: label, quantity: qty, unit_price: price }) })
@@ -1390,6 +1583,102 @@
                     .then(function() { toast('🗑️ Đã xóa'); loadUserAssets(function() { refreshAssetCards(); }); })
                     .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Xóa thất bại'), true); });
             }
+            // ---------- Sửa khoản Vàng/Bạc / Tiền gửi NH / Crypto (giống sửa cổ phiếu) ----------
+            let activeAssetEdit = null; // { cls, id }
+            function editingAssetRow(cls) {
+                if (!activeAssetEdit || activeAssetEdit.cls !== cls) return null;
+                return (userAssets[cls] || []).find(function(x) { return x.id === activeAssetEdit.id; }) || null;
+            }
+            function startAssetEdit(cls, id) {
+                activeAssetEdit = { cls: cls, id: Number(id) };
+                refreshAssetCards();
+            }
+            function stopAssetEdit() {
+                activeAssetEdit = null;
+                refreshAssetCards();
+            }
+            function editBtnHtml(cls, id) {
+                return '<button type="button" class="act-btn ok pa-edit" data-cls="' + cls + '" data-id="' + id + '" title="Cập nhật"><i class="fas fa-pen"></i></button>';
+            }
+            function editActionsHtml(cls, id) {
+                return '<button type="button" class="btn btn-primary pa-save" data-cls="' + cls + '" style="padding:5px 12px;"><i class="fas fa-save"></i> Lưu</button>' +
+                    '<button type="button" class="btn pa-cancel" data-cls="' + cls + '" style="padding:5px 12px;">Hủy</button>';
+            }
+            function goldEditPanel(row) {
+                return '<div class="pf-stock-form">' +
+                    '<div class="pf-form-head"><i class="fas fa-pen"></i> Cập nhật Vàng/Bạc · ' + esc(row.label || '') + '</div>' +
+                    '<div class="pf-form-row">' +
+                        '<div class="pf-field"><label>Tên khoản</label><input type="text" id="paEditLabel" value="' + esc(row.label || '') + '" /></div>' +
+                        '<div class="pf-field"><label>Đơn giá (đ/lượng)</label><input type="number" step="any" id="paEditPrice" value="' + Number(row.unit_price) + '" /></div>' +
+                        '<div class="pf-field"><label>Số lượng</label><input type="number" step="any" id="paEditQty" value="' + Number(row.quantity) + '" /></div>' +
+                        '<div class="pf-field pf-submit">' + editActionsHtml('gold', row.id) + '</div>' +
+                    '</div>' +
+                    '<div class="pf-form-hint" style="margin-top:8px;">Số tiền đầu tư tự tính = Số lượng × Đơn giá.</div>' +
+                '</div>';
+            }
+            function depositEditPanel(row) {
+                return '<div class="pf-stock-form">' +
+                    '<div class="pf-form-head"><i class="fas fa-pen"></i> Cập nhật tiền gửi · ' + esc(row.label || '') + '</div>' +
+                    '<div class="pf-form-row">' +
+                        '<div class="pf-field"><label>Số tiền gửi (đ)</label><input type="number" step="any" id="paEditAmt" value="' + Math.round(Number(row.amount)) + '" /></div>' +
+                        '<div class="pf-field"><label>Lãi suất (%/năm)</label><input type="number" step="0.01" id="paEditRate" value="' + Number(row.unit_price) + '" /></div>' +
+                        '<div class="pf-field"><label>Thời gian gửi (tháng)</label><input type="number" step="1" id="paEditTerm" value="' + Math.round(Number(row.quantity)) + '" /></div>' +
+                        '<div class="pf-field pf-submit">' + editActionsHtml('deposit', row.id) + '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+            function cryptoEditPanel(row) {
+                const cur = row.currency || 'USDT';
+                return '<div class="pf-stock-form">' +
+                    '<div class="pf-form-head"><i class="fas fa-pen"></i> Cập nhật Crypto · ' + esc(row.label || '') + '</div>' +
+                    '<div class="pf-form-row">' +
+                        '<div class="pf-field"><label>Coin</label><span style="font-weight:800;font-size:15px;">' + esc(row.label || '') + '</span></div>' +
+                        '<div class="pf-field"><label>Loại</label><select id="paEditCur">' +
+                            '<option value="USDT"' + (cur === 'USDT' ? ' selected' : '') + '>USDT</option>' +
+                            '<option value="USDC"' + (cur === 'USDC' ? ' selected' : '') + '>USDC</option></select></div>' +
+                        '<div class="pf-field"><label>Giá vốn (USDT/USDC)</label><input type="number" step="any" id="paEditPrice" value="' + Number(row.unit_price) + '" /></div>' +
+                        '<div class="pf-field"><label>Số lượng coin</label><input type="number" step="any" id="paEditQty" value="' + Number(row.quantity) + '" /></div>' +
+                        '<div class="pf-field pf-submit">' + editActionsHtml('crypto', row.id) + '</div>' +
+                    '</div>' +
+                    '<div class="pf-form-hint" style="margin-top:8px;">Tổng đầu tư (USDT/USDC) tự tính = Số lượng × Giá vốn.</div>' +
+                '</div>';
+            }
+            function saveAssetEdit(cls) {
+                const row = editingAssetRow(cls);
+                if (!row) return;
+                let payload = null;
+                if (cls === 'gold') {
+                    const label = ((document.getElementById('paEditLabel') || {}).value || '').trim();
+                    const price = parseFloat((document.getElementById('paEditPrice') || {}).value);
+                    const qty = parseFloat((document.getElementById('paEditQty') || {}).value);
+                    if (!label) { toast('Nhập tên khoản.', true); return; }
+                    if (!(price > 0) || !(qty > 0)) { toast('Nhập Đơn giá và Số lượng > 0.', true); return; }
+                    payload = { label: label, quantity: qty, unit_price: price, amount: Math.round(qty * price * 100) / 100 };
+                } else if (cls === 'deposit') {
+                    const amount = parseFloat((document.getElementById('paEditAmt') || {}).value);
+                    const rate = parseFloat((document.getElementById('paEditRate') || {}).value);
+                    const term = Math.round(parseFloat((document.getElementById('paEditTerm') || {}).value));
+                    if (!(amount > 0) || !(rate > 0) || !(term > 0)) { toast('Nhập đủ Số tiền gửi · Lãi suất · Thời gian (> 0).', true); return; }
+                    payload = { label: row.label, quantity: term, unit_price: rate, amount: amount };
+                } else if (cls === 'crypto') {
+                    const price = parseFloat((document.getElementById('paEditPrice') || {}).value);
+                    const qty = parseFloat((document.getElementById('paEditQty') || {}).value);
+                    const cur = ((document.getElementById('paEditCur') || {}).value || 'USDT').toUpperCase();
+                    if (!(price > 0) || !(qty > 0)) { toast('Nhập Giá vốn và Số lượng > 0.', true); return; }
+                    const amount = Math.round(qty * price * 10000) / 10000;
+                    payload = { label: row.label, quantity: qty, unit_price: price, amount: amount, note: cur };
+                }
+                if (!payload) return;
+                fetch('/api/assets/' + row.id, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(payload) })
+                    .then(function(r) { if (!r.ok) return r.json().then(function(j) { throw new Error(j.detail || 'Lỗi'); }); return r.json(); })
+                    .then(function() {
+                        toast('✅ Đã cập nhật');
+                        activeAssetEdit = null;
+                        loadUserAssets(function() { refreshAssetCards(); });
+                    })
+                    .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không cập nhật được'), true); });
+            }
+
             let assetBound = false;
             function bindAssetForm() {
                 if (assetBound) return;
@@ -1397,6 +1686,12 @@
                 document.addEventListener('click', function(e) {
                     const add = e.target.closest('.pa-add');
                     if (add) { e.preventDefault(); addAsset(add.getAttribute('data-cls')); return; }
+                    const pedit = e.target.closest('.pa-edit');
+                    if (pedit) { e.preventDefault(); startAssetEdit(pedit.getAttribute('data-cls'), Number(pedit.getAttribute('data-id'))); return; }
+                    const psave = e.target.closest('.pa-save');
+                    if (psave) { e.preventDefault(); saveAssetEdit(psave.getAttribute('data-cls')); return; }
+                    const pcancel = e.target.closest('.pa-cancel');
+                    if (pcancel) { e.preventDefault(); stopAssetEdit(); return; }
                     const tt = e.target.closest('.pa-tt');
                     if (tt) {
                         e.preventDefault();
@@ -1430,7 +1725,7 @@
                         const it = cryptoFind((t.value || '').trim());
                         if (it && it.price > 0) {
                             const pEl = document.getElementById('pacryptoPrice');
-                            if (pEl && !(parseFloat(pEl.value) > 0)) pEl.value = it.price;
+                            if (pEl && !(moneyNum('pacryptoPrice') > 0)) setMoney(pEl, it.price);
                         }
                     }
                     updateCryptoPreview();
@@ -1550,12 +1845,22 @@
                 // Chỉ hiển thị các loại đang thực sự nắm giữ (bỏ hàng 0% vô nghĩa).
                 return rows.filter(function(r) { return r.value > 0; });
             }
+            // Nội dung .pf-alloc của "Phân bổ tài sản": donut tròn + chú thích màu bên phải.
+            function assetAllocBodyInner(list) {
+                const total = list.reduce(function(a, s) { return a + s.value; }, 0) || 1;
+                const donut = donutSvg(list, 176, 176, 'tổng giá trị', fmtCompactVnd(total));
+                const legend = list.map(function(s, i) {
+                    return '<div class="al-row"><span class="al-dot" style="background:' + PALETTE[i % PALETTE.length] + ';"></span>' +
+                        '<span class="al-name">' + esc(s.name) + '</span>' +
+                        '<span class="al-pct">' + (s.value / total * 100).toFixed(1) + '%</span>' +
+                        '<span class="al-val">' + fmtMoney(s.value) + ' đ</span></div>';
+                }).join('');
+                return '<div>' + donut + '</div><div class="pf-alloc-legend">' + legend + '</div>';
+            }
             function renderAssetAlloc() {
                 const list = assetAllocation();
                 if (!list.length) return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-empty">Chưa có dữ liệu — nhập tài sản ở tab Danh mục đang nắm giữ.</div></div>';
-                return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-hbar" id="pfAssetAllocBody">' + hbarRowsHtml(list) + '</div>' +
-                    '<div class="pf-alloc-note"><i class="fas fa-info-circle"></i> Tính theo tài sản đang nắm giữ: Cổ phiếu, Tiền mặt, Vàng/Bạc, Crypto, Tiền gửi ngân hàng (quy VND).</div>' +
-                '</div>';
+                return '<div class="pf-card"><h3>Phân bổ tài sản</h3><div class="pf-alloc" id="pfAssetAllocBody">' + assetAllocBodyInner(list) + '</div></div>';
             }
             // Làm mới riêng vùng "Phân bổ tài sản" sau khi nạp xong cash / tài sản ngoài cổ phiếu.
             function refreshAssetAlloc() {
@@ -1568,16 +1873,69 @@
                 if (!list.length) {
                     card.innerHTML = '<h3>Phân bổ tài sản</h3><div class="pf-empty">Chưa có dữ liệu — nhập tài sản ở tab Danh mục đang nắm giữ.</div>';
                 } else {
-                    body.innerHTML = hbarRowsHtml(list);
+                    body.innerHTML = assetAllocBodyInner(list);
                 }
                 notifyParentHeight();
             }
             // Nạp dữ liệu cần cho Phân bổ tài sản khi đang ở tab Phân tích tài sản (overview):
             // Tiền mặt + Vàng/Bạc + Crypto + Tiền gửi ngân hàng + tỷ giá (fx).
             function loadOverviewAssets() {
-                loadCash(function() { refreshAssetAlloc(); });
-                loadUserAssets(function() { refreshAssetAlloc(); });
-                loadCryptoMeta().then(function() { refreshAssetAlloc(); });
+                loadCash(function() { refreshAssetAlloc(); refreshCryptoAlloc(); });
+                loadUserAssets(function() { refreshAssetAlloc(); refreshCryptoAlloc(); });
+                loadCryptoMeta().then(function() { refreshAssetAlloc(); refreshCryptoAlloc(); });
+            }
+
+            // ---------- Phân bổ theo mã Crypto (donut giống Phân bổ theo ngành) ----------
+            // Mỗi vị thế = 1 coin; giá trị quy VND theo giá hiện tại (qty × giá live × tỷ giá),
+            // nếu chưa có giá live thì dùng vốn đầu tư (amount USDT/USDC × tỷ giá).
+            function cryptoAllocation() {
+                const fx = fxVnd();
+                if (!(fx > 0)) return [];
+                const out = [];
+                (userAssets.crypto || []).forEach(function(x) {
+                    const q = Number(x.quantity) || 0;
+                    const up = String(x.label || '').trim().toUpperCase();
+                    if (!up) return;
+                    const mk = cryptoMap[up] || null;
+                    const px = mk ? (Number(mk.price) || 0) : 0;
+                    const usd = px > 0 ? q * px : (Number(x.amount) || 0);
+                    const vnd = Math.round(usd * fx);
+                    const friendly = (mk && mk.name && String(mk.name).toUpperCase() !== up) ? mk.name : '';
+                    if (vnd > 0) out.push({ name: up, sub: friendly, value: vnd });
+                });
+                return out.sort(function(a, b) { return b.value - a.value; });
+            }
+            function cryptoAllocBody(list) {
+                const total = list.reduce(function(a, s) { return a + s.value; }, 0) || 1;
+                const donut = donutSvg(list, 176, 176, 'coin');
+                const legend = list.map(function(s, i) {
+                    return '<div class="al-row"><span class="al-dot" style="background:' + PALETTE[i % PALETTE.length] + ';"></span>' +
+                        '<span class="al-name">' + esc(s.name) + (s.sub ? '<span class="al-sub">' + esc(s.sub) + '</span>' : '') + '</span>' +
+                        '<span class="al-pct">' + (s.value / total * 100).toFixed(1) + '%</span>' +
+                        '<span class="al-val">' + fmtMoney(s.value) + ' đ</span></div>';
+                }).join('');
+                return '<div>' + donut + '</div><div class="pf-alloc-legend">' + legend + '</div>';
+            }
+            function cryptoAllocCardHtml(list) {
+                return '<div class="pf-card"><h3><i class="fas fa-coins" style="color:#008080;"></i> Phân bổ theo mã Crypto</h3>' +
+                    '<div class="pf-alloc" id="pfCryptoAllocBody">' + cryptoAllocBody(list) + '</div></div>';
+            }
+            function refreshCryptoAlloc() {
+                if (currentTab !== 'overview') return;
+                const wrap = document.getElementById('pfCryptoAllocCard');
+                if (!wrap) return;
+                const row = document.getElementById('pfRowB');
+                const list = cryptoAllocation();
+                if (!list.length) {
+                    wrap.innerHTML = '';
+                    wrap.style.display = 'none';
+                    if (row) row.classList.add('sole'); // chỉ còn Phân bổ theo ngành, full-width
+                } else {
+                    wrap.innerHTML = cryptoAllocCardHtml(list);
+                    wrap.style.display = '';
+                    if (row) row.classList.remove('sole');
+                }
+                notifyParentHeight();
             }
 
             // ---------- Phân bổ theo ngành (taxonomy ngành thống nhất của hệ thống) ----------
@@ -1597,154 +1955,387 @@
                 return allocCard('Phân bổ theo ngành', list, 'ngành');
             }
 
-            // ---------- Trung tâm cảnh báo ----------
-            // Hiển thị 3 block: Cơ hội / Cảnh báo / Xu hướng (mỗi block = 1 category)
-            const ALERT_BLOCKS = [
-                { k: 'opportunity', label: 'Cơ hội', icon: 'fa-lightbulb', color: '#00a08a' },
-                { k: 'warning', label: 'Cảnh báo', icon: 'fa-triangle-exclamation', color: '#d0314e' },
-                { k: 'trend', label: 'Xu hướng', icon: 'fa-chart-line', color: '#4a7fc4' }
-            ];
-            const ALERT_TYPE_META = {
-                SUPPORT_NEAR:      { icon: 'fa-arrow-down-to-line', color: '#00a08a', label: 'Gần hỗ trợ' },
-                RESISTANCE_NEAR:   { icon: 'fa-arrow-up-from-line', color: '#d0314e', label: 'Gần kháng cự' },
-                BREAKOUT:          { icon: 'fa-arrow-trend-up', color: '#00a08a', label: 'Phá vỡ kháng cự' },
-                BREAKDOWN:         { icon: 'fa-arrow-trend-down', color: '#d0314e', label: 'Thủng hỗ trợ' },
-                PRICE_TARGET:      { icon: 'fa-bullseye', color: '#7b61c4', label: 'Mục tiêu giá' },
-                MA_CROSS_UP:       { icon: 'fa-arrows-up-to-line', color: '#00a08a', label: 'MA cắt lên' },
-                MA_CROSS_DOWN:     { icon: 'fa-arrows-down-to-line', color: '#d0314e', label: 'MA cắt xuống' },
-                MA50_BREAK_UP:     { icon: 'fa-arrow-up-from-bracket', color: '#00a08a', label: 'Phá vỡ MA50' },
-                MA50_BREAK_DOWN:   { icon: 'fa-arrow-down-to-bracket', color: '#d0314e', label: 'Rơi khỏi MA50' },
-                MA200_BREAK_UP:    { icon: 'fa-arrow-up-from-bracket', color: '#00a08a', label: 'Phá vỡ MA200' },
-                MA200_BREAK_DOWN:  { icon: 'fa-arrow-down-to-bracket', color: '#d0314e', label: 'Rơi khỏi MA200' },
-                RSI_OVERBOUGHT:    { icon: 'fa-temperature-high', color: '#d0314e', label: 'RSI quá mua' },
-                RSI_OVERSOLD:      { icon: 'fa-temperature-low', color: '#00a08a', label: 'RSI quá bán' },
-                MACD_BULLISH_CROSS:{ icon: 'fa-arrow-trend-up', color: '#00a08a', label: 'MACD vàng' },
-                MACD_BEARISH_CROSS:{ icon: 'fa-arrow-trend-down', color: '#d0314e', label: 'MACD tử' },
-                TREND_STRENGTHENING:{ icon: 'fa-arrow-up-wide-short', color: '#00a08a', label: 'Xu hướng mạnh lên' },
-                TREND_WEAKENING:   { icon: 'fa-arrow-down-wide-short', color: '#d0314e', label: 'Xu hướng yếu đi' }
-            };
-            const IMPORTANCE_META = {
-                low:      { label: 'Thấp', color: '#8a99b1' },
-                medium:   { label: 'Trung bình', color: '#f5a623' },
-                high:     { label: 'Cao', color: '#d0314e' },
-                critical: { label: 'Nghiêm trọng', color: '#8a2333' }
-            };
-            function alertMeta(t) { return ALERT_TYPE_META[t] || { icon: 'fa-bell', color: '#8a99b1', label: t }; }
-
-            // Ưu tiên tín hiệu khi 1 mã xung đột Cơ hội vs Cảnh báo (cao hơn = được giữ).
-            // Quy tắc: 1 mã chỉ có CƠ HỘI hoặc CẢNH BÁO (không cả hai); Xu hướng độc lập.
-            const ALERT_PRIORITY = {
-                BREAKOUT: 5, BREAKDOWN: 5,
-                SUPPORT_NEAR: 4, RESISTANCE_NEAR: 4,
-                RSI_OVERSOLD: 2, RSI_OVERBOUGHT: 2
-            };
-            function alertPrio(a) { return ALERT_PRIORITY[a.alert_type] || 1; }
-            function alertStrength(a) { return Number((a.metadata || {}).strength_score) || 0; }
-            function bestScore(list) {
-                let bp = -1, bs = -1;
-                list.forEach(function(a) {
-                    const p = alertPrio(a), s = alertStrength(a);
-                    if (p > bp || (p === bp && s > bs)) { bp = p; bs = s; }
-                });
-                return { p: bp, s: bs };
-            }
-            function resolveCategoryConflict(alerts) {
-                const bySym = {};
-                alerts.forEach(function(a) {
-                    if (a.category === 'opportunity' || a.category === 'warning') {
-                        (bySym[a.symbol] = bySym[a.symbol] || { opportunity: [], warning: [] })[a.category].push(a);
-                    }
-                });
-                const hide = {}; // symbol -> category bị ẩn (chỉ giữ 1 nhóm)
-                Object.keys(bySym).forEach(function(sym) {
-                    const g = bySym[sym];
-                    if (!g.opportunity.length || !g.warning.length) return;
-                    const o = bestScore(g.opportunity), w = bestScore(g.warning);
-                    const warnWins = w.p > o.p || (w.p === o.p && w.s >= o.s); // hoà → Cảnh báo thắng
-                    hide[sym] = warnWins ? 'opportunity' : 'warning';
-                });
-                return alerts.filter(function(a) {
-                    if (a.category !== 'opportunity' && a.category !== 'warning') return true;
-                    return hide[a.symbol] !== a.category;
-                });
-            }
+            // ---------- Trung tâm cảnh báo (AI): Cảnh báo Cổ phiếu + Tín hiệu Crypto ----------
 
             function renderAlerts() {
-                return '<div class="pf-alerts">' +
-                    '<div class="pf-alerts-head">' +
-                        '<button type="button" id="pfAlertScan" class="pf-scan-btn"><i class="fas fa-sync-alt"></i> Quét cảnh báo</button>' +
+                return stockSignalsSectionHtml() + cryptoSignalsSectionHtml();
+            }
+            function cryptoSignalsSectionHtml() {
+                return '<div class="pf-card ca-sect">' +
+                    '<div class="pf-ca-head">' +
+                        '<div class="pf-ca-hinfo">' +
+                            '<h3 style="margin:0;"><i class="fas fa-coins" style="color:#d99a2b;margin-right:7px;"></i>Tín hiệu Crypto<span class="ca-ai">AI</span></h3>' +
+                            '<div class="pf-ca-sub">Phân tích các mã crypto đang theo dõi &amp; vị thế của bạn bằng AI — gồm Cơ hội · Cảnh báo · Xu hướng. Bấm nút bên phải để AI quét &amp; nhận định thị trường.</div>' +
+                        '</div>' +
+                        '<button type="button" id="cryptoAlertScan" class="pf-scan-btn ca-scan"><i class="fas fa-sync-alt"></i> Quét tín hiệu</button>' +
                     '</div>' +
-                    '<div id="pfAlertList"><div class="pf-loading">Đang tải cảnh báo…</div></div>' +
+                    '<div id="pfCryptoMeta"></div>' +
+                    '<div id="pfCryptoAlertList"><div class="pf-loading">Đang tải tín hiệu…</div></div>' +
                 '</div>';
             }
-
-            function loadAlerts(lockedFree) {
-                const list = document.getElementById('pfAlertList');
-                const scanBtn = document.getElementById('pfAlertScan');
-                if (scanBtn) {
-                    scanBtn.addEventListener('click', function() {
-                        if (DEMO) { toast('Vui lòng đăng nhập để quét cảnh báo.', true); return; }
-                        scanBtn.disabled = true; scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang quét…';
-                        fetch('/api/alerts/scan', { method: 'POST', headers: authHeaders() })
-                            .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-                            .then(function(res) {
-                                toast('Đã quét ' + (res.scanned || 0) + ' mã, tạo ' + (res.created || 0) + ' cảnh báo.');
-                                return loadAlerts(false);
-                            })
-                            .catch(function() { toast('Quét cảnh báo thất bại.', true); })
-                            .finally(function() {
-                                scanBtn.disabled = false; scanBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Quét cảnh báo';
-                            });
-                    });
+            // 3 cột cố định của Tín hiệu Crypto (nội dung do AI trả về)
+            const CRYPTO_BLOCKS = [
+                { k: 'opportunities', label: 'Cơ hội', icon: 'fa-lightbulb', color: '#00a08a' },
+                { k: 'alerts', label: 'Cảnh báo', icon: 'fa-triangle-exclamation', color: '#d0314e' },
+                { k: 'trends', label: 'Xu hướng', icon: 'fa-chart-line', color: '#4a7fc4' }
+            ];
+            const CRYPTO_SEV_META = {
+                HIGH: { label: 'Cao', color: '#d0314e' },
+                MEDIUM: { label: 'Trung bình', color: '#f5a623' },
+                LOW: { label: 'Thấp', color: '#8a99b1' }
+            };
+            const CRYPTO_TREND_META = {
+                BULLISH: { label: 'Tăng', color: '#00a884', bg: 'rgba(0,168,132,0.13)' },
+                BEARISH: { label: 'Giảm', color: '#E5484D', bg: 'rgba(229,72,77,0.12)' },
+                NEUTRAL: { label: 'Đi ngang', color: '#8a99b1', bg: 'rgba(138,153,177,0.14)' }
+            };
+            function cryptoInPosition(sym) {
+                return !!(cryptoSignalsData && (cryptoSignalsData.in_position || []).indexOf(sym) >= 0);
+            }
+            function cryptoItemHtml(it, kind) {
+                const isOpp = kind === 'opportunities';
+                const ic = isOpp ? { c: '#00a08a', i: 'fa-lightbulb' } : { c: '#d0314e', i: 'fa-triangle-exclamation' };
+                const sev = CRYPTO_SEV_META[String(it.severity || '').toUpperCase()] || CRYPTO_SEV_META.MEDIUM;
+                const str = Number(it.strength) || 0, conf = Number(it.confidence) || 0;
+                const head = '<span class="pf-ac-sym">' + esc(it.symbol) + '</span>' +
+                    (cryptoInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
+                    '<span class="pf-ac-imp" style="color:' + sev.color + '">' + esc(sev.label) + '</span>' +
+                    '<span class="ca-str">Độ mạnh <b>' + str + '</b>/100 · Tin cậy <b>' + conf + '</b></span>';
+                let extra = '';
+                if (isOpp) {
+                    if (it.zone) extra += '<div class="ca-zone"><i class="fas fa-arrows-left-right"></i> Vùng giá quan trọng: <b>' + esc(it.zone) + '</b></div>';
+                    if (it.confirmation) extra += '<div class="ca-confirm"><i class="fas fa-check-double"></i> Xác nhận: ' + esc(it.confirmation) + '</div>';
                 }
-                if (DEMO) { list.innerHTML = '<div class="pf-empty">Đăng nhập để xem Trung tâm cảnh báo.</div>'; return; }
-                fetch('/api/alerts?limit=100', { headers: authHeaders(), cache: 'no-store' })
-                    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-                    .then(function(items) {
-                        alertData = items;
-                        renderAlertList();
-                        // Free: giữ nội dung thật phía sau lớp MỜ + nút mở khóa (teaser).
-                        const gate = window.TuniXMembership;
-                        if (lockedFree && gate) {
-                            const l2 = document.getElementById('pfAlertList');
-                            if (l2) {
-                                const hasCards = !!l2.querySelector('.pf-alert-card');
-                                if (!hasCards) {
-                                    l2.innerHTML = gate.lockCardHTML({
-                                        title: 'Trung tâm cảnh báo dành cho Hội viên',
-                                        desc: 'Phát hiện gần hỗ trợ/kháng cự, breakout, MA… cho cổ phiếu bạn theo dõi.',
-                                        icon: 'fa-bell'
-                                    });
-                                } else if (!l2.getAttribute('data-tg-locked')) {
-                                    gate.lockBlur(l2, false);
-                                }
-                            }
-                        }
-                        notifyParentHeight();
-                    })
-                    .catch(function() { list.innerHTML = '<div class="pf-empty">Không tải được cảnh báo.</div>'; notifyParentHeight(); });
+                if (it.why) extra += '<div class="pf-ac-why"><i class="fas fa-circle-question"></i> Vì sao: ' + esc(it.why) + '</div>';
+                return '<div class="pf-alert-card ca-card" style="border-left-color:' + ic.c + '">' +
+                    '<div class="pf-ac-left"><i class="fas ' + ic.i + '" style="color:' + ic.c + '"></i></div>' +
+                    '<div class="pf-ac-main">' +
+                        '<div class="pf-ac-top">' + head + '</div>' +
+                        '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
+                        (it.price != null && it.price !== '' ? '<div class="ca-price">Giá hiện tại: <b>' + fmtDec(it.price) + '</b> $</div>' : '') +
+                        '<div class="pf-ac-desc">' + esc(it.description || '') + '</div>' +
+                        extra +
+                    '</div>' +
+                '</div>';
+            }
+            function cryptoTrendHtml(it) {
+                const chips = [['short_term', 'Ngắn'], ['medium_term', 'Trung'], ['long_term', 'Dài']];
+                const ch = chips.map(function (p) {
+                    const m = CRYPTO_TREND_META[String(it[p[0]] || 'NEUTRAL').toUpperCase()] || CRYPTO_TREND_META.NEUTRAL;
+                    return '<span class="ca-chip" style="color:' + m.color + ';background:' + m.bg + '">' + p[1] + ' hạn · ' + m.label + '</span>';
+                }).join('');
+                const str = Number(it.strength) || 0;
+                return '<div class="pf-alert-card ca-card" style="border-left-color:#4a7fc4">' +
+                    '<div class="pf-ac-left"><i class="fas fa-chart-line" style="color:#4a7fc4"></i></div>' +
+                    '<div class="pf-ac-main">' +
+                        '<div class="pf-ac-top"><span class="pf-ac-sym">' + esc(it.symbol) + '</span>' +
+                            (cryptoInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
+                            '<span class="ca-str">Độ mạnh xu hướng <b>' + str + '</b>/100</span></div>' +
+                        '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
+                        '<div class="ca-trend-chips">' + ch + '</div>' +
+                        '<div class="pf-ac-desc">' + esc(it.description || '') + '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+            function renderCryptoSignals() {
+                const list = document.getElementById('pfCryptoAlertList');
+                if (!list) return;
+                const meta = document.getElementById('pfCryptoMeta');
+                const d = cryptoSignalsData;
+                if (!d) {
+                    list.innerHTML = '<div class="pf-loading">Đang tải tín hiệu…</div>';
+                    if (meta) meta.innerHTML = '';
+                    notifyParentHeight(); return;
+                }
+                const opp = d.opportunities || [], war = d.alerts || [], tr = d.trends || [];
+                const total = opp.length + war.length + tr.length;
+                if (meta) {
+                    const ago = d.scanned_at ? fmtAgo(d.scanned_at) : 'chưa quét';
+                    const pos = (d.in_position || []).length;
+                    meta.innerHTML = '<div class="pf-ca-meta">' +
+                        '<span><i class="fas fa-clock"></i> Cập nhật: <b>' + esc(ago) + '</b></span>' +
+                        '<span><i class="fas fa-microchip"></i> Phân tích <b>' + esc((d.symbols || []).join(', ')) + '</b></span>' +
+                        (pos ? '<span><i class="fas fa-briefcase"></i> ' + pos + ' vị thế đang nắm</span>' : '') +
+                        '<span><i class="fas fa-bell"></i> ' + total + ' tín hiệu</span>' +
+                    '</div>';
+                }
+                if (!total) {
+                    list.innerHTML = '<div class="pf-empty">Chưa có tín hiệu nào cho danh mục crypto của bạn.' +
+                        (d.scanned_at ? '' : ' Hãy bấm "Quét tín hiệu" để AI phân tích.') +
+                    '</div>';
+                    notifyParentHeight(); return;
+                }
+                let html = '';
+                CRYPTO_BLOCKS.forEach(function (b) {
+                    const items = b.k === 'opportunities' ? opp : (b.k === 'alerts' ? war : tr);
+                    html += '<div class="pf-alert-block" data-block="' + b.k + '">' +
+                        '<div class="pf-alert-block-head">' +
+                            '<i class="fas ' + b.icon + '" style="color:' + b.color + '"></i> ' + esc(b.label) +
+                            '<span class="pf-alert-block-count" style="background:' + b.color + '1a;color:' + b.color + '">' + items.length + '</span>' +
+                        '</div>' +
+                        (items.length ? items.map(function (it) { return b.k === 'trends' ? cryptoTrendHtml(it) : cryptoItemHtml(it, b.k); }).join('')
+                                      : '<div class="pf-empty">Chưa có ' + esc(b.label.toLowerCase()) + ' nào.</div>') +
+                    '</div>';
+                });
+                list.innerHTML = '<div class="pf-alert-blocks">' + html + '</div>';
+                notifyParentHeight();
             }
 
             function mountAlerts() {
-                const list = document.getElementById('pfAlertList');
-                if (!list) return;
                 const gate = window.TuniXMembership;
                 const apply = function(m) {
-                    const l = document.getElementById('pfAlertList');
-                    if (!l) return;
-                    const scanBtn = document.getElementById('pfAlertScan');
                     // "Trung tâm cảnh báo" MỞ khi Super Admin bật cho tất cả, hoặc user đang là hội viên.
                     const open = gate ? gate.featureOpen('alert_center') : !!(m && m.active);
-                    if ((m && m.active) || open) {
-                        if (scanBtn) scanBtn.style.display = '';
-                        loadAlerts(false);
+                    const member = !!(m && m.active);
+                    if (member || open) {
+                        sigScanVisible('stockAlertScan', true);
+                        sigScanVisible('cryptoAlertScan', true);
+                        loadStockSignals(false);
+                        loadCryptoSignals(false);
                         return;
                     }
                     // Khoá hội viên: ẩn nút Quét, VẪN tải nội dung để làm mờ (teaser) + khóa.
-                    if (scanBtn) scanBtn.style.display = 'none';
-                    loadAlerts(true);
+                    sigScanVisible('stockAlertScan', false);
+                    sigScanVisible('cryptoAlertScan', false);
+                    loadStockSignals(true);
+                    loadCryptoSignals(true);
                 };
-                if (gate) gate.ensure().then(apply); else loadAlerts(false);
+                if (gate) gate.ensure().then(apply); else { loadStockSignals(false); loadCryptoSignals(false); }
+            }
+            function sigScanVisible(id, on) {
+                const b = document.getElementById(id);
+                if (b) b.style.display = on ? '' : 'none';
+            }
+            // ---- Tín hiệu Crypto: quét + hiển thị ----
+            function loadCryptoSignals(lockedFree) {
+                const list = document.getElementById('pfCryptoAlertList');
+                if (!list) return;
+                const scanBtn = document.getElementById('cryptoAlertScan');
+                if (scanBtn && !scanBtn.getAttribute('data-bound')) {
+                    scanBtn.setAttribute('data-bound', '1');
+                    scanBtn.addEventListener('click', function() {
+                        if (DEMO) { toast('Vui lòng đăng nhập để dùng Tín hiệu Crypto.', true); return; }
+                        scanBtn.disabled = true;
+                        scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI đang phân tích…';
+                        fetch('/api/crypto-signals/scan', { method: 'POST', headers: authHeaders() })
+                            .then(function(r) {
+                                if (!r.ok) return r.json().then(function(e) { throw new Error((e && e.detail) || 'Quét tín hiệu thất bại.'); });
+                                return r.json();
+                            })
+                            .then(function(res) {
+                                const nSig = ((res.opportunities || []).length + (res.alerts || []).length + (res.trends || []).length);
+                                toast('Đã phân tích ' + (res.symbols || []).length + ' mã, tìm thấy ' + nSig + ' tín hiệu.');
+                                cryptoSignalsData = res;
+                                renderCryptoSignals();
+                                if (lockedFree) applyCryptoTeaser(lockedFree);
+                            })
+                            .catch(function(err) {
+                                const msg = (err && err.message) || 'Quét tín hiệu thất bại.';
+                                list.innerHTML = '<div class="pf-empty"><i class="fas fa-circle-exclamation"></i> ' + esc(msg) + '</div>';
+                                notifyParentHeight();
+                            })
+                            .finally(function() {
+                                scanBtn.disabled = false;
+                                scanBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Quét tín hiệu';
+                            });
+                    });
+                }
+                if (DEMO) {
+                    list.innerHTML = '<div class="pf-empty">Đăng nhập để xem Tín hiệu Crypto.</div>';
+                    notifyParentHeight(); return;
+                }
+                fetch('/api/crypto-signals', { headers: authHeaders(), cache: 'no-store' })
+                    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+                    .then(function(res) {
+                        cryptoSignalsData = res;
+                        renderCryptoSignals();
+                        if (lockedFree) applyCryptoTeaser(lockedFree);
+                    })
+                    .catch(function() { list.innerHTML = '<div class="pf-empty">Không tải được tín hiệu.</div>'; notifyParentHeight(); });
+            }
+            function applyCryptoTeaser(lockedFree) {
+                const gate = window.TuniXMembership;
+                if (!(lockedFree && gate)) return;
+                const list = document.getElementById('pfCryptoAlertList');
+                if (!list || list.getAttribute('data-tg-locked')) return;
+                const hasCards = !!list.querySelector('.pf-alert-card');
+                if (!hasCards) {
+                    list.innerHTML = gate.lockCardHTML({
+                        title: 'Tín hiệu Crypto dành cho Hội viên',
+                        desc: 'AI phân tích vị thế & mã crypto đang theo dõi của bạn: Cơ hội, Cảnh báo, Xu hướng.',
+                        icon: 'fa-coins'
+                    });
+                } else {
+                    gate.lockBlur(list, false);
+                }
+            }
+
+            // ---- Cảnh báo Cổ phiếu (AI): quét + hiển thị ----
+            function stockSignalsSectionHtml() {
+                return '<div class="pf-card ca-sect">' +
+                    '<div class="pf-ca-head">' +
+                        '<div class="pf-ca-hinfo">' +
+                            '<h3 style="margin:0;"><i class="fas fa-chart-column" style="color:#008080;margin-right:7px;"></i>Cảnh báo Cổ phiếu<span class="ca-ai">AI</span></h3>' +
+                            '<div class="pf-ca-sub">Phân tích các cổ phiếu đang nắm giữ &amp; theo dõi của bạn bằng AI — gồm Cơ hội · Cảnh báo · Xu hướng. Bấm nút bên phải để AI quét &amp; nhận định thị trường.</div>' +
+                        '</div>' +
+                        '<button type="button" id="stockAlertScan" class="pf-scan-btn ca-scan"><i class="fas fa-sync-alt"></i> Quét cảnh báo</button>' +
+                    '</div>' +
+                    '<div id="pfStockMeta"></div>' +
+                    '<div id="pfStockAlertList"><div class="pf-loading">Đang tải cảnh báo…</div></div>' +
+                '</div>';
+            }
+            function stockInPosition(sym) {
+                return !!(stockSignalsData && (stockSignalsData.in_position || []).indexOf(sym) >= 0);
+            }
+            function stockItemHtml(it, kind) {
+                const isOpp = kind === 'opportunities';
+                const ic = isOpp ? { c: '#00a08a', i: 'fa-lightbulb' } : { c: '#d0314e', i: 'fa-triangle-exclamation' };
+                const sev = CRYPTO_SEV_META[String(it.severity || '').toUpperCase()] || CRYPTO_SEV_META.MEDIUM;
+                const str = Number(it.strength) || 0, conf = Number(it.confidence) || 0;
+                const head = '<span class="pf-ac-sym">' + esc(it.symbol) + '</span>' +
+                    (stockInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
+                    '<span class="pf-ac-imp" style="color:' + sev.color + '">' + esc(sev.label) + '</span>' +
+                    '<span class="ca-str">Độ mạnh <b>' + str + '</b>/100 · Tin cậy <b>' + conf + '</b></span>';
+                let extra = '';
+                if (isOpp) {
+                    if (it.zone) extra += '<div class="ca-zone"><i class="fas fa-arrows-left-right"></i> Vùng giá quan trọng: <b>' + esc(it.zone) + '</b> đ</div>';
+                    if (it.confirmation) extra += '<div class="ca-confirm"><i class="fas fa-check-double"></i> Xác nhận: ' + esc(it.confirmation) + '</div>';
+                }
+                if (it.why) extra += '<div class="pf-ac-why"><i class="fas fa-circle-question"></i> Vì sao: ' + esc(it.why) + '</div>';
+                return '<div class="pf-alert-card ca-card" style="border-left-color:' + ic.c + '">' +
+                    '<div class="pf-ac-left"><i class="fas ' + ic.i + '" style="color:' + ic.c + '"></i></div>' +
+                    '<div class="pf-ac-main">' +
+                        '<div class="pf-ac-top">' + head + '</div>' +
+                        '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
+                        (it.price != null && it.price !== '' ? '<div class="ca-price">Giá hiện tại: <b>' + fmtMoney(Number(it.price)) + '</b> đ</div>' : '') +
+                        '<div class="pf-ac-desc">' + esc(it.description || '') + '</div>' +
+                        extra +
+                    '</div>' +
+                '</div>';
+            }
+            function stockTrendHtml(it) {
+                const chips = [['short_term', 'Ngắn'], ['medium_term', 'Trung'], ['long_term', 'Dài']];
+                const ch = chips.map(function (p) {
+                    const m = CRYPTO_TREND_META[String(it[p[0]] || 'NEUTRAL').toUpperCase()] || CRYPTO_TREND_META.NEUTRAL;
+                    return '<span class="ca-chip" style="color:' + m.color + ';background:' + m.bg + '">' + p[1] + ' hạn · ' + m.label + '</span>';
+                }).join('');
+                const str = Number(it.strength) || 0;
+                return '<div class="pf-alert-card ca-card" style="border-left-color:#4a7fc4">' +
+                    '<div class="pf-ac-left"><i class="fas fa-chart-line" style="color:#4a7fc4"></i></div>' +
+                    '<div class="pf-ac-main">' +
+                        '<div class="pf-ac-top"><span class="pf-ac-sym">' + esc(it.symbol) + '</span>' +
+                            (stockInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
+                            '<span class="ca-str">Độ mạnh xu hướng <b>' + str + '</b>/100</span></div>' +
+                        '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
+                        '<div class="ca-trend-chips">' + ch + '</div>' +
+                        '<div class="pf-ac-desc">' + esc(it.description || '') + '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+            function renderStockSignals() {
+                const list = document.getElementById('pfStockAlertList');
+                if (!list) return;
+                const meta = document.getElementById('pfStockMeta');
+                const d = stockSignalsData;
+                if (!d) {
+                    list.innerHTML = '<div class="pf-loading">Đang tải cảnh báo…</div>';
+                    if (meta) meta.innerHTML = '';
+                    notifyParentHeight(); return;
+                }
+                const opp = d.opportunities || [], war = d.alerts || [], tr = d.trends || [];
+                const total = opp.length + war.length + tr.length;
+                if (meta) {
+                    const ago = d.scanned_at ? fmtAgo(d.scanned_at) : 'chưa quét';
+                    const pos = (d.in_position || []).length;
+                    meta.innerHTML = '<div class="pf-ca-meta">' +
+                        '<span><i class="fas fa-clock"></i> Cập nhật: <b>' + esc(ago) + '</b></span>' +
+                        '<span><i class="fas fa-microchip"></i> Phân tích <b>' + esc((d.symbols || []).join(', ')) + '</b></span>' +
+                        (pos ? '<span><i class="fas fa-briefcase"></i> ' + pos + ' vị thế đang nắm</span>' : '') +
+                        '<span><i class="fas fa-bell"></i> ' + total + ' tín hiệu</span>' +
+                    '</div>';
+                }
+                if (!total) {
+                    list.innerHTML = '<div class="pf-empty">Chưa có tín hiệu nào cho cổ phiếu của bạn.' +
+                        (d.scanned_at ? '' : ' Hãy bấm "Quét cảnh báo" để AI phân tích.') +
+                    '</div>';
+                    notifyParentHeight(); return;
+                }
+                let html = '';
+                CRYPTO_BLOCKS.forEach(function (b) {
+                    const items = b.k === 'opportunities' ? opp : (b.k === 'alerts' ? war : tr);
+                    html += '<div class="pf-alert-block" data-block="' + b.k + '">' +
+                        '<div class="pf-alert-block-head">' +
+                            '<i class="fas ' + b.icon + '" style="color:' + b.color + '"></i> ' + esc(b.label) +
+                            '<span class="pf-alert-block-count" style="background:' + b.color + '1a;color:' + b.color + '">' + items.length + '</span>' +
+                        '</div>' +
+                        (items.length ? items.map(function (it) { return b.k === 'trends' ? stockTrendHtml(it) : stockItemHtml(it, b.k); }).join('')
+                                      : '<div class="pf-empty">Chưa có ' + esc(b.label.toLowerCase()) + ' nào.</div>') +
+                    '</div>';
+                });
+                list.innerHTML = '<div class="pf-alert-blocks">' + html + '</div>';
+                notifyParentHeight();
+            }
+            function loadStockSignals(lockedFree) {
+                const list = document.getElementById('pfStockAlertList');
+                if (!list) return;
+                const scanBtn = document.getElementById('stockAlertScan');
+                if (scanBtn && !scanBtn.getAttribute('data-bound')) {
+                    scanBtn.setAttribute('data-bound', '1');
+                    scanBtn.addEventListener('click', function() {
+                        if (DEMO) { toast('Vui lòng đăng nhập để dùng Cảnh báo Cổ phiếu.', true); return; }
+                        scanBtn.disabled = true;
+                        scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI đang phân tích…';
+                        fetch('/api/stock-signals/scan', { method: 'POST', headers: authHeaders() })
+                            .then(function(r) {
+                                if (!r.ok) return r.json().then(function(e) { throw new Error((e && e.detail) || 'Quét cảnh báo thất bại.'); });
+                                return r.json();
+                            })
+                            .then(function(res) {
+                                const nSig = ((res.opportunities || []).length + (res.alerts || []).length + (res.trends || []).length);
+                                toast('Đã phân tích ' + (res.symbols || []).length + ' mã, tìm thấy ' + nSig + ' tín hiệu.');
+                                stockSignalsData = res;
+                                renderStockSignals();
+                                if (lockedFree) applyStockTeaser(lockedFree);
+                            })
+                            .catch(function(err) {
+                                const msg = (err && err.message) || 'Quét cảnh báo thất bại.';
+                                list.innerHTML = '<div class="pf-empty"><i class="fas fa-circle-exclamation"></i> ' + esc(msg) + '</div>';
+                                notifyParentHeight();
+                            })
+                            .finally(function() {
+                                scanBtn.disabled = false;
+                                scanBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Quét cảnh báo';
+                            });
+                    });
+                }
+                if (DEMO) {
+                    list.innerHTML = '<div class="pf-empty">Đăng nhập để xem Cảnh báo Cổ phiếu.</div>';
+                    notifyParentHeight(); return;
+                }
+                fetch('/api/stock-signals', { headers: authHeaders(), cache: 'no-store' })
+                    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+                    .then(function(res) {
+                        stockSignalsData = res;
+                        renderStockSignals();
+                        if (lockedFree) applyStockTeaser(lockedFree);
+                    })
+                    .catch(function() { list.innerHTML = '<div class="pf-empty">Không tải được cảnh báo.</div>'; notifyParentHeight(); });
+            }
+            function applyStockTeaser(lockedFree) {
+                const gate = window.TuniXMembership;
+                if (!(lockedFree && gate)) return;
+                const list = document.getElementById('pfStockAlertList');
+                if (!list || list.getAttribute('data-tg-locked')) return;
+                const hasCards = !!list.querySelector('.pf-alert-card');
+                if (!hasCards) {
+                    list.innerHTML = gate.lockCardHTML({
+                        title: 'Cảnh báo Cổ phiếu dành cho Hội viên',
+                        desc: 'AI phân tích vị thế & mã cổ phiếu đang theo dõi của bạn: Cơ hội, Cảnh báo, Xu hướng.',
+                        icon: 'fa-chart-column'
+                    });
+                } else {
+                    gate.lockBlur(list, false);
+                }
             }
 
             function fmtAgo(iso) {
@@ -1759,86 +2350,14 @@
                 } catch (e) { return ''; }
             }
 
-            function alertCardHtml(a) {
-                const m = alertMeta(a.alert_type);
-                const imp = IMPORTANCE_META[a.importance] || IMPORTANCE_META.medium;
-                const why = a.metadata || {};
-                const zone = why.zone || null;
-                const distPct = (typeof why.distance_percent !== 'undefined') ? Number(why.distance_percent).toFixed(2) : null;
-                return '<div class="pf-alert-card' + (a.is_read ? '' : ' unread') + '" data-id="' + a.id + '">' +
-                    '<div class="pf-ac-left"><i class="fas ' + m.icon + '" style="color:' + m.color + '"></i></div>' +
-                    '<div class="pf-ac-main">' +
-                        '<div class="pf-ac-top">' +
-                            '<span class="pf-ac-type" style="background:' + m.color + '1a;color:' + m.color + '">' + esc(m.label) + '</span>' +
-                            '<span class="pf-ac-sym">' + esc(a.symbol) + '</span>' +
-                            '<span class="pf-ac-imp" style="color:' + imp.color + '">' + esc(imp.label) + '</span>' +
-                            '<span class="pf-ac-time">' + fmtAgo(a.created_at) + '</span>' +
-                        '</div>' +
-                        '<div class="pf-ac-title">' + esc(a.title) + '</div>' +
-                        '<div class="pf-ac-desc">' + esc(a.description) + '</div>' +
-                        (zone ? '<div class="pf-ac-why">' +
-                            '<i class="fas fa-circle-question"></i> Vì sao có cảnh báo này: ' +
-                            'giá ' + fmtMoney(why.current_price) +
-                            ' cách vùng ' + fmtMoney(zone.lower) + '–' + fmtMoney(zone.upper) +
-                            (distPct !== null ? ' (' + distPct + '%)' : '') +
-                            ' · chạm ' + (why.touch_count || 0) + ' lần · độ mạnh ' + (why.strength_score || 0) + '/100' +
-                            ' · độ tin cậy ' + esc(why.confidence || '—') +
-                            ' · khung ' + esc(why.timeframe || '1D') +
-                        '</div>' : '') +
-                    '</div>' +
-                    '<div class="pf-ac-right">' +
-                        (a.is_read ? '<span class="pf-ac-readmark"><i class="fas fa-check-circle"></i></span>'
-                                   : '<button type="button" class="pf-ac-read" data-id="' + a.id + '" title="Đánh dấu đã đọc"><i class="fas fa-circle"></i></button>') +
-                    '</div>' +
-                '</div>';
-            }
-
-            function renderAlertList() {
-                const list = document.getElementById('pfAlertList');
-                if (!list) return;
-                if (!alertData.length) {
-                    list.innerHTML = '<div class="pf-empty">Chưa có cảnh báo nào. Hãy bấm "Quét cảnh báo" để phân tích cổ phiếu của bạn.</div>';
-                    notifyParentHeight(); return;
-                }
-                // Nhóm theo 3 block cố định: Cơ hội / Cảnh báo / Xu hướng (hiển thị ngang 3 cột).
-                // Lọc xung đột: 1 mã chỉ giữ Cơ hội HOẶC Cảnh báo (Xu hướng độc lập).
-                const shown = resolveCategoryConflict(alertData);
-                let html = '';
-                ALERT_BLOCKS.forEach(function(b) {
-                    const items = shown.filter(function(a) { return a.category === b.k; });
-                    html += '<div class="pf-alert-block" data-block="' + b.k + '">' +
-                        '<div class="pf-alert-block-head">' +
-                            '<i class="fas ' + b.icon + '" style="color:' + b.color + '"></i> ' + esc(b.label) +
-                            '<span class="pf-alert-block-count" style="background:' + b.color + '1a;color:' + b.color + '">' + items.length + '</span>' +
-                        '</div>' +
-                        (items.length ? items.map(alertCardHtml).join('')
-                                      : '<div class="pf-empty">Chưa có ' + b.label.toLowerCase() + ' nào.</div>') +
-                    '</div>';
-                });
-                list.innerHTML = '<div class="pf-alert-blocks">' + html + '</div>';
-                list.querySelectorAll('.pf-ac-read').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                        const id = btn.getAttribute('data-id');
-                        fetch('/api/alerts/' + id + '/read', { method: 'POST', headers: authHeaders() })
-                            .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-                            .then(function() {
-                                alertData = alertData.map(function(x) { return x.id === Number(id) ? Object.assign({}, x, { is_read: true }) : x; });
-                                renderAlertList();
-                            })
-                            .catch(function() { toast('Không cập nhật được trạng thái.', true); });
-                    });
-                });
-                notifyParentHeight();
-            }
-
             // ---------- Watchlist ----------
             function renderWatchlist() {
-                return '<div class="pf-card"><h3>Danh sách theo dõi</h3>' +
+                return '<div class="pf-card"><h3>Cổ phiếu đang theo dõi</h3>' +
                     '<div class="pf-wl-add">' + (DEMO ? '' : '<input id="wlInput" placeholder="Thêm mã, VD: VNM" /><button id="wlAdd"><i class="fas fa-plus"></i></button>') + '</div>' +
                     '<div class="pf-table-wrap"><table class="pf-wl-table"><thead><tr>' +
                         '<th>Mã</th><th>Giá hiện tại</th><th>Giá Hôm Qua</th><th>Thay đổi</th><th>Khối lượng</th><th></th>' +
                     '</tr></thead><tbody id="wlList"><tr><td colspan="5" class="pf-loading">Đang tải…</td></tr></tbody></table></div>' +
-                '</div>';
+                '</div>' + cryptoWlCardHtml();
             }
             // Màu theo quy ước trang Thị trường: Trần = tím, Tăng = xanh lá, Đứng = vàng, Giảm = đỏ, Sàn = xanh lơ
             const WL_COLORS = { ceiling: '#9A26F3', up: '#00A745', flat: '#FFC107', down: '#DC3545', floor: '#33b1e3' };
@@ -1919,7 +2438,7 @@
                         const items = Array.isArray(list) ? list : [];
                         watchlistSyms = items.map(function(w) { return w.symbol; });
                         if (!listEl) return;
-                        if (!items.length) { listEl.innerHTML = '<tr><td colspan="6" class="pf-empty">Chưa có cổ phiếu theo dõi.</td></tr>'; return; }
+                        if (!items.length) { listEl.innerHTML = '<tr><td colspan="6" class="pf-empty">Chưa có mã trong danh mục theo dõi.</td></tr>'; return; }
                         listEl.innerHTML = watchlistSyms.map(function(s) { return wlItemHtml(s, true); }).join('');
                         bindWlList();
                         fillWlQuotes(listEl, watchlistSyms);
@@ -1947,7 +2466,7 @@
                                 document.querySelectorAll('#wlList tr[data-symbol="' + sym + '"]').forEach(function(el) { el.remove(); });
                                 const listEl = document.getElementById('wlList');
                                 if (listEl && !watchlistSyms.length) {
-                                    listEl.innerHTML = '<tr><td colspan="6" class="pf-empty">Chưa có cổ phiếu theo dõi.</td></tr>';
+                                    listEl.innerHTML = '<tr><td colspan="6" class="pf-empty">Chưa có mã trong danh mục theo dõi.</td></tr>';
                                 }
                                 toast('Đã bỏ theo dõi ' + sym);
                                 notifyParentHeight();
@@ -1958,11 +2477,164 @@
             }
 
             // ---------- Portfolio table (nắm giữ + theo dõi) ----------
+            // Bảng danh mục cổ phiếu (như cũ) + Bảng danh mục crypto (gộp vị thế đang giữ + coin đang theo dõi).
+            const CRYPTO_PT_HEADER = '<th>Coin</th><th>Giá Vốn TB</th><th>Giá hiện tại</th><th>Số lượng</th><th>Giá trị (USDT)</th><th>Lãi/Lỗ (%)</th><th>Hỗ trợ</th><th>Kháng cự</th><th>Trạng thái</th><th>Volume 24h</th>';
+            function cryptoBoardRows() {
+                const held = userAssets.crypto || [];
+                const heldMap = {};
+                held.forEach(function(p) { const s = String(p.label || '').trim().toUpperCase(); if (s) heldMap[s] = p; });
+                const syms = [];
+                held.forEach(function(p) { const s = String(p.label || '').trim().toUpperCase(); if (s && syms.indexOf(s) < 0) syms.push(s); });
+                (cwSyms || []).forEach(function(s) { if (s && syms.indexOf(s) < 0) syms.push(s); });
+                const rows = [];
+                syms.forEach(function(sym) {
+                    const p = heldMap[sym];
+                    const it = cryptoMap[sym] || null;
+                    const price = it ? (Number(it.price) || 0) : 0;
+                    const vol = it ? (Number(it.volume) || 0) : null;
+                    const qty = p ? (Number(p.quantity) || 0) : 0;
+                    const cost = p ? (Number(p.amount) || 0) : 0;
+                    const avg = p ? ((Number(p.unit_price) || 0) || (qty > 0 ? cost / qty : 0)) : 0;
+                    let cur = null, pnl = null, pnlPct = null;
+                    if (p) {
+                        cur = price > 0 ? qty * price : cost;
+                        if (price > 0) { pnl = cur - cost; pnlPct = cost > 0 ? pnl / cost * 100 : 0; }
+                    }
+                    rows.push({ sym: sym, name: (it && it.name && String(it.name).toUpperCase() !== sym) ? it.name : '', hold: !!p, avg: avg, qty: qty, price: price, vol: vol, cur: cur, pnl: pnl, pnlPct: pnlPct });
+                });
+                return rows;
+            }
+            function cryptoBoardRowHtml(o) {
+                const name = o.name ? '<span class="name">' + esc(o.name) + '</span>' : '';
+                const avgHtml = (o.hold && o.avg > 0) ? fmtDec(o.avg) : '—';
+                const priceHtml = o.price > 0 ? '<span style="font-weight:800;">' + fmtDec(o.price) + '</span>' : '—';
+                const pnlUp = (o.pnl || 0) >= 0;
+                let pnlHtml = '<span>—</span>';
+                if (o.pnl != null && o.pnlPct != null) {
+                    const cls = pnlUp ? 'pos' : 'neg';
+                    pnlHtml = '<span class="' + cls + '">' + (o.pnl >= 0 ? '+' : '−') + fmtDec(Math.abs(o.pnl)) +
+                        ' <span style="font-size:11px;">(' + (o.pnlPct >= 0 ? '+' : '−') + Math.abs(o.pnlPct).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%)</span></span>';
+                }
+                return '<tr data-csym="' + esc(o.sym) + '">' +
+                    '<td><div class="td-sym">' + esc(o.sym) + name + '</div></td>' +
+                    '<td>' + avgHtml + '</td>' +
+                    '<td>' + priceHtml + '</td>' +
+                    '<td>' + (o.hold ? fmtDec(o.qty) : '—') + '</td>' +
+                    '<td>' + (o.cur != null ? fmtDec(o.cur) : '—') + '</td>' +
+                    '<td>' + pnlHtml + '</td>' +
+                    '<td class="cr-sup">…</td>' +
+                    '<td class="cr-res">…</td>' +
+                    '<td class="cr-status">…</td>' +
+                    '<td>' + (o.vol != null ? fmtVolUsd(o.vol) : '—') + '</td>' +
+                '</tr>';
+            }
+            function cryptoPortfolioEmptyHtml() {
+                return '<tr><td colspan="10" class="pf-empty">Chưa có coin nào — nhập vị thế ở "Danh mục đang nắm giữ" hoặc thêm coin ở "Danh mục theo dõi".</td></tr>';
+            }
+            function loadCryptoPortfolio() {
+                const tbody = document.getElementById('cryptoPortfolioBody');
+                if (!tbody) return;
+                function render() {
+                    const rows = cryptoBoardRows();
+                    tbody.innerHTML = rows.length ? rows.map(cryptoBoardRowHtml).join('') : cryptoPortfolioEmptyHtml();
+                    loadCryptoSr();
+                    notifyParentHeight();
+                }
+                if (DEMO) { cwSyms = CW_DEMO.slice(); Promise.resolve(loadCryptoMeta()).then(function() { render(); }); return; }
+                const metaP = Promise.resolve(loadCryptoMeta()).catch(function() {});
+                const assetsP = new Promise(function(res) { loadUserAssets(function() { res(); }); });
+                const wlP = fetch('/api/crypto-watchlist', { headers: authHeaders() })
+                    .then(function(r) { return r.ok ? r.json() : []; })
+                    .then(function(rows) { cwSyms = (Array.isArray(rows) ? rows : []).map(function(w) { return w.symbol; }); })
+                    .catch(function() { cwSyms = []; });
+                Promise.all([metaP, assetsP, wlP]).then(render).catch(render);
+            }
+            // Hỗ trợ/Kháng cự crypto (nến 1D Binance): đỉnh/đáy fractal + gom cụm → vùng gần giá hiện tại.
+            const cryptoSrCache = {};
+            function cryptoPivots(candles) {
+                const highs = [], lows = [];
+                for (let i = 2; i < candles.length - 2; i++) {
+                    const h = candles[i].high, l = candles[i].low;
+                    if (h > candles[i-1].high && h > candles[i-2].high && h > candles[i+1].high && h > candles[i+2].high) highs.push(h);
+                    if (l < candles[i-1].low && l < candles[i-2].low && l < candles[i+1].low && l < candles[i+2].low) lows.push(l);
+                }
+                return { highs: highs, lows: lows };
+            }
+            function cryptoZonesFrom(vals) {
+                const sorted = (vals || []).slice().sort(function(a, b) { return a - b; });
+                const zones = [];
+                sorted.forEach(function(v) {
+                    let z = null;
+                    for (let k = 0; k < zones.length; k++) { if (Math.abs(v - zones[k].c) / zones[k].c <= 0.004) { z = zones[k]; break; } }
+                    if (z) { z.min = Math.min(z.min, v); z.max = Math.max(z.max, v); z.c = (z.c * z.n + v) / (z.n + 1); z.n += 1; }
+                    else zones.push({ min: v, max: v, c: v, n: 1 });
+                });
+                return zones;
+            }
+            function cryptoNearestSr(candles, refPrice) {
+                if (!candles || candles.length < 20 || !(refPrice > 0)) return { support: null, resistance: null };
+                const pv = cryptoPivots(candles);
+                const zs = cryptoZonesFrom(pv.highs).concat(cryptoZonesFrom(pv.lows)).sort(function(a, b) { return a.c - b.c; });
+                let support = null, resistance = null;
+                for (let i = 0; i < zs.length; i++) {
+                    const z = zs[i];
+                    if (z.max < refPrice && (!support || (refPrice - z.max) < (refPrice - support.max))) support = z;
+                    if (z.min > refPrice && (!resistance || (z.min - refPrice) < (resistance.min - refPrice))) resistance = z;
+                }
+                return { support: support, resistance: resistance };
+            }
+            function srZoneText(z) {
+                return '<span title="Vùng ' + z.n + ' lần chạm">' + fmtDec(z.min) + '–' + fmtDec(z.max) + '</span>';
+            }
+            function cryptoStatusHtml(st) {
+                st = st || { label: 'Trung lập', icon: 'fa-minus', color: '#8a99b1' };
+                return '<span class="pf-st" style="color:' + st.color + ';"><i class="fas ' + st.icon + '"></i>' + st.label + '</span>';
+            }
+            function setSrCells(sym, result) {
+                document.querySelectorAll('#cryptoPortfolioBody tr[data-csym="' + sym + '"]').forEach(function(tr) {
+                    const sup = tr.querySelector('.cr-sup'), res = tr.querySelector('.cr-res'), stEl = tr.querySelector('.cr-status');
+                    if (sup) sup.innerHTML = (result && result.support) ? srZoneText(result.support) : '—';
+                    if (res) res.innerHTML = (result && result.resistance) ? srZoneText(result.resistance) : '—';
+                    if (stEl) stEl.innerHTML = cryptoStatusHtml(result && result.st);
+                });
+                notifyParentHeight();
+            }
+            function loadCryptoSr() {
+                const syms = [];
+                document.querySelectorAll('#cryptoPortfolioBody tr[data-csym]').forEach(function(tr) {
+                    const s = tr.getAttribute('data-csym');
+                    if (s && syms.indexOf(s) < 0) syms.push(s);
+                });
+                syms.forEach(function(sym) {
+                    if (cryptoSrCache[sym]) { cryptoSrCache[sym].then(function(r) { setSrCells(sym, r); }); return; }
+                    cryptoSrCache[sym] = fetch('/api/crypto/klines?symbol=' + encodeURIComponent(sym) + '&interval=1d&limit=360', { cache: 'no-store' })
+                        .then(function(r) { return r.ok ? r.json() : null; })
+                        .then(function(d) {
+                            const items = (d && Array.isArray(d.items)) ? d.items : [];
+                            if (!items.length) return { support: null, resistance: null, st: null };
+                            const candles = items.map(function(b) { return { high: Number(b.high) || 0, low: Number(b.low) || 0, close: Number(b.close) || 0 }; });
+                            const mk = cryptoMap[sym];
+                            const ref = mk ? (Number(mk.price) || 0) : (candles[candles.length - 1].close || 0);
+                            const sr = cryptoNearestSr(candles, ref);
+                            // Dùng đúng logic cột Trạng thái cổ phiếu (calcStatus): Gần hỗ trợ/kháng cự → MA20 + momentum.
+                            const supObj = sr.support ? { upper_bound: sr.support.max } : null;
+                            const resObj = sr.resistance ? { lower_bound: sr.resistance.min } : null;
+                            sr.st = calcStatus(ref, supObj, resObj, candles);
+                            return sr;
+                        })
+                        .catch(function() { return { support: null, resistance: null, st: null }; });
+                    cryptoSrCache[sym].then(function(r) { setSrCells(sym, r); });
+                });
+            }
             function renderPortfolioTable() {
-                return '<div class="pf-card"><h3>Bảng danh mục</h3>' +
+                return '<div class="pf-card"><h3>Bảng danh mục cổ phiếu</h3>' +
                     '<div class="pf-table-wrap"><table class="pf-pt-table"><thead><tr>' +
                         '<th>Mã</th><th>Giá vốn TB</th><th>Giá hôm qua</th><th>Giá hiện tại</th><th>SL</th><th>Giá trị</th><th>Lãi/Lỗ (%)</th><th>%HN</th><th>Hỗ trợ</th><th>Kháng cự</th><th>Trạng thái</th>' +
                     '</tr></thead><tbody id="pfPortfolioBody"><tr><td colspan="11" class="pf-loading">Đang tải…</td></tr></tbody></table></div>' +
+                '</div>' +
+                '<div class="pf-card"><h3>Bảng danh mục crypto</h3>' +
+                    '<div class="pf-table-wrap"><table class="pf-pt-table"><thead><tr>' + CRYPTO_PT_HEADER +
+                    '</tr></thead><tbody id="cryptoPortfolioBody"><tr><td colspan="10" class="pf-loading">Đang tải…</td></tr></tbody></table></div>' +
                 '</div>';
             }
             function nearestZone(zones, kind, price) {
@@ -2006,6 +2678,18 @@
                     if (!aboveMA && !momentum) return { label: 'Xu hướng suy yếu', icon: 'fa-arrow-trend-down', color: '#f5a623' };
                 }
                 return neutral;
+            }
+            // Đảm bảo luôn có danh sách mã cổ phiếu đang theo dõi (cần cho Bảng danh mục)
+            // — không phụ thuộc việc user đã mở tab "Danh mục theo dõi" hay chưa.
+            function ensureWatchlistSyms(cb) {
+                if (DEMO) { watchlistSyms = ['ACB', 'VCI', 'FPT', 'HPG', 'MBB']; if (cb) cb(); return; }
+                fetch('/api/watchlist', { headers: authHeaders() })
+                    .then(function(r) { return r.ok ? r.json() : []; })
+                    .then(function(rows) {
+                        watchlistSyms = (Array.isArray(rows) ? rows : []).map(function(w) { return w.symbol; });
+                        if (cb) cb();
+                    })
+                    .catch(function() { watchlistSyms = []; if (cb) cb(); });
             }
             function loadPortfolioTable() {
                 const tbody = document.getElementById('pfPortfolioBody');
@@ -2139,6 +2823,11 @@
                             '<div class="pf-stat-label">Tổng lãi/lỗ <span class="pf-tip" data-tip="' + esc(TIP_PNL) + '">i</span></div>' +
                             '<div class="pf-stat-value">' + sign + fmtMoney(Math.abs(t.totalPnl)) + ' <span style="font-size:13px;font-weight:600;">đ</span></div>' +
                             '<div class="pf-stat-sub">' + pctTxt + '</div>' +
+                        '</div>' +
+                        '<div class="pf-perf-stat">' +
+                            '<div class="pf-stat-label">Lợi nhuận hôm nay</div>' +
+                            '<div class="pf-stat-value ' + (t.todayPnl >= 0 ? 'pos' : 'neg') + '">' + (t.todayPnl >= 0 ? '+' : '−') + fmtMoney(Math.abs(t.todayPnl)) + ' <span style="font-size:13px;font-weight:600;">đ</span></div>' +
+                            '<div class="pf-stat-sub ' + (t.todayPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(t.todayPct) + '</div>' +
                         '</div>' +
                         '<div class="pf-perf-chart">' +
                             '<div id="pfPerfChart"><div class="pf-loading">Đang tải dữ liệu giá…</div></div>' +
@@ -2289,10 +2978,10 @@
 
             // ---------- Tabs ----------
             const TAB_DEFS = {
-                overview: { label: 'Phân tích tài sản', icon: 'fa-chart-pie', html: function() { return renderSummary() + renderPerformance() + renderChartCard() + renderAssetAlloc() + '<div class="pf-duo">' + renderReview() + renderAlloc() + '</div>'; }, mount: function() { bindChart(); loadChart(); loadPerformance(); loadOverviewAssets(); } },
+                overview: { label: 'Phân tích tài sản', icon: 'fa-chart-pie', html: function() { return renderPerformance() + renderChartCard() + '<div class="pf-duo">' + renderAssetAlloc() + renderReview() + '</div>' + '<div class="pf-duo pf-rowb" id="pfRowB">' + '<div id="pfCryptoAllocCard"></div>' + renderAlloc() + '</div>'; }, mount: function() { bindChart(); loadChart(); loadPerformance(); loadOverviewAssets(); } },
                 holdings: { label: 'Danh mục đang nắm giữ', icon: 'fa-briefcase', html: function() { return renderHoldingsTab(); }, mount: function() { bindTable(); bindForm(); bindAssetForm(); loadCryptoMeta(); loadUserAssets(function() { refreshAssetCards(); }); } },
-                watchlist: { label: 'Cổ phiếu theo dõi', icon: 'fa-eye', html: renderWatchlist, mount: function() { loadWatchlist(); bindWlAdd(); } },
-                portfolio: { label: 'Bảng danh mục', icon: 'fa-table', html: renderPortfolioTable, mount: function() { loadPortfolioTable(); } },
+                watchlist: { label: 'Danh mục theo dõi', icon: 'fa-eye', html: renderWatchlist, mount: function() { loadWatchlist(); bindWlAdd(); mountCryptoWl(); } },
+                portfolio: { label: 'Bảng danh mục', icon: 'fa-table', html: renderPortfolioTable, mount: function() { ensureWatchlistSyms(function() { loadPortfolioTable(); }); loadCryptoPortfolio(); } },
                 alerts: { label: 'Trung tâm cảnh báo', icon: 'fa-bell', html: renderAlerts, mount: function() { mountAlerts(); } },
                 events: { label: 'Sự kiện liên quan', icon: 'fa-calendar-day', html: renderEvents, mount: function() { loadEvents(); } },
             };
@@ -2312,10 +3001,24 @@
                 document.querySelectorAll('.pf-sub-btn').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === name); });
                 const content = document.getElementById('pfTabBody');
                 if (!content) return;
+                // Khối xanh đầu trang đổi text theo từng tab (cùng vị trí, chỉ khác tiêu đề/mô tả).
+                const ht = document.getElementById('pfHeadTitle');
+                if (ht) ht.textContent = def.label;
+                const hs = document.getElementById('pfHeadSub');
+                if (hs) hs.textContent = TAB_HERO_SUB[name] || '';
                 content.innerHTML = def.html();
                 def.mount();
                 notifyParentHeight();
             }
+            // Mô tả khối xanh theo từng tab (title = TAB_DEFS.label).
+            const TAB_HERO_SUB = {
+                overview: 'Tổng quan tài sản: hiệu suất đầu tư, lãi/lỗ, phân bổ tài sản & ngành theo thời gian thực.',
+                holdings: 'Các vị thế đang nắm giữ (cổ phiếu, crypto, vàng/bạc, tiền gửi) — mua/bán, sửa, theo dõi lãi/lỗ.',
+                watchlist: 'Cổ phiếu và crypto đang theo dõi để canh điểm ra/vào phù hợp.',
+                portfolio: 'Bảng danh mục cổ phiếu & crypto kèm giá vốn, hỗ trợ/kháng cự, trạng thái kỹ thuật.',
+                alerts: 'Cảnh báo Cổ phiếu và Tín hiệu Crypto do AI phân tích từ dữ liệu thị trường của bạn.',
+                events: 'Sự kiện doanh nghiệp của các mã bạn đang nắm giữ & theo dõi: cổ tức, chốt quyền, kết quả kinh doanh…'
+            };
             const EVENT_TYPE_META = {
                 DIVIDEND:               { icon: 'fa-coins', color: '#00a08a', label: 'Cổ tức' },
                 EX_DIVIDEND_DATE:       { icon: 'fa-calendar-check', color: '#7b61c4', label: 'Chốt quyền' },
@@ -2442,6 +3145,124 @@
                 });
                 wlInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') wlAdd.click(); });
             }
+
+            // ---------- Crypto đang theo dõi (watchlist coin, dữ liệu giá từ /api/crypto/markets) ----------
+            function cryptoWlCardHtml() {
+                const add = DEMO ? '' :
+                    '<div class="pf-wl-add"><input id="cwInput" placeholder="Thêm coin, VD: BTC" autocomplete="off" spellcheck="false" /><button id="cwAdd"><i class="fas fa-plus"></i></button></div>';
+                return '<div class="pf-card"><h3>Crypto đang theo dõi</h3>' + add +
+                    '<div class="pf-table-wrap"><table class="pf-wl-table"><thead><tr>' +
+                        '<th>Coin</th><th>Giá (USDT)</th><th>% 24h</th><th>Volume 24h</th><th></th>' +
+                    '</tr></thead><tbody id="cwList"><tr><td colspan="5" class="pf-loading">Đang tải…</td></tr></tbody></table></div>' +
+                '</div>';
+            }
+            function cryptoWlRowHtml(sym, showRemove) {
+                const mk = cryptoMap[sym] || null;
+                const nm = (mk && mk.name && String(mk.name).toUpperCase() !== sym) ? mk.name : '';
+                return '<tr data-cwsym="' + esc(sym) + '">' +
+                    '<td><div class="td-sym">' + esc(sym) + (nm ? '<span class="name wl-name">' + esc(nm) + '</span>' : '') + '</div></td>' +
+                    '<td class="wl-price" style="font-weight:800;">--</td>' +
+                    '<td class="wl-chg" style="font-weight:700;">--</td>' +
+                    '<td class="wl-vol">--</td>' +
+                    (showRemove ? '<td style="text-align:right;"><div class="td-actions" style="justify-content:flex-end;"><button type="button" class="act-btn del cw-rm" data-rm="' + esc(sym) + '" title="Xóa"><i class="fas fa-trash"></i></button></div></td>' : '') +
+                '</tr>';
+            }
+            function fmtVolUsd(v) {
+                const n = Number(v) || 0;
+                if (!n) return '--';
+                if (n >= 1e9) return (n / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' tỷ';
+                if (n >= 1e6) return (n / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' triệu';
+                return fmtDec(n);
+            }
+            function cwFillRows(listEl, syms) {
+                syms.forEach(function(sym) {
+                    const mk = cryptoMap[sym] || null;
+                    const row = listEl ? listEl.querySelector('[data-cwsym="' + sym + '"]') : null;
+                    if (!mk || !row) return;
+                    const price = Number(mk.price) || 0;
+                    const pct = Number(mk.change_pct) || 0;
+                    const up = pct >= 0;
+                    const color = up ? '#00a08a' : '#d0314e';
+                    const priceEl = row.querySelector('.wl-price');
+                    if (priceEl) { priceEl.textContent = price ? fmtDec(price) : '--'; priceEl.style.color = '#12203a'; }
+                    const chgEl = row.querySelector('.wl-chg');
+                    if (chgEl) { chgEl.textContent = (pct === 0 ? '0%' : (up ? '+' : '−') + Math.abs(pct).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%'); chgEl.style.color = color; }
+                    const volEl = row.querySelector('.wl-vol');
+                    if (volEl) volEl.textContent = fmtVolUsd(mk.volume);
+                });
+            }
+            function bindCwList() {
+                document.querySelectorAll('#cwList .cw-rm').forEach(function(b) {
+                    b.addEventListener('click', function() {
+                        const sym = b.getAttribute('data-rm');
+                        fetch('/api/crypto-watchlist/' + encodeURIComponent(sym), { method: 'DELETE', headers: authHeaders() })
+                            .then(function(r) { if (!r.ok) return r.json().then(function(j) { throw new Error((j && j.detail) || 'Xóa thất bại'); }); return null; })
+                            .then(function() {
+                                cwSyms = cwSyms.filter(function(s) { return s !== sym; });
+                                document.querySelectorAll('#cwList tr[data-cwsym="' + sym + '"]').forEach(function(el) { el.remove(); });
+                                if (!cwSyms.length) { const l = document.getElementById('cwList'); if (l) l.innerHTML = '<tr><td colspan="5" class="pf-empty">Chưa có coin nào trong danh mục theo dõi.</td></tr>'; }
+                                toast('Đã bỏ theo dõi ' + sym);
+                                notifyParentHeight();
+                            })
+                            .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Xóa thất bại'), true); });
+                    });
+                });
+            }
+            function renderCryptoWlList() {
+                const listEl = document.getElementById('cwList');
+                if (!listEl) return;
+                if (!cwSyms.length) {
+                    listEl.innerHTML = '<tr><td colspan="5" class="pf-empty">Chưa có coin nào — thêm coin bên trên để theo dõi giá.</td></tr>';
+                    bindCwList();
+                    notifyParentHeight();
+                    return;
+                }
+                listEl.innerHTML = cwSyms.map(function(s) { return cryptoWlRowHtml(s, !DEMO); }).join('');
+                cwFillRows(listEl, cwSyms);
+                bindCwList();
+                notifyParentHeight();
+            }
+            function loadCryptoWatchlist() {
+                if (DEMO) {
+                    cwSyms = CW_DEMO.slice();
+                    Promise.resolve(loadCryptoMeta()).then(function() { renderCryptoWlList(); });
+                    return;
+                }
+                Promise.resolve(loadCryptoMeta()).then(function() {
+                    return fetch('/api/crypto-watchlist', { headers: authHeaders() })
+                        .then(function(r) { return r.ok ? r.json() : []; })
+                        .then(function(rows) {
+                            cwSyms = (Array.isArray(rows) ? rows : []).map(function(w) { return w.symbol; });
+                            renderCryptoWlList();
+                            return null;
+                        })
+                        .catch(function() { const l = document.getElementById('cwList'); if (l) l.innerHTML = '<tr><td colspan="5" class="pf-empty">Không tải được danh sách theo dõi crypto.</td></tr>'; });
+                });
+            }
+            function bindCwAdd() {
+                const btn = document.getElementById('cwAdd');
+                const input = document.getElementById('cwInput');
+                if (!btn || !input) return;
+                function submit() {
+                    const raw = input.value.trim();
+                    if (!raw) return;
+                    // Nhập tự do như ô cổ phiếu (không tự điền/tự sửa khi gõ). Khi bấm Thêm:
+                    // nếu khớp coin trong danh sách (mã/tên) → lấy đúng mã; ngược lại lấy chuỗi in hoa đã lọc.
+                    const it = cryptoFind(raw);
+                    const v = it ? String(it.symbol).toUpperCase() : raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    if (!v) { toast('Mã coin không hợp lệ.', true); return; }
+                    fetch('/api/crypto-watchlist', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ symbol: v }) })
+                        .then(function(r) { if (!r.ok) return r.json().then(function(j) { throw new Error((j && j.detail) || 'Lỗi'); }); return r.json(); })
+                        .then(function() { input.value = ''; toast('Đã thêm ' + v + ' vào danh mục theo dõi'); loadCryptoWatchlist(); })
+                        .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không thêm được'), true); });
+                }
+                btn.addEventListener('click', submit);
+                input.addEventListener('keydown', function(e) { if (e.key === 'Enter') submit(); });
+            }
+            function mountCryptoWl() {
+                bindCwAdd();
+                loadCryptoWatchlist();
+            }
             function fetchPriceHint(symbol) {
                 const hint = document.getElementById('pfPriceHint');
                 if (!hint) return;
@@ -2453,7 +3274,7 @@
                         const useLabel = tradeMode === 'sell' ? 'Dùng giá này làm giá bán' : 'Dùng giá này làm giá mua';
                         hint.innerHTML = 'Giá hiện tại: <strong>' + fmtMoney(price) + ' đ</strong> · <a id="pfUsePrice">' + useLabel + '</a>';
                         const a = document.getElementById('pfUsePrice');
-                        if (a) a.addEventListener('click', function() { const avg = document.getElementById('pfAvg'); if (avg) { avg.value = price; toast('Đã điền giá hiện tại'); } });
+                        if (a) a.addEventListener('click', function() { const avg = document.getElementById('pfAvg'); if (avg) { avg.value = price; fmtMoneyInput(avg); toast('Đã điền giá hiện tại'); } });
                     })
                     .catch(function() { hint.innerHTML = ''; });
             }
@@ -2479,15 +3300,15 @@
                         .catch(function(e) { if (e && e.message) toast('❌ ' + e.message, true); });
                 }
                 if (editId) {
-                    const quantity = parseFloat(document.getElementById('pfQty').value);
-                    const avg_price = parseFloat(document.getElementById('pfAvg').value);
+                    const quantity = moneyNum('pfQty');
+                    const avg_price = moneyNum('pfAvg');
                     if (!(quantity > 0)) { toast('Số lượng phải lớn hơn 0.', true); return; }
                     if (!(avg_price >= 0)) { toast('Giá vốn không hợp lệ.', true); return; }
                     send('/api/portfolio/' + editId, 'PUT', { quantity: quantity, avg_price: avg_price });
                     return;
                 }
-                const quantity = parseFloat(document.getElementById('pfQty').value);
-                const price = parseFloat(document.getElementById('pfAvg').value);
+                const quantity = moneyNum('pfQty');
+                const price = moneyNum('pfAvg');
                 if (!(quantity > 0)) { toast('Số lượng mua/bán phải lớn hơn 0.', true); return; }
                 if (!(price > 0)) { toast('Giá mua/bán không hợp lệ.', true); return; }
                 if (quantity > 1000000) { toast('Số lượng tối đa 1.000.000.', true); return; }
@@ -2500,8 +3321,7 @@
                 }
                 const needVnd = quantity * price * (1 + fee / 100);
                 if (needVnd > cashVnd) {
-                    toast('Quỹ VND không đủ ' + fmtMoney(needVnd) + ' đ để mua (đang có ' + fmtMoney(cashVnd) + ' đ). Hãy Nạp tiền mặt VND trước.', true);
-                    return;
+                    return needTopUp('VND', fmtMoney(needVnd) + ' đ');
                 }
                 send('/api/portfolio', 'POST', { symbol: symbol, quantity: quantity, avg_price: price, fee: fee });
             }

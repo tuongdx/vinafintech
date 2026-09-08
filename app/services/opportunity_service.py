@@ -1,6 +1,7 @@
 """Engine "Cơ hội nổi bật hôm nay".
 
-Tự động phát hiện 3–5 cổ phiếu có tín hiệu thị trường đáng chú ý trong phiên, dựa trên
+Tự động phát hiện cổ phiếu có tín hiệu thị trường đáng chú ý trong phiên (tối đa 11 mã:
+9 mã cho lưới chính + 2 mã hiển thị dưới panel AI trên trang Khám phá), dựa trên
 xu hướng giá, dòng tiền/thanh khoản, động lượng (RSI/MACD), vị trí giá, yếu tố cơ bản
 và sức mạnh ngành — KHÔNG phải khuyến nghị mua/bán.
 
@@ -202,7 +203,7 @@ def _market_state(stocks: list[dict[str, Any]]) -> dict[str, Any]:
         "adv_ratio": breadth["adv_ratio"],
         "adv": breadth["adv"],
         "dec": breadth["dec"],
-        "max_items": 5 if status == "positive" else (3 if status == "neutral" else 0),
+        "max_items": 0 if status == "negative" else 11,
         "message": "Thị trường đang có mức độ biến động/rủi ro cao. Chưa ghi nhận đủ tín hiệu nổi bật."
         if status == "negative" else "",
     }
@@ -526,11 +527,12 @@ def _compute_impl() -> dict[str, Any]:
 
     scored.sort(key=lambda x: x["opportunity_score"], reverse=True)
 
-    # Hiển thị TỐI THIỂU 4 mã (trừ khi thị trường rủi ro cao): ưu tiên mã >= 65,
-    # nếu chưa đủ thì bổ sung các mã đạt tiếp theo (điểm thực, không giả) tới đủ cap.
+    # Hiển thị TỐI ĐA 11 mã (trừ khi thị trường rủi ro cao): 9 mã cho lưới chính +
+    # 2 mã hiển thị dưới panel AI; ưu tiên mã >= 65, nếu chưa đủ thì bổ sung các mã
+    # đạt tiếp theo (điểm thực, không giả) tới đủ cap = 11.
     items: list[dict[str, Any]] = []
     if market["status"] != "negative" and scored:
-        cap = 5 if market["status"] == "positive" else 4
+        cap = 11
         items = [x for x in scored if x["opportunity_score"] >= _MIN_SCORE][:cap]
         seen = {x["symbol"] for x in items}
         for x in scored:

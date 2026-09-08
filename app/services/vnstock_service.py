@@ -4466,7 +4466,6 @@ def get_stock_discover_page() -> dict[str, Any]:
         "ai_prompts": [
             "Tìm cổ phiếu ngân hàng định giá thấp",
             "Tìm doanh nghiệp lợi nhuận tăng mạnh",
-            "Tìm cổ phiếu đang breakout",
         ],
     }
     return payload

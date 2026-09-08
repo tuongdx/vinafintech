@@ -2663,7 +2663,7 @@
                     <span class="mm-sub" id="mmQltsSub" role="menu">
                         <a role="menuitem" href="/quan-ly-tai-san/phan-tich-tai-san" class="mm-sub-item" data-qlts-sub="overview"><i class="fas fa-chart-pie"></i> Phân tích tài sản</a>
                         <a role="menuitem" href="/quan-ly-tai-san/danh-muc-dang-nam-giu" class="mm-sub-item" data-qlts-sub="holdings"><i class="fas fa-briefcase"></i> Danh mục đang nắm giữ</a>
-                        <a role="menuitem" href="/quan-ly-tai-san/co-phieu-theo-doi" class="mm-sub-item" data-qlts-sub="watchlist"><i class="fas fa-eye"></i> Cổ phiếu theo dõi</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/danh-muc-theo-doi" class="mm-sub-item" data-qlts-sub="watchlist"><i class="fas fa-eye"></i> Danh mục theo dõi</a>
                         <a role="menuitem" href="/quan-ly-tai-san/bang-danh-muc" class="mm-sub-item" data-qlts-sub="portfolio"><i class="fas fa-table"></i> Bảng danh mục</a>
                         <a role="menuitem" href="/quan-ly-tai-san/trung-tam-canh-bao" class="mm-sub-item" data-qlts-sub="alerts"><i class="fas fa-bell"></i> Trung tâm cảnh báo</a>
                         <a role="menuitem" href="/quan-ly-tai-san/su-kien-lien-quan" class="mm-sub-item" data-qlts-sub="events"><i class="fas fa-calendar-day"></i> Sự kiện liên quan</a>
@@ -2675,6 +2675,7 @@
                     <span class="mm-sub" id="mmTienIchSub" role="menu">
                         <a role="menuitem" href="/tien-ich/gia-dieu-chinh-co-phieu" class="mm-sub-item" data-ti-sub="adj"><i class="fas fa-chart-line"></i> Giá điều chỉnh cổ phiếu</a>
                         <a role="menuitem" href="/tien-ich/loi-nhuan-tien-gui" class="mm-sub-item" data-ti-sub="dep"><i class="fas fa-piggy-bank"></i> Lợi nhuận tiền gửi</a>
+                        <a role="menuitem" href="/tien-ich/ty-gia-ngoai-te" class="mm-sub-item" data-ti-sub="ex"><i class="fas fa-coins"></i> Tỷ giá ngoại tệ</a>
                     </span>
                 </span>
                 <span class="mm-sep"></span>
@@ -3244,23 +3245,25 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260907y';
+        const CACHE_VERSION = '20260908aw';
         // Slug URL đẹp cho các section Quản lý tài sản
         window.__QLTS_SLUGS = {
             overview: 'phan-tich-tai-san',
             holdings: 'danh-muc-dang-nam-giu',
-            watchlist: 'co-phieu-theo-doi',
+            watchlist: 'danh-muc-theo-doi',
             portfolio: 'bang-danh-muc',
             alerts: 'trung-tam-canh-bao',
             events: 'su-kien-lien-quan'
         };
         window.__QLTS_SLUG_TO_TAB = {};
         Object.keys(window.__QLTS_SLUGS).forEach(function(k) { window.__QLTS_SLUG_TO_TAB[window.__QLTS_SLUGS[k]] = k; });
+        window.__QLTS_SLUG_TO_TAB['co-phieu-theo-doi'] = 'watchlist'; // alias cũ cho link cũ
         window.qltsPathFromTab = function(tab) { return '/quan-ly-tai-san/' + (window.__QLTS_SLUGS[tab] || 'phan-tich-tai-san'); };
         // Slug URL đẹp cho các công cụ Tiện ích
         window.__TI_SLUGS = {
             adj: 'gia-dieu-chinh-co-phieu',
-            dep: 'loi-nhuan-tien-gui'
+            dep: 'loi-nhuan-tien-gui',
+            ex: 'ty-gia-ngoai-te'
         };
         window.__TI_SLUG_TO_TOOL = {};
         Object.keys(window.__TI_SLUGS).forEach(function(k) { window.__TI_SLUG_TO_TOOL[window.__TI_SLUGS[k]] = k; });
@@ -3546,6 +3549,7 @@
             else if (/^\/crypto/.test(pg) || /crypto\.html/.test(pg)) active = 'crypto';
             else if (/^\/kham-pha/.test(pg) || /KhamPha\.html/.test(pg)) active = 'kham-pha';
             else if (/^\/tuniai/.test(pg) || /TuniAI\.html/.test(pg)) active = 'tuniai';
+            else if (/^\/ty-gia-ngoai-te/.test(pg) || /exchange\.html/.test(pg)) active = 'tien-ich';
             else if (/^\/tien-ich(?:\/|$|[?#])/.test(pg) || /tienich\.html/.test(pg)) active = 'tien-ich';
             else if (/^\/quan-ly-tai-san(?:\/|$|[?#])/.test(pg) || /quanlytaisan\.html/.test(pg)) active = 'quan-ly-tai-san';
             else if (/tintuc|tin-tuc/.test(pg)) active = '';
@@ -3645,6 +3649,11 @@
                     if (tiOutTimer) { clearTimeout(tiOutTimer); tiOutTimer = null; }
                     showTiSub();
                 });
+                // Chuột rời khỏi khung (nút "Tiện ích" + menu con) → đóng menu ngay.
+                mmTiWrap.addEventListener('mouseleave', function () {
+                    if (tiOutTimer) { clearTimeout(tiOutTimer); tiOutTimer = null; }
+                    hideTiSub();
+                });
                 document.addEventListener('mousemove', function (e) {
                     if (!mmTiSub.classList.contains('open')) return;
                     if (tiInsidePoint(e.clientX, e.clientY)) {
@@ -3725,6 +3734,11 @@
                 mmQltsWrap.addEventListener('mouseenter', function () {
                     if (qltsOutTimer) { clearTimeout(qltsOutTimer); qltsOutTimer = null; }
                     showQltsSub();
+                });
+                // Chuột rời khỏi khung (nút "Quản lý tài sản" + menu con) → đóng menu ngay.
+                mmQltsWrap.addEventListener('mouseleave', function () {
+                    if (qltsOutTimer) { clearTimeout(qltsOutTimer); qltsOutTimer = null; }
+                    hideQltsSub();
                 });
                 document.addEventListener('mousemove', function (e) {
                     if (!mmQltsSub.classList.contains('open')) return;
@@ -3951,12 +3965,14 @@
         }
         window.updateRightColumnForStock = updateRightColumnForStock;
 
-        // Bật/tắt ẩn thanh cuộn shell theo trang công cụ đang xem (Tiện ích / Lãi ngân hàng).
+        // Bật/tắt ẩn thanh cuộn shell theo trang.
+        // TRƯỚC đây ẩn thanh cuộn shell cho Tiện ích + Lãi ngân hàng → khi chuyển từ trang DÀI
+        // (Thị trường/Cổ phiếu có thanh cuộn) sang 2 trang này, scrollbar biến mất làm nội dung
+        // giãn rộng ~15px → trang bị "lệch" ngang. Giờ THỐNG NHẤT: mọi trang GIỮ thanh cuộn
+        // website; các trang công cụ tự ẩn scrollbar NỘI BỘ bằng CSS riêng (như Vàng/Crypto/Tỷ giá).
         function updateScrollBarMode(page) {
-            const isTool = /^\/tien-ich/.test(page) || /tienich\.html/.test(page)
-                || /^\/lai-ngan-hang/.test(page) || /lai-ngan-hang\.html/.test(page);
-            document.documentElement.classList.toggle('tx-hide-scroll', !!isTool);
-            document.body.classList.toggle('tx-hide-scroll', !!isTool);
+            document.documentElement.classList.remove('tx-hide-scroll');
+            document.body.classList.remove('tx-hide-scroll');
         }
         window.updateScrollBarMode = updateScrollBarMode;
 
@@ -3987,7 +4003,7 @@
             updateRightColumnForStock(relatedSymbol);
 
             // Home va StockDetail duoc nhung bang iframe de giu nguyen HTML/CSS/JS.
-            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/quan-ly-tai-san(?:[?#].*)?$/.test(page) || /^\/frontend\/quanlytaisan\.html(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/tuniai(?:[?#].*)?$/.test(page) || /^\/frontend\/TuniAI\.html(?:[?#].*)?$/.test(page) || /^\/tien-ich(?:[?#].*)?$/.test(page) || /^\/frontend\/tienich\.html(?:[?#].*)?$/.test(page) || /^\/lai-ngan-hang(?:[?#].*)?$/.test(page) || /^\/frontend\/lai-ngan-hang\.html(?:[?#].*)?$/.test(page) || /^\/gia-vang-bac(?:[?#].*)?$/.test(page) || /^\/frontend\/gold\.html(?:[?#].*)?$/.test(page) || /^\/crypto(?:[?#].*)?$/.test(page) || /^\/frontend\/crypto\.html(?:[?#].*)?$/.test(page);
+            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/quan-ly-tai-san(?:[?#].*)?$/.test(page) || /^\/frontend\/quanlytaisan\.html(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/tuniai(?:[?#].*)?$/.test(page) || /^\/frontend\/TuniAI\.html(?:[?#].*)?$/.test(page) || /^\/tien-ich(?:[?#].*)?$/.test(page) || /^\/frontend\/tienich\.html(?:[?#].*)?$/.test(page) || /^\/lai-ngan-hang(?:[?#].*)?$/.test(page) || /^\/frontend\/lai-ngan-hang\.html(?:[?#].*)?$/.test(page) || /^\/gia-vang-bac(?:[?#].*)?$/.test(page) || /^\/frontend\/gold\.html(?:[?#].*)?$/.test(page) || /^\/crypto(?:[?#].*)?$/.test(page) || /^\/frontend\/crypto\.html(?:[?#].*)?$/.test(page) || /^\/ty-gia-ngoai-te(?:[?#].*)?$/.test(page) || /^\/frontend\/exchange\.html(?:[?#].*)?$/.test(page);
             // Ẩn thanh cuộn trang khi đang xem chi tiết bài viết
             const isArticlePage = /^\/tintuc(?:[?#].*)?$/.test(page);
             document.body.classList.toggle('article-mode', isArticlePage);
@@ -4522,6 +4538,7 @@
             const MAP = {
                 '/quan-ly-tai-san': '/frontend/quanlytaisan.html',
                 '/tien-ich': '/frontend/tienich.html',
+                '/ty-gia-ngoai-te': '/frontend/exchange.html',
                 '/thi-truong': '/frontend/ThiTruong.html',
                 '/co-phieu': '/frontend/CoPhieu.html',
                 '/lai-ngan-hang': '/frontend/lai-ngan-hang.html',
@@ -4561,7 +4578,7 @@
                 goBackInApp();
                 return;
             }
-            if (data.type === 'tunix-ti-nav' && (data.tool === 'adj' || data.tool === 'dep')) {
+            if (data.type === 'tunix-ti-nav' && (data.tool === 'adj' || data.tool === 'dep' || data.tool === 'ex')) {
                 // Trang Tiện ích báo bấm chip đổi công cụ → cập nhật URL đẹp /tien-ich/{slug} (không reload iframe).
                 if (/^\/tien-ich(?:\/|$)/.test(window.location.pathname)) {
                     const p = window.tiPathFromTool ? window.tiPathFromTool(data.tool) : ('/tien-ich?tool=' + data.tool);
@@ -4754,6 +4771,10 @@
             const toolParam = initialParams.get('tool');
             loadContent('/frontend/tienich.html' + (toolParam ? '?tool=' + encodeURIComponent(toolParam) : ''));
             window.history.replaceState({}, '', '/tien-ich' + (toolParam ? '?tool=' + encodeURIComponent(toolParam) : ''));
+        } else if (pathPage === 'ty-gia-ngoai-te' || initialPage === 'ty-gia-ngoai-te') {
+            // Trang Tỷ giá ngoại tệ: /ty-gia-ngoai-te → nạp vào left-col.
+            loadContent('/frontend/exchange.html');
+            setHeaderContext(false);
         } else if (PAGE_FILE_MAP[pathPage]) {
             // URL đẹp /Trang
             loadContent(PAGE_FILE_MAP[pathPage]);

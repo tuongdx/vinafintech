@@ -359,6 +359,19 @@ class Watchlist(Base):
     __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_watchlist_user_symbol"),)
 
 
+class CryptoWatchlist(Base):
+    """Coin crypto người dùng đang theo dõi (watchlist) — riêng, không phải vị thế nắm giữ."""
+
+    __tablename__ = "crypto_watchlist"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    symbol: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_crypto_watchlist_user_symbol"),)
+
+
 class PortfolioHolding(Base):
     """Cổ phiếu người dùng nắm giữ trong danh mục đầu tư (số lượng + giá vốn bình quân).
 

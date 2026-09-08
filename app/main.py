@@ -14,7 +14,7 @@ from app.core.security import decode_token
 from app.db import SessionLocal
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, alerts, asset_events, assets, auth, bank_rates, chart, contact, crypto, dashboard, faqs, features, feedback, gold, logs, membership, news, notifications, plans, portfolio, stocks, stocks_admin, tickets, tools, users, watchlist
+from app.routers import ai, alerts, asset_events, assets, auth, bank_rates, chart, contact, crypto, crypto_signals, crypto_watchlist, dashboard, exchange, faqs, features, feedback, gold, logs, membership, news, notifications, plans, portfolio, stocks, stocks_admin, stock_signals, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -180,6 +180,9 @@ app.include_router(features.router, prefix=api)
 app.include_router(dashboard.router, prefix=api)
 app.include_router(logs.router, prefix=api)
 app.include_router(watchlist.router, prefix=api)
+app.include_router(crypto_watchlist.router, prefix=api)
+app.include_router(crypto_signals.router, prefix=api)
+app.include_router(stock_signals.router, prefix=api)
 app.include_router(notifications.router, prefix=api)
 app.include_router(portfolio.router, prefix=api)
 app.include_router(alerts.router, prefix=api)
@@ -187,6 +190,7 @@ app.include_router(asset_events.router, prefix=api)
 app.include_router(bank_rates.router, prefix=api)
 app.include_router(crypto.router, prefix=api)
 app.include_router(gold.router, prefix=api)
+app.include_router(exchange.router, prefix=api)
 app.include_router(assets.router, prefix=api)
 
 frontend_path = Path(settings.frontend_dir)
@@ -306,6 +310,8 @@ PAGE_MAP: dict[str, str] = {
     "doimatkhau": "doimatkhau.html",
     "quan-ly-tai-san": "quanlytaisan.html",
     "tien-ich": "tienich.html",
+    # Trang Tỷ giá ngoại tệ: /ty-gia-ngoai-te giữ nguyên shell, nội dung nạp vào iframe left-col.
+    "ty-gia-ngoai-te": "exchange.html",
     "QuanTri": "QuanTri.html",
     "AdminLogin": "AdminLogin.html",
     "TrungTamTroGiup": "TrungTamTroGiup.html",
@@ -355,6 +361,8 @@ INDEX_SHELL_PAGES = {
     "quan-ly-tai-san",
     # Trang Tiện ích: /tien-ich giữ nguyên shell, nội dung nạp vào iframe left-col.
     "tien-ich",
+    # Trang Tỷ giá ngoại tệ: /ty-gia-ngoai-te giữ nguyên shell, nội dung nạp vào iframe left-col.
+    "ty-gia-ngoai-te",
     # URL đẹp danh mục tin tức
     "chung-khoan",
     "ngan-hang",

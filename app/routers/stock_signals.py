@@ -1,0 +1,24 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from app.core.dependencies import get_current_user
+from app.db import get_db
+from app.models import User
+from app.services import stock_signal_service as sss
+
+router = APIRouter(prefix="/stock-signals", tags=["stock-signals"])
+
+
+@router.get("")
+def list_stock_signals(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return sss.latest(db, user)
+
+
+@router.post("/scan")
+async def scan_stock_signals(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    try:
+        return await sss.scan_user(db, user)
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001 — trả lỗi rõ ràng để UI hiển thị
+        raise HTTPException(status_code=503, detail=str(exc) or "Quét tín hiệu Cổ phiếu thất bại.")

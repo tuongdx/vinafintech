@@ -29,6 +29,28 @@
 
         /* ===== Layout ===== */
         .tt-top { display: flex; flex-direction: column; gap: 18px; margin-bottom: 18px; }
+        /* Khối xanh đầu trang (giống Tỷ giá ngoại tệ / Vàng-Bạc — cùng size & màu, chỉ khác text) */
+        .tt-hero {
+            position: relative; overflow: hidden;
+            background: linear-gradient(135deg, #006b6b 0%, #008080 55%, #00a08a 100%);
+            border-radius: 18px; padding: 22px 26px; color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 60, 60, 0.10);
+        }
+        .tt-hero::after {
+            content: ''; position: absolute; right: -60px; top: -60px;
+            width: 240px; height: 240px;
+            background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%);
+            border-radius: 50%; pointer-events: none;
+        }
+        .tt-hero h1 { color: #fff; font-size: 21px; font-weight: 800; letter-spacing: -0.3px; position: relative; z-index: 1; }
+        .tt-hero .tt-hero-sub { color: rgba(255,255,255,0.92); font-size: 13px; margin-top: 6px; max-width: 800px; line-height: 1.55; position: relative; z-index: 1; }
+        .tt-hero .tt-hero-pill {
+            display: inline-block; margin-top: 10px; position: relative; z-index: 1;
+            background: rgba(255,255,255,0.16); padding: 4px 12px; border-radius: 20px;
+            font-size: 12px; color: #fff;
+        }
+        .tt-hero .tt-hero-pill i { margin-right: 5px; }
+        .tt-hero .tt-hero-pill b { color: #fff; font-weight: 700; }
         .tt-body { display: grid; grid-template-columns: 1fr 320px; gap: 18px; align-items: stretch; }
         .tt-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
         .tt-side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
@@ -289,6 +311,7 @@
             .tt-radar-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260908t" />
 </head>
 <body>
     <div class="tt-page">
@@ -335,6 +358,20 @@
                 const d = new Date(iso);
                 if (isNaN(d.getTime())) return '';
                 return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+            }
+            function fmtUpd(iso) {
+                // as_of ở dạng ISO UTC → +7h giờ VN, định dạng dd/MM/yyyy · HH:mm
+                if (!iso) return '';
+                const d = new Date(new Date(iso).getTime() + 7 * 3600 * 1000);
+                if (isNaN(d.getTime())) return '';
+                const p = function (x) { return (x < 10 ? '0' : '') + x; };
+                return p(d.getUTCDate()) + '/' + p(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear() + ' · ' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes());
+            }
+            function ttHeroHtml(asof) {
+                return '<div class="tt-hero"><h1>Thị trường</h1>' +
+                    '<div class="tt-hero-sub">Toàn cảnh chứng khoán Việt Nam: chỉ số chính, độ rộng, dòng tiền, hiệu suất ngành, bản đồ thị trường, radar & cổ phiếu VN30.</div>' +
+                    (asof ? '<span class="tt-hero-pill"><i class="far fa-clock"></i> Cập nhật lần cuối: <b>' + asof + '</b></span>' : '') +
+                    '</div>';
             }
 
             // ---------- SVG helpers ----------
@@ -1077,7 +1114,7 @@
                 if (asofEl) asofEl.textContent = 'Cập nhật: ' + fmtDate(dash.as_of);
 
                 const top = document.getElementById('ttTop');
-                if (top) top.innerHTML = mainChartHtml() +
+                if (top) top.innerHTML = ttHeroHtml(fmtUpd(dash.as_of)) + mainChartHtml() +
                     '<section class="tt-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><h2 style="margin-bottom:0;">Bản đồ thị trường</h2><div style="margin-left:auto;display:flex;align-items:center;gap:10px;"><div class="tt-map-legend" id="ttMapLegend" style="margin-bottom:0;flex-shrink:0;"></div><button id="ttMapShot" class="tt-map-btn" title="Tải ảnh bản đồ thị trường"><i class="fas fa-camera"></i></button><button id="ttMapShare" class="tt-map-btn fb" title="Chia sẻ lên Facebook"><i class="fab fa-facebook"></i></button></div></div><div id="ttMapSlot"><div class="tt-loading" style="padding:16px;"><i class="fas fa-spinner fa-spin"></i> Đang tải bản đồ...</div></div></section>';
                 main.innerHTML = renderBreadth(b) +
                     renderFlow(f) +

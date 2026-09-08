@@ -1,0 +1,48 @@
+/* ============================================================
+   Block-tint — nền gradient xanh nhạt cho CÁC BLOCK CHÍNH toàn site
+   (đồng bộ với block "Tổng lãi/lỗ tài sản" / `.pf-perf` ở Quản lý tài sản)
+   Chỉ tác động lên thẻ/khối nội dung chính; các panel con
+   (bảng, chip, ô, card con) vẫn giữ nền riêng để dễ đọc.
+   ============================================================ */
+
+/* ---- Light mode ---- */
+.ov-sec,
+.ov-port,
+.cp-table-card,
+.kp-sec,
+.tt-card,
+.pf-card,
+.cr-card,
+.gv-card,
+.lnh-card,
+.ti-card,
+.ta-app {
+    background: linear-gradient(135deg, #ffffff 0%, #f0fbf9 100%);
+    border-color: rgba(0, 128, 128, 0.22);
+}
+
+/* Chat TuniAI: `.ta-app` bị các con opaque che kín → cho vùng chat
+   trong suốt nhẹ để lộ nền gradient của khung (vẫn đủ tương phản). */
+.ta-main {
+    background: rgba(255, 255, 255, 0.72);
+}
+
+/* ---- Dark mode ---- */
+body.dark-mode .ov-sec,
+body.dark-mode .ov-port,
+body.dark-mode .cp-table-card,
+body.dark-mode .kp-sec,
+body.dark-mode .tt-card,
+body.dark-mode .pf-card,
+body.dark-mode .cr-card,
+body.dark-mode .gv-card,
+body.dark-mode .lnh-card,
+body.dark-mode .ti-card,
+body.dark-mode .ta-app {
+    background: linear-gradient(135deg, #151b23 0%, #0e2320 100%);
+    border-color: rgba(0, 128, 128, 0.45);
+}
+
+body.dark-mode .ta-main {
+    background: rgba(21, 27, 35, 0.62);
+}

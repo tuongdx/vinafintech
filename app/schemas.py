@@ -310,6 +310,18 @@ class WatchlistOut(BaseModel):
         from_attributes = True
 
 
+class CryptoWatchlistCreate(BaseModel):
+    symbol: str
+
+
+class CryptoWatchlistOut(BaseModel):
+    symbol: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class NotificationItem(BaseModel):
     symbol: str
     favorited_at: datetime

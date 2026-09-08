@@ -74,6 +74,11 @@ class Settings(BaseSettings):
     alert_history_period: str = "1y"              # khung dữ liệu để tính vùng S/R
     asset_event_window_days: int = 183            # chỉ lấy sự kiện tài sản sắp tới / trong ~6 tháng gần
 
+    # Tỷ giá ngoại tệ (Tiện ích) — nhà cung cấp có thể đổi qua ENV mà không sửa code
+    exchange_rate_api_url: str = "https://open.er-api.com/v6/latest/USD"  # {apikey} chèn nếu có
+    exchange_rate_api_key: str = ""               # trống = miễn phí không cần key
+    exchange_cache_ttl: int = 3600                # cache tỷ giá (giây) — tránh gọi API ngoài mỗi lần nhập
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
 
 

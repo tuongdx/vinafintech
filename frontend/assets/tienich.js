@@ -33,14 +33,34 @@
 
     // ---------- Bộ chọn công cụ ----------
     const TOOL_META = {
-        adj: { title: '📈 Giá điều chỉnh cổ phiếu', icon: 'fa-chart-line' },
-        dep: { title: '🏦 Lợi nhuận tiền gửi', icon: 'fa-piggy-bank' }
+        adj: {
+            title: '📈 Giá điều chỉnh cổ phiếu', icon: 'fa-chart-line',
+            head: 'Giá điều chỉnh cổ phiếu',
+            sub: 'Tính giá cổ phiếu sau các sự kiện thay đổi vốn (cổ tức tiền mặt, cổ tức cổ phiếu, thưởng, phát hành quyền mua).'
+        },
+        dep: {
+            title: '🏦 Lợi nhuận tiền gửi', icon: 'fa-piggy-bank',
+            head: 'Lợi nhuận tiền gửi',
+            sub: 'Tính tiền lãi ngân hàng theo lãi suất, kỳ hạn, hình thức trả lãi (lãi đơn / lãi kép).'
+        },
+        ex: {
+            title: '🪙 Tỷ giá ngoại tệ', icon: 'fa-coins',
+            head: 'Tỷ giá ngoại tệ',
+            sub: 'Xem tỷ giá và hoán đổi giữa VND với các ngoại tệ phổ biến (USD, JPY, KRW, CNY, SGD, EUR, GBP, TWD, AUD).'
+        }
     };
     function showTool(tool) {
         $('panelAdj').style.display = tool === 'adj' ? 'block' : 'none';
         $('panelDep').style.display = tool === 'dep' ? 'block' : 'none';
+        if ($('panelEx')) $('panelEx').style.display = tool === 'ex' ? 'block' : 'none';
         const meta = TOOL_META[tool] || TOOL_META.adj;
-        $('toolTitle').innerHTML = '<i class="fas ' + meta.icon + '"></i><span>' + esc(meta.title) + '</span>';
+        // Toolbar title: chỉ giữ emoji + tên công cụ (bỏ icon FA trước title vì trùng/không cần).
+        $('toolTitle').innerHTML = '<span>' + esc(meta.title) + '</span>';
+        // Khối xanh đầu trang đổi text theo công cụ (cùng vị trí/màu, chỉ khác tiêu đề).
+        const hh = document.querySelector('.ti-head h1');
+        if (hh) hh.textContent = meta.head || 'Tiện ích';
+        const hs = document.querySelector('.ti-head .ti-sub');
+        if (hs) hs.textContent = meta.sub || '';
         document.querySelectorAll('.ti-chip').forEach(function (c) {
             c.classList.toggle('on', c.getAttribute('data-tool') === tool);
         });
@@ -319,11 +339,13 @@
     updateDepHint();
     addEvent('cash');
 
-    // Hiển thị thẳng một công cụ (mặc định Giá điều chỉnh); menu con truyền ?tool=adj|dep để mở đúng màn hình.
+    // Hiển thị thẳng một công cụ (mặc định Giá điều chỉnh); menu con truyền ?tool=adj|dep|ex để mở đúng màn hình.
     (function () {
         try {
             const t = new URLSearchParams(location.search).get('tool');
-            showTool(t === 'dep' ? 'dep' : 'adj');
+            if (t === 'dep') showTool('dep');
+            else if (t === 'ex') showTool('ex');
+            else showTool('adj');
         } catch (e) {
             showTool('adj');
         }
@@ -348,7 +370,7 @@
         const data = event.data;
         if (!data) return;
         // Shell báo đổi công cụ (đã mở sẵn trang Tiện ích) → hiển thị đúng màn hình.
-        if (data.type === 'tunix-ti-tool' && (data.tool === 'adj' || data.tool === 'dep')) {
+        if (data.type === 'tunix-ti-tool' && (data.tool === 'adj' || data.tool === 'dep' || data.tool === 'ex')) {
             showTool(data.tool);
             return;
         }

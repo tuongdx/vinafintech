@@ -247,6 +247,7 @@
         .cp-ind-head .cp-asof i { margin-right: 4px; }
         .cp-ind-head .cp-asof b { color: #fff; }
     </style>
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260908t" />
 </head>
 <body>
     <div class="cp-page">
@@ -483,7 +484,8 @@
                 }).join('');
                 notableEl.style.display = '';
                 renderNotable();
-                screenerEl.innerHTML = breadcrumbHtml() + headerHtml('Nhóm ngành', 'Danh sách toàn bộ các nhóm ngành cổ phiếu.') +
+                // Trang bên trong: chỉ đường dẫn (ẩn block xanh).
+                screenerEl.innerHTML = breadcrumbHtml() +
                     '<div class="cp-ind-grid">' + cards + '</div>';
                 bindNav();
             }
@@ -499,7 +501,8 @@
                 }).join('');
                 notableEl.style.display = '';
                 renderNotable();
-                screenerEl.innerHTML = breadcrumbHtml() + headerHtml(sec.name, 'Các ngành con thuộc nhóm ' + sec.name + '.') +
+                // Trang bên trong: chỉ đường dẫn (ẩn block xanh).
+                screenerEl.innerHTML = breadcrumbHtml() +
                     '<div class="cp-ind-grid">' + cards + '</div>';
                 bindNav();
             }
@@ -615,12 +618,17 @@
             }
 
             function renderTable() {
+                const isRoot = currentPath.length === 0; // Trang gốc "Cổ phiếu" (toàn thị trường)
                 const hd = currentTitleDesc();
-                const action = currentPath.length === 0
+                const action = isRoot
                     ? '<a class="cp-ind-btn" href="#" data-nav="nganh"><i class="fas fa-layer-group"></i> Nhóm ngành</a>'
                     : '';
-                const asof = currentPath.length === 0 ? cpAsOfHtml() : '';
-                screenerEl.innerHTML = breadcrumbHtml() + headerHtml(hd.title, hd.desc, action, asof) + tableHtml();
+                const asof = isRoot ? cpAsOfHtml() : '';
+                // Trang gốc: chỉ hiện block xanh (ẩn đường dẫn). Trang bên trong: chỉ hiện đường dẫn (ẩn block xanh).
+                const head = isRoot
+                    ? headerHtml(hd.title, hd.desc, action, asof)
+                    : breadcrumbHtml();
+                screenerEl.innerHTML = head + tableHtml();
                 bindNav();
                 // bind table sort + pager + rows
                 const tableCard = screenerEl.querySelector('.cp-table-card');
