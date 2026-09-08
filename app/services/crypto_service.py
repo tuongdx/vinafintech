@@ -20,6 +20,14 @@ _BINANCE_HOSTS = ("https://data-api.binance.vision", "https://api.binance.com")
 _UA = {"User-Agent": "Mozilla/5.0 (TuniX/1.0)", "Accept": "application/json"}
 
 _QUOTE = "USDT"
+# Bybit public API — nguồn dự phòng KHÔNG geo/cloud-block (dùng được từ Render/SG khi
+# Binance chặn IP datacenter trả 418). Không cần API key, chỉ dùng market-data công khai.
+_BYBIT_BASE = "https://api.bybit.com"
+_BYBIT_INTERVAL = {
+    "1m": "1", "3m": "3", "5m": "5", "15m": "15", "30m": "30",
+    "1h": "60", "2h": "120", "4h": "240", "6h": "360", "12h": "720",
+    "1d": "D", "1w": "W", "1M": "M",
+}
 _cache: dict[str, tuple[float, object]] = {}
 _lock = threading.Lock()
 _TICK_TTL = 6.0
@@ -66,6 +74,45 @@ def _get(path: str, params: dict | None = None) -> object:
     return {}
 
 
+def _bybit_get(path: str, params: dict | None = None) -> object:
+    """GET Bybit public API + kiểm tra retCode (0 = thành công)."""
+    with httpx.Client(base_url=_BYBIT_BASE, headers=_UA, timeout=15.0) as client:
+        r = client.get(path, params=params)
+        r.raise_for_status()
+        data = r.json()
+    if isinstance(data, dict) and data.get("retCode") not in (0, None):
+        raise RuntimeError(f"Bybit API error retCode={data.get('retCode')}")
+    return data
+
+
+def _bybit_tickers() -> dict[str, dict]:
+    """Ticker spot Bybit → map về đúng dạng Binance để dùng chung logic xếp hạng."""
+
+    def _prod() -> dict[str, dict]:
+        data = _bybit_get("/v5/market/tickers", {"category": "spot"})
+        out: dict[str, dict] = {}
+        rows = ((data or {}).get("result") or {}).get("list") or []
+        for row in rows:
+            sym = str(row.get("symbol") or "")
+            if not sym.endswith(_QUOTE):
+                continue
+            try:
+                chg = float(row.get("price24hPcnt") or 0) * 100.0
+            except (TypeError, ValueError):
+                chg = 0.0
+            out[sym] = {
+                "symbol": sym,
+                "priceChangePercent": chg,
+                "lastPrice": row.get("lastPrice"),
+                "highPrice": row.get("highPrice24h"),
+                "lowPrice": row.get("lowPrice24h"),
+                "quoteVolume": row.get("turnover24h"),
+            }
+        return out
+
+    return _cached("tickers:bybit:24hr", _TICK_TTL, _prod)
+
+
 def _f(v: str | None):
     try:
         return float(v) if v not in (None, "") else 0.0
@@ -110,18 +157,24 @@ def get_markets() -> dict:
     - Giá/Cao-Thấp/Volume 24h: Binance (host vision → api, cache 6s).
     - Thứ hạng theo thanh khoản Binance — không hiển thị vốn hóa.
     """
+    source = "binance"
     try:
         tickers = _all_tickers()
-    except Exception as e:  # noqa: BLE001 — Binance cả 2 host đều lỗi
-        return {
-            "quote": _QUOTE,
-            "source": "binance",
-            "count": 0,
-            "total": 100,
-            "error": str(e),
-            "message": "Không lấy được dữ liệu từ Binance. Vui lòng thử lại sau.",
-            "items": [],
-        }
+    except Exception:
+        # Binance bị geo/cloud-block (VD: Render region singapore trả 418) → thử Bybit.
+        try:
+            tickers = _bybit_tickers()
+            source = "bybit"
+        except Exception as e:  # noqa: BLE001 — cả Binance & Bybit đều lỗi
+            return {
+                "quote": _QUOTE,
+                "source": "binance",
+                "count": 0,
+                "total": 100,
+                "error": str(e),
+                "message": "Không lấy được dữ liệu thị trường. Vui lòng thử lại sau.",
+                "items": [],
+            }
 
     top = _volume_ranking(tickers)
     items: list[dict] = []
@@ -151,7 +204,7 @@ def get_markets() -> dict:
             break
     return {
         "quote": _QUOTE,
-        "source": "binance",
+        "source": source,
         "count": len(items),
         "total": 100,
         "as_of": _now_utc().isoformat(),
@@ -166,26 +219,60 @@ def get_klines(symbol: str, interval: str = "1d", limit: int = 90) -> dict:
         pair = pair + _QUOTE
 
     def _prod() -> dict:
+        out: list[dict] = []
+        # 1) Binance; 2) Bybit (khi Binance bị cloud-block như Render/SG trả 418).
         try:
             rows = _get("/api/v3/klines", {"symbol": pair, "interval": interval, "limit": int(limit)})
-        except Exception:  # noqa: BLE001 — Binance cả 2 host lỗi → không làm 500
-            return {"symbol": pair, "interval": interval, "items": [], "error": "Không lấy được dữ liệu biểu đồ từ Binance."}
-        out: list[dict] = []
-        if isinstance(rows, list):
-            for row in rows:
-                try:
-                    out.append(
-                        {
-                            "time": int(row[0]),
-                            "open": float(row[1]),
-                            "high": float(row[2]),
-                            "low": float(row[3]),
-                            "close": float(row[4]),
-                            "volume": float(row[5]),
-                        }
-                    )
-                except (TypeError, ValueError, IndexError):
-                    continue
+        except Exception:  # noqa: BLE001 — Binance cả 2 host lỗi → thử Bybit
+            rows = None
+        if rows is None:
+            try:
+                by_int = _BYBIT_INTERVAL.get(interval, "D")
+                data = _bybit_get(
+                    "/v5/market/kline",
+                    {"category": "spot", "symbol": pair, "interval": by_int, "limit": int(limit)},
+                )
+                raw = ((data or {}).get("result") or {}).get("list") or []
+                # Bybit trả list NGƯỢC (mới → cũ) → đảo để tăng dần theo thời gian.
+                for row in reversed(raw):
+                    if not isinstance(row, (list, tuple)) or len(row) < 6:
+                        continue
+                    try:
+                        out.append(
+                            {
+                                "time": int(row[0]),
+                                "open": float(row[1]),
+                                "high": float(row[2]),
+                                "low": float(row[3]),
+                                "close": float(row[4]),
+                                "volume": float(row[5]),
+                            }
+                        )
+                    except (TypeError, ValueError, IndexError):
+                        continue
+            except Exception as e:  # noqa: BLE001 — Binance & Bybit đều lỗi → không làm 500
+                return {
+                    "symbol": pair,
+                    "interval": interval,
+                    "items": [],
+                    "error": "Không lấy được dữ liệu biểu đồ từ Binance/Bybit: " + str(e),
+                }
+        else:
+            if isinstance(rows, list):
+                for row in rows:
+                    try:
+                        out.append(
+                            {
+                                "time": int(row[0]),
+                                "open": float(row[1]),
+                                "high": float(row[2]),
+                                "low": float(row[3]),
+                                "close": float(row[4]),
+                                "volume": float(row[5]),
+                            }
+                        )
+                    except (TypeError, ValueError, IndexError):
+                        continue
         return {"symbol": pair, "interval": interval, "items": out}
 
     return _cached(f"klines:{pair}:{interval}:{int(limit)}", _KLINES_TTL, _prod)
