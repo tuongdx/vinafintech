@@ -12,14 +12,20 @@ Khác `migrate_to_render.py` (bản cũ chỉ chuyển 11 bảng và tự bỏ q
   - in bảng đối chiếu số dòng nguồn/đích sau khi chạy.
 
 CÁCH DÙNG
-  1. Render Dashboard -> service `Tunix-test1-db` -> Connect -> **External Database URL**
-     (dạng dpg-xxxx-a.singapore-postgres.render.com, KHÔNG dùng Internal URL).
-  2. Thêm 1 dòng vào `.env` (file này đã bị .gitignore, không commit):
-         TARGET_DATABASE_URL=postgresql://user:pass@dpg-xxxx-a.singapore-postgres.render.com/tunix?sslmode=require
-     (hoặc set biến môi trường TARGET_DATABASE_URL, hoặc truyền --url "...")
-  3. Chạy bằng interpreter CÓ sqlalchemy + psycopg2 (venv của workspace KHÔNG có):
-         py scripts/push_db_to_render.py --mode replace --yes
-         py scripts/push_db_to_render.py --dry-run          # chỉ xem trước
+  Cách 1 — chạy trực tiếp, script TỰ HỎI URL (ký tự ẩn, không lưu ra file):
+         py scripts/push_db_to_render.py --mode replace
+  Cách 2 — lưu URL vào file (tiện chạy lại nhiều lần):
+     1. Render Dashboard -> service `Tunix-test1-db` -> Connect -> **External Database URL**
+        (dạng dpg-xxxx-a.singapore-postgres.render.com, KHÔNG dùng Internal URL).
+     2. Thêm 1 dòng vào `.env` (file này đã bị .gitignore, không commit):
+            TARGET_DATABASE_URL=postgresql://tunixtest1_user:pass@dpg-xxxx-a.singapore-postgres.render.com/tunixtest1?sslmode=require
+        (hoặc set biến môi trường TARGET_DATABASE_URL, hoặc truyền --url "...")
+     3. Chạy:
+            py scripts/push_db_to_render.py --mode replace --yes
+            py scripts/push_db_to_render.py --dry-run          # chỉ xem trước (không cần URL)
+
+  LƯU Ý: dùng interpreter CÓ sqlalchemy + psycopg2 — venv của workspace KHÔNG có, nên chạy bằng
+  `py` (Python toàn cục) hoặc `.venv` của workspace 2.TuniX-Product.
 """
 
 from __future__ import annotations
@@ -41,7 +47,7 @@ for _stream in (sys.stdout, sys.stderr):
     except Exception:  # noqa: BLE001 — Python cũ / stream bị redirect
         pass
 
-from sqlalchemy import MetaData, create_engine, inspect, text  # noqa: E402
+from sqlalchemy import MetaData, create_engine, func, inspect, select, text  # noqa: E402
 from sqlalchemy.dialects.postgresql import insert as pg_insert  # noqa: E402
 
 from app.db import Base  # noqa: E402
@@ -63,7 +69,7 @@ def mask_url(url: str) -> str:
 
 
 def load_target_url(cli_url: str | None) -> str:
-    """Ưu tiên --url > env > dòng TARGET_DATABASE_URL trong .env."""
+    """Ưu tiên --url > env > dòng TARGET_DATABASE_URL trong .env > hỏi trực tiếp (ẩn ký tự)."""
     if cli_url and cli_url.strip():
         return cli_url.strip()
     env_value = os.environ.get("TARGET_DATABASE_URL", "").strip()
@@ -77,7 +83,21 @@ def load_target_url(cli_url: str | None) -> str:
                 continue
             key, value = line.split("=", 1)
             if key.strip() == "TARGET_DATABASE_URL":
-                return value.strip().strip('"').strip("'")
+                value = value.strip().strip('"').strip("'")
+                if value:
+                    return value
+    # Không tìm thấy → hỏi trực tiếp (ẩn ký tự) để không phải lưu mật khẩu vào file.
+    if sys.stdin.isatty():
+        import getpass
+        try:
+            typed = getpass.getpass(
+                "Dán 'External Database URL' của Render (ký tự sẽ bị ẩn): "
+            ).strip()
+        except (EOFError, KeyboardInterrupt):
+            return ""
+        if typed:
+            print("   (đã nhận URL, sẽ không lưu vào file nào)")
+        return typed
     return ""
 
 
@@ -113,8 +133,8 @@ def main() -> int:
         target_url = "postgresql://dry-run@dry-run.invalid/tunix"
     if not target_url:
         print("❌ Chưa có URL DB đích.")
-        print("   Thêm dòng sau vào file .env (đã gitignore):")
-        print("   TARGET_DATABASE_URL=postgresql://user:pass@dpg-xxxx-a.singapore-postgres.render.com/tunix?sslmode=require")
+        print("   Chạy lại ở terminal thật (không pipe) để script tự hỏi URL, hoặc thêm dòng sau vào .env:")
+        print("   TARGET_DATABASE_URL=postgresql://tunixtest1_user:pass@dpg-xxxx-a.singapore-postgres.render.com/tunixtest1?sslmode=require")
         print("   (lấy ở Render -> Tunix-test1-db -> Connect -> External Database URL)")
         return 1
     if target_url.startswith("sqlite"):
@@ -206,7 +226,7 @@ def main() -> int:
             target_cols[name] = []
 
     copied_tables: list[str] = []
-    report: list[tuple[str, int, int]] = []
+    report: list[tuple[str, int, int, int]] = []
 
     with src_engine.connect() as sc, tgt_engine.begin() as tc:
         # 1) replace: xoá đích theo thứ tự NGƯỢC (bảng con trước) để không vướng FK.
@@ -221,7 +241,9 @@ def main() -> int:
             if not tgt_cols:
                 print(f"   ⚠️  Bỏ qua {name}: không có bảng ở đích")
                 continue
-            src_table = src_meta.tables[name]
+            # Đọc bằng bảng theo MODEL (đúng kiểu JSON/DateTime/Boolean/Enum) để dữ liệu
+            # sang Postgres không bị double-encode; bảng không có model thì dùng bảng reflect.
+            src_table = model_tables.get(name) or src_meta.tables[name]
             src_cols = [c.name for c in src_table.columns]
             cols = [c for c in src_cols if c in tgt_cols]
             dropped = [c for c in src_cols if c not in tgt_cols]
@@ -229,48 +251,59 @@ def main() -> int:
                 print(f"   ⚠️  {name}: bỏ cột không có ở đích {dropped}")
 
             tgt_table = model_tables.get(name) or src_meta.tables[name]
-            insert_fn = pg_insert(tgt_table)
             use_on_conflict = args.mode == "merge" and len(tgt_table.primary_key.columns) > 0
 
             start = time.time()
-            src_count = sc.execute(text(f'SELECT COUNT(*) FROM "{name}"')).scalar() or 0
-            if cols:
-                col_sql = ", ".join(f'"{c}"' for c in cols)
-                result = sc.exec_driver_sql(f'SELECT {col_sql} FROM "{name}"')
-                batch: list[dict] = []
-                written = 0
-                while True:
-                    rows = result.fetchmany(CHUNK_SIZE)
-                    if not rows:
-                        break
-                    batch.extend(dict(zip(cols, row)) for row in rows)
-                    if len(batch) >= CHUNK_SIZE:
-                        stmt = insert_fn.values(batch)
-                        stmt = stmt.on_conflict_do_nothing() if use_on_conflict else stmt
-                        tc.execute(stmt)
-                        written += len(batch)
-                        batch = []
-                if batch:
-                    stmt = insert_fn.values(batch)
-                    stmt = stmt.on_conflict_do_nothing() if use_on_conflict else stmt
-                    tc.execute(stmt)
-                    written += len(batch)
-                tgt_count = tc.execute(text(f'SELECT COUNT(*) FROM "{name}"')).scalar() or 0
-                report.append((name, src_count, tgt_count))
-                flag = "✅" if tgt_count >= src_count else "⚠️ "
-                print(f"   {flag} {name:28} nguồn={src_count:>7}  đích={tgt_count:>7}  ({time.time()-start:4.1f}s)")
-                copied_tables.append(name)
-            else:
+            src_count = sc.execute(select(func.count()).select_from(src_table)).scalar() or 0
+            if not cols:
                 print(f"   ·  {name:28} bỏ qua (không có cột dùng chung)")
-                report.append((name, src_count, 0))
+                report.append((name, src_count, 0, 0))
+                continue
+
+            def _insert_rows(rows: list[dict]) -> None:
+                stmt = pg_insert(tgt_table).values(rows)
+                if use_on_conflict:
+                    stmt = stmt.on_conflict_do_nothing()
+                tc.execute(stmt)
+
+            insert_stmt = select(*[src_table.c[c] for c in cols])
+            written = 0
+            failed = 0
+            try:
+                # SAVEPOINT theo bảng: 1 bảng lỗi không làm hỏng cả giao dịch.
+                with tc.begin_nested():
+                    for part in sc.execute(insert_stmt).partitions(CHUNK_SIZE):
+                        rows = [dict(zip(cols, row)) for row in part]
+                        if rows:
+                            _insert_rows(rows)
+                            written += len(rows)
+            except Exception as exc:  # noqa: BLE001
+                print(f"   ⚠️  {name}: insert theo lô lỗi ({str(exc)[:70]}) → thử lại từng dòng")
+                written = 0
+                for part in sc.execute(insert_stmt).partitions(CHUNK_SIZE):
+                    for row in part:
+                        try:
+                            with tc.begin_nested():
+                                _insert_rows([dict(zip(cols, row))])
+                            written += 1
+                        except Exception:  # noqa: BLE001 — bỏ qua dòng lỗi, đếm lại
+                            failed += 1
+
+            tgt_count = tc.execute(select(func.count()).select_from(tgt_table)).scalar() or 0
+            report.append((name, src_count, tgt_count, failed))
+            flag = "✅" if failed == 0 and tgt_count >= src_count else "⚠️ "
+            extra_txt = f" lỗi={failed}" if failed else ""
+            print(f"   {flag} {name:28} nguồn={src_count:>7}  đích={tgt_count:>7}{extra_txt}  ({time.time()-start:4.1f}s)")
+            copied_tables.append(name)
 
     reset_sequences(tgt_engine, copied_tables)
 
     print("\n== Đối chiếu ==")
-    mismatch = [(n, s, t) for n, s, t in report if t < s]
-    print(f"   {len(report)} bảng | khớp: {len(report) - len(mismatch)} | thiếu: {len(mismatch)}")
-    for n, s, t in mismatch:
-        print(f"     ⚠️  {n}: nguồn {s} > đích {t}")
+    mismatch = [(n, s, t, f) for n, s, t, f in report if t < s or f]
+    print(f"   {len(report)} bảng | khớp: {len(report) - len(mismatch)} | thiếu/lỗi: {len(mismatch)}")
+    for n, s, t, f in mismatch:
+        detail = f"lỗi {f} dòng" if f else "thiếu dòng"
+        print(f"     ⚠️  {n}: nguồn {s} > đích {t} ({detail})")
     if mismatch and args.mode == "merge":
         print("   (merge chỉ thêm bản ghi chưa có — chênh lệch là bình thường nếu đích đã có dữ liệu khác)")
 
