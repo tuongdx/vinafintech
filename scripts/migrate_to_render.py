@@ -1,8 +1,8 @@
 """Migrate dữ liệu từ SQLite local (tunix.db) lên Render PostgreSQL.
 
 Cách dùng (chạy 1 lần):
-  1. Lấy "External Database URL" của tunix-db trên Render Dashboard
-     (Service tunix-db -> Connect -> External Database URL).
+  1. Lấy "External Database URL" của Tunix-test1-db trên Render Dashboard
+     (Service Tunix-test1-db -> Connect -> External Database URL).
   2. Chạy:
        $env:TARGET_DATABASE_URL="postgresql://USER:PASS@host/db?sslmode=require"
        .venv/Scripts/python.exe scripts/migrate_to_render.py

@@ -306,7 +306,7 @@ breadth:  { up, down, flat }   (best-effort, tốn kém)
 ## 11. Deploy & biến môi trường (Render)
 
 `render.yaml`:
-- **Database**: `tunix-db` (Postgres free, region singapore).
+- **Database**: `Tunix-test1-db` / `tunixtest1` (Postgres free, region singapore).
 - **Service**: `tunix` (web, python, free, singapore, `autoDeploy: true`).
   - `buildCommand: pip install -r requirements.txt`
   - `startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT`

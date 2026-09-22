@@ -7,10 +7,15 @@
 # ============================================================
 
 databases:
-  - name: tunix-db
+  - name: Tunix-test1-db
+    databaseName: tunixtest1
+    user: tunixtest1_user
     plan: free                 # Free Postgres: 1 GB, hết hạn sau 30 ngày
-    databaseName: tunix
     region: singapore          # Gần VN → độ trễ thấp, cùng region với web
+    postgresMajorVersion: "18"
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere   # Cho phép kết nối từ ngoài (đẩy dữ liệu từ máy local)
 
 services:
   - type: web
@@ -34,7 +39,7 @@ services:
       # Kết nối Postgres tự động (internal URL, cùng region)
       - key: DATABASE_URL
         fromDatabase:
-          name: tunix-db
+          name: Tunix-test1-db
           property: connectionString
       # Có thể set sau khi biết URL thật của service (để link reset mật khẩu đúng)
       - key: FRONTEND_URL

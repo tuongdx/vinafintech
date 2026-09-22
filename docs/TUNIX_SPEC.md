@@ -220,7 +220,7 @@ Thư mục `frontend/assets/chart/`:
 
 ## 12. Deploy
 
-- **Render** (`render.yaml`): web service `tunix` + Postgres `tunix-db` (region Singapore), `autoDeploy: true` khi push `main`.
+- **Render** (`render.yaml`): web service `tunix` + Postgres `Tunix-test1-db` (region Singapore), `autoDeploy: true` khi push `main`.
 - `buildCommand: pip install -r requirements.txt`, `startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT`.
 - Env: `APP_ENV=production`, `SECRET_KEY` (tự sinh), `DATABASE_URL` (từ DB), `FRONTEND_URL=https://tunix.onrender.com`, `DEEPSEEK_API_KEY` (set thủ công).
 - Scripts: `migrate_to_render.py`, `push_news_to_render.py`, `create_superadmin.py`.
