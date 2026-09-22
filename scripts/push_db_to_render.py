@@ -13,16 +13,19 @@ Khác `migrate_to_render.py` (bản cũ chỉ chuyển 11 bảng và tự bỏ q
 
 CÁCH DÙNG
   Cách 1 — chạy trực tiếp, script TỰ HỎI URL (ký tự ẩn, không lưu ra file):
-         py scripts/push_db_to_render.py --mode replace
-  Cách 2 — lưu URL vào file (tiện chạy lại nhiều lần):
-     1. Render Dashboard -> service `Tunix-test1-db` -> Connect -> **External Database URL**
-        (dạng dpg-xxxx-a.singapore-postgres.render.com, KHÔNG dùng Internal URL).
-     2. Thêm 1 dòng vào `.env` (file này đã bị .gitignore, không commit):
-            TARGET_DATABASE_URL=postgresql://tunixtest1_user:pass@dpg-xxxx-a.singapore-postgres.render.com/tunixtest1?sslmode=require
-        (hoặc set biến môi trường TARGET_DATABASE_URL, hoặc truyền --url "...")
-     3. Chạy:
-            py scripts/push_db_to_render.py --mode replace --yes
-            py scripts/push_db_to_render.py --dry-run          # chỉ xem trước (không cần URL)
+         py scripts/push_db_to_render.py --mode merge
+  Cách 2 — dùng biến môi trường trong phiên (không lưu ra file):
+         $env:TARGET_DATABASE_URL="postgresql://..."; py scripts/push_db_to_render.py --mode merge
+  Cách 3 — lưu vào file `.target_db_url` (đã gitignore) ở gốc project, mỗi dòng 1 URL.
+
+  ⚠️ TUYỆT ĐỐI KHÔNG thêm TARGET_DATABASE_URL vào `.env`: app dùng pydantic Settings với
+     `extra='forbid'` nên `.env` có key lạ sẽ làm backend KHÔNG khởi động được
+     (ValidationError: extra_forbidden).
+
+  URL lấy ở: Render Dashboard -> service `Tunix-test1-db` -> Connect -> **External Database URL**
+  (dạng dpg-xxxx-a.singapore-postgres.render.com, KHÔNG dùng Internal URL).
+
+  Xem trước (không cần URL): py scripts/push_db_to_render.py --dry-run
 
   LƯU Ý: dùng interpreter CÓ sqlalchemy + psycopg2 — venv của workspace KHÔNG có, nên chạy bằng
   `py` (Python toàn cục) hoặc `.venv` của workspace 2.TuniX-Product.
@@ -69,23 +72,30 @@ def mask_url(url: str) -> str:
 
 
 def load_target_url(cli_url: str | None) -> str:
-    """Ưu tiên --url > env > dòng TARGET_DATABASE_URL trong .env > hỏi trực tiếp (ẩn ký tự)."""
+    """Ưu tiên --url > env > file `.target_db_url` > hỏi trực tiếp (ẩn ký tự)."""
     if cli_url and cli_url.strip():
         return cli_url.strip()
     env_value = os.environ.get("TARGET_DATABASE_URL", "").strip()
     if env_value:
         return env_value
+    url_file = ROOT / ".target_db_url"
+    if url_file.exists():
+        for line in url_file.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                return line
+
+    # Cảnh báo (KHÔNG dùng) nếu người dùng lỡ dán URL vào .env — vì app dùng pydantic
+    # Settings với extra='forbid', .env có key lạ sẽ làm backend KHÔNG khởi động được.
     env_file = ROOT / ".env"
     if env_file.exists():
         for line in env_file.read_text(encoding="utf-8", errors="replace").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, value = line.split("=", 1)
-            if key.strip() == "TARGET_DATABASE_URL":
-                value = value.strip().strip('"').strip("'")
-                if value:
-                    return value
+            if line.strip().startswith("TARGET_DATABASE_URL"):
+                print("⚠️  Phát hiện TARGET_DATABASE_URL trong .env — HÃY XOÁ dòng đó!")
+                print("   App dùng pydantic Settings (extra='forbid') nên .env có key lạ sẽ làm")
+                print("   backend KHÔNG khởi động được (ValidationError extra_forbidden).")
+                print("   Thay vào đó: dán URL khi script hỏi, hoặc lưu vào `.target_db_url`, hoặc dùng biến môi trường.")
+                break
     # Không tìm thấy → hỏi trực tiếp (ẩn ký tự) để không phải lưu mật khẩu vào file.
     if sys.stdin.isatty():
         import getpass
@@ -133,9 +143,10 @@ def main() -> int:
         target_url = "postgresql://dry-run@dry-run.invalid/tunix"
     if not target_url:
         print("❌ Chưa có URL DB đích.")
-        print("   Chạy lại ở terminal thật (không pipe) để script tự hỏi URL, hoặc thêm dòng sau vào .env:")
-        print("   TARGET_DATABASE_URL=postgresql://tunixtest1_user:pass@dpg-xxxx-a.singapore-postgres.render.com/tunixtest1?sslmode=require")
-        print("   (lấy ở Render -> Tunix-test1-db -> Connect -> External Database URL)")
+        print("   Chạy lại ở terminal thật (không pipe) để script tự hỏi URL, hoặc:")
+        print("     $env:TARGET_DATABASE_URL=\"postgresql://...\"; py scripts/push_db_to_render.py --mode merge")
+        print("   (lấy ở Render -> Tunix-test1-db -> Connect -> External Database URL;")
+        print("    ĐỪNG thêm vào .env vì sẽ làm backend không khởi động được)")
         return 1
     if target_url.startswith("sqlite"):
         print("❌ URL đích không được là sqlite.")

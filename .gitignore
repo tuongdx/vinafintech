@@ -10,6 +10,9 @@ env/
 
 # === Bí mật & môi trường (KHÔNG đẩy .env lên git!) ===
 .env
+# URL Postgres đích dùng cho scripts/push_db_to_render.py (không được để trong .env:
+# pydantic Settings dùng extra='forbid' → .env có key lạ là backend không khởi động được)
+.target_db_url
 
 # === Database ===
 *.db
