@@ -417,6 +417,90 @@
         });
     }
 
+    // ===== Tin tức ngân hàng (load 18 tin — hiển thị 6 tin/trang, mũi tên đổi trang) =====
+    var NEWS_PER_PAGE = 6;
+    var newsItems = [];
+    var newsPage = 0;
+    function newsPageCount() { return Math.max(1, Math.ceil(newsItems.length / NEWS_PER_PAGE)); }
+    function fmtNewsDate(iso) {
+        if (!iso) return '';
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        var p = function (x) { return (x < 10 ? '0' : '') + x; };
+        return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' · ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+    function openNewsArticle(id, slug) {
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug || '' }, '*');
+            return;
+        }
+        window.location.href = slug ? '/' + slug + '-' + id + '.html' : '/tintuc?id=' + encodeURIComponent(id);
+    }
+    function newsItemHtml(n) {
+        var thumb = n.image_url
+            ? '<img src="' + esc(n.image_url) + '" alt="" loading="lazy">'
+            : '<i class="fas fa-newspaper"></i>';
+        return '<div class="lnh-nitem" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+            '<div class="lnh-nthumb">' + thumb + '</div>' +
+            '<div class="lnh-nbody">' +
+                '<div class="lnh-ntitle">' + esc(n.title) + '</div>' +
+                '<div class="lnh-ndate"><i class="far fa-clock"></i> ' + esc(fmtNewsDate(n.published_at || n.created_at)) + '</div>' +
+            '</div></div>';
+    }
+    function updateNewsNav() {
+        var prev = $('lnhNewsPrev'), next = $('lnhNewsNext');
+        if (!prev || !next) return;
+        var single = newsItems.length <= NEWS_PER_PAGE;
+        prev.disabled = single || newsPage <= 0;
+        next.disabled = single || newsPage >= newsPageCount() - 1;
+    }
+    function renderNewsPage() {
+        var el = $('lnhNews');
+        if (!el) return;
+        var start = newsPage * NEWS_PER_PAGE;
+        el.innerHTML = newsItems.slice(start, start + NEWS_PER_PAGE).map(newsItemHtml).join('');
+        el.querySelectorAll('.lnh-nitem').forEach(function (it) {
+            it.addEventListener('click', function () {
+                openNewsArticle(it.getAttribute('data-id'), it.getAttribute('data-slug'));
+            });
+        });
+        updateNewsNav();
+        notifyParentHeight();
+    }
+    function newsGo(delta) {
+        var n = newsPage + delta;
+        if (n < 0 || n > newsPageCount() - 1) return;
+        newsPage = n;
+        renderNewsPage();
+    }
+    function loadNews() {
+        var el = $('lnhNews');
+        if (!el) return;
+        var prev = $('lnhNewsPrev'), next = $('lnhNewsNext');
+        if (prev && !prev.dataset.bound) { prev.dataset.bound = '1'; prev.addEventListener('click', function () { newsGo(-1); }); }
+        if (next && !next.dataset.bound) { next.dataset.bound = '1'; next.addEventListener('click', function () { newsGo(1); }); }
+        fetch('/api/news?category=ngan-hang&limit=18', { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function (list) {
+                list = Array.isArray(list) ? list : [];
+                newsItems = list;
+                newsPage = 0;
+                if (!list.length) {
+                    el.innerHTML = '<div class="lnh-news-empty">Chưa có tin tức ngân hàng.</div>';
+                    updateNewsNav();
+                    notifyParentHeight();
+                    return;
+                }
+                renderNewsPage();
+            })
+            .catch(function () {
+                newsItems = [];
+                el.innerHTML = '<div class="lnh-news-empty">Không tải được tin tức ngân hàng.</div>';
+                updateNewsNav();
+                notifyParentHeight();
+            });
+    }
+
     // ===== Embed / chiều cao / theme (giống các trang TuniX khác) =====
     if (window.self !== window.top) document.body.classList.add('embedded');
     function applyEmbedTheme(mode) { document.body.classList.toggle('dark-mode', mode === 'dark'); }
@@ -454,6 +538,7 @@
             fillExampleCompare();
             syncTermSort(12);
             loadMatrix('online');
+            loadNews();
         }).catch(function () {
             $('metaUpdated').textContent = '—';
             $('lnhMxBody').innerHTML = '<tr><td colspan="20" class="lnh-empty">Không tải được dữ liệu. Vui lòng thử lại sau.</td></tr>';

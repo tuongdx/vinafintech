@@ -203,11 +203,37 @@
         .tt-ev .te-title, .tt-n-item .ni-title { font-size: 12.5px; font-weight: 600; line-height: 1.35; }
         .tt-ev .te-date, .tt-n-item .ni-date { font-size: 11px; color: #8a99b1; margin-top: 3px; }
         .tt-news-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        /* Danh sách tin nổi bật: tối thiểu 6 tin đầu, các tin còn lại cuộn dọc (ẩn thanh cuộn).
+           Block này là block DUY NHẤT giãn ra trong sidebar: khi "Lịch sự kiện thị trường"
+           ngắn lại thì nó cao lên bù vào đúng phần chỗ trống đó (xem fitNewsScroll()). */
+        .tt-news-card { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+        .tt-news-card > h2 { flex: 0 0 auto; }
+        .tt-news-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; }
+        .tt-news-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        .tt-news-scroll::-webkit-scrollbar-thumb { background: transparent; }
+
+        /* ===== Lịch sự kiện thị trường — sự kiện SẮP DIỄN RA (kiểu "Sự kiện liên quan") ===== */
+        .tt-ev-note { font-size: 12px; color: #6b7a8f; margin-bottom: 10px; line-height: 1.5; }
+        .tt-ev-group { margin-bottom: 14px; }
+        .tt-ev-group:last-child { margin-bottom: 0; }
+        .tt-ev-sym { font-weight: 800; font-size: 13.5px; color: #008080; margin-bottom: 7px; }
+        .tt-ev-item { display: flex; gap: 10px; background: #f8fafc; border: 1px solid #e9edf2; border-radius: 11px; padding: 10px 12px; margin-bottom: 7px; text-decoration: none; cursor: pointer; transition: all 0.15s; }
+        .tt-ev-item:hover { border-color: #008080; }
+        .tt-ev-item:last-child { margin-bottom: 0; }
+        .tt-ev-ico { flex: 0 0 auto; font-size: 15px; padding-top: 2px; width: 22px; text-align: center; }
+        .tt-ev-body { flex: 1; min-width: 0; }
+        .tt-ev-row { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; flex-wrap: wrap; }
+        .tt-ev-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; padding: 2px 7px; border-radius: 5px; }
+        .tt-ev-date { font-size: 11px; color: #8a99b1; font-weight: 700; }
+        .tt-ev-days { font-size: 10.5px; font-weight: 800; color: #008080; background: rgba(0,128,128,0.1); border-radius: 5px; padding: 1px 6px; }
+        .tt-ev-title { font-size: 12.5px; font-weight: 700; color: #12203a; line-height: 1.4; }
+        .tt-ev-desc { font-size: 11.5px; color: #4a5a72; line-height: 1.5; margin-top: 3px; }
         .tt-n-tag { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; background: rgba(0,128,128,0.09); color: #008080; border: 1px solid rgba(0,128,128,0.18); cursor: pointer; }
         .tt-n-tag:hover { border-color: #008080; }
         .tt-n-tag.neg { background: #fdeaea; color: #d0314e; border-color: rgba(208,49,78,0.2); }
         .tt-n-tag .pct { font-weight: 800; margin-left: 2px; }
-        .tt-impact-card { flex: 1; }
+        /* Không giãn: chỗ trống dư trong cột để cho "Tin tức nổi bật" hưởng */
+        .tt-impact-card { flex: 0 0 auto; }
         .tt-impact-row { display: grid; grid-template-columns: 46px 1fr 70px; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid #f2f4f8; cursor: pointer; }
         .tt-impact-row:hover { background: #f0fbf9; border-radius: 6px; }
         .tt-impact-row:last-child { border-bottom: none; }
@@ -285,6 +311,10 @@
         body.dark-mode .tt-impact-bar { background: #21262d; }
         body.dark-mode .tt-impact-row:hover { background: #10151c; }
         body.dark-mode .tt-news-ph { background: #1c2128; color: #adbac7; }
+        body.dark-mode .tt-ev-item { background: #1c2128; border-color: #21262d; }
+        body.dark-mode .tt-ev-item:hover { border-color: rgba(0,128,128,0.5); }
+        body.dark-mode .tt-ev-title { color: #e6edf3; }
+        body.dark-mode .tt-ev-desc { color: #adbac7; }
         body.dark-mode .tt-n-tag { background: rgba(0,128,128,0.15); color: #4db6b6; border-color: rgba(0,128,128,0.3); }
         body.dark-mode .tt-n-tag:hover { border-color: #4db6b6; }
         body.dark-mode .tt-n-tag.neg { background: rgba(208,49,78,0.15); color: #ff8b8b; border-color: rgba(208,49,78,0.3); }
@@ -311,7 +341,7 @@
             .tt-radar-grid { grid-template-columns: 1fr; }
         }
     </style>
-    <link rel="stylesheet" href="/static/block-tint.css?v=20260908t" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
 </head>
 <body>
     <div class="tt-page">
@@ -985,20 +1015,93 @@
                     return '<span class="tt-n-tag ' + cls + '" data-symbol="' + esc(t) + '">' + t + (s ? '<span class="pct">' + (p >= 0 ? '+' : '') + p.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%</span>' : '') + '</span>';
                 }).join('');
             }
-            function renderSide(events, news, impact) {
-                const ev = (events || []).map(function(n) {
-                    return '<div class="tt-ev" data-news="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
-                        newsImg(n) +
-                        '<div class="tt-news-body"><div class="te-title">' + esc(n.title) + '</div>' +
-                        '<div class="tt-news-tags">' + newsTags(n) + '</div>' +
-                        '<div class="te-date">' + fmtDate(n.created_at) + '</div></div></div>';
-                }).join('');
+            // ---------- Lịch sự kiện thị trường (sự kiện SẮP DIỄN RA) ----------
+            // Nguồn: /api/asset-events/upcoming (server quét nhóm cổ phiếu vốn hoá lớn,
+            // chỉ trả sự kiện có ngày trong TƯƠNG LAI, sắp diễn ra trước).
+            const EVENT_TYPE_META = {
+                DIVIDEND:               { icon: 'fa-coins', color: '#00a08a', label: 'Cổ tức' },
+                EX_DIVIDEND_DATE:       { icon: 'fa-calendar-check', color: '#7b61c4', label: 'Chốt quyền' },
+                STOCK_SPLIT:            { icon: 'fa-scissors', color: '#f5a623', label: 'Chia tách' },
+                RIGHTS_ISSUE:           { icon: 'fa-file-invoice', color: '#f5a623', label: 'Phát hành' },
+                EARNINGS:               { icon: 'fa-chart-pie', color: '#4a7fc4', label: 'Kết quả KD' },
+                IMPORTANT_NEWS:         { icon: 'fa-newspaper', color: '#4a7fc4', label: 'Tin quan trọng' },
+                UNUSUAL_PRICE_MOVEMENT: { icon: 'fa-bolt', color: '#d0314e', label: 'Biến động bất thường' }
+            };
+            function daysLeft(iso) {
+                if (!iso) return null;
+                const d = new Date(iso);
+                if (isNaN(d.getTime())) return null;
+                const now = new Date();
+                const a = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+                const b = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+                return Math.round((a - b) / 86400000);
+            }
+            function renderUpcomingEvents(items) {
+                const el = document.getElementById('ttEvents');
+                if (!el) return;
+                if (!items || !items.length) {
+                    el.innerHTML = '<div class="tt-radar-empty">Chưa có sự kiện sắp diễn ra.</div>';
+                    notifyParentHeight();
+                    return;
+                }
+                // Nhóm theo mã cổ phiếu (giống "Sự kiện liên quan"); nhóm nào có sự kiện gần nhất lên trước.
+                const groups = {};
+                items.forEach(function(e) { const s = e.symbol || 'Thị trường'; (groups[s] = groups[s] || []).push(e); });
+                const order = Object.keys(groups).sort(function(a, b) {
+                    return String((groups[a][0] || {}).event_date || '').localeCompare(String((groups[b][0] || {}).event_date || ''));
+                });
+                let html = '';
+                order.forEach(function(sym) {
+                    html += '<div class="tt-ev-group"><div class="tt-ev-sym">' + esc(sym) + '</div>';
+                    groups[sym].forEach(function(e) {
+                        const m = EVENT_TYPE_META[e.event_type] || { icon: 'fa-bell', color: '#8a99b1', label: e.event_type };
+                        const dl = daysLeft(e.event_date);
+                        const dayTxt = dl === 0 ? 'hôm nay' : (dl > 0 ? 'còn ' + dl + ' ngày' : '');
+                        html += '<div class="tt-ev-item" data-symbol="' + esc(e.symbol || '') + '"' +
+                                (e.news_id ? ' data-news="' + esc(e.news_id) + '"' : '') + '>' +
+                            '<div class="tt-ev-ico" style="color:' + m.color + '"><i class="fas ' + m.icon + '"></i></div>' +
+                            '<div class="tt-ev-body">' +
+                                '<div class="tt-ev-row"><span class="tt-ev-badge" style="background:' + m.color + '1a;color:' + m.color + '">' + esc(m.label) + '</span>' +
+                                (e.event_date ? '<span class="tt-ev-date">' + fmtDate(e.event_date) + '</span>' : '') +
+                                (dayTxt ? '<span class="tt-ev-days">' + dayTxt + '</span>' : '') + '</div>' +
+                                '<div class="tt-ev-title">' + esc(e.title) + '</div>' +
+                                (e.description ? '<div class="tt-ev-desc">' + esc(e.description) + '</div>' : '') +
+                            '</div></div>';
+                    });
+                    html += '</div>';
+                });
+                el.innerHTML = html;
+                el.querySelectorAll('.tt-ev-item').forEach(function(it) {
+                    it.addEventListener('click', function() {
+                        const nid = it.getAttribute('data-news');
+                        if (nid) {
+                            if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(nid), slug: '' }, '*');
+                            return;
+                        }
+                        const sym = it.getAttribute('data-symbol');
+                        if (sym && window.parent && window.parent !== window) {
+                            window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                        }
+                    });
+                });
+                notifyParentHeight();
+            }
+            function loadUpcomingEvents() {
+                const el = document.getElementById('ttEvents');
+                if (!el) return;
+                fetch('/api/asset-events/upcoming?limit=5', { cache: 'no-store' })
+                    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+                    .then(function(items) { renderUpcomingEvents(items); })
+                    .catch(function() { el.innerHTML = '<div class="tt-radar-empty">Không tải được lịch sự kiện.</div>'; });
+            }
+
+            function renderSide(news, impact) {
                 const ns = (news || []).map(function(n) {
                     return '<div class="tt-n-item" data-news="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                         newsImg(n) +
                         '<div class="tt-news-body"><div class="ni-title">' + esc(n.title) + '</div>' +
                         '<div class="tt-news-tags">' + newsTags(n) + '</div>' +
-                        '<div class="ni-date">' + fmtDate(n.created_at) + '</div></div></div>';
+                        '<div class="ni-date">' + fmtDate(n.published_at || n.created_at) + '</div></div></div>';
                 }).join('');
                 const maxImp = Math.max.apply(null, (impact || []).map(function(i) { return i.impact; }).concat([1]));
                 const imp = (impact || []).map(function(i) {
@@ -1010,9 +1113,10 @@
                 }).join('');
                 side.innerHTML =
                     '<section class="tt-card"><h2>Lịch sự kiện thị trường</h2>' +
-                        (ev || '<div class="tt-radar-empty">Chưa có sự kiện.</div>') + '</section>' +
-                    '<section class="tt-card"><h2>Tin tức nổi bật</h2>' +
-                        (ns || '<div class="tt-radar-empty">Chưa có tin nổi bật.</div>') + '</section>' +
+                        '<div id="ttEvents"><div class="tt-radar-empty">Đang tải…</div></div></section>' +
+                    '<section class="tt-card tt-news-card"><h2>Tin tức nổi bật</h2>' +
+                        '<div class="tt-news-scroll" id="ttNewsScroll">' +
+                            (ns || '<div class="tt-radar-empty">Chưa có tin nổi bật.</div>') + '</div></section>' +
                     '<section class="tt-card tt-impact-card"><h2>Top cổ phiếu ảnh hưởng VN-INDEX</h2>' +
                         (imp || '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</section>';
                 // Ảnh lỗi -> thay bằng placeholder
@@ -1024,6 +1128,28 @@
                         im.parentNode.replaceChild(ph, im);
                     });
                 });
+            }
+
+            // "Tin tức nổi bật" luôn hiện TỐI THIỂU 6 tin đầu (min-height) và tự giãn thêm
+            // để bù đúng phần chiều cao mà "Lịch sự kiện thị trường" ngắn lại — nhờ vậy
+            // cột phải luôn cao bằng cột chính, không còn khoảng trắng ở đáy.
+            // flex-basis = chiều cao 6 tin: để "chiều cao tự nhiên" của block chỉ tính 6 tin,
+            // phần dư (do block sự kiện ngắn lại) mới được cấp cho block này giãn ra.
+            function fitNewsScroll() {
+                const box = document.getElementById('ttNewsScroll');
+                if (!box) return;
+                const items = box.querySelectorAll('.tt-n-item');
+                const base = (items.length > 6) ? (items[6].offsetTop - items[0].offsetTop) : 0;
+                if (window.innerWidth <= 1080) {
+                    // Sidebar xếp ngang (grid): không giãn, chỉ cuộn sau 6 tin đầu
+                    box.style.flexBasis = '';
+                    box.style.minHeight = '';
+                    box.style.maxHeight = base > 0 ? Math.round(base) + 'px' : '';
+                    return;
+                }
+                box.style.maxHeight = '';
+                box.style.minHeight = base > 0 ? Math.round(base) + 'px' : '';
+                box.style.flexBasis = base > 0 ? Math.round(base) + 'px' : '';
             }
 
             function bindClicks() {
@@ -1130,17 +1256,19 @@
                 // Sidebar: sự kiện + tin nổi bật + ảnh hưởng
                 side.innerHTML = '<div class="tt-loading" style="padding:20px;"><i class="fas fa-spinner fa-spin"></i></div>';
                 Promise.all([
-                    fetch('/api/news?limit=6').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
-                    fetch('/api/news/popular?limit=6').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+                    // "Tin tức nổi bật" = 20 tin MỚI NHẤT của chuyên mục Chứng khoán
+                    // (block chỉ hiện 6 tin đầu, các tin còn lại cuộn trong block)
+                    fetch('/api/news?category=chung-khoan&limit=20').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
                     fetch('/api/stocks/stock-screener').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
                 ]).then(function(arrs) {
-                    const evts = Array.isArray(arrs[0]) ? arrs[0] : ((arrs[0] && arrs[0].items) || []);
-                    const pops = Array.isArray(arrs[1]) ? arrs[1] : ((arrs[1] && arrs[1].items) || []);
-                    const sd = arrs[2];
+                    const pops = Array.isArray(arrs[0]) ? arrs[0] : ((arrs[0] && arrs[0].items) || []);
+                    const sd = arrs[1];
                     const symMap = {};
                     (sd && sd.stocks || []).forEach(function(s) { symMap[s.symbol] = s; });
                     setNewsSyms(symMap);
-                    renderSide(evts, pops, imp);
+                    renderSide(pops, imp);
+                    fitNewsScroll();
+                    loadUpcomingEvents();
                     bindClicks();
                     notifyParentHeight();
                 });
@@ -1175,9 +1303,9 @@
                 setTimeout(notifyParentHeight, 60);
                 setTimeout(notifyParentHeight, 400);
             });
-            window.addEventListener('resize', notifyParentHeight);
+            window.addEventListener('resize', function() { fitNewsScroll(); notifyParentHeight(); });
             if (window.ResizeObserver) {
-                const obs = new ResizeObserver(notifyParentHeight);
+                const obs = new ResizeObserver(function() { fitNewsScroll(); notifyParentHeight(); });
                 obs.observe(document.querySelector('.tt-page') || document.body);
             }
             applyEmbedTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');

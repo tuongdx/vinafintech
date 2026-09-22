@@ -222,6 +222,31 @@ def update_user_plan(
     return user
 
 
+@router.patch("/{user_id}/signal-access", response_model=UserOut)
+def update_user_signal_access(
+    user_id: int,
+    enabled: bool,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(RoleEnum.admin, RoleEnum.super_admin)),
+):
+    """Bật/tắt quyền dùng tính năng **Tín hiệu** cho MỘT tài khoản (admin cấp riêng).
+
+    Quyền này quyết định việc menu Tín hiệu có hiện trên giao diện người dùng hay không,
+    VÀ được kiểm tra lại ở server (`require_signal_access`) — không chỉ ẩn ở frontend.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not _can_manage_user(current_user, user):
+        raise HTTPException(status_code=403, detail="Bạn không có quyền cấp quyền cho tài khoản này.")
+    if user.role == RoleEnum.super_admin and not enabled:
+        raise HTTPException(status_code=400, detail="Super admin luôn có quyền Tín hiệu, không thể tắt.")
+    user.signal_access = bool(enabled)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
     return current_user

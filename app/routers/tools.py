@@ -8,6 +8,11 @@ Mapping các trường JSON:
   tags           -> News.tags        (list -> chuỗi phẩy, bỏ phần tử rỗng)
   url            -> News.source_url
   content_html   -> News.content     (giữ text + ảnh, bỏ link trong text, bỏ banner/quảng cáo)
+  published_at   -> News.published_at (ngày giờ ĐĂNG của bài — giữ đúng ngày giờ trong file:
+                    published_at / published_at_raw / published_date + published_time).
+                    File không có ngày giờ -> dùng thời điểm import (giờ VN).
+  source         -> News.source (tự suy theo chuyên mục: Chứng khoán/Ngân hàng/Doanh nghiệp
+                    = "An ninh tiền tệ"; còn lại = "MarketTimes". Có thể ghi đè qua param `source`).
 
 Trạng thái theo lựa chọn của người dùng:
   approve=False, publish=False (publish bị disable) -> pending_approval (chờ duyệt thủ công)
@@ -16,14 +21,16 @@ Trạng thái theo lựa chọn của người dùng:
 """
 import json
 from pathlib import Path
+from urllib.parse import quote
 
 from bs4 import BeautifulSoup, Comment
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import require_roles
 from app.db import get_db
-from app.models import News, NewsStatusEnum, RoleEnum, User
+from app.models import News, NewsStatusEnum, RoleEnum, ToolFile, User
+from app.services import news_source, news_time
 
 router = APIRouter(prefix="/admin/tools", tags=["admin-tools"])
 
@@ -146,6 +153,7 @@ async def import_news(
     file_path: str = Form(""),
     author: str = Form("Ban biên tập TuniX"),
     category: str = Form("chung-khoan"),
+    source: str = Form(""),
     approve: str = Form("false"),
     publish: str = Form("false"),
     dry_run: str = Form("false"),
@@ -193,16 +201,19 @@ async def import_news(
         status = NewsStatusEnum.pending_approval
 
     category = _resolve_category(category)
+    # Nguồn tự suy theo chuyên mục (An ninh Tiền tệ vs MarketTimes); cho phép ghi đè thủ công.
+    source = (source or "").strip() or news_source.source_for_category(category)
     author = (author or "").strip() or "Ban biên tập TuniX"
 
-    existing_urls = {
-        row.source_url
-        for row in db.query(News.source_url).filter(News.source_url.isnot(None)).all()
+    existing_news = {
+        row.source_url: row
+        for row in db.query(News).filter(News.source_url.isnot(None)).all()
     }
 
-    inserted = skipped = errors = 0
+    inserted = skipped = updated = errors = 0
     inserted_titles: list[str] = []
     skipped_titles: list[str] = []
+    updated_titles: list[str] = []
     error_details: list[str] = []
 
     for i, item in enumerate(data, start=1):
@@ -212,7 +223,16 @@ async def import_news(
             errors += 1
             error_details.append(f"[{i}] Thiếu tiêu đề.")
             continue
-        if url and url in existing_urls:
+        published_at = news_time.parse_published_at(item)
+        if url and url in existing_news:
+            # Đã có bài cùng URL: chỉ cập nhật lại NGÀY GIỜ ĐĂNG nếu file có và khác dữ liệu đang lưu
+            # (giúp các bài import trước đây chưa có published_at được bổ sung đúng ngày giờ).
+            row = existing_news[url]
+            if published_at is not None and row.published_at != published_at:
+                if not dry_bool:
+                    row.published_at = published_at
+                updated += 1
+                updated_titles.append(title)
             skipped += 1
             skipped_titles.append(title)
             continue
@@ -227,14 +247,16 @@ async def import_news(
                 image_url=(item.get("main_image") or "").strip() or None,
                 image_caption=(item.get("image_caption") or "").strip() or None,
                 tags=_join_tags(item.get("tags")),
-                source="MarketTimes",
+                source=source,
                 source_url=url or None,
                 author_name=author,
                 status=status,
+                # Ngày giờ trong file input; file không có thì lấy thời điểm import (giờ VN)
+                published_at=published_at or news_time.now_vn(),
             )
             db.add(news)
             if url:
-                existing_urls.add(url)
+                existing_news[url] = news
 
         inserted += 1
         inserted_titles.append(title)
@@ -247,10 +269,102 @@ async def import_news(
         "total": len(data),
         "inserted": inserted,
         "skipped": skipped,
+        "updated": updated,
         "errors": errors,
         "status": status.value,
         "category": category,
+        "source": source,
         "author": author,
         "titles": (inserted_titles + skipped_titles)[:50],
+        "updated_titles": updated_titles[:50],
         "error_details": error_details[:20],
     }
+
+
+# ============================================================================
+# TOOL CRAWL BÀI VIẾT — admin tải lên; biên tập viên / quản trị nội dung tải về
+# ============================================================================
+_CRAWL_TOOL_KEY = "crawl-news"
+_CRAWL_TOOL_MAX_BYTES = 25 * 1024 * 1024  # 25 MB
+# Vai trò được XEM & TẢI VỀ (giống quyền dùng tool viết bài) + admin
+_CRAWL_DOWNLOAD_ROLES = (*_TOOL_ROLES, RoleEnum.admin)
+# Vai trò được TẢI LÊN / thay file tool — chỉ nhóm quản trị
+_CRAWL_UPLOAD_ROLES = (RoleEnum.super_admin, RoleEnum.admin)
+
+
+def _safe_filename(name: str) -> str:
+    """Chỉ giữ tên file (bỏ đường dẫn), loại ký tự có thể phá header khi tải về."""
+    base = Path(name or "").name.strip().replace('"', "").replace("\\", "")
+    return base[:200] or "crawl-tool"
+
+
+@router.get("/crawl-tool")
+def crawl_tool_meta(
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_roles(*_CRAWL_DOWNLOAD_ROLES)),
+):
+    """Thông tin file tool crawl hiện có (để UI hiển thị tên / kích thước / ngày cập nhật)."""
+    row = db.query(ToolFile).filter(ToolFile.key == _CRAWL_TOOL_KEY).first()
+    if not row:
+        return {"exists": False, "filename": "", "size": 0, "updated_at": None, "uploaded_by": ""}
+    return {
+        "exists": True,
+        "filename": row.filename,
+        "size": row.size or 0,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        "uploaded_by": row.uploaded_by or "",
+    }
+
+
+@router.get("/crawl-tool/download")
+def download_crawl_tool(
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_roles(*_CRAWL_DOWNLOAD_ROLES)),
+):
+    """Tải file tool crawl về máy người dùng (Content-Disposition: attachment)."""
+    row = db.query(ToolFile).filter(ToolFile.key == _CRAWL_TOOL_KEY).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Admin chưa tải tool crawl bài viết lên hệ thống.")
+    filename = _safe_filename(row.filename)
+    ascii_name = filename.encode("ascii", "ignore").decode() or "crawl-tool"
+    return Response(
+        content=row.data,
+        media_type=row.content_type or "application/octet-stream",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{ascii_name}"; filename*=UTF-8\'\'{quote(filename)}'
+            ),
+            "Content-Length": str(len(row.data)),
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.post("/crawl-tool")
+async def upload_crawl_tool(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_CRAWL_UPLOAD_ROLES)),
+):
+    """Admin tải lên (hoặc thay thế) file tool crawl bài viết."""
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="File tải lên rỗng.")
+    if len(raw) > _CRAWL_TOOL_MAX_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File quá lớn (tối đa {_CRAWL_TOOL_MAX_BYTES // (1024 * 1024)} MB).",
+        )
+    filename = _safe_filename(file.filename)
+    content_type = file.content_type or "application/octet-stream"
+    row = db.query(ToolFile).filter(ToolFile.key == _CRAWL_TOOL_KEY).first()
+    if row is None:
+        row = ToolFile(key=_CRAWL_TOOL_KEY, data=b"")
+        db.add(row)
+    row.filename = filename
+    row.content_type = content_type
+    row.size = len(raw)
+    row.data = raw
+    row.uploaded_by = user.email or ""
+    db.commit()
+    return {"ok": True, "filename": filename, "size": len(raw), "uploaded_by": row.uploaded_by}

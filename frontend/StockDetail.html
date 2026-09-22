@@ -44,6 +44,23 @@
             overflow: hidden;
         }
 
+        /* Viền cho CÁC BLOCK CHÍNH của trang chi tiết — giống block "TuniAI Analysis" (.ta-block).
+           Ở đây chỉ khai báo độ dày/kiểu viền; MÀU viền do block-tint.css quyết định
+           (light rgba(0,128,128,.22) · dark rgba(0,128,128,.45)) nên mọi block luôn cùng
+           màu viền với .ta-block ở cả 2 chế độ sáng/tối. */
+        .stock-header,
+        .chart-block,
+        .order-book,
+        .recent-trades,
+        .peer-block,
+        .profit-block,
+        .shareholder-block,
+        .accum-block,
+        .reports-block,
+        .stock-news-block {
+            border: 1px solid #e9edf2;
+        }
+
         body.dark-mode .stock-header,
         body.dark-mode .chart-block,
         body.dark-mode .order-book,
@@ -512,6 +529,55 @@
         body.dark-mode .metric-divider {
             border-top-color: #2a3648;
         }
+
+        /* ----- 1.5 TUNIX ANALYSIS (TuniX Signal Engine — người dùng) ----- */
+        .ta-block {
+            background: #fff;
+            border: 1px solid #e9edf2;
+            border-radius: 16px;
+            padding: 14px 18px;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+            transition: all 0.3s ease;
+        }
+        .ta-block h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ta-engine {
+            font-size: 10px;
+            font-weight: 600;
+            color: #008080;
+            background: rgba(0, 128, 128, 0.1);
+            border-radius: 20px;
+            padding: 2px 8px;
+        }
+        .ta-meta { font-size: 11px; color: #8a99b1; margin-bottom: 10px; }
+        .ta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+        .ta-tile { border: 1px solid #eef2f6; border-radius: 12px; padding: 9px 11px; background: #fbfdfe; }
+        .ta-tile .k { font-size: 10.5px; color: #8a99b1; text-transform: uppercase; letter-spacing: .3px; }
+        .ta-tile .v { font-size: 14px; font-weight: 700; margin-top: 3px; color: #12203a; }
+        .ta-tile .s { font-size: 10.5px; color: #8a99b1; margin-top: 2px; }
+        .ta-tile .v.pos { color: #0f7b3a; }
+        .ta-tile .v.neg { color: #d0314e; }
+        .ta-tile .v.na { color: #8a99b1; }
+        .ta-cond-head { font-size: 12px; font-weight: 600; margin: 12px 0 6px; color: #12203a; }
+        .ta-conds { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 4px 14px; }
+        .ta-cond { font-size: 11.5px; color: #4a5a72; display: flex; gap: 6px; }
+        .ta-cond .ok { color: #0f7b3a; font-weight: 700; }
+        .ta-cond .no { color: #d0314e; font-weight: 700; }
+        .ta-cond .na { color: #8a99b1; font-weight: 700; }
+        .ta-foot { font-size: 10.5px; color: #8a99b1; margin-top: 10px; border-top: 1px dashed #eef2f6; padding-top: 8px; }
+        body.dark-mode .ta-block { background: #161b22; border-color: #30363d; }
+        body.dark-mode .ta-tile { background: #1c2128; border-color: #30363d; }
+        body.dark-mode .ta-tile .v { color: #e6edf3; }
+        body.dark-mode .ta-cond-head { color: #e6edf3; }
+        body.dark-mode .ta-cond { color: #adbac7; }
+        body.dark-mode .ta-foot { border-top-color: #30363d; }
+        body.dark-mode .ta-engine { color: #4fa8a2; background: rgba(79, 168, 162, 0.15); }
 
         /* ----- 2. BIỂU ĐỒ CHART ----- */
         .chart-block {
@@ -2658,6 +2724,198 @@
             color: #e74c3c;
         }
 
+        /* ----- 6.5.1 Chia 2 nửa: trái = công cụ tính, phải = lịch sử góp vốn + cổ tức ----- */
+        .accum-split {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 14px;
+            align-items: start;
+        }
+
+        .accum-left,
+        .accum-right {
+            min-width: 0;
+        }
+
+        .accum-right {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .accum-right .acc-hist-sec {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e9edf2;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        body.dark-mode .accum-right .acc-hist-sec {
+            border-color: #21262d;
+        }
+
+        .accum-right .acc-hist-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 10px;
+            background: #f4f8fb;
+            font-size: 11px;
+            font-weight: 700;
+            color: #33415c;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .accum-right .acc-hist-head {
+            background: #1c2128;
+            color: #e6edf3;
+        }
+
+        .accum-right .acc-hist-head .acc-hist-sum {
+            font-size: 10.5px;
+            font-weight: 600;
+            color: #008080;
+            white-space: nowrap;
+        }
+
+        body.dark-mode .accum-right .acc-hist-head .acc-hist-sum {
+            color: #4db6b6;
+        }
+
+        /* Ẩn thanh cuộn nhưng vẫn cuộn được (thống nhất với các khối khác của site) */
+        .accum-right .acc-hist-list {
+            flex: 1 1 auto;
+            max-height: 246px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .accum-right .acc-hist-list::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
+        }
+
+        .accum-right .acc-row {
+            padding: 7px 10px;
+            border-top: 1px solid #f2f5f9;
+            font-size: 11px;
+            color: #4a5a72;
+            transition: border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .accum-right .acc-row {
+            border-top-color: #21262d;
+            color: #c9d1d9;
+        }
+
+        .accum-right .acc-row:first-child {
+            border-top: none;
+        }
+
+        .accum-right .acc-row .acc-row-main {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+            font-weight: 600;
+            color: #1a1f36;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .accum-right .acc-row .acc-row-main {
+            color: #e6edf3;
+        }
+
+        .accum-right .acc-row .acc-row-main .acc-row-amt {
+            color: #008080;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        body.dark-mode .accum-right .acc-row .acc-row-main .acc-row-amt {
+            color: #4db6b6;
+        }
+
+        .accum-right .acc-row.acc-div .acc-row-main .acc-row-amt {
+            color: #f59e0b;
+        }
+
+        body.dark-mode .accum-right .acc-row.acc-div .acc-row-main .acc-row-amt {
+            color: #f0c674;
+        }
+
+        .accum-right .acc-row .acc-row-sub {
+            font-size: 10px;
+            color: #8a99b1;
+            margin-top: 2px;
+            line-height: 1.55;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .accum-right .acc-row .acc-row-sub {
+            color: #8b949e;
+        }
+
+        .accum-right .acc-row .acc-row-sub b {
+            color: #0f7b3a;
+        }
+
+        body.dark-mode .accum-right .acc-row .acc-row-sub b {
+            color: #3fb950;
+        }
+
+        .accum-right .acc-hist-empty {
+            padding: 10px;
+            font-size: 11px;
+            color: #8a99b1;
+        }
+
+        @media (max-width: 780px) {
+            .accum-split {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        /* ※ Note: giải thích cách tính (cuối block) */
+        .accum-foot {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #f8faff;
+            font-size: 10.5px;
+            line-height: 1.7;
+            color: #6b7a8f;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .accum-foot {
+            background: #0d1117;
+            color: #8b949e;
+        }
+
+        .accum-foot b {
+            color: #008080;
+        }
+
+        body.dark-mode .accum-foot b {
+            color: #4db6b6;
+        }
+
+        .accum-foot ul {
+            margin: 4px 0 0;
+            padding-left: 16px;
+        }
+
+        .accum-foot li {
+            margin: 2px 0;
+        }
+
         /* ----- 7. BÁO CÁO ----- */
         .reports-block {
             background: #fff;
@@ -2750,6 +3008,202 @@
             display: flex;
             gap: 10px;
             transition: color 0.3s ease;
+        }
+
+        /* Danh sách báo cáo: backend trả tối đa 20, block CỐ ĐỊNH chiều cao đúng 5 dòng đầu —
+           nhiều hơn thì cuộn, ít hơn thì giữ nguyên khung (không co lại).
+           Chiều cao do JS gán (fitReportScroll) theo offsetTop thực tế của 5 dòng. */
+        #reportList {
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        #reportList::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
+        }
+
+        /* ----- 7.1 Báo cáo (nửa trái) + Tin tức liên quan (nửa phải) ----- */
+        .reports-news-split {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 8px;
+            align-items: start;
+        }
+
+        .reports-news-split > .reports-block,
+        .stock-news-block {
+            min-width: 0;
+        }
+
+        /* Chiều cao khối tin tức do JS gán = chiều cao khối báo cáo (equal height) */
+        .stock-news-block {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #fff;
+            border-radius: 16px;
+            padding: 14px 18px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease;
+        }
+
+        .stock-news-block h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            flex: none;
+        }
+
+        .stock-news-block h3 .sn-sym {
+            color: #008080;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .stock-news-block h3 .sn-sym {
+            color: #4db6b6;
+        }
+
+        /* Ẩn thanh cuộn nhưng vẫn cuộn được (thống nhất với các khối khác của site) */
+        .stock-news-list {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .stock-news-list::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
+        }
+
+        .sn-item {
+            display: flex;
+            gap: 8px;
+            padding: 7px 0;
+            border-bottom: 1px solid #f5f7fb;
+            text-decoration: none;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        body.dark-mode .sn-item {
+            border-bottom-color: #21262d;
+        }
+
+        .sn-item:last-child {
+            border-bottom: none;
+        }
+
+        .sn-thumb {
+            flex: none;
+            width: 46px;
+            height: 46px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #eef3f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9fb0c7;
+            font-size: 15px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .sn-thumb {
+            background: #161b22;
+            color: #6e7681;
+        }
+
+        .sn-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .sn-body {
+            min-width: 0;
+        }
+
+        .sn-title {
+            font-size: 11.5px;
+            font-weight: 500;
+            line-height: 1.35;
+            color: #1a1f36;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .sn-title {
+            color: #e6edf3;
+        }
+
+        .sn-item:hover .sn-title {
+            color: #008080;
+        }
+
+        body.dark-mode .sn-item:hover .sn-title {
+            color: #4db6b6;
+        }
+
+        .sn-meta {
+            font-size: 10px;
+            color: #8a99b1;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .sn-meta .sn-cat {
+            color: #008080;
+            font-weight: 600;
+        }
+
+        body.dark-mode .sn-meta .sn-cat {
+            color: #4db6b6;
+        }
+
+        .sn-hit {
+            background: rgba(0, 128, 128, 0.1);
+            color: #008080;
+            border-radius: 5px;
+            padding: 0 5px;
+            font-weight: 600;
+        }
+
+        body.dark-mode .sn-hit {
+            background: rgba(77, 182, 182, 0.16);
+            color: #4db6b6;
+        }
+
+        .stock-news-list .acc-hist-empty,
+        .stock-news-list .info-empty {
+            padding: 8px 0;
+            font-size: 11px;
+            color: #8a99b1;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 780px) {
+            .reports-news-split {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .stock-news-list {
+                max-height: 320px;
+            }
         }
 
         /* Meta links (cổ tức / tóm tắt doanh nghiệp) */
@@ -3091,7 +3545,8 @@
             .mb-rows { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
-    <link rel="stylesheet" href="/static/typography.css" />
+    <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
     <!-- Biểu đồ nến: Lightweight Charts (TradingView open-source) + dữ liệu OHLCV TuniX -->
     <script src="/static/vendor/lightweight-charts.standalone.production.js?v=5.2.1"></script>
 </head>
@@ -3143,6 +3598,20 @@
                     <div class="metric-item"><span class="label">Thấp nhất</span><span class="value">28,350</span></div>
                     <div class="metric-item"><span class="label">Bid 1</span><span class="value">28,550</span></div>
                     <div class="metric-item"><span class="label">Ask 1</span><span class="value">28,650</span></div>
+                </div>
+            </div>
+
+            <!-- 1.5 TUNIX ANALYSIS — TuniX Signal Engine (dành cho NGƯỜI DÙNG: chỉ phân tích,
+                 KHÔNG có BUY/SELL/Entry/Stop Loss — API public cũng không trả các field đó) -->
+            <div class="ta-block" id="tuniAnalysisBlock">
+                <h3><i class="fas fa-brain"></i> TuniAI Analysis <span class="ta-engine" id="taEngine"></span></h3>
+                <div class="ta-meta" id="taMeta">Đang tải phân tích…</div>
+                <div class="ta-grid" id="taGrid"></div>
+                <div class="ta-cond-head" id="taCondHead"></div>
+                <div class="ta-conds" id="taConds"></div>
+                <div class="ta-foot">
+                    Phân tích định lượng: xu hướng, momentum, chỉ báo kỹ thuật, dòng tiền và sức mạnh tương đối
+                    so với thị trường. Đây là <b>thông tin phân tích</b>, không phải khuyến nghị mua/bán.
                 </div>
             </div>
 
@@ -3334,30 +3803,58 @@
             <!-- 6.5 GIẢ ĐỊNH TÍCH SẢN -->
             <div class="accum-block">
                 <h3>Giả định tích sản <span id="accumSymbol"></span> 5 năm</h3>
-                <div class="accum-controls">
-                    <label for="accumMonthlyInput">Mỗi tháng góp</label>
-                    <input type="number" id="accumMonthlyInput" value="5" min="0.1" step="0.5" inputmode="decimal" />
-                    <span>triệu VND</span>
+                <div class="accum-split">
+                    <!-- Nửa TRÁI: công cụ tính + biểu đồ + kết quả -->
+                    <div class="accum-left">
+                        <div class="accum-controls">
+                            <label for="accumMonthlyInput">Mỗi tháng góp</label>
+                            <input type="number" id="accumMonthlyInput" value="5" min="0.1" step="0.5" inputmode="decimal" />
+                            <span>triệu VND</span>
+                        </div>
+                        <div class="accum-note" id="accumNote">Lãi ngân hàng giả định 7%/năm · Cổ tức theo lịch sử thực tế</div>
+                        <div class="accum-legend" id="accumLegend"></div>
+                        <div class="accum-chart" id="accumChart">
+                            <div class="info-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                        </div>
+                        <div class="accum-summary" id="accumSummary"></div>
+                    </div>
+                    <!-- Nửa PHẢI: lịch sử góp vốn theo tháng + lịch sử chia cổ tức (căn cứ ra con số lợi nhuận) -->
+                    <div class="accum-right" id="accumHistory">
+                        <div class="info-loading">Đang tải...</div>
+                    </div>
                 </div>
-                <div class="accum-note" id="accumNote">Lãi ngân hàng giả định 7%/năm · Cổ tức theo lịch sử thực tế</div>
-                <div class="accum-legend" id="accumLegend"></div>
-                <div class="accum-chart" id="accumChart">
-                    <div class="info-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                <div class="accum-foot">
+                    <b>※ Note:</b> cách tính
+                    <ul>
+                        <li>Mỗi tháng góp đúng số tiền ở ô “Mỗi tháng góp” và mua cổ phiếu theo <b>giá đóng cửa cuối tháng</b> đó (DCA), không tính phí giao dịch.</li>
+                        <li><b>Cổ tức/thưởng bằng tiền:</b> nhận tiền theo số cổ phiếu đang nắm (X đ/cp × số cp) và cộng dồn vào giá trị — <i>không</i> tái đầu tư.</li>
+                        <li><b>Cổ tức/thưởng bằng cổ phiếu:</b> tăng số lượng cổ phiếu theo tỷ lệ công bố (tỷ lệ A:B ⇒ +B/A; “100:15” ⇒ +15%).</li>
+                        <li><b>Không tính</b> các đợt phải bỏ tiền ra mua: quyền mua/phát hành thêm, bán ưu đãi, phát hành riêng lẻ, ESOP cho CBCNV, trái phiếu chuyển đổi.</li>
+                        <li><b>Dòng so sánh:</b> “Vốn góp” = không sinh lời; “Gửi ngân hàng 7%/năm” = lãi kép theo tháng; “Đầu tư cổ phiếu” = số cp × giá đóng cửa tháng gần nhất + tiền cổ tức đã nhận.</li>
+                        <li>Dữ liệu là <b>lịch sử giá</b> và <b>lịch sử cổ tức thực tế</b> của mã; kết quả chỉ mang tính tham khảo, không phải khuyến nghị đầu tư.</li>
+                    </ul>
                 </div>
-                <div class="accum-summary" id="accumSummary"></div>
             </div>
 
-            <!-- 7. BÁO CÁO -->
-            <div class="reports-block">
-                <h3>Báo cáo</h3>
-                <div class="report-tabs">
-                    <span class="active" data-category="financial">Báo cáo tài chính</span>
-                    <span data-category="annual">Báo cáo thường niên</span>
-                    <span data-category="agm">Nghị quyết ĐHĐCĐ</span>
-                    <span data-category="prospectus">Bản cáo bạch</span>
+            <!-- 7. BÁO CÁO + TIN TỨC LIÊN QUAN (chia 2 nửa) -->
+            <div class="reports-news-split">
+                <div class="reports-block">
+                    <h3>Báo cáo</h3>
+                    <div class="report-tabs">
+                        <span class="active" data-category="financial">Báo cáo tài chính</span>
+                        <span data-category="annual">Báo cáo thường niên</span>
+                        <span data-category="agm">Nghị quyết ĐHĐCĐ</span>
+                        <span data-category="prospectus">Bản cáo bạch</span>
+                    </div>
+                    <div id="reportList">
+                        <div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                    </div>
                 </div>
-                <div id="reportList">
-                    <div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                <div class="stock-news-block" id="stockNewsBlock">
+                    <h3>Tin tức liên quan <span class="sn-sym" id="stockNewsSymbol"></span></h3>
+                    <div class="stock-news-list" id="stockNewsList">
+                        <div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                    </div>
                 </div>
             </div>
 
@@ -4030,11 +4527,36 @@
         };
         const reportsData = {};
 
+        // Số báo cáo HIỂN THỊ trong block (backend trả tối đa 20, phần còn lại cuộn bên trong).
+        const REPORT_VISIBLE = 5;
+        // Chiều cao CỐ ĐỊNH của danh sách = chiều cao đúng REPORT_VISIBLE dòng.
+        // Đo 1 lần từ danh mục có đủ dòng rồi giữ nguyên cho MỌI danh mục (danh mục ít báo cáo
+        // cũng không co lại → block Báo cáo + block Tin tức liên quan luôn cùng 1 kích thước).
+        let reportListFixedH = 0;
+
+        function fitReportScroll() {
+            const list = document.getElementById('reportList');
+            if (!list) return;
+            const items = list.querySelectorAll('.report-item');
+            if (items.length > REPORT_VISIBLE) {
+                // Đo theo bề rộng hiện tại (tiêu đề 1 hay 2 dòng đều đúng)
+                const h = items[REPORT_VISIBLE].offsetTop - items[0].offsetTop;
+                if (h > 0) reportListFixedH = h;
+            } else if (items.length && !reportListFixedH) {
+                // Mã chỉ có ít báo cáo (chưa từng đo được) → ước lượng theo chiều cao trung bình 1 dòng
+                reportListFixedH = Math.round((list.scrollHeight / items.length) * REPORT_VISIBLE);
+            }
+            if (reportListFixedH > 0) list.style.height = reportListFixedH + 'px';
+        }
+
         function renderReports(category, items) {
             const list = document.getElementById('reportList');
             if (!list) return;
             if (!items || !items.length) {
                 list.innerHTML = '<div class="info-empty">Không có báo cáo cho danh mục này</div>';
+                // Danh mục ít báo cáo → khối Báo cáo thấp lại → nửa phải thu chiều cao theo.
+                fitReportScroll();
+                syncStockNewsHeight();
                 return;
             }
             list.innerHTML = items.map(item => {
@@ -4050,12 +4572,17 @@
                     </a>
                 `;
             }).join('');
+            // Giới hạn 5 báo cáo hiển thị (còn lại cuộn) RỒI mới khớp chiều cao cho nửa phải.
+            fitReportScroll();
+            syncStockNewsHeight();
         }
 
         async function loadReports(symbol, category) {
             const list = document.getElementById('reportList');
             if (list) {
                 list.innerHTML = '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+                fitReportScroll();
+                syncStockNewsHeight();
             }
             try {
                 const data = await api(`/stocks/${encodeURIComponent(symbol)}/reports?category=${encodeURIComponent(category)}`);
@@ -4066,7 +4593,179 @@
                 if (list) {
                     list.innerHTML = '<div class="info-empty">Không thể tải dữ liệu báo cáo</div>';
                 }
+                fitReportScroll();
+                syncStockNewsHeight();
             }
+        }
+
+        // ===== TIN TỨC LIÊN QUAN (nửa phải của khối Báo cáo) =====
+        // Lấy từ /api/news/related — backend khớp mã trong tiêu đề/tags/tóm tắt/NỘI DUNG
+        // + từ khoá thương hiệu (VD "Techcombank", "Vinhomes"); tin khớp MÃ luôn xếp trước.
+        let stockNewsItems = [];
+        let stockNewsSymbol = '';
+        let stockNewsBrandLoaded = '';
+
+        // Từ khoá phụ suy ra từ tên công ty. CHỈ nhận từ khoá ĐỦ ĐẶC TRƯNG để tránh nhiễu:
+        //   "Ngân hàng TMCP Kỹ Thương Việt Nam (Techcombank)" → "Techcombank" (tên trong ngoặc)
+        //   "Công ty cổ phần Vinhomes" → "Vinhomes", "… Chứng khoán VNDIRECT" → "VNDIRECT"
+        //   "Công ty cổ phần Sữa Việt Nam" → "" (bỏ "Sữa" quá chung)
+        //   "… Chứng khoán Sài Gòn - Hà Nội" → "" (bỏ "Hà Nội" — tin Hà Nội không liên quan cổ phiếu)
+        const NAME_STOPWORDS = [
+            'công', 'ty', 'cổ', 'phần', 'cp', 'ctcp', 'tập', 'đoàn', 'tổng', 'ngân', 'hàng',
+            'tmcp', 'thương', 'mại', 'dịch', 'vụ', 'đầu', 'tư', 'tài', 'chính', 'chứng', 'khoán',
+            'sản', 'xuất', 'nhập', 'khẩu', 'bất', 'động', 'việt', 'nam',
+            'and', 'group', 'joint', 'stock', 'company', 'corp', 'corporation', 'investment',
+            'holding', 'holdings', 'services', 'service', 'jsc', 'bank', 'vietnam'
+        ];
+        const BRAND_MIN_LEN = 6; // "Vinhomes" (8) · "VNDIRECT" (8) · "Techcombank" (11)
+
+        function brandKeywordFromName(name) {
+            const raw = String(name || '').trim();
+            if (!raw) return '';
+            // 1) Tên thương hiệu trong ngoặc (VD "(Techcombank)") — bỏ nếu chỉ là tên sàn
+            const inParen = raw.match(/\(([^)]+)\)/);
+            if (inParen) {
+                const kw = inParen[1].trim();
+                const isExchange = /^(HOSE|HNX|UPCOM|UPCoM|HSX)\.?$/i.test(kw);
+                if (!isExchange && kw.length >= BRAND_MIN_LEN) return kw;
+            }
+            // 2) Từ ĐƠN dài nhất còn lại sau khi bỏ từ loại hình doanh nghiệp
+            const tokens = raw.replace(/[(),.\-–]/g, ' ').split(/\s+/)
+                .filter(t => t && NAME_STOPWORDS.indexOf(t.toLowerCase()) < 0);
+            const best = tokens.filter(t => t.length >= BRAND_MIN_LEN)
+                .sort((a, b) => b.length - a.length)[0];
+            return best || '';
+        }
+
+        function openStockNews(id, slug) {
+            if (!id) return;
+            const url = slug ? ('/' + slug + '-' + id + '.html') : ('/tintuc?id=' + id);
+            // Trang chi tiết cổ phiếu có thể nằm SÂU trong iframe (shell → CoPhieu.html → StockDetail):
+            // gửi thẳng lên window.top (shell) vì iframe cha trung gian KHÔNG chuyển tiếp message này.
+            // Shell nhận 'tunix-open-tintuc' → mở trang chi tiết bài viết trong vùng nội dung.
+            const topWin = window.top;
+            if (topWin && topWin !== window) {
+                try {
+                    topWin.postMessage({ type: 'tunix-open-tintuc', id: id, slug: slug || '' }, '*');
+                    return;
+                } catch (e) { /* ignore → điều hướng trực tiếp bên dưới */ }
+            }
+            // Mở trực tiếp (trang độc lập, không có shell)
+            location.href = url;
+        }
+
+        function stockNewsDate(stamp) {
+            if (!stamp) return '';
+            const d = new Date(stamp);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        // Nhãn chuyên mục tiếng Việt (giống trang Tin tức) — DB lưu slug
+        const STOCK_NEWS_CAT = {
+            'chung-khoan': 'Chứng khoán',
+            'ngan-hang': 'Ngân hàng',
+            'bat-dong-san': 'Bất động sản',
+            'doanh-nghiep': 'Doanh nghiệp',
+            'dong-tien-thong-minh': 'Kinh doanh',
+            'tai-chinh-quoc-te': 'Quốc tế',
+            'cong-nghe': 'Công nghệ',
+            'tin-tuc': 'Tin tức',
+        };
+
+        function stockNewsCatLabel(slug) {
+            const key = String(slug || '').trim().toLowerCase();
+            if (!key) return '';
+            return STOCK_NEWS_CAT[key] || key.replace(/-/g, ' ');
+        }
+
+        function renderStockNews(items, symbol) {
+            const list = document.getElementById('stockNewsList');
+            if (!list) return;
+            stockNewsItems = Array.isArray(items) ? items : [];
+            if (!stockNewsItems.length) {
+                list.innerHTML = '<div class="info-empty">Chưa có bài viết nào liên quan đến ' +
+                    escapeHtml(symbol) + ' trong dữ liệu TuniX.</div>';
+                return;
+            }
+            list.innerHTML = stockNewsItems.map(n => {
+                const thumb = n.image_url
+                    ? '<img src="' + escapeHtml(n.image_url) + '" alt="" loading="lazy">'
+                    : '<i class="fas fa-newspaper"></i>';
+                const cat = stockNewsCatLabel(n.category);
+                const date = stockNewsDate(n.published_at || n.created_at);
+                const meta = [
+                    cat ? '<span class="sn-cat">' + escapeHtml(cat) + '</span>' : '',
+                    date ? '<span>' + date + '</span>' : ''
+                ].filter(Boolean).join('');
+                const href = n.slug ? ('/' + n.slug + '-' + n.id + '.html') : ('/tintuc?id=' + n.id);
+                return '<a class="sn-item" href="' + escapeHtml(href) + '" data-id="' + n.id +
+                    '" data-slug="' + escapeHtml(n.slug || '') + '">' +
+                    '<span class="sn-thumb">' + thumb + '</span>' +
+                    '<span class="sn-body"><span class="sn-title">' + escapeHtml(n.title || '') + '</span>' +
+                    '<span class="sn-meta">' + meta + '</span></span>' +
+                '</a>';
+            }).join('');
+
+            // Ảnh lỗi → icon thay thế (tránh khung vỡ)
+            list.querySelectorAll('.sn-thumb img').forEach(im => {
+                im.addEventListener('error', function() {
+                    const ph = document.createElement('i');
+                    ph.className = 'fas fa-newspaper';
+                    if (this.parentNode) this.parentNode.replaceChild(ph, this);
+                });
+            });
+            // Click → mở bài viết trong app (không điều hướng iframe sang trang tin).
+            // Nhường Ctrl/Cmd/Shift + click cho trình duyệt (mở tab mới) như link thường.
+            list.querySelectorAll('.sn-item').forEach(a => {
+                a.addEventListener('click', function(ev) {
+                    if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+                    ev.preventDefault();
+                    openStockNews(this.getAttribute('data-id'), this.getAttribute('data-slug'));
+                });
+            });
+        }
+
+        // Chiều cao khối tin tức = ĐÚNG chiều cao khối Báo cáo (tin nhiều thì cuộn bên trong).
+        function syncStockNewsHeight() {
+            const rep = document.querySelector('.reports-news-split > .reports-block');
+            const news = document.getElementById('stockNewsBlock');
+            if (!rep || !news) return;
+            if (window.innerWidth <= 780) {
+                // 1 cột: khối tin tức để cao tự nhiên (danh sách tự giới hạn 320px).
+                news.__syncedH = 0;
+                news.style.height = '';
+                return;
+            }
+            const h = Math.round(rep.getBoundingClientRect().height);
+            if (h <= 0 || Math.abs(h - (news.__syncedH || 0)) < 1) return;
+            news.__syncedH = h;
+            news.style.height = h + 'px';
+        }
+
+        async function loadStockNews(symbol, keyword) {
+            const list = document.getElementById('stockNewsList');
+            const symEl = document.getElementById('stockNewsSymbol');
+            if (!list) return [];
+            stockNewsSymbol = symbol;
+            if (symEl) symEl.textContent = symbol;
+            if (!keyword) {
+                list.innerHTML = '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+            }
+            let items = [];
+            try {
+                let url = `/news/related?symbol=${encodeURIComponent(symbol)}&limit=20`;
+                if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+                const data = await api(url);
+                items = Array.isArray(data) ? data : [];
+            } catch (error) {
+                console.error('Failed to load related news:', error);
+            }
+            if (stockNewsSymbol !== symbol) return items; // mã đã đổi trong lúc chờ → bỏ kết quả cũ
+            renderStockNews(items, symbol);
+            syncStockNewsHeight();
+            notifyParentHeight();
+            return items;
         }
 
         // ===== DANH SÁCH THEO DÕI (favorites) — theo dõi theo tài khoản =====
@@ -4296,6 +4995,37 @@
             }
         }
 
+        // Hồ sơ doanh nghiệp — CHỈ có khi dữ liệu lấy từ vnstock (fallback lúc Simplize rỗng)
+        function buildProfileHtml(p) {
+            if (!p) return '';
+            const rows = [
+                ['Loại hình', p.company_type],
+                ['Ngày thành lập', p.founded_date],
+                ['Ngày niêm yết', p.listing_date],
+                ['Sàn niêm yết', p.exchange],
+                ['Vốn điều lệ', p.charter_capital],
+                ['Số nhân sự', p.number_of_employees],
+                ['KL niêm yết', p.listed_volume],
+                ['KL đang lưu hành', p.outstanding_shares],
+                ['Người đại diện', p.ceo_name],
+                ['Mã số thuế', p.tax_id],
+                ['Kiểm toán', p.auditor],
+                ['Điện thoại', p.phone],
+                ['Email', p.email],
+                ['Website', p.website]
+            ].filter(r => String(r[1] || '').trim());
+            if (!rows.length && !String(p.address || '').trim()) return '';
+            const addressHtml = String(p.address || '').trim()
+                ? `<h4>Địa chỉ</h4><p>${escapeHtml(String(p.address).trim())}</p>`
+                : '';
+            const gridHtml = rows.length
+                ? `<div class="info-kv-grid">${rows.map(r =>
+                    `<div class="info-kv"><span class="k">${escapeHtml(r[0])}</span><span class="v">${escapeHtml(String(r[1]).trim())}</span></div>`
+                ).join('')}</div>`
+                : '';
+            return `<h4>Hồ sơ doanh nghiệp</h4>${gridHtml}${addressHtml}`;
+        }
+
         // Dựng HTML Tóm tắt doanh nghiệp — dùng chung cho click lẫn preload nền
         function buildCompanySummaryHtml(s) {
             const section = (secTitle, text) => {
@@ -4313,6 +5043,7 @@
             return `
                 <div class="info-company-name">${escapeHtml(s.name_vi)}</div>
                 <div class="info-company-en">${escapeHtml(s.name_en || '')}</div>
+                ${buildProfileHtml(s.profile)}
                 ${section('Giới thiệu chung', s.business_overall)}
                 ${section('Ngành nghề kinh doanh', s.business_line)}
                 ${section('Sản phẩm & Dịch vụ', s.main_service)}
@@ -4502,7 +5233,9 @@
                 loadProfitAnalysis(symbol);
                 loadShareholderStructure(symbol);
                 loadReports(symbol, 'financial');
+                loadStockNews(symbol);   // nửa phải khối Báo cáo (chưa có tên công ty → chỉ khớp theo MÃ)
                 loadAccumulation(symbol);
+                loadTuniAnalysis(symbol);
                 loadOrderBook(symbol);
                 loadRecentTrades(symbol);
                 loadPeerComparison(symbol);
@@ -4545,6 +5278,13 @@
                     // Giá trị hiện tại trong bảng cổ đông cần giá -> render lại sau khi có quote.
                     if (shareholderData) {
                         renderShareholderTable();
+                    }
+                    // Đã có TÊN CÔNG TY → nạp lại tin liên quan kèm từ khoá thương hiệu
+                    // (VD Techcombank/Vinhomes) để bắt thêm các bài gọi mã bằng tên. Mỗi mã 1 lần.
+                    const brand = brandKeywordFromName(quote.name);
+                    if (brand && brand.toUpperCase() !== symbol && stockNewsBrandLoaded !== symbol) {
+                        stockNewsBrandLoaded = symbol;
+                        loadStockNews(symbol, brand);
                     }
                 }
                 // ?fs=1 → bật toàn màn hình sau khi chart nạp (mặc định VNINDEX).
@@ -4710,15 +5450,51 @@
             return `${y}-${String(m0 + 1).padStart(2, '0')}`;
         }
 
+        // Chuỗi số từ nguồn dữ liệu: dấu PHẨY phân cách nghìn + dấu CHẤM là phần thập phân
+        // ("5,035.18 đồng/CP" ⇒ 5035.18, KHÔNG phải 503518). Dữ liệu kiểu Việt Nam
+        // ("5.035,18") cũng phải đúng ⇒ quy tắc: dấu xuất hiện SAU CÙNG là dấu thập phân.
+        // Chỉ có 1 loại dấu mà khối cuối đúng 3 chữ số ⇒ phân cách nghìn ("1,000" ⇒ 1000);
+        // còn lại là thập phân ("10.5" ⇒ 10.5).
         function parseVnNumber(s) {
             if (s == null) return NaN;
-            const n = Number(String(s).replace(/[,.]/g, ''));
+            let t = String(s).trim().replace(/\s/g, '');
+            if (!t) return NaN;
+            const iComma = t.lastIndexOf(',');
+            const iDot = t.lastIndexOf('.');
+            let dec = '';
+            if (iComma >= 0 && iDot >= 0) {
+                dec = iComma > iDot ? ',' : '.';
+            } else {
+                const sep = iComma >= 0 ? ',' : (iDot >= 0 ? '.' : '');
+                if (sep && t.length - t.lastIndexOf(sep) - 1 !== 3) dec = sep;
+            }
+            if (dec) {
+                const other = dec === ',' ? '.' : ',';
+                const i = t.lastIndexOf(dec);
+                t = t.slice(0, i).split(other).join('').split(dec).join('') + '.' + t.slice(i + 1);
+            } else {
+                t = t.split(',').join('').split('.').join('');
+            }
+            const n = Number(t);
             return Number.isFinite(n) ? n : NaN;
         }
 
-        function parseDividend(content) {
-            const text = String(content || '').toLowerCase().replace(/\s+/g, ' ');
+        // Từ khoá chỉ các đợt KHÔNG phải cổ tức/thưởng cho cổ đông → KHÔNG tính vào lợi nhuận:
+        // quyền mua, bán ưu đãi, phát hành riêng (ESOP/CBCNV), trái phiếu chuyển đổi, tăng vốn…
+        const DIV_EXCLUDE_RE = /(quyền mua|mua cổ phiếu|bán ưu đãi|ưu đãi|chào bán|phát hành riêng|esop|cbc nv|cán bộ công nhân|chuyển đổi|trái phiếu|tăng vốn|đấu giá)/;
+
+        // Phân tích MỘT phần của đợt (một đợt có thể gồm nhiều phần ngăn bởi <br>)
+        function parseDividendPart(partText) {
+            const text = ' ' + String(partText || '').toLowerCase().replace(/\s+/g, ' ').trim() + ' ';
             const out = { cash: 0, stockPct: 0 };
+
+            // CHỈ nhận đợt cổ tức / thưởng cho cổ đông
+            if (!/(cổ tức|thưởng)/.test(text)) return out;
+            // Loại quyền mua / bán ưu đãi / phát hành riêng / ESOP / trái phiếu chuyển đổi…
+            if (DIV_EXCLUDE_RE.test(text)) return out;
+            // Có GIÁ phát hành ("giá 20.000 đ/cp") ⇒ đợt mua ưu đãi (phải bỏ tiền ra mua), không phải cổ tức
+            if (/giá\s*[\d.,]+\s*(?:đ|vnd|vnđ|đồng|dong)/.test(text)) return out;
+
             const isStock = /(cổ phiếu|co phieu|thưởng phiếu|thuong phieu|thưởng cp|thuong cp|cp thưởng)/.test(text);
             const isCash = /(tiền mặt|tien mat|bằng tiền|bang tien)/.test(text) || /[đd]\/\s*(cp|cổ phiếu|co phieu)/.test(text) || /đồng\/(cp|cổ phiếu|co phieu)/.test(text);
 
@@ -4728,7 +5504,7 @@
                 out.cash = parseVnNumber(m[1]);
             }
 
-            // 2) Tiền mặt theo % mệnh giá (10.000đ): "bằng tiền mặt 5%"
+            // 2) Tiền mặt theo % mệnh giá (10.000đ): "bằng tiền mặt 5%", "Cổ tức bằng Tiền, tỷ lệ 10%"
             if (!out.cash && isCash) {
                 m = text.match(/(\d+(?:[.,]\d+)?)\s*%/);
                 if (m) {
@@ -4745,12 +5521,14 @@
                 }
             }
 
-            // 4) Tỷ lệ cổ phiếu "A:B" (vd "tỷ lệ 20:3" => 15%, "tỷ lệ 100:15" => 15%)
-            if (isStock || /tỷ lệ\s*\d+\s*:\s*\d+/.test(text)) {
-                m = text.match(/tỷ lệ\s*(\d+)\s*[:/]\s*(\d+)/) || text.match(/(\d+)\s*cp\s*[:/]\s*(\d+)\s*cp/);
+            // 4) Tỷ lệ chia cổ phiếu "A:B" (vd "20:3" => 15%, "100:15" => 15%, "1:1" => 100%,
+            //    "100:10.5" => 10,5%) — chấp nhận cả dấu chấm/phẩy thập phân
+            if (isStock || /tỷ lệ\s*\d+\s*[:/]\s*\d+/.test(text)) {
+                m = text.match(/tỷ lệ\s*(\d+(?:[.,]\d+)?)\s*[:/]\s*(\d+(?:[.,]\d+)?)/) ||
+                    text.match(/(\d+(?:[.,]\d+)?)\s*cp\s*[:/]\s*(\d+(?:[.,]\d+)?)\s*cp/);
                 if (m) {
-                    const a = parseInt(m[1], 10);
-                    const b = parseInt(m[2], 10);
+                    const a = parseFloat(m[1].replace(',', '.'));
+                    const b = parseFloat(m[2].replace(',', '.'));
                     if (a > 0) out.stockPct = (b / a) * 100;
                 }
             }
@@ -4758,6 +5536,22 @@
             if (!Number.isFinite(out.cash) || out.cash < 0) out.cash = 0;
             if (!Number.isFinite(out.stockPct) || out.stockPct < 0 || out.stockPct > 1000) out.stockPct = 0;
             return out;
+        }
+
+        // Một đợt có thể gồm nhiều phần (vừa cổ tức cổ phiếu vừa cổ tức tiền mặt) →
+        // bỏ phần không phải cổ tức/thưởng rồi gộp: tiền mặt lấy phần lớn nhất,
+        // tỷ lệ cổ phiếu NHÂN DỒN (tránh cộng trùng khi cùng đợt được mô tả 2 lần).
+        function parseDividend(content) {
+            const parts = String(content || '').split(/<br\s*\/?>|\n|;|\+/i);
+            let cash = 0;
+            let stockFactor = 1;
+            parts.forEach(part => {
+                const r = parseDividendPart(part);
+                if (r.cash > cash) cash = r.cash;
+                if (r.stockPct > 0) stockFactor *= (1 + r.stockPct / 100);
+            });
+            const stockPct = stockFactor > 1 ? (stockFactor - 1) * 100 : 0;
+            return { cash: cash, stockPct: stockPct };
         }
 
         function buildAccumMonthlyPrices(history) {
@@ -4815,6 +5609,8 @@
             const capital = [];
             const bank = [];
             const stock = [];
+            const contributions = [];   // lịch sử góp vốn từng tháng (hiển thị nửa phải)
+            const dividendEvents = [];  // lịch sử chia cổ tức đã áp vào danh mục
 
             // Đường 1: vốn góp thuần (không lãi). Đường 2: gửi ngân hàng lãi kép 7%/năm
             const monthlyRate = ACCUM_BANK_RATE / 12;
@@ -4825,16 +5621,21 @@
                 bank.push(bankBalance);
             }
 
-            // Gom cổ tức (5 năm) theo tháng
+            // Gom cổ tức (5 năm) theo tháng — CHỈ những đợt cổ tức/thưởng (xem parseDividend):
+            // quyền mua / bán ưu đãi / phát hành riêng… đã bị loại ở bước parse.
             const divByMonth = {};
+            const seenDiv = {};   // chống trùng: nguồn dữ liệu đôi khi trả 2 dòng cho CÙNG một đợt
             (Array.isArray(dividends) ? dividends : []).forEach(d => {
                 const k = accumMonthKey(d.date);
                 if (!k) return;
                 const parsed = parseDividend(d.content);
-                if (parsed.cash > 0 || parsed.stockPct > 0) {
-                    if (!divByMonth[k]) divByMonth[k] = [];
-                    divByMonth[k].push(parsed);
-                }
+                if (parsed.cash <= 0 && parsed.stockPct <= 0) return;
+                // Cùng ngày + cùng giá trị ⇒ coi là cùng một đợt, chỉ tính 1 lần
+                const dedupKey = d.date + '|' + parsed.cash.toFixed(2) + '|' + parsed.stockPct.toFixed(4);
+                if (seenDiv[dedupKey]) return;
+                seenDiv[dedupKey] = true;
+                if (!divByMonth[k]) divByMonth[k] = [];
+                divByMonth[k].push({ cash: parsed.cash, stockPct: parsed.stockPct, date: d.date, content: d.content });
             });
 
             // Đường 3: DCA mua cổ phiếu theo giá thị trường + cổ tức
@@ -4844,19 +5645,89 @@
             for (let i = 0; i < months.length; i++) {
                 const m = months[i];
                 const price = m.price;
+                let boughtShares = 0;
                 if (price !== null && price > 0) {
-                    shares += monthly / price;
+                    boughtShares = monthly / price;
+                    shares += boughtShares;
                 }
                 const k = accumMonthKeyFrom(m.year, m.month - 1);
                 const divs = divByMonth[k] || [];
+                let cashThisMonth = 0;
+                let sharesFromDividend = 0;
                 divs.forEach(div => {
-                    if (div.cash > 0) cash += div.cash * shares;
-                    if (div.stockPct > 0) shares *= (1 + div.stockPct / 100);
+                    const sharesBefore = shares;
+                    let cashReceived = 0;
+                    let stockShares = 0;
+                    if (div.cash > 0) {
+                        cashReceived = div.cash * shares;
+                        cash += cashReceived;
+                        cashThisMonth += cashReceived;
+                    }
+                    if (div.stockPct > 0) {
+                        stockShares = shares * (div.stockPct / 100);
+                        shares += stockShares;
+                        sharesFromDividend += stockShares;
+                    }
+                    dividendEvents.push({
+                        date: div.date,
+                        content: div.content,
+                        cashPerShare: div.cash,
+                        stockPct: div.stockPct,
+                        sharesBefore: sharesBefore,
+                        cashReceived: cashReceived,
+                        stockShares: stockShares,
+                        cashTotalAfter: cash,
+                        sharesAfter: shares
+                    });
+                });
+                contributions.push({
+                    year: m.year,
+                    month: m.month,
+                    price: price,
+                    boughtShares: boughtShares,
+                    shares: shares,
+                    sharesFromDividend: sharesFromDividend,
+                    cashThisMonth: cashThisMonth,
+                    cashTotal: cash,
+                    invested: monthly * (i + 1)
                 });
                 stock.push(hasPrice && price !== null && price > 0 ? shares * price + cash : capital[i]);
             }
 
-            return { capital, bank, stock };
+            return { capital, bank, stock, contributions, dividendEvents };
+        }
+
+        // Chiều cao biểu đồ khớp với nửa phải: nhiều/ít/không có đợt cổ tức → nửa phải cao thấp
+        // khác nhau nên tính lại mỗi lần render:
+        //  1) Đo chiều cao TỰ NHIÊN của nửa phải (tạm hạ chart về 0 để không tự ảnh hưởng chính nó).
+        //  2) Đặt chiều cao chart = phần còn lại → đáy 2 nửa trùng nhau khi bên phải cao hơn.
+        //  3) Nếu bên phải THẤP hơn (ít/không có cổ tức) → kéo nửa phải cao bằng nửa trái
+        //     (2 khối lịch sử dàn đều nhờ flex).
+        function fitAccumChartHeight() {
+            const left = document.querySelector('.accum-left');
+            const right = document.querySelector('.accum-right');
+            const chart = document.getElementById('accumChart');
+            if (!left || !right || !chart) return;
+            // Màn hẹp: 2 nửa xếp dọc → dùng chiều cao mặc định của CSS
+            if (window.innerWidth <= 780) {
+                chart.style.height = '';
+                right.style.minHeight = '';
+                return;
+            }
+            const prevHeight = chart.style.height;
+            const prevMinHeight = right.style.minHeight;
+            chart.style.height = '0px';
+            right.style.minHeight = '0px';
+            const rightNatural = right.getBoundingClientRect().height;
+            const nonChart = left.getBoundingClientRect().height;   // controls + note + legend + summary
+            chart.style.height = prevHeight;
+            right.style.minHeight = prevMinHeight;
+
+            const h = Math.max(220, Math.min(Math.round(rightNatural - nonChart), 640));
+            chart.style.height = h + 'px';
+            // Nửa trái cao hơn (bên phải ít nội dung) → kéo nửa phải cao bằng cho cân đối
+            const leftHeight = left.getBoundingClientRect().height;
+            right.style.minHeight = leftHeight > rightNatural ? Math.round(leftHeight) + 'px' : '';
         }
 
         function renderAccumChart(months, series, monthly) {
@@ -4878,7 +5749,10 @@
                 return;
             }
 
-            const W = 820, H = 300;
+            // Đo kích thước THẬT của vùng biểu đồ để vẽ 1:1 (không bị méo chữ khi chiều cao thay đổi
+            // theo nội dung nửa phải). Fallback 820x300 khi chưa có kích thước (mobile).
+            const W = Math.max(320, Math.round(chartEl.clientWidth) || 820);
+            const H = Math.max(180, Math.round(chartEl.clientHeight) || 300);
             const padL = 52, padR = 14, padT = 14, padB = 30;
             const plotW = W - padL - padR;
             const plotH = H - padT - padB;
@@ -5028,6 +5902,76 @@
             `;
         }
 
+        // ===== Nửa PHẢI: lịch sử góp vốn theo tháng + lịch sử chia cổ tức =====
+        // Đây là căn cứ để ra con số "Đầu tư cổ phiếu + cổ tức" ở nửa trái.
+        function renderAccumHistory(series, monthly) {
+            const el = document.getElementById('accumHistory');
+            if (!el) return;
+            const contributions = series.contributions || [];
+            const divEvents = series.dividendEvents || [];
+            if (!contributions.length) {
+                el.innerHTML = '<div class="acc-hist-empty">Không có dữ liệu góp vốn.</div>';
+                return;
+            }
+
+            const fmtVnd = v => Math.round(v).toLocaleString('vi-VN') + ' đ';
+            // Cổ tức/CP có thể lẻ tới 2 số thập phân (vd 5,035.18 đ/cp) → giữ phần thập phân.
+            const fmtVndExact = v => v.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' đ';
+            const fmtShares = v => v.toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+
+            // Mới nhất lên đầu
+            const contribRows = contributions.slice().reverse().map(c => {
+                const priceTxt = (c.price !== null && c.price > 0)
+                    ? `Giá ${fmtVnd(c.price)} → mua ${fmtShares(c.boughtShares)} cp`
+                    : 'Chưa có giá phiên → giữ tiền mặt';
+                const divTxt = c.sharesFromDividend > 0 ? ` · +${fmtShares(c.sharesFromDividend)} cp cổ tức` : '';
+                const cashTxt = c.cashThisMonth > 0 ? ` · nhận cổ tức tiền ${fmtVnd(c.cashThisMonth)}` : '';
+                return '<div class="acc-row">' +
+                    '<div class="acc-row-main"><span>' + String(c.month).padStart(2, '0') + '/' + c.year + '</span>' +
+                    '<span class="acc-row-amt">+' + fmtVnd(monthly) + '</span></div>' +
+                    '<div class="acc-row-sub">' + priceTxt + divTxt + cashTxt +
+                    '<br>Luỹ kế: <b>' + fmtShares(c.shares) + ' cp</b> · vốn đã góp ' + fmtVnd(c.invested) + '</div>' +
+                    '</div>';
+            }).join('');
+
+            const divRows = divEvents.length
+                ? divEvents.slice().reverse().map(d => {
+                    let label = 'Cổ tức';
+                    let amount = '';
+                    let sub = '';
+                    if (d.cashPerShare > 0) {
+                        label = 'Cổ tức tiền mặt ' + fmtVndExact(d.cashPerShare) + '/cp';
+                        amount = '+' + fmtVnd(d.cashReceived);
+                        sub = fmtShares(d.sharesBefore) + ' cp được nhận';
+                    } else if (d.stockPct > 0) {
+                        label = 'Cổ tức cổ phiếu ' + fmtShares(d.stockPct) + '%';
+                        amount = '+' + fmtShares(d.stockShares) + ' cp';
+                        sub = fmtShares(d.sharesBefore) + ' cp → ' + fmtShares(d.sharesAfter) + ' cp';
+                    }
+                    return '<div class="acc-row acc-div">' +
+                        '<div class="acc-row-main"><span>' + (d.date || '—') + '</span>' +
+                        '<span class="acc-row-amt">' + amount + '</span></div>' +
+                        '<div class="acc-row-sub">' + label + (sub ? ' · ' + sub : '') +
+                        '<br>Tiền cổ tức luỹ kế: <b>' + fmtVnd(d.cashTotalAfter) + '</b></div>' +
+                        '</div>';
+                }).join('')
+                : '<div class="acc-row acc-hist-empty">Không có đợt chia cổ tức nào trong giai đoạn này.</div>';
+
+            const totalCash = divEvents.length ? divEvents[divEvents.length - 1].cashTotalAfter : 0;
+            const lastShares = contributions[contributions.length - 1].shares;
+            el.innerHTML =
+                '<div class="acc-hist-sec">' +
+                    '<div class="acc-hist-head"><span>Lịch sử đầu tư (mỗi tháng ' + fmtVnd(monthly) + ')</span>' +
+                    '<span class="acc-hist-sum">' + contributions.length + ' tháng · ' + fmtVnd(monthly * contributions.length) + '</span></div>' +
+                    '<div class="acc-hist-list">' + contribRows + '</div>' +
+                '</div>' +
+                '<div class="acc-hist-sec">' +
+                    '<div class="acc-hist-head"><span>Lịch sử chia cổ tức</span>' +
+                    '<span class="acc-hist-sum">' + divEvents.length + ' đợt · tiền ' + fmtVnd(totalCash) + ' · ' + fmtShares(lastShares) + ' cp</span></div>' +
+                    '<div class="acc-hist-list">' + divRows + '</div>' +
+                '</div>';
+        }
+
         function renderAccumulation(history, dividends) {
             const monthly = getAccumMonthlyVnd();
             const months = buildAccumMonthlyPrices(history);
@@ -5039,9 +5983,90 @@
                     : base;
             }
             const series = computeAccumSeries(months, dividends, monthly);
-            renderAccumChart(months, series, monthly);
             renderAccumSummary(series);
+            renderAccumHistory(series, monthly);
+            // Nửa phải render xong → khớp chiều cao biểu đồ với nó RỒI mới vẽ chart theo kích thước thật
+            fitAccumChartHeight();
+            renderAccumChart(months, series, monthly);
             notifyParentHeight();
+        }
+
+        // ===== 1.5 TUNIX ANALYSIS (Signal Engine — dành cho người dùng) =====
+        // Gọi /api/stocks/{symbol}/analysis — response KHÔNG chứa BUY/SELL/Entry/SL/TP (serializer whitelist).
+        function taNum(v, dec) {
+            if (v === null || v === undefined || v === '') return '—';
+            const n = Number(v);
+            if (!isFinite(n)) return '—';
+            return n.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: dec === undefined ? 2 : dec });
+        }
+        function taTile(label, value, sub, cls) {
+            return '<div class="ta-tile"><div class="k">' + label + '</div><div class="v ' + (cls || '') + '">' +
+                value + '</div>' + (sub ? '<div class="s">' + sub + '</div>' : '') + '</div>';
+        }
+        function taCondHtml(c) {
+            const mark = c.state === 'PASS' ? '<span class="ok">✓</span>'
+                : c.state === 'FAIL' ? '<span class="no">✗</span>' : '<span class="na">—</span>';
+            return '<div class="ta-cond">' + mark + '<span>' + String(c.label || c.key) + '</span></div>';
+        }
+        async function loadTuniAnalysis(symbol) {
+            const grid = document.getElementById('taGrid');
+            const meta = document.getElementById('taMeta');
+            const engine = document.getElementById('taEngine');
+            const conds = document.getElementById('taConds');
+            const condHead = document.getElementById('taCondHead');
+            if (!grid) return;
+            grid.innerHTML = '<div class="ta-tile"><div class="k">Đang tải</div><div class="v na">…</div></div>';
+            try {
+                const d = await api(`/stocks/${encodeURIComponent(symbol)}/analysis`);
+                const a = d.analysis || {};
+                const scores = d.scores || {};
+                const setup = d.setup || {};
+                const risk = d.risk || {};
+                const ai = d.ai || {};
+                const trend = a.trend || {}, mom = a.momentum || {}, rsi = a.rsi || {}, vol = a.volume || {};
+                const mf = a.money_flow || {}, rs = a.relative_strength || {};
+                const trendCls = trend.direction === 'UP' ? 'pos' : trend.direction === 'DOWN' ? 'neg' : 'na';
+                const rsiCls = rsi.state === 'OVERSOLD' ? 'pos' : rsi.state === 'OVERBOUGHT' ? 'neg' : '';
+                const mfCls = (mf.cmf || 0) > 0 ? 'pos' : (mf.cmf || 0) < 0 ? 'neg' : '';
+                const rsCls = (rs.score || 0) > 0 ? 'pos' : (rs.score || 0) < 0 ? 'neg' : '';
+                if (engine) engine.textContent = 'engine ' + (d.config_version || '');
+                if (meta) {
+                    meta.textContent = 'Cập nhật: ' + (d.as_of || '—') + ' · dữ liệu: ' + (d.status || '—') +
+                        ' · trạng thái setup: ' + (setup.state || '—');
+                }
+                grid.innerHTML = [
+                    taTile('Xu hướng', trend.label || '—', (trend.direction || '—') + ' · sức mạnh ' + taNum(trend.strength, 0), trendCls),
+                    taTile('Momentum', mom.label || '—', 'composite ' + taNum(mom.composite, 2) + '% · 3 tháng ' + taNum(mom.long_term, 1) + '%'),
+                    taTile('MA Alignment', trend.ma_alignment || '—', 'MA10 ' + taNum((trend.ma_values || {}).ma10, 0) + ' · MA20 ' + taNum((trend.ma_values || {}).ma20, 0)),
+                    taTile('RSI', taNum(rsi.value, 1), rsi.state || '', rsiCls),
+                    taTile('Volume', vol.label || '—', 'tỉ lệ ' + taNum(vol.volume_ratio, 2) + '× TB40'),
+                    taTile('Money Flow (CMF)', taNum(mf.cmf, 3), mf.state || '', mfCls),
+                    taTile('Sức mạnh tương đối', rs.label || '—', 'RS ' + taNum(rs.score, 2) + ' (so với thị trường)', rsCls),
+                    taTile('AI Score', ai.used_in_scoring ? taNum(scores.ai_score, 0) : '—',
+                        ai.used_in_scoring ? (ai.trained_models + '/' + ai.total_models + ' model hoạt động') : 'Model AI chưa được train',
+                        ai.used_in_scoring ? '' : 'na'),
+                    taTile('Risk Score', taNum(risk.risk_score, 0), risk.level || ''),
+                    taTile('TuniX Signal Score', taNum(scores.signal_score, 1), scores.label || ''),
+                    taTile('Setup Strength', setup.strength || '—', (setup.confirmations || 0) + '/' + (setup.total_conditions || 0) + ' điều kiện xác nhận' +
+                        (setup.unavailable_conditions ? ' · ' + setup.unavailable_conditions + ' chưa đánh giá được' : '')),
+                    taTile('Market State', (d.market_state || {}).regime || '—', (d.market_state || {}).benchmark || ''),
+                    taTile('Khoảng cách đỉnh 52T', taNum((a.price_structure || {}).distance_from_high_pct, 1) + '%',
+                        'vị trí trong biên: ' + taNum((a.price_structure || {}).position_in_range_pct, 0) + '%'),
+                ].join('');
+                const conditions = d.conditions || [];
+                const passed = conditions.filter((c) => c.state === 'PASS').length;
+                const unavailable = conditions.filter((c) => c.state === 'UNAVAILABLE').length;
+                if (condHead) {
+                    condHead.textContent = 'Điều kiện đang hội tụ — ' + passed + '/' + conditions.length + ' đạt' +
+                        (unavailable ? ' (' + unavailable + ' điều kiện AI chưa đánh giá được)' : '');
+                }
+                if (conds) conds.innerHTML = conditions.length ? conditions.map(taCondHtml).join('')
+                    : '<div class="ta-cond"><span class="na">—</span><span>Chưa đủ dữ liệu để đánh giá điều kiện.</span></div>';
+            } catch (err) {
+                grid.innerHTML = '<div class="ta-tile"><div class="k">Lỗi</div><div class="v na" style="font-size:12px;">' +
+                    (err && err.message ? err.message : 'Không tải được phân tích') + '</div></div>';
+                if (meta) meta.textContent = 'Không tải được phân tích cho mã này.';
+            }
         }
 
         async function loadAccumulation(symbol) {
@@ -5076,9 +6101,38 @@
             accumMonthlyInput.addEventListener('change', rerenderAccum);
         }
 
+        // Đổi bề rộng (breakpoint 2 cột ⇄ 1 cột) → chiều cao biểu đồ cần khớp lại.
+        // Chỉ vẽ lại khi bề rộng vùng biểu đồ thật sự đổi (tránh vòng lặp resize).
+        let accumResizeTimer = null;
+        let accumLastChartWidth = 0;
+        window.addEventListener('resize', function() {
+            if (!accumHistoryData) return;
+            const chart = document.getElementById('accumChart');
+            if (!chart) return;
+            const w = Math.round(chart.getBoundingClientRect().width);
+            if (Math.abs(w - accumLastChartWidth) < 4) return;
+            accumLastChartWidth = w;
+            clearTimeout(accumResizeTimer);
+            accumResizeTimer = setTimeout(function() {
+                if (accumHistoryData && accumDividendData) renderAccumulation(accumHistoryData, accumDividendData);
+            }, 180);
+        });
+
+        // Đổi breakpoint 2 cột ⇄ 1 cột (hoặc bề rộng đổi) → nửa phải phải khớp lại chiều cao nửa trái.
+        let stockNewsResizeTimer = null;
+        window.addEventListener('resize', function() {
+            clearTimeout(stockNewsResizeTimer);
+            stockNewsResizeTimer = setTimeout(function() {
+                fitReportScroll();
+                syncStockNewsHeight();
+            }, 200);
+        });
+
         loadStockDetail();
         window.addEventListener('load', () => {
             notifyParentHeight();
+            fitReportScroll();
+            syncStockNewsHeight();
             setTimeout(notifyParentHeight, 120);
         });
         window.addEventListener('resize', notifyParentHeight);

@@ -8,6 +8,7 @@ from app.core.dependencies import require_roles
 from app.db import get_db
 from app.models import News, NewsStatusEnum, RoleEnum, User
 from app.schemas import NewsCreate, NewsOut, NewsUpdate
+from app.services import news_time
 
 router = APIRouter(prefix="/news", tags=["news"])
 
@@ -45,7 +46,14 @@ def _news_out(n: News) -> dict:
         "status": n.status,
         "author_name": (n.author_name or (n.author.full_name if n.author else None)),
         "created_at": n.created_at,
+        # Ngày giờ đăng bài (đúng định dạng file input: 2026-09-12T15:50:01+07:00).
+        # Frontend ưu tiên hiển thị published_at thay cho created_at.
+        **news_time.fields_for_row(n),
     }
+
+
+# Sắp xếp bài mới nhất trước theo NGÀY GIỜ ĐĂNG (xem app/services/news_time.latest_first)
+_latest_first = news_time.latest_first
 
 
 # ---------------------------------------------------------------------------
@@ -73,7 +81,13 @@ def list_published_news(
         News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published])
     )
     if category:
-        query = query.filter(News.category == category)
+        # Hỗ trợ 1 chuyên mục ("ngan-hang") hoặc NHIỀU chuyên mục cách nhau dấu phẩy
+        # ("chung-khoan,ngan-hang,bat-dong-san") — dùng cho block "Tin tức quan trọng" trang chủ.
+        cats = [c.strip().lower() for c in str(category).split(",") if c.strip()]
+        if len(cats) > 1:
+            query = query.filter(News.category.in_(cats))
+        elif cats:
+            query = query.filter(News.category == cats[0])
 
     count = max(1, min(limit, 50))
     start = max(0, offset)
@@ -82,7 +96,7 @@ def list_published_news(
         # Tìm kiếm không phân biệt dấu: bỏ dấu cả 2 vế rồi so sánh chuỗi con.
         nkw = _strip_diacritics(search)
         nkw_nospace = nkw.replace(" ", "")
-        rows = query.order_by(News.id.desc()).all()
+        rows = _latest_first(query).all()
         if exclude_id:
             rows = [n for n in rows if n.id != exclude_id]
         if nkw:
@@ -103,7 +117,7 @@ def list_published_news(
 
     if exclude_id:
         query = query.filter(News.id != exclude_id)
-    rows = query.order_by(News.id.desc()).offset(start).limit(count).all()
+    rows = _latest_first(query).offset(start).limit(count).all()
     return [_news_out(n) for n in rows]
 
 
@@ -115,7 +129,7 @@ def list_all_news(
     db: Session = Depends(get_db),
     _user: User = Depends(require_roles(*_ADMIN_NEWS_ROLES)),
 ):
-    rows = db.query(News).order_by(News.id.desc()).all()
+    rows = _latest_first(db.query(News)).all()
     return [_news_out(n) for n in rows]
 
 
@@ -124,7 +138,7 @@ def pending_news(
     db: Session = Depends(get_db),
     _user: User = Depends(require_roles(RoleEnum.content_manager, RoleEnum.super_admin)),
 ):
-    rows = db.query(News).filter(News.status == NewsStatusEnum.pending_approval).order_by(News.id.desc()).all()
+    rows = _latest_first(db.query(News).filter(News.status == NewsStatusEnum.pending_approval)).all()
     return [_news_out(n) for n in rows]
 
 
@@ -144,30 +158,88 @@ def popular_news(limit: int = 6, db: Session = Depends(get_db)):
 
 
 # ---------------------------------------------------------------------------
-# Public: tin liên quan theo mã cổ phiếu (lọc trong tags) — dùng ở trang chi tiết cổ phiếu
+# Public: tin liên quan theo mã cổ phiếu — dùng ở trang chi tiết cổ phiếu
 # ---------------------------------------------------------------------------
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _plain_text(html: str | None) -> str:
+    """Bỏ thẻ HTML để tìm mã cổ phiếu trong phần nội dung bài viết."""
+    return _HTML_TAG_RE.sub(" ", html or "")
+
+
+def _symbol_re(sym: str) -> re.Pattern:
+    """Mã cổ phiếu phải đứng riêng (FPT trong 'FPT' nhưng không khớp 'FPTS'/'VN30FPT')."""
+    return re.compile(r"(?<![0-9A-Za-z])" + re.escape(sym) + r"(?![0-9A-Za-z])")
+
+
 @router.get("/related", response_model=list[NewsOut])
-def related_news(symbol: str = "", limit: int = 8, db: Session = Depends(get_db)):
-    """Tin liên quan cổ phiếu: chỉ trả các bài thực sự có mã trong tags/tiêu đề.
-    Có bao nhiêu trả bấy nhiêu (tối đa `limit`, mặc định 8), KHÔNG lấp bằng tin
-    không liên quan. Không có bài nào → trả về danh sách rỗng."""
+def related_news(
+    symbol: str = "",
+    keyword: str = "",
+    limit: int = 8,
+    db: Session = Depends(get_db),
+):
+    """Tin liên quan cổ phiếu (trang chi tiết cổ phiếu).
+
+    Mã cổ phiếu được tìm trong **tiêu đề, tags, tóm tắt và nội dung** bài viết
+    (khớp theo TỪ, không khớp chuỗi con: "VND" không khớp "VNDIRECT").
+
+    `keyword` là từ khoá phụ (VD tên thương hiệu: "Techcombank", "Vinhomes") do
+    frontend lấy từ tên công ty — dùng để bắt các bài viết gọi mã bằng tên.
+
+    Kết quả = **tối đa `limit` tin GẦN NHẤT** trong số các bài có liên quan
+    (sắp theo NGÀY GIỜ ĐĂNG giảm dần — không sắp theo mức độ liên quan).
+    Không có bài nào → trả danh sách rỗng (KHÔNG lấp bằng tin không liên quan).
+    """
     limit = max(1, min(limit, 50))
-    sym = (symbol or "").strip().upper()
+    sym = re.sub(r"[^A-Z0-9]", "", (symbol or "").strip().upper())
+    kw = (keyword or "").strip()
 
     if not sym:
         return []
 
-    matched = (
-        db.query(News)
-        .filter(
-            News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published]),
-            (News.tags.ilike(f"%{sym}%")) | (News.title.ilike(f"%{sym}%")),
+    sym_like = f"%{sym}%"
+    cond = (
+        News.title.ilike(sym_like)
+        | News.summary.ilike(sym_like)
+        | News.tags.ilike(sym_like)
+        | News.content.ilike(sym_like)
+    )
+    if len(kw) >= 3:
+        kw_like = f"%{kw}%"
+        cond = cond | News.title.ilike(kw_like) | News.summary.ilike(kw_like)
+
+    # Quét tối đa 400 bài (mới nhất trước) rồi chấm điểm LIÊN QUAN trong Python.
+    # `rows` đã sắp mới-nhất-trước ⇒ giữ nguyên thứ tự này = lấy `limit` tin GẦN NHẤT.
+    rows = (
+        _latest_first(
+            db.query(News).filter(
+                News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published]),
+                cond,
+            )
         )
-        .order_by(News.id.desc())
-        .limit(limit)
+        .limit(400)
         .all()
     )
-    return [_news_out(n) for n in matched]
+
+    sym_re = _symbol_re(sym)
+    kw_low = kw.lower() if len(kw) >= 3 else ""
+    related: list[News] = []
+    for n in rows:
+        title = n.title or ""
+        summary = n.summary or ""
+        tags = n.tags or ""
+        hit = bool(sym_re.search(title) or sym_re.search(tags) or sym_re.search(summary)
+                   or sym_re.search(_plain_text(n.content)))
+        if not hit and kw_low:
+            hit = kw_low in title.lower() or kw_low in summary.lower()
+        if hit:
+            related.append(n)
+
+    # Chỉ giữ bài CÓ LIÊN QUAN và lấy `limit` tin GẦN NHẤT:
+    # `related` giữ nguyên thứ tự của `rows` (mới nhất trước) nên không cần sort lại.
+    return [_news_out(n) for n in related[:limit]]
 
 
 # ---------------------------------------------------------------------------
@@ -206,6 +278,8 @@ def create_news(
         source_url=payload.source_url,
         author_id=user.id,
         status=NewsStatusEnum.pending_approval,
+        # Bài viết tay: ngày giờ đăng = thời điểm tạo (giờ VN)
+        published_at=news_time.now_vn(),
     )
     db.add(news)
     db.commit()

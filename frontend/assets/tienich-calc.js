@@ -271,6 +271,119 @@
         };
     }
 
+    // ---------- Tool 3: Chia đều vốn đầu tư ----------
+    // Người dùng CHỈ nhập: (1) tổng vốn, (2) danh sách mã. Giá hiện tại do API thị trường
+    // của TuniX cung cấp (không hard-code giá, không bắt người dùng nhập giá).
+    //   Vốn phân bổ mỗi mã = Tổng vốn / Số mã
+    //   Số lượng lý thuyết = Vốn phân bổ / Giá hiện tại
+    //   Số lượng mua      = floor(Số lượng lý thuyết / Lô) × Lô   (KHÔNG làm tròn lên để không vượt vốn)
+    //   Giá trị mua       = Số lượng mua × Giá hiện tại
+    //   Tiền dư của mã    = Vốn phân bổ − Giá trị mua
+    const ALLOC_LOT = 100; // lô giao dịch mặc định: 100 cổ phiếu
+
+    /**
+     * Chuẩn hoá danh sách mã: cắt khoảng trắng, VIẾT HOA, bỏ ký tự lạ, bỏ mã trùng (giữ thứ tự xuất hiện).
+     * @param {string|string[]} input chuỗi người dùng gõ/dán ("hpg, acb ctg HPG") hoặc mảng mã
+     * @returns {string[]} ví dụ: ['HPG','ACB','CTG']
+     */
+    function normalizeSymbols(input) {
+        const raw = Array.isArray(input) ? input : String(input == null ? '' : input).split(/[\s,;|/\\\t]+/);
+        const out = [];
+        const seen = {};
+        raw.forEach(function (s) {
+            const t = String(s == null ? '' : s).trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+            if (!t || seen[t]) return;
+            seen[t] = 1;
+            out.push(t);
+        });
+        return out;
+    }
+
+    /** Vốn phân bổ cho mỗi mã = Tổng vốn / Số mã. */
+    function equalCapital(total, count) {
+        const t = num(total), n = num(count);
+        if (!(t > 0) || !(n > 0)) return NaN;
+        return t / n;
+    }
+
+    /** Số lượng mua theo lô = floor(vốn phân bổ / giá / lô) × lô (làm tròn XUỐNG). */
+    function sharesByLot(capital, price, lot) {
+        const c = num(capital), p = num(price);
+        const L = num(lot) > 0 ? num(lot) : ALLOC_LOT;
+        if (!(c > 0) || !(p > 0)) return 0;
+        return Math.floor(c / p / L + 1e-9) * L;
+    }
+
+    /** Giá trị mua thực tế = số lượng mua × giá hiện tại. */
+    function purchaseValue(qty, price) {
+        const q = num(qty), p = num(price);
+        if (!(q > 0) || !(p > 0)) return 0;
+        return q * p;
+    }
+
+    /** Tiền dư của mã = vốn phân bổ − giá trị mua thực tế. */
+    function remainingCash(capital, value) {
+        const c = num(capital);
+        if (!isFinite(c)) return 0;
+        const v = num(value);
+        return c - (isFinite(v) ? v : 0);
+    }
+
+    /**
+     * Chia đều tổng vốn cho danh sách mã ĐÃ CÓ GIÁ hiện tại.
+     * @param {number} total tổng vốn đầu tư (đồng)
+     * @param {Array<{symbol:string, price:number, name?:string}>} items mã + giá hiện tại
+     * @param {number} [lot=100] lô giao dịch
+     * @returns {{errors:string[], rows:Array, summary:Object}} errors rỗng nghĩa là tính thành công
+     */
+    function allocateEqualCapital(total, items, lot) {
+        const errs = [];
+        const hasTotal = !(total === null || total === undefined || String(total).trim() === '');
+        const t = num(total);
+        if (!hasTotal || !isFinite(t)) {
+            errs.push('Vui lòng nhập tổng số tiền đầu tư.');
+        } else if (!(t > 0)) {
+            errs.push('Số tiền đầu tư phải lớn hơn 0.');
+        }
+        const list = (Array.isArray(items) ? items : []).filter(function (i) {
+            return i && i.symbol;
+        });
+        if (!list.length) errs.push('Vui lòng nhập ít nhất một mã cổ phiếu.');
+        if (errs.length) return { errors: errs, rows: [], summary: null };
+
+        const L = num(lot) > 0 ? num(lot) : ALLOC_LOT;
+        const count = list.length;
+        const capital = equalCapital(t, count); // có thể lẻ đồng nếu tổng vốn không chia hết
+        const rows = list.map(function (it) {
+            const price = num(it.price);
+            const qty = sharesByLot(capital, price, L);
+            const value = purchaseValue(qty, price);
+            return {
+                symbol: String(it.symbol).toUpperCase(),
+                name: it.name ? String(it.name) : '',
+                price: isFinite(price) ? price : 0,
+                capital: capital,
+                qty: qty,
+                value: round(value, 0),
+                remain: round(remainingCash(capital, value), 0)
+            };
+        });
+        const buyValue = round(rows.reduce(function (a, r) { return a + r.value; }, 0), 0);
+        return {
+            errors: [],
+            rows: rows,
+            summary: {
+                total: round(t, 0),
+                count: count,
+                lot: L,
+                capital: capital,
+                buyValue: buyValue,
+                // Tính từ tổng vốn ⇒ luôn đảm bảo: Tổng giá trị mua + Tổng tiền dư = Tổng vốn.
+                remain: round(t - buyValue, 0)
+            }
+        };
+    }
+
     // ---------- Public API ----------
     const api = {
         num: num,
@@ -279,11 +392,17 @@
         fmtVND: fmtVND,
         EVENT_LABELS: EVENT_LABELS,
         MODE_LABELS: MODE_LABELS,
+        ALLOC_LOT: ALLOC_LOT,
         validateEvents: validateEvents,
         calcAdjusted: calcAdjusted,
-        calcDeposit: calcDeposit
+        calcDeposit: calcDeposit,
+        normalizeSymbols: normalizeSymbols,
+        equalCapital: equalCapital,
+        sharesByLot: sharesByLot,
+        purchaseValue: purchaseValue,
+        remainingCash: remainingCash,
+        allocateEqualCapital: allocateEqualCapital
     };
-
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = api;
     } else {

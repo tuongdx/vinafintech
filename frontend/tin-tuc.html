@@ -376,7 +376,7 @@
             gap: 5px;
         }
 
-        /* ===== BẢN TIN TỔNG HỢP: 4 khối (1 to + 5 nhỏ / list 5 / chia đôi 2 / trung bình ~4) ===== */
+        /* ===== BẢN TIN TỔNG HỢP: các khối (1 to + 5 nhỏ / chia đôi 2 / danh sách 2 cột) ===== */
         .news-grid-digest {
             display: flex;
             flex-direction: column;
@@ -398,11 +398,24 @@
             grid-column: 2;
         }
 
-        /* Khối 2: list 5 bài */
-        .digest-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        /* Khối 2: 2 bài chia đôi */
+        .digest-half {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-auto-rows: 220px;
+            gap: 14px;
+        }
+        .news-cell.half .news-cell-title {
+            font-size: 15px;
+            -webkit-line-clamp: 2;
+        }
+
+        /* Khối 3: danh sách tin 2 cột (bên trái / bên phải) */
+        .digest-medium {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            align-items: start;
         }
         .news-row {
             display: flex;
@@ -488,30 +501,6 @@
             color: #4fb3b3;
         }
 
-        /* Khối 3: 2 bài chia đôi */
-        .digest-half {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-auto-rows: 220px;
-            gap: 14px;
-        }
-        .news-cell.half .news-cell-title {
-            font-size: 15px;
-            -webkit-line-clamp: 2;
-        }
-
-        /* Khối 4: ~4 bài cỡ trung bình */
-        .digest-medium {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-auto-rows: 190px;
-            gap: 14px;
-        }
-        .news-cell.medium .news-cell-title {
-            font-size: 14px;
-            -webkit-line-clamp: 2;
-        }
-
         /* ============================================================
                    DARK MODE
                 ============================================================ */
@@ -568,6 +557,9 @@
             .news-grid {
                 grid-template-columns: 1fr;
             }
+            .digest-medium {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -603,8 +595,8 @@
                 { slug: 'ngan-hang',              label: 'Ngân Hàng',          icon: 'fa-university' },
                 { slug: 'bat-dong-san',           label: 'Bất Động Sản',       icon: 'fa-building' },
                 { slug: 'doanh-nghiep',           label: 'Doanh Nghiệp',       icon: 'fa-briefcase' },
-                { slug: 'dong-tien-thong-minh',   label: 'Dòng Tiền Thông Minh', icon: 'fa-money-bill-wave' },
-                { slug: 'tai-chinh-quoc-te',      label: 'Tài Chính Quốc Tế',  icon: 'fa-globe' },
+                { slug: 'dong-tien-thong-minh',   label: 'Kinh doanh',         icon: 'fa-money-bill-wave' },
+                { slug: 'tai-chinh-quoc-te',      label: 'Quốc Tế',            icon: 'fa-globe' },
                 { slug: 'cong-nghe',              label: 'Công Nghệ',          icon: 'fa-microchip' },
             ];
 
@@ -701,6 +693,12 @@
                 return day + '/' + month + '/' + year + ' ' + hh + ':' + mm;
             }
 
+            // Ngày giờ ĐĂNG của bài: ưu tiên published_at (đúng ngày giờ trong file input),
+            // bài cũ chưa có thì dùng created_at.
+            function newsStamp(n) {
+                return (n && (n.published_at || n.created_at)) || '';
+            }
+
             function categoryLabel(slug) {
                 return LABEL_MAP[slug] || (slug ? slug : 'Tin Tức');
             }
@@ -783,7 +781,7 @@
                     : '<div class="no-img"><i class="fas fa-newspaper"></i></div>';
                 var cat = categoryLabel(n.category);
                 var catIc = categoryIcon(n.category);
-                var time = formatTime(n.created_at);
+                var time = formatTime(newsStamp(n));
                 var url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
                 return '<article class="news-card" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                     '<div class="thumb">' + img +
@@ -966,7 +964,7 @@
                     : '';
                 var cat = categoryLabel(n.category);
                 var catIc = categoryIcon(n.category);
-                var time = formatTime(n.created_at);
+                var time = formatTime(newsStamp(n));
                 var url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
                 return '<div class="news-cell ' + size + '" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                     img +
@@ -979,13 +977,13 @@
                 '</div>';
             }
 
-            // Dòng list (khối 2)
+            // Dòng list (dùng trong khối danh sách 2 cột)
             function digestRowHtml(n) {
                 var img = n.image_url
                     ? '<img src="' + esc(n.image_url) + '" alt="" loading="lazy" onload="window.__newsNotify && window.__newsNotify()">'
                     : '<i class="fas fa-newspaper"></i>';
                 var cat = categoryLabel(n.category);
-                var time = formatTime(n.created_at);
+                var time = formatTime(newsStamp(n));
                 var url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
                 return '<div class="news-row" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                     '<div class="nr-img">' + img + '</div>' +
@@ -1029,17 +1027,11 @@
                         return;
                     }
 
-                    // Layout 5 khối:
-                    // 1) 6 bài đầu: 1 bài TO + 5 bài NHỎ
-                    // 2) list 5 bài
-                    // 3) 2 bài chia đôi (ngang nhau)
-                    // 4) 12 bài cỡ trung bình (4 + 8 thêm)
-                    // 5) list thêm 5 bài ở dưới cùng
+                    // Layout: 6 bài đầu (1 bài TO + 5 bài NHỎ) → 2 bài chia đôi
+                    //         → 22 bài còn lại: danh sách 2 cột (trái / phải)
                     var featured = items.slice(0, 6);
-                    var listItems = items.slice(6, 11);
-                    var halfItems = items.slice(11, 13);
-                    var mediumItems = items.slice(13, 25);
-                    var listItems2 = items.slice(25, 30);
+                    var halfItems = items.slice(6, 8);
+                    var mediumItems = items.slice(8, 30);
 
                     var html = '';
                     if (featured.length) {
@@ -1047,21 +1039,13 @@
                             return digestCellHtml(n, i === 0 ? 'big' : 'small');
                         }).join('') + '</div>';
                     }
-                    if (listItems.length) {
-                        html += '<div class="digest-list">' + listItems.map(digestRowHtml).join('') + '</div>';
-                    }
                     if (halfItems.length) {
                         html += '<div class="digest-half">' + halfItems.map(function (n) {
                             return digestCellHtml(n, 'half');
                         }).join('') + '</div>';
                     }
                     if (mediumItems.length) {
-                        html += '<div class="digest-medium">' + mediumItems.map(function (n) {
-                            return digestCellHtml(n, 'medium');
-                        }).join('') + '</div>';
-                    }
-                    if (listItems2.length) {
-                        html += '<div class="digest-list">' + listItems2.map(digestRowHtml).join('') + '</div>';
+                        html += '<div class="digest-medium">' + mediumItems.map(digestRowHtml).join('') + '</div>';
                     }
 
                     gridEl.innerHTML = html;

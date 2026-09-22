@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
+import logging
 from datetime import datetime, timezone
 
 import httpx
@@ -23,6 +23,13 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models import CryptoWatchlist, Setting, User, UserAsset, UserAssetClass
 from app.services import crypto_service
+from app.services.llm_json import parse_llm_json
+
+logger = logging.getLogger(__name__)
+
+# Trần output DeepSeek (deepseek-chat tối đa 8192). Trần cũ 5000 dễ làm JSON bị cắt giữa chừng
+# khi danh mục nhiều mã → json.loads lỗi "Expecting ',' delimiter".
+_MAX_OUTPUT_TOKENS = 8000
 
 # Hệ thống prompt người dùng đặc tả — giữ nguyên bản.
 SYSTEM_PROMPT = """Bạn là hệ thống phân tích tín hiệu Crypto của TuniX. Phân tích các tài sản mà người dùng đang theo dõi và đang có vị thế, sau đó tạo ra 3 nhóm tín hiệu: CƠ HỘI, CẢNH BÁO, XU HƯỚNG.
@@ -51,7 +58,7 @@ Phân tích từng tài sản thuộc WATCHLIST hoặc POSITIONS. Đồng thời
 OUTPUT: Chỉ trả về JSON hợp lệ (không kèm giải thích ngoài JSON):
 {"opportunities":[{"symbol":"","title":"","severity":"LOW|MEDIUM|HIGH","priority":0,"price":0,"zone":"","description":"","why":"","strength":0,"confidence":0,"confirmation":""}],"alerts":[{"symbol":"","title":"","severity":"LOW|MEDIUM|HIGH|CRITICAL","priority":0,"price":0,"description":"","why":"","strength":0,"confidence":0}],"trends":[{"symbol":"","title":"","short_term":"BULLISH|NEUTRAL|BEARISH","medium_term":"BULLISH|NEUTRAL|BEARISH","long_term":"BULLISH|NEUTRAL|BEARISH","strength":0,"description":""}]}
 
-QUY TẮC CUỐI: Không bắt buộc đủ 3 nhóm — ít nhưng chất lượng cao. Trả về đúng các mã thuộc danh sách được cấp. Giá trị price ghi số thật từ dữ liệu (không bịa). strength/confidence trong 0-100."""
+QUY TẮC CUỐI: Không bắt buộc đủ 3 nhóm — ít nhưng chất lượng cao. Mỗi nhóm TỐI ĐA 8 tín hiệu; `description` và `why` viết ngắn gọn (mỗi trường ≤ 240 ký tự) để câu trả lời không bị cắt. Trả về đúng các mã thuộc danh sách được cấp. Giá trị price ghi số thật từ dữ liệu (không bịa). strength/confidence trong 0-100."""
 
 _SETTING_PREFIX = "crypto_signals:"
 _FUTURES_BASES = ("https://fapi.binance.com", "https://fapi.binance.com")
@@ -140,18 +147,6 @@ def _nearest_sr(bars: list[dict], price: float, span: int = 60):
     support = next((z for z in sorted(zones, key=lambda x: -x["c"]) if z["max"] < price), None)
     resistance = next((z for z in sorted(zones, key=lambda x: x["c"]) if z["min"] > price), None)
     return (support, resistance)
-
-
-def _clean_json(text: str) -> str:
-    text = text.strip()
-    m = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
-    if m:
-        text = m.group(1).strip()
-    start = text.find("{")
-    end = text.rfind("}")
-    if start >= 0 and end > start:
-        return text[start:end + 1]
-    return text
 
 
 def _clip(v, lo=0, hi=100):
@@ -294,7 +289,12 @@ def _store(db: Session, user: User, data: dict) -> None:
     db.commit()
 
 
-async def _llm_json(system: str, user_prompt: str) -> str:
+async def _llm_json(system: str, user_prompt: str) -> dict:
+    """Gọi DeepSeek ở chế độ JSON, trả `{content, finish_reason, usage}`.
+
+    `finish_reason == "length"` nghĩa là model bị cắt vì chạm `max_tokens` → JSON có thể cụt
+    (vẫn cứu được phần đã sinh xong nhờ `parse_llm_json`).
+    """
     if not settings.deepseek_api_key:
         raise RuntimeError("TuniAI chưa được cấu hình API key DeepSeek (DEEPSEEK_API_KEY).")
     base = (settings.deepseek_base_url or "https://api.deepseek.com").rstrip("/")
@@ -303,7 +303,8 @@ async def _llm_json(system: str, user_prompt: str) -> str:
         "model": settings.deepseek_model,
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user_prompt}],
         "temperature": 0.2,
-        "max_tokens": 5000,
+        "max_tokens": _MAX_OUTPUT_TOKENS,
+        "response_format": {"type": "json_object"},
         "stream": False,
     }
     async with httpx.AsyncClient(timeout=timeout) as client:
@@ -316,7 +317,12 @@ async def _llm_json(system: str, user_prompt: str) -> str:
     if resp.status_code != 200:
         raise RuntimeError(f"DeepSeek trả lỗi {resp.status_code}: {resp.text[:200]}")
     data = resp.json()
-    return (data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
+    choice = (data.get("choices") or [{}])[0]
+    return {
+        "content": choice.get("message", {}).get("content") or "",
+        "finish_reason": choice.get("finish_reason"),
+        "usage": data.get("usage") or {},
+    }
 
 
 def _normalize(items: list, kind: str, allowed_symbols: set[str]) -> list[dict]:
@@ -437,11 +443,23 @@ async def scan_user(db: Session, user: User) -> dict:
     }
 
     user_prompt = _build_prompt(symbols, watch, positions, inds, breadth, deriv)
-    raw = await _llm_json(SYSTEM_PROMPT, user_prompt)
+    llm = await _llm_json(SYSTEM_PROMPT, user_prompt)
+    truncated = llm.get("finish_reason") == "length"
     try:
-        parsed = json.loads(_clean_json(raw))
-    except Exception as exc:  # noqa: BLE001
-        raise RuntimeError(f"Không phân tích được JSON từ AI: {exc}")
+        parsed = parse_llm_json(llm.get("content") or "")
+    except ValueError as exc:
+        logger.warning(
+            "crypto-signals user=%s: JSON không dùng được (finish_reason=%s, usage=%s, len=%s) — cuối phản hồi: %s",
+            user.id, llm.get("finish_reason"), llm.get("usage"), len(llm.get("content") or ""),
+            (llm.get("content") or "")[-400:],
+        )
+        if truncated:
+            raise RuntimeError(
+                "AI trả lời quá dài nên bị cắt và không khôi phục được dữ liệu. Vui lòng bấm \u201cQuét tín hiệu\u201d để thử lại."
+            ) from exc
+        raise RuntimeError("AI trả về dữ liệu không đúng định dạng. Vui lòng bấm \u201cQuét tín hiệu\u201d để thử lại.") from exc
+    if truncated:
+        logger.warning("crypto-signals user=%s: phản hồi AI bị cắt (max_tokens) — đã khôi phục phần hoàn chỉnh.", user.id)
 
     allowed = set(symbols)
     payload = {
@@ -449,6 +467,7 @@ async def scan_user(db: Session, user: User) -> dict:
         "scanned_at": datetime.now(timezone.utc).isoformat(),
         "symbols": symbols,
         "in_position": sorted(positions),
+        "truncated": truncated,
         "opportunities": _normalize(parsed.get("opportunities"), "opportunities", allowed),
         "alerts": _normalize(parsed.get("alerts"), "alerts", allowed),
         "trends": _normalize_trends(parsed.get("trends"), allowed),

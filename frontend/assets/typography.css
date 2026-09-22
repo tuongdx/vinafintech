@@ -44,21 +44,14 @@ small {
   font-family: var(--tx-font);
 }
 
+/* Danh mục "Sản phẩm" ở footer là mục KHÔNG bấm được (span, không phải link)
+   → giữ nguyên màu khi rê chuột, không đổi sang màu xanh teal. */
 .footer ul .footer-label {
   color: #6b7a8f;
-  transition: color 0.2s;
-}
-
-.footer ul li:hover .footer-label {
-  color: #008080;
 }
 
 body.dark-mode .footer ul .footer-label {
   color: #8b949e;
-}
-
-body.dark-mode .footer ul li:hover .footer-label {
-  color: #4fa8a2;
 }
 
 @media (max-width: 768px) {

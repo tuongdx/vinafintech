@@ -349,6 +349,50 @@
                 if (!Array.isArray(v)) return [];
                 return v.map(function(x) { const n = Number(x); return isFinite(n) ? n : 0; });
             }
+            // Phân tích 1 nhãn thành mốc thời gian để sắp xếp. Trả về {kind, key} hoặc null.
+            // Hỗ trợ: Q1/2026 · Q1-2026 · 2026-Q1 · Quý 1/2026 · Quý I/2026 · H1/2026
+            //         T1/2026 · Tháng 1/2026 · 01/2026 · 2026-01 · 2025 (năm).
+            function parseTimeLabel(label) {
+                const s = String(label == null ? '' : label).trim();
+                if (!s) return null;
+                const ROMAN = { i: 1, ii: 2, iii: 3, iv: 4 };
+                let m;
+                if ((m = s.match(/^Q\s*([1-4])\s*[\/\-.]\s*(20\d{2})$/i))) return { kind: 'q', key: (+m[2]) * 10 + (+m[1]) };
+                if ((m = s.match(/^(20\d{2})\s*[\/\-.]\s*Q\s*([1-4])$/i))) return { kind: 'q', key: (+m[1]) * 10 + (+m[2]) };
+                if ((m = s.match(/^Q\s*([1-4])\s+(20\d{2})$/i))) return { kind: 'q', key: (+m[2]) * 10 + (+m[1]) };
+                if ((m = s.match(/^Qu[ýy]\s*([1-4IVX]+)\s*[\/\-.]?\s*(20\d{2})$/i))) {
+                    const q = ROMAN[m[1].toLowerCase()] || parseInt(m[1], 10);
+                    if (q >= 1 && q <= 4) return { kind: 'q', key: (+m[2]) * 10 + q };
+                    return null;
+                }
+                if ((m = s.match(/^H\s*([12])\s*[\/\-.]?\s*(20\d{2})$/i))) return { kind: 'h', key: (+m[2]) * 10 + (+m[1]) };
+                if ((m = s.match(/^[Tt](?:h[áa]ng)?\s*(1[0-2]|[1-9])\s*[\/\-.]\s*(20\d{2})$/))) return { kind: 'm', key: (+m[2]) * 100 + (+m[1]) };
+                if ((m = s.match(/^(1[0-2]|0?[1-9])\s*[\/\-. ]\s*(20\d{2})$/))) return { kind: 'm', key: (+m[2]) * 100 + (+m[1]) };
+                if ((m = s.match(/^(20\d{2})\s*[\/\-.]\s*(1[0-2]|0[1-9])$/))) return { kind: 'm', key: (+m[1]) * 100 + (+m[2]) };
+                if ((m = s.match(/^(20\d{2})$/))) return { kind: 'y', key: (+m[1]) * 100 };
+                return null;
+            }
+            // Nếu TẤT CẢ nhãn là chuỗi thời gian cùng loại → trả về hoán vị chỉ số theo CŨ → MỚI.
+            // Trả về null khi nhãn không phải thời gian hoặc đã đúng thứ tự.
+            function timeOrderIdx(labels) {
+                if (!Array.isArray(labels) || labels.length < 2) return null;
+                const parsed = [];
+                let kind = '';
+                for (let i = 0; i < labels.length; i++) {
+                    const p = parseTimeLabel(labels[i]);
+                    if (!p) return null;
+                    if (!kind) kind = p.kind;
+                    else if (kind !== p.kind) return null;
+                    parsed.push({ idx: i, key: p.key });
+                }
+                let ordered = true;
+                for (let i = 1; i < parsed.length; i++) {
+                    if (parsed[i - 1].key > parsed[i].key) { ordered = false; break; }
+                }
+                if (ordered) return null;
+                parsed.sort(function(a, b) { return a.key - b.key; });
+                return parsed.map(function(x) { return x.idx; });
+            }
             function fmtCompact(v) {
                 const abs = Math.abs(v);
                 if (abs >= 1e12) return (v / 1e12).toFixed(2).replace(/\.?0+$/, '') + 'T';
@@ -407,6 +451,18 @@
                     series = [{ name: String(cfg.seriesName || 'Giá trị'), values: numArr(cfg.values), color: safeColor(cfg.color) || CHART_COLORS[0] }];
                 }
                 series = series.filter(function(s) { return s.values.length; });
+                // Biểu đồ theo THỜI GIAN (quý/năm/tháng) → luôn xếp CŨ NHẤT bên trái, MỚI NHẤT bên phải.
+                const chrono = timeOrderIdx(labels);
+                if (chrono) {
+                    const nl = chrono.map(function(i) { return labels[i]; });
+                    labels.length = 0;
+                    for (let i = 0; i < nl.length; i++) labels.push(nl[i]);
+                    series.forEach(function(s) {
+                        if (s.values.length === chrono.length) {
+                            s.values = chrono.map(function(i) { return s.values[i]; });
+                        }
+                    });
+                }
                 if (!labels.length || !series.length) return '';
                 const n = Math.min(labels.length, Math.max.apply(null, series.map(function(s) { return s.values.length; })));
                 const H = 230, padL = 52, padR = 16, padT = 18, padB = 46;

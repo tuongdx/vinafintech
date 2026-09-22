@@ -24,7 +24,7 @@
         /* ===== Header ===== */
         .pf-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
         .pf-head h1 { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; }
-        .pf-head .pf-sub { font-size: 13px; color: #6b7a8f; margin-top: 6px; }
+        .pf-head .pf-sub { font-size: 13px; color: #6b7a8f; margin-top: 6px; max-width: 800px; line-height: 1.55; }
         .pf-demo-banner { margin-bottom: 16px; background: #fff8e8; border: 1px solid #f2d9a0; color: #8a6d1a; border-radius: 12px; padding: 10px 16px; font-size: 13px; display: flex; align-items: center; gap: 10px; }
         .pf-demo-banner a { color: #008080; font-weight: 700; text-decoration: none; }
 
@@ -183,6 +183,8 @@
         .pf-table-wrap { overflow-x: auto; border: 1px solid #e9edf2; border-radius: 14px; background: #fff; }
         table { width: 100%; border-collapse: collapse; min-width: 820px; }
         .pf-wl-table { min-width: 680px; }
+        /* Cột giá: màu theo theme (dark mode cần chữ sáng, trước đây bị hardcode #12203a trong JS) */
+        .pf-wl-table td.wl-price { color: #12203a; }
         thead th { text-align: left; font-size: 11.5px; font-weight: 700; color: #6b7a8f; text-transform: uppercase; letter-spacing: 0.4px; padding: 11px 13px; border-bottom: 1px solid #eef1f5; background: #fafbfd; white-space: nowrap; }
         tbody td { padding: 11px 13px; border-bottom: 1px solid #f2f4f8; font-size: 13.5px; white-space: nowrap; }
         tbody tr:last-child td { border-bottom: none; }
@@ -267,6 +269,12 @@
         .pf-alert-card .pf-ac-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
         .pf-ac-type { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 8px; border-radius: 6px; }
         .pf-ac-sym { font-weight: 800; font-size: 12.5px; color: #12203a; }
+        /* Mã cổ phiếu bấm được → mở trang chi tiết cổ phiếu */
+        .ca-sym-link { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; font-size: 12.5px; color: #008080; background: rgba(0,128,128,0.10); border: 1px solid rgba(0,128,128,0.28); border-radius: 8px; padding: 2px 8px; cursor: pointer; transition: all 0.15s; }
+        .ca-sym-link i { font-size: 9.5px; opacity: 0.8; }
+        .ca-sym-link:hover { background: rgba(0,128,128,0.18); border-color: #008080; color: #006e6e; }
+        .ca-sym-link:hover i { opacity: 1; transform: translateX(1px); }
+        .ca-sym-link:focus-visible { outline: 2px solid #008080; outline-offset: 2px; }
         .pf-ac-imp { font-size: 11px; font-weight: 700; }
         .pf-ac-time { font-size: 11px; color: #8a99b1; margin-left: auto; }
         .pf-ac-title { font-size: 13.5px; font-weight: 700; color: #12203a; line-height: 1.4; }
@@ -476,11 +484,15 @@
         body.dark-mode .pf-alert-card { background: #10151c; border-color: #21262d; }
         body.dark-mode .pf-alert-card.unread { background: #0e1a1a; }
         body.dark-mode .pf-ac-title, body.dark-mode .pf-ac-sym { color: #e6edf3; }
+        body.dark-mode .ca-sym-link { color: #4dd8c4; background: rgba(0,128,128,0.22); border-color: rgba(77,216,196,0.4); }
+        body.dark-mode .ca-sym-link:hover { background: rgba(0,128,128,0.34); border-color: #4dd8c4; color: #7fe9d8; }
+        body.dark-mode .ca-sym-link:focus-visible { outline-color: #4dd8c4; }
         body.dark-mode .pf-ac-desc { color: #adbac7; }
         body.dark-mode .pf-ac-why { background: rgba(0,128,128,0.14); border-color: rgba(0,128,128,0.35); color: #adbac7; }
         body.dark-mode .pf-alert-block-head { color: #e6edf3; border-bottom-color: #21262d; }
         body.dark-mode .pf-wl-item { background: #10151c; border-color: #21262d; }
         body.dark-mode .pf-wl-item .wl-name, body.dark-mode .pf-wl-item .wl-vol { color: #8b949e; }
+        body.dark-mode .pf-wl-table td.wl-price { color: #e6edf3; }
         body.dark-mode .pf-ev-item { background: #10151c; border-color: #21262d; }
         body.dark-mode .pf-ev-item .pf-ev-title { color: #e6edf3; }
         body.dark-mode .pf-ev-item .pf-ev-desc { color: #adbac7; }
@@ -507,8 +519,8 @@
         .pf-head {
             position: relative; overflow: hidden; align-items: center;
             background: linear-gradient(135deg, #006b6b 0%, #008080 55%, #00a08a 100%);
-            border-radius: 18px; padding: 22px 26px;
-            color: #fff; box-shadow: 0 2px 10px rgba(0, 60, 60, 0.10);
+            border-radius: 18px; padding: 22px 26px; min-height: 136px;
+            color: #fff; line-height: 1.45; box-shadow: 0 2px 10px rgba(0, 60, 60, 0.10);
         }
         .pf-head::after {
             content: ''; position: absolute; right: -60px; top: -60px;
@@ -532,8 +544,37 @@
             .pf-head { padding: 18px; }
             .pf-head h1 { font-size: 21px; }
         }
+
+        /* ===== Hàng BUTTON chuyển mục nhanh (chip giống trang Tiện ích) — hiện ở MỌI mục ===== */
+        .pf-tabchips { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; }
+        .pf-tabchip {
+            display: inline-flex; align-items: center; gap: 6px;
+            border: 1px solid #dbe4ec; background: #fff; color: #5a6b85; border-radius: 20px;
+            padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
+            font-family: inherit; transition: all .15s;
+        }
+        .pf-tabchip i { color: #008080; font-size: 12px; }
+        .pf-tabchip:hover { border-color: #008080; color: #008080; }
+        .pf-tabchip:focus-visible { outline: 2px solid rgba(0,128,128,.45); outline-offset: 1px; }
+        body.dark-mode .pf-tabchip { background: #21262d; border-color: #3e4c61; color: #d3deeb; }
+        body.dark-mode .pf-tabchip i { color: #4db6b6; }
+        body.dark-mode .pf-tabchip:hover { border-color: #008080; color: #5fd6cf; }
+        /* ⚠️ Button ĐANG MỞ: phải có specificity cao hơn rule dark ở trên VÀ đặt SAU rule `:hover`
+           (cùng 0,3,1) — nếu không, dark mode sẽ mất highlight, không biết đang ở mục nào. */
+        .pf-tabchip.on { background: #008080; border-color: #008080; color: #fff; }
+        .pf-tabchip.on i { color: #fff; }
+        body.dark-mode .pf-tabchip.on {
+            background: linear-gradient(135deg, #008080, #00a08a);
+            border-color: #4dd8c4; color: #fff;
+            box-shadow: 0 0 0 1px rgba(77, 216, 196, 0.4);
+        }
+        body.dark-mode .pf-tabchip.on i { color: #fff; }
+        body.dark-mode .pf-tabchip.on:hover {
+            background: linear-gradient(135deg, #008080, #00a08a);
+            border-color: #4dd8c4; color: #fff;
+        }
     </style>
-    <link rel="stylesheet" href="/static/block-tint.css?v=20260908t" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
 </head>
 <body>
     <div class="app-wrapper">
@@ -563,6 +604,9 @@
             let chartPeriod = '1M';
             let currentTab = 'overview';
             const INIT_TAB = (new URLSearchParams(window.location.search || '')).get('tab') || null;
+            // Deep-link ?tab=... CHỈ áp dụng cho lần nạp ĐẦU TIÊN (mở trang bằng URL có tab).
+            // Các lần nạp lại sau đó (mua/bán/sửa/xoá) phải GIỮ tab người dùng đang xem.
+            let initTabApplied = false;
             let watchlistSyms = [];
             let cwSyms = [];          // coin crypto đang theo dõi
             const CW_DEMO = ['BTC', 'ETH', 'BNB', 'SOL'];
@@ -578,6 +622,40 @@
 
             function loggedIn() { return !!localStorage.getItem(TOKEN_KEY); }
             function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem(TOKEN_KEY) }; }
+            // ---- Phiên "nhớ đăng nhập": access token hết hạn (60') → tự refresh rồi thử lại ----
+            // Trang chạy trong iframe của shell → dùng chung refreshAccessToken của shell (chống gọi trùng);
+            // nếu mở trực tiếp /frontend/quanlytaisan.html thì tự gọi API refresh.
+            let _refreshPromise = null;
+            function refreshSession() {
+                if (_refreshPromise) return _refreshPromise;
+                _refreshPromise = (function() {
+                    const parentWin = (window.parent && window.parent !== window) ? window.parent : null;
+                    if (parentWin && typeof parentWin.refreshAccessToken === 'function') {
+                        return parentWin.refreshAccessToken()
+                            .then(function(ok) { return !!ok || !!localStorage.getItem(TOKEN_KEY); })
+                            .catch(function() { return false; });
+                    }
+                    const rt = localStorage.getItem('tunix_refresh_token');
+                    if (!rt) return Promise.resolve(false);
+                    return fetch('/api/auth/refresh-token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ refresh_token: rt })
+                    })
+                        .then(function(r) { return r.ok ? r.json() : null; })
+                        .then(function(d) {
+                            if (!d || !d.access_token) return false;
+                            localStorage.setItem(TOKEN_KEY, d.access_token);
+                            if (d.refresh_token) localStorage.setItem('tunix_refresh_token', d.refresh_token);
+                            if (d.user) localStorage.setItem('tunix_user', JSON.stringify(d.user));
+                            return true;
+                        })
+                        .catch(function() { return false; });
+                })();
+                // Giải phóng khoá sau khi xong (thành công hay thất bại)
+                _refreshPromise.then(function() { _refreshPromise = null; }, function() { _refreshPromise = null; });
+                return _refreshPromise;
+            }
             function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
             function fmtMoney(v) { const n = Number(v) || 0; return new Intl.NumberFormat('vi-VN').format(Math.round(n)); }
             // Rút gọn số VND lớn cho giữa donut: 1,23 tỷ / 850 triệu / 120 nghìn.
@@ -594,7 +672,19 @@
                 return fmtMoney(n);
             }
             function fmtPct(v) { const n = Number(v) || 0; return (n >= 0 ? '+' : '') + n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%'; }
-            function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*'); }
+            function openStock(sym) {
+                if (!sym) return;
+                if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                else window.location.href = '/co-phieu/' + encodeURIComponent(sym);
+            }
+            // Mở trang Crypto (nhúng trong shell) và xem sẵn chi tiết coin.
+            // LƯU Ý: fallback KHÔNG dùng `/crypto?symbol=` — `routeFromUrl()` của shell hiểu
+            // `?symbol=` là mã CỔ PHIẾU (sẽ mở nhầm chi tiết cổ phiếu). Dùng thẳng trang crypto.html.
+            function openCrypto(sym) {
+                if (!sym) return;
+                if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-crypto', symbol: sym }, '*');
+                else window.location.href = '/frontend/crypto.html?symbol=' + encodeURIComponent(sym);
+            }
 
             function toast(msg, isErr) {
                 let t = document.getElementById('pfToast');
@@ -874,14 +964,27 @@
             }
 
             // ---------- Table + form ----------
+            // Sắp xếp ALPHABET (A→Z, đúng thứ tự tiếng Việt) cho MỌI bảng trong trang:
+            // cổ phiếu (Mã), Crypto/Vàng-Bạc (Tên), Tiền gửi (Tên khoản).
+            // Trả về BẢN SAO đã sắp xếp — KHÔNG đổi mảng gốc (holdings/userAssets) để các
+            // logic khác (Bán, sửa, tính tổng) không bị ảnh hưởng.
+            function alphaSort(list, keyFn) {
+                return (list || []).slice().sort(function(a, b) {
+                    return String(keyFn(a) || '').localeCompare(String(keyFn(b) || ''), 'vi', { sensitivity: 'base' });
+                });
+            }
+            function labelKey(x) { return (x && x.label) || ''; }
+            function symKey(s) { return s; }   // khoá sắp xếp cho mảng mã dạng chuỗi
+            function sortedHoldings() { return alphaSort(holdings, function(h) { return h.symbol; }); }
             function renderTable() {
                 const tt = totals();
                 const total = tt.totalValue || 1;
-                const tableHtml = holdings.length
+                const rows = sortedHoldings();
+                const tableHtml = rows.length
                     ? '<div class="pf-table-wrap"><table><thead><tr>' +
                         '<th>Mã</th><th>Giá vốn</th><th>Giá hiện tại</th><th>Số lượng</th><th>Giá trị</th><th>Lãi/Lỗ</th><th>Tỷ trọng</th><th></th>' +
                       '</tr></thead><tbody>' +
-                        holdings.map(function(h) {
+                        rows.map(function(h) {
                             const pnlCls = Number(h.pnl) >= 0 ? 'pos' : 'neg';
                             const pctCls = Number(h.percent_change) >= 0 ? 'pos' : 'neg';
                             const weight = (Number(h.market_value) || 0) / total * 100;
@@ -1132,7 +1235,7 @@
             }
             function renderHoldingsTab() {
                 return cashCardHtml() +
-                    renderTable() +
+                    '<div id="pfStockCardWrap">' + renderTable() + '</div>' +
                     '<div id="assetWrap-gold">' + assetCardInner('gold') + '</div>' +
                     '<div id="assetWrap-deposit">' + assetCardInner('deposit') + '</div>' +
                     '<div id="assetWrap-crypto">' + assetCardInner('crypto') + '</div>';
@@ -1155,7 +1258,7 @@
                 const curs = [];
                 list.forEach(function(x) { const c = x.currency || 'USDT'; if (curs.indexOf(c) < 0) curs.push(c); });
                 const curLbl = curs.join('/') || 'USDT';
-                const enriched = list.map(function(x) {
+                const enriched = alphaSort(list.map(function(x) {
                     const c = x.currency || 'USDT';
                     const sym = String(x.label || '').trim().toUpperCase();
                     const mk = cryptoMap[sym] || null;
@@ -1169,7 +1272,7 @@
                         x: x, c: c, sym: sym, px: px, qty: qty, cost: cost, avg: avg, cur: cur, pnl: pnl,
                         name: (mk && mk.name && String(mk.name).toUpperCase() !== sym) ? mk.name : ''
                     };
-                });
+                }), function(r) { return r.sym; });
                 const totalCost = enriched.reduce(function(s, r) { return s + r.cost; }, 0);
                 const totalCur = enriched.reduce(function(s, r) { return s + r.cur; }, 0);
                 const rows = enriched.length ? enriched.map(function(r) {
@@ -1205,7 +1308,8 @@
                 if (cls === 'crypto') return assetCryptoCardInner(ASSET_META.crypto, userAssets.crypto || []);
                 if (cls === 'deposit') return assetDepositCardInner(ASSET_META.deposit, userAssets.deposit || []);
                 const m = ASSET_META[cls];
-                const list = userAssets[cls] || [];
+                // Bảng Vàng/Bạc: sắp xếp theo Tên khoản (A→Z).
+                const list = alphaSort(userAssets[cls] || [], labelKey);
                 const total = list.reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0);
                 const emptyText = m.trade
                     ? 'Chưa có vị thế nào — Mua bên dưới để theo dõi.'
@@ -1248,7 +1352,7 @@
                     '<div class="pf-form-head"><i class="fas ' + ico + '"></i> Mua/Bán Crypto (USDT/USDC)</div>' +
                     toggle +
                     '<div class="pf-form-row">' +
-                        '<div class="pf-field" style="flex:1 1 200px;"><label>Tên crypto</label><input type="text" id="pacryptoName" list="cryptoCoinList" placeholder="' + esc(ASSET_META.crypto.ph) + '" ' + disabled + ' autocomplete="off" spellcheck="false" /></div>' +
+                        '<div class="pf-field" style="flex:1 1 200px;"><label>Tên crypto</label><input type="text" id="pacryptoName" placeholder="' + esc(ASSET_META.crypto.ph) + '" ' + disabled + ' autocomplete="off" spellcheck="false" /></div>' +
                         '<div class="pf-field" style="flex:0 1 105px;"><label>Loại</label><select id="pacryptoCur"' + (DEMO ? ' disabled' : '') + '><option value="USDT">USDT</option><option value="USDC">USDC</option></select></div>' +
                         '<div class="pf-field"><label>Giá (USDT/USDC)</label><input type="text" inputmode="numeric" autocomplete="off" id="pacryptoPrice" min="0" step="any" placeholder="VD: 100.000" ' + disabled + ' /></div>' +
                         '<div class="pf-field"><label>' + esc(amountLabel) + '</label><input type="text" inputmode="numeric" autocomplete="off" id="pacryptoAmt" min="0" step="any" placeholder="VD: 1.000" ' + disabled + ' /></div>' +
@@ -1300,6 +1404,8 @@
                 return n > 0 ? n + ' tháng' : '—';
             }
             function assetDepositCardInner(m, list) {
+                // Bảng Tiền gửi ngân hàng: sắp xếp theo Tên khoản (A→Z).
+                list = alphaSort(list || [], labelKey);
                 const total = list.reduce(function(s, x) { return s + (Number(x.amount) || 0); }, 0);
                 const totalInt = list.reduce(function(s, x) {
                     const d = depositInterest(x.amount, x.unit_price, x.quantity);
@@ -1364,13 +1470,6 @@
                     if (nm) cryptoMap['n:' + nm] = it;
                 });
             }
-            function buildCryptoDatalist() {
-                let dl = document.getElementById('cryptoCoinList');
-                if (!dl) { dl = document.createElement('datalist'); dl.id = 'cryptoCoinList'; document.body.appendChild(dl); }
-                dl.innerHTML = (cryptoList || []).map(function(it) {
-                    return '<option value="' + esc(it.symbol) + '">' + esc(it.name) + '</option>';
-                }).join('');
-            }
             function cryptoFind(raw) {
                 const q = String(raw == null ? '' : raw).trim();
                 if (!q) return null;
@@ -1399,7 +1498,6 @@
                         const d = rs[0];
                         cryptoList = (d && Array.isArray(d.items)) ? d.items : [];
                         buildCryptoIndex();
-                        buildCryptoDatalist();
                         const f = rs[1];
                         cryptoFx = (f && f.usd_vnd) ? { usd_vnd: Number(f.usd_vnd) } : null;
                         cryptoMetaLoaded = true;
@@ -1997,7 +2095,7 @@
                 const ic = isOpp ? { c: '#00a08a', i: 'fa-lightbulb' } : { c: '#d0314e', i: 'fa-triangle-exclamation' };
                 const sev = CRYPTO_SEV_META[String(it.severity || '').toUpperCase()] || CRYPTO_SEV_META.MEDIUM;
                 const str = Number(it.strength) || 0, conf = Number(it.confidence) || 0;
-                const head = '<span class="pf-ac-sym">' + esc(it.symbol) + '</span>' +
+                const head = symChip(it.symbol) +
                     (cryptoInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
                     '<span class="pf-ac-imp" style="color:' + sev.color + '">' + esc(sev.label) + '</span>' +
                     '<span class="ca-str">Độ mạnh <b>' + str + '</b>/100 · Tin cậy <b>' + conf + '</b></span>';
@@ -2028,7 +2126,7 @@
                 return '<div class="pf-alert-card ca-card" style="border-left-color:#4a7fc4">' +
                     '<div class="pf-ac-left"><i class="fas fa-chart-line" style="color:#4a7fc4"></i></div>' +
                     '<div class="pf-ac-main">' +
-                        '<div class="pf-ac-top"><span class="pf-ac-sym">' + esc(it.symbol) + '</span>' +
+                        '<div class="pf-ac-top">' + symChip(it.symbol) +
                             (cryptoInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
                             '<span class="ca-str">Độ mạnh xu hướng <b>' + str + '</b>/100</span></div>' +
                         '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
@@ -2040,6 +2138,7 @@
             function renderCryptoSignals() {
                 const list = document.getElementById('pfCryptoAlertList');
                 if (!list) return;
+                bindSignalLinks('pfCryptoAlertList', openCrypto);
                 const meta = document.getElementById('pfCryptoMeta');
                 const d = cryptoSignalsData;
                 if (!d) {
@@ -2187,12 +2286,38 @@
             function stockInPosition(sym) {
                 return !!(stockSignalsData && (stockSignalsData.in_position || []).indexOf(sym) >= 0);
             }
+            // Mã bấm được → mở trang chi tiết tương ứng (cổ phiếu / crypto); dùng chung cho CƠ HỘI / CẢNH BÁO / XU HƯỚNG.
+            function symChip(sym) {
+                const s = esc(sym);
+                return '<span class="ca-sym-link" role="link" tabindex="0" data-sym="' + s + '" title="Xem chi tiết ' + s + '">' + s + '<i class="fas fa-chevron-right"></i></span>';
+            }
+            // Uỷ quyền sự kiện ở container: bền với việc render lại HTML và cả khi Hội viên bọc lớp
+            // khóa mờ (.tg-blur-body có pointer-events:none → click vào chip sẽ không phát sinh sự kiện).
+            function bindSignalLinks(listId, go) {
+                const list = document.getElementById(listId);
+                if (!list || list.getAttribute('data-linkbound')) return;
+                list.setAttribute('data-linkbound', '1');
+                function hit(e) { return e.target && e.target.closest ? e.target.closest('.ca-sym-link') : null; }
+                list.addEventListener('click', function(e) {
+                    const el = hit(e);
+                    if (!el) return;
+                    e.preventDefault();
+                    go(el.getAttribute('data-sym'));
+                });
+                list.addEventListener('keydown', function(e) {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    const el = hit(e);
+                    if (!el) return;
+                    e.preventDefault();
+                    go(el.getAttribute('data-sym'));
+                });
+            }
             function stockItemHtml(it, kind) {
                 const isOpp = kind === 'opportunities';
                 const ic = isOpp ? { c: '#00a08a', i: 'fa-lightbulb' } : { c: '#d0314e', i: 'fa-triangle-exclamation' };
                 const sev = CRYPTO_SEV_META[String(it.severity || '').toUpperCase()] || CRYPTO_SEV_META.MEDIUM;
                 const str = Number(it.strength) || 0, conf = Number(it.confidence) || 0;
-                const head = '<span class="pf-ac-sym">' + esc(it.symbol) + '</span>' +
+                const head = symChip(it.symbol) +
                     (stockInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
                     '<span class="pf-ac-imp" style="color:' + sev.color + '">' + esc(sev.label) + '</span>' +
                     '<span class="ca-str">Độ mạnh <b>' + str + '</b>/100 · Tin cậy <b>' + conf + '</b></span>';
@@ -2223,7 +2348,7 @@
                 return '<div class="pf-alert-card ca-card" style="border-left-color:#4a7fc4">' +
                     '<div class="pf-ac-left"><i class="fas fa-chart-line" style="color:#4a7fc4"></i></div>' +
                     '<div class="pf-ac-main">' +
-                        '<div class="pf-ac-top"><span class="pf-ac-sym">' + esc(it.symbol) + '</span>' +
+                        '<div class="pf-ac-top">' + symChip(it.symbol) +
                             (stockInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
                             '<span class="ca-str">Độ mạnh xu hướng <b>' + str + '</b>/100</span></div>' +
                         '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
@@ -2235,6 +2360,7 @@
             function renderStockSignals() {
                 const list = document.getElementById('pfStockAlertList');
                 if (!list) return;
+                bindSignalLinks('pfStockAlertList', openStock);
                 const meta = document.getElementById('pfStockMeta');
                 const d = stockSignalsData;
                 if (!d) {
@@ -2425,7 +2551,7 @@
             function loadWatchlist() {
                 const listEl = document.getElementById('wlList');
                 if (DEMO) {
-                    watchlistSyms = ['ACB', 'VCI', 'FPT', 'HPG', 'MBB'];
+                    watchlistSyms = alphaSort(['ACB', 'VCI', 'FPT', 'HPG', 'MBB'], symKey);
                     if (!listEl) return;
                     listEl.innerHTML = watchlistSyms.map(function(sym) { return wlItemHtml(sym, false); }).join('');
                     bindWlList();
@@ -2436,7 +2562,8 @@
                     .then(function(r) { return r.ok ? r.json() : []; })
                     .then(function(list) {
                         const items = Array.isArray(list) ? list : [];
-                        watchlistSyms = items.map(function(w) { return w.symbol; });
+                        // Sắp xếp theo MÃ (A→Z) — bảng "Cổ phiếu đang theo dõi".
+                        watchlistSyms = alphaSort(items.map(function(w) { return w.symbol; }), symKey);
                         if (!listEl) return;
                         if (!items.length) { listEl.innerHTML = '<tr><td colspan="6" class="pf-empty">Chưa có mã trong danh mục theo dõi.</td></tr>'; return; }
                         listEl.innerHTML = watchlistSyms.map(function(s) { return wlItemHtml(s, true); }).join('');
@@ -2487,7 +2614,7 @@
                 held.forEach(function(p) { const s = String(p.label || '').trim().toUpperCase(); if (s && syms.indexOf(s) < 0) syms.push(s); });
                 (cwSyms || []).forEach(function(s) { if (s && syms.indexOf(s) < 0) syms.push(s); });
                 const rows = [];
-                syms.forEach(function(sym) {
+                alphaSort(syms, symKey).forEach(function(sym) {
                     const p = heldMap[sym];
                     const it = cryptoMap[sym] || null;
                     const price = it ? (Number(it.price) || 0) : 0;
@@ -2682,11 +2809,11 @@
             // Đảm bảo luôn có danh sách mã cổ phiếu đang theo dõi (cần cho Bảng danh mục)
             // — không phụ thuộc việc user đã mở tab "Danh mục theo dõi" hay chưa.
             function ensureWatchlistSyms(cb) {
-                if (DEMO) { watchlistSyms = ['ACB', 'VCI', 'FPT', 'HPG', 'MBB']; if (cb) cb(); return; }
+                if (DEMO) { watchlistSyms = alphaSort(['ACB', 'VCI', 'FPT', 'HPG', 'MBB'], symKey); if (cb) cb(); return; }
                 fetch('/api/watchlist', { headers: authHeaders() })
                     .then(function(r) { return r.ok ? r.json() : []; })
                     .then(function(rows) {
-                        watchlistSyms = (Array.isArray(rows) ? rows : []).map(function(w) { return w.symbol; });
+                        watchlistSyms = alphaSort((Array.isArray(rows) ? rows : []).map(function(w) { return w.symbol; }), symKey);
                         if (cb) cb();
                     })
                     .catch(function() { watchlistSyms = []; if (cb) cb(); });
@@ -2694,9 +2821,11 @@
             function loadPortfolioTable() {
                 const tbody = document.getElementById('pfPortfolioBody');
                 if (!tbody) return;
-                const syms = [];
+                let syms = [];
                 holdings.forEach(function(h) { if (syms.indexOf(h.symbol) === -1) syms.push(h.symbol); });
                 watchlistSyms.forEach(function(s) { if (syms.indexOf(s) === -1) syms.push(s); });
+                // Sắp xếp theo MÃ (A→Z): bảng gộp cả mã đang NẮM GIỮ và đang THEO DÕI.
+                syms = alphaSort(syms, symKey);
                 if (!syms.length) { tbody.innerHTML = '<tr><td colspan="11" class="pf-empty">Chưa có cổ phiếu nào trong danh mục.</td></tr>'; notifyParentHeight(); return; }
                 const hmap = {};
                 holdings.forEach(function(h) { hmap[h.symbol] = h; });
@@ -2985,20 +3114,52 @@
                 alerts: { label: 'Trung tâm cảnh báo', icon: 'fa-bell', html: renderAlerts, mount: function() { mountAlerts(); } },
                 events: { label: 'Sự kiện liên quan', icon: 'fa-calendar-day', html: renderEvents, mount: function() { loadEvents(); } },
             };
+            // Slug URL đẹp của từng mục (giống __QLTS_SLUGS ở shell) — dùng khi bấm button trong trang.
+            const QLTS_SLUGS = {
+                overview: 'phan-tich-tai-san', holdings: 'danh-muc-dang-nam-giu', watchlist: 'danh-muc-theo-doi',
+                portfolio: 'bang-danh-muc', alerts: 'trung-tam-canh-bao', events: 'su-kien-lien-quan'
+            };
+            // Button chuyển mục (kiểu chip trang Tiện ích) — dựng từ TAB_DEFS nên luôn đủ/đúng thứ tự 6 mục.
+            function renderTabChips() {
+                return '<div class="pf-tabchips" id="pfTabChips">' + Object.keys(TAB_DEFS).map(function(k) {
+                    const d = TAB_DEFS[k];
+                    return '<button type="button" class="pf-tabchip" data-tab="' + k + '"><i class="fas ' + d.icon + '"></i> ' + esc(d.label) + '</button>';
+                }).join('') + '</div>';
+            }
+            function bindTabChips() {
+                document.querySelectorAll('#pfTabChips .pf-tabchip').forEach(function(b) {
+                    b.addEventListener('click', function() { goTab(b.getAttribute('data-tab')); });
+                });
+            }
+            // Bấm button: đổi mục NGAY trong trang (không reload) + báo shell đổi URL đẹp /quan-ly-tai-san/{slug}.
+            // Menu con trên header vẫn dùng được như cũ (shell gửi `tunix-qlts-tab` → showTab → tự tô sáng button).
+            function goTab(tab) {
+                if (!TAB_DEFS[tab]) return;
+                showTab(tab);
+                const slug = QLTS_SLUGS[tab];
+                if (!slug) return;
+                if (window.parent && window.parent !== window) {
+                    try { window.parent.postMessage({ type: 'tunix-qlts-nav', slug: slug }, '*'); } catch (e) {}
+                } else {
+                    try { window.history.replaceState({}, '', '/quan-ly-tai-san/' + slug); } catch (e) {}
+                }
+            }
             // ---------- Main render ----------
             function render() {
                 const headRight = document.getElementById('pfHeadRight');
                 if (headRight) headRight.innerHTML = DEMO
                     ? '<a href="/Login" style="text-decoration:none;background:#008080;color:#fff;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px;">Đăng nhập</a>'
                     : '<span style="font-size:12px;color:#8a99b1;"><i class="fas fa-sync-alt"></i> Tự cập nhật theo phiên</span>';
-                body.innerHTML = '<div class="pf-tab-body" id="pfTabBody"></div>';
+                body.innerHTML = renderTabChips() + '<div class="pf-tab-body" id="pfTabBody"></div>';
+                bindTabChips();
                 showTab(currentTab);
             }
             function showTab(name) {
                 const def = TAB_DEFS[name];
                 if (!def) return;
                 currentTab = name;
-                document.querySelectorAll('.pf-sub-btn').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === name); });
+                // Tô sáng button của mục đang mở (mọi đường vào: button trong trang, menu con header, deep-link ?tab=).
+                document.querySelectorAll('#pfTabChips .pf-tabchip').forEach(function(b) { b.classList.toggle('on', b.getAttribute('data-tab') === name); });
                 const content = document.getElementById('pfTabBody');
                 if (!content) return;
                 // Khối xanh đầu trang đổi text theo từng tab (cùng vị trí, chỉ khác tiêu đề/mô tả).
@@ -3184,7 +3345,7 @@
                     const up = pct >= 0;
                     const color = up ? '#00a08a' : '#d0314e';
                     const priceEl = row.querySelector('.wl-price');
-                    if (priceEl) { priceEl.textContent = price ? fmtDec(price) : '--'; priceEl.style.color = '#12203a'; }
+                    if (priceEl) { priceEl.textContent = price ? fmtDec(price) : '--'; }
                     const chgEl = row.querySelector('.wl-chg');
                     if (chgEl) { chgEl.textContent = (pct === 0 ? '0%' : (up ? '+' : '−') + Math.abs(pct).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%'); chgEl.style.color = color; }
                     const volEl = row.querySelector('.wl-vol');
@@ -3224,7 +3385,7 @@
             }
             function loadCryptoWatchlist() {
                 if (DEMO) {
-                    cwSyms = CW_DEMO.slice();
+                    cwSyms = alphaSort(CW_DEMO.slice(), symKey);
                     Promise.resolve(loadCryptoMeta()).then(function() { renderCryptoWlList(); });
                     return;
                 }
@@ -3232,7 +3393,8 @@
                     return fetch('/api/crypto-watchlist', { headers: authHeaders() })
                         .then(function(r) { return r.ok ? r.json() : []; })
                         .then(function(rows) {
-                            cwSyms = (Array.isArray(rows) ? rows : []).map(function(w) { return w.symbol; });
+                            // Sắp xếp theo mã coin (A→Z) — bảng "Crypto đang theo dõi".
+                            cwSyms = alphaSort((Array.isArray(rows) ? rows : []).map(function(w) { return w.symbol; }), symKey);
                             renderCryptoWlList();
                             return null;
                         })
@@ -3295,7 +3457,7 @@
                             else if (method === 'POST') toast('✅ Đã mua thêm vào danh mục');
                             else toast('✅ Đã cập nhật');
                             editId = null;
-                            load();
+                            refreshStockCard();
                         })
                         .catch(function(e) { if (e && e.message) toast('❌ ' + e.message, true); });
                 }
@@ -3387,6 +3549,31 @@
                 notifyParentHeight();
             }
 
+            // Sau khi Mua/Bán/Cập nhật cổ phiếu: nạp lại danh mục rồi CHỈ vẽ lại card cổ phiếu
+            // (#pfStockCardWrap) + cập nhật số dư Tiền mặt. Nhờ vậy màn hình ĐỨNG YÊN: giữ nguyên
+            // tab đang xem, vị trí cuộn và các block khác (Tiền mặt/crypto/vàng/tiền gửi).
+            function refreshStockCard() {
+                // Không ở tab "Danh mục đang nắm giữ" (hiếm) → giữ hành vi cũ.
+                if (!document.getElementById('pfStockCardWrap')) { load(); return; }
+                fetch('/api/portfolio', { headers: authHeaders() })
+                    .then(function(r) {
+                        if (r.status !== 401) return r;
+                        return refreshSession().then(function(ok) { return ok ? fetch('/api/portfolio', { headers: authHeaders() }) : r; });
+                    })
+                    .then(function(r) { return r.ok ? r.json() : null; })
+                    .then(function(list) {
+                        if (Array.isArray(list)) holdings = list;
+                        editId = null;
+                        const wrap = document.getElementById('pfStockCardWrap');
+                        if (!wrap) return; // người dùng đã đổi tab trong lúc chờ → không đụng gì
+                        wrap.innerHTML = renderTable();
+                        bindTable();
+                        bindForm();
+                        // Mua/Bán có trừ/cộng quỹ VND → cập nhật số dư đang hiển thị trên card Tiền mặt.
+                        loadCash(function() { applyCashUI(); notifyParentHeight(); });
+                    })
+                    .catch(function() { load(); });
+            }
             function load() {
                 const banner = document.getElementById('pfDemoBanner');
                 if (banner) banner.innerHTML = '';
@@ -3399,6 +3586,15 @@
                 const screenerDone = loadScreenerMap();
                 fetch('/api/portfolio', { headers: authHeaders() })
                     .then(function(r) {
+                        // 401 = access token hết hạn → refresh (phiên nhớ tới khi tự đăng xuất) rồi gọi lại 1 lần
+                        if (r.status !== 401) return r;
+                        return refreshSession().then(function(ok) {
+                            if (!ok) return r;
+                            return fetch('/api/portfolio', { headers: authHeaders() });
+                        });
+                    })
+                    .then(function(r) {
+                        if (!r) return null;
                         if (r.status === 401) { showLocked(); return null; }
                         if (!r.ok) throw new Error('Lỗi tải danh mục');
                         return r.json();
@@ -3410,7 +3606,13 @@
                         loadCash(function() {
                             render();
                             loadWatchlist();
-                            if (INIT_TAB && TAB_DEFS[INIT_TAB] && INIT_TAB !== currentTab) showTab(INIT_TAB);
+                            // Deep-link ?tab=... CHỈ áp dụng ở lần nạp ĐẦU TIÊN. Nếu áp dụng lại ở mọi lần
+                            // nạp thì mở trang bằng /quan-ly-tai-san/phan-tich-tai-san (?tab=overview),
+                            // sang tab "Danh mục đang nắm giữ" rồi bấm Mua sẽ bị NHẢY về "Phân tích tài sản".
+                            if (!initTabApplied && INIT_TAB && TAB_DEFS[INIT_TAB]) {
+                                initTabApplied = true;
+                                if (INIT_TAB !== currentTab) showTab(INIT_TAB);
+                            }
                             // Screener về SAU khi tab đã render → cập nhật đúng ngành cho
                             // vùng "Phân bổ theo ngành" (không dựng lại toàn bộ tab).
                             screenerDone.then(function(ok) {

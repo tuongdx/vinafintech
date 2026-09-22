@@ -112,7 +112,7 @@
         .ov-stock .os-trend { margin-top: 9px; font-size: 10.5px; color: #9aa8bd; }
 
         /* ===== Market Radar ===== */
-        .ov-radar { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .ov-radar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .ov-radar-card { background: #f8fafc; border: 1px solid #e9edf2; border-radius: 13px; padding: 13px 15px; }
         .ov-radar-card .rc-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; }
         .ov-radar-card .rc-ico { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; }
@@ -122,6 +122,26 @@
         .ov-radar-card .rc-chip.sec { cursor: default; }
         .ov-radar-card .rc-chip.sec:hover { border-color: #e5eaf0; color: #4a5a72; }
         .ov-radar-card .rc-note { font-size: 11.5px; color: #8a99b1; margin-top: 8px; }
+        /* 3 block phụ: lãi suất ngân hàng / vàng SJC / BTC-ETH */
+        .ov-radar-card .rc-price { margin-top: 8px; display: flex; flex-direction: column; }
+        .ov-radar-card .rc-prow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px dashed #eef1f5; }
+        .ov-radar-card .rc-prow:last-child { border-bottom: none; }
+        .ov-radar-card .rc-pname { font-size: 12.5px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ov-radar-card .rc-pval { font-size: 12.5px; font-weight: 800; white-space: nowrap; }
+        .ov-radar-card .rc-pval small { font-size: 11.5px; font-weight: 700; margin-left: 4px; }
+        .ov-radar-card .rc-pval.pos { color: #0f7b3a; }
+        .ov-radar-card .rc-pval.neg { color: #d0314e; }
+        .ov-radar-card .rc-go { margin-left: auto; font-size: 10.5px; color: #b8c2d0; }
+        /* 3 block phụ là LINK → click mở trang tương ứng */
+        a.ov-radar-card { display: block; text-decoration: none; color: inherit; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+        a.ov-radar-card:hover { border-color: #008080; box-shadow: 0 6px 16px rgba(0, 128, 128, 0.12); transform: translateY(-1px); }
+        a.ov-radar-card:hover .rc-go { color: #008080; }
+        .ov-radar-card .rc-pval small.rc-delta { color: #8a99b1; }
+        .ov-radar-card .rc-pval small.rc-delta.pos { color: #0f7b3a; }
+        .ov-radar-card .rc-pval small.rc-delta.neg { color: #d0314e; }
+        /* Giá và tăng/giảm xếp dọc: giá trên, tăng/giảm xuống dòng dưới */
+        .ov-radar-card .rc-pval.stack { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.35; }
+        .ov-radar-card .rc-pval.stack small.rc-delta { margin-left: 0; margin-top: 1px; }
 
         /* ===== News (card grid) ===== */
         .ov-news { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -224,6 +244,15 @@
         body.dark-mode .ov-radar-card .rc-chip:hover { border-color: #4db6b6; color: #4db6b6; }
         body.dark-mode .ov-radar-card .rc-chip.sec:hover { border-color: #30363d; color: #adbac7; }
         body.dark-mode .ov-radar-card .rc-note { color: #8b949e; }
+        body.dark-mode .ov-radar-card .rc-prow { border-bottom-color: #21262d; }
+        body.dark-mode .ov-radar-card .rc-pval.pos { color: #3fb950; }
+        body.dark-mode .ov-radar-card .rc-pval.neg { color: #f85149; }
+        body.dark-mode .ov-radar-card .rc-go { color: #6e7d92; }
+        body.dark-mode a.ov-radar-card:hover { border-color: #4db6b6; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); }
+        body.dark-mode a.ov-radar-card:hover .rc-go { color: #4db6b6; }
+        body.dark-mode .ov-radar-card .rc-pval small.rc-delta { color: #8b949e; }
+        body.dark-mode .ov-radar-card .rc-pval small.rc-delta.pos { color: #3fb950; }
+        body.dark-mode .ov-radar-card .rc-pval small.rc-delta.neg { color: #f85149; }
         body.dark-mode .ov-news-item { background: #161b22; border-color: #21262d; }
         body.dark-mode .ov-news-item:hover { border-color: rgba(0,128,128,0.5); }
         body.dark-mode .ov-news-item .ni-img { background: #10151c; }
@@ -247,10 +276,11 @@
         .ov-empty { text-align: center; color: #8a99b1; padding: 24px; font-size: 13px; }
 
         @media (max-width: 1180px) { .ov-body { grid-template-columns: 1fr; } .ov-side { position: static; } .ov-hot { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 1020px) { .ov-radar { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 820px) { .ov-radar, .ov-opps, .ov-news { grid-template-columns: 1fr; } }
         @media (max-width: 560px) { .ov-hot { grid-template-columns: 1fr; } .ov-hero { padding: 20px; } }
     </style>
-    <link rel="stylesheet" href="/static/block-tint.css?v=20260908t" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
 </head>
 <body>
     <div class="dashboard">
@@ -318,10 +348,23 @@
         (function() {
             const sparkCache = {};
             const PALETTE = ['#008080', '#00a08a', '#4a7fc4', '#f5a623', '#7b61c4', '#d0314e', '#4f8f68', '#8a99b1'];
+            // Số tin ở block "Tin tức quan trọng": 9 khi block "Cơ hội nổi bật hôm nay" KHÔNG có mã nào,
+            // ngược lại 6. oppHasStocks = null nghĩa là block cơ hội CHƯA render xong (tạm hiển thị 6).
+            const NEWS_LIMIT_NO_OPP = 9;
+            const NEWS_LIMIT_WITH_OPP = 6;
+            // Block "Tin tức quan trọng": CHỈ 2 chuyên mục Chứng khoán · Ngân hàng.
+            // Mỗi chuyên mục lấy tin MỚI NHẤT của nó (theo giờ BÀI VIẾT lấy từ nguồn, KHÔNG phải giờ import)
+            // rồi trộn lại: 9 tin → lấy 5/chuyên mục rồi cắt còn 9; 6 tin → 3+3.
+            const HOME_NEWS_CATEGORIES = ['chung-khoan', 'ngan-hang'];
+            const NEWS_PER_CATEGORY = Math.ceil(NEWS_LIMIT_NO_OPP / HOME_NEWS_CATEGORIES.length); // 5 tin/chuyên mục
+            let oppHasStocks = null;
+            let newsByCat = {}; // { 'chung-khoan': [bài mới nhất, ...], ... }
 
             function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
             function fmt(v, d) { const n = Number(v); if (!isFinite(n) || n === 0) return '--'; return n.toLocaleString('vi-VN', { maximumFractionDigits: d == null ? 2 : d }); }
             function fmtMoney(v) { const n = Number(v) || 0; return new Intl.NumberFormat('vi-VN').format(Math.round(n)); }
+            // Như fmt() nhưng GIỮ số 0 (fmt() trả '--' khi giá trị bằng 0 → thẻ chỉ số bị "+-- (0%)").
+            function fmtNum(v, d) { const n = Number(v) || 0; return n.toLocaleString('vi-VN', { minimumFractionDigits: d == null ? 2 : d, maximumFractionDigits: d == null ? 2 : d }); }
             function pct(v) { const n = Number(v) || 0; if (!n) return '0%'; return (n >= 0 ? '+' : '') + n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%'; }
             function cls(v) { return Number(v) >= 0 ? 'pos' : 'neg'; }
             function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*'); }
@@ -409,6 +452,7 @@
                 const el = document.getElementById('ovHot');
                 const market = (d && d.market) || null;
                 const items = (d && Array.isArray(d.items)) ? d.items.slice(0, 3) : []; // trang chủ: top 3
+                oppHasStocks = items.length > 0; // block cơ hội có mã → "Tin tức quan trọng" hiển thị 6 tin
                 if (mEl) {
                     if (!market || !market.status) { mEl.innerHTML = ''; mEl.className = 'ov-market'; }
                     else {
@@ -420,7 +464,11 @@
                             (market.status === 'negative' && market.message ? '<span class="om-note">' + esc(market.message) + '</span>' : '');
                     }
                 }
-                if (!items.length) { el.innerHTML = '<div class="ov-empty">Chưa ghi nhận đủ tín hiệu nổi bật trong phiên hôm nay.</div>'; return; }
+                if (!items.length) {
+                    el.innerHTML = '<div class="ov-empty">Chưa ghi nhận đủ tín hiệu nổi bật trong phiên hôm nay.</div>';
+                    refreshNewsCount(); // không có mã nào → tin tức hiển thị 9 tin
+                    return;
+                }
                 el.innerHTML = items.map(function(s) {
                     const chips = [];
                     chips.push('<span class="om-chip idx"><i class="fas fa-coins"></i> ' + omLiq(Number(s.price) * Number(s.volume)) + '</span>');
@@ -438,27 +486,120 @@
                     '</div>';
                 }).join('');
                 el.querySelectorAll('.ov-stock').forEach(function(c) { c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); }); });
+                refreshNewsCount();
             }
 
             // ---------- Market Radar ----------
+            // Mọi card đều lấy từ dữ liệu thật của /api/stocks/market-dashboard + note động theo số liệu.
             function renderRadar(d) {
                 const el = document.getElementById('ovRadar');
                 const radar = d.radar || {};
                 const sectors = d.sectors || [];
-                const strong = sectors.slice(0, 2).map(function(s) { return s.name; });
+                const strong = sectors.slice(0, 2);
                 const weak = sectors.length ? sectors[sectors.length - 1] : null;
-                const vol = (radar.volume_spike || []).slice(0, 2).map(function(s) { return s.symbol; });
-                const fbuy = (radar.foreign_buy || []).slice(0, 2).map(function(s) { return s.symbol; });
+                // Breakout/rủi ro: tín hiệu kỹ thuật thật (screener); fallback top tăng/giảm của market-map.
+                const boTech = (radar.breakout_tech || []).slice(0, 2);
+                const riskSig = (radar.risk_signal || []).slice(0, 2);
+                const bo = boTech.length ? boTech : (radar.breakout || []).slice(0, 2);
+                const risk = riskSig.length ? riskSig : (radar.weak || []).slice(0, 2);
+                const volSpike = (radar.volume_spike_ratio || radar.volume_spike || []).slice(0, 2);
+                const fbuy = (radar.foreign_buy || []).slice(0, 2);
+
+                const syms = function(arr) { return (arr || []).map(function(x) { return typeof x === 'string' ? x : x.symbol; }).filter(Boolean); };
                 const chip = function(arr) { return (arr || []).map(function(x) { return '<span class="rc-chip" data-symbol="' + esc(x) + '">' + esc(x) + '</span>'; }).join(''); };
                 const secChip = function(arr) { return (arr || []).map(function(x) { return '<span class="rc-chip sec">' + esc(x) + '</span>'; }).join(''); };
+                const chipsOr = function(html) { return html || '<span class="rc-chip sec">—</span>'; };
+                const card = function(color, icon, title, chipsHtml, noteText) {
+                    return '<div class="ov-radar-card"><div class="rc-head"><span class="rc-ico" style="background:' + color + ';"><i class="fas ' + icon + '"></i></span> ' + title + '</div>' +
+                        '<div class="rc-chips">' + chipsOr(chipsHtml) + '</div>' +
+                        (noteText ? '<div class="rc-note">' + esc(noteText) + '</div>' : '') + '</div>';
+                };
+                const firstNote = function(arr, fallback) { return (arr && arr.length && arr[0].note) ? arr[0].note : fallback; };
+
+                const fbuyNote = (fbuy.length && fbuy[0].net_value != null)
+                    ? 'Mua ròng ' + fmt(Number(fbuy[0].net_value) / 1e9, 1) + ' tỷ'
+                    : 'Nhà đầu tư nước ngoài mua ròng';
+
                 el.innerHTML =
-                    '<div class="ov-radar-card"><div class="rc-head"><span class="rc-ico" style="background:#008080;"><i class="fas fa-arrow-trend-up"></i></span> Ngành tăng mạnh</div><div class="rc-chips">' + secChip(strong) + '</div><div class="rc-note">' + (strong.length ? 'Ngành dẫn dắt đà tăng hôm nay' : '') + '</div></div>' +
-                    '<div class="ov-radar-card"><div class="rc-head"><span class="rc-ico" style="background:#d0314e;"><i class="fas fa-arrow-trend-down"></i></span> Ngành suy yếu</div><div class="rc-chips">' + (weak ? '<span class="rc-chip sec">' + esc(weak.name) + '</span>' : '') + '</div><div class="rc-note">' + (weak ? 'Điều chỉnh ' + pct(weak.avg_pct) : '') + '</div></div>' +
-                    '<div class="ov-radar-card"><div class="rc-head"><span class="rc-ico" style="background:#f5a623;"><i class="fas fa-fire"></i></span> Volume bất thường</div><div class="rc-chips">' + chip(vol) + '</div><div class="rc-note">Giao dịch vượt trội so trung bình</div></div>' +
-                    '<div class="ov-radar-card"><div class="rc-head"><span class="rc-ico" style="background:#4a7fc4;"><i class="fas fa-coins"></i></span> Khối ngoại mua ròng</div><div class="rc-chips">' + chip(fbuy) + '</div><div class="rc-note">Nhà đầu tư nước ngoài quan tâm</div></div>' +
-                    '<div class="ov-radar-card"><div class="rc-head"><span class="rc-ico" style="background:#f0883a;"><i class="fas fa-arrow-up-right-from-square"></i></span> Breakout kỹ thuật</div><div class="rc-chips">' + chip(['VCI', 'MBB']) + '</div><div class="rc-note">Vượt vùng kháng cự quan trọng</div></div>' +
-                    '<div class="ov-radar-card"><div class="rc-head"><span class="rc-ico" style="background:#e5533d;"><i class="fas fa-triangle-exclamation"></i></span> Tín hiệu rủi ro</div><div class="rc-chips">' + chip(['FPT', 'VHM']) + '</div><div class="rc-note">Xu hướng ngắn hạn suy yếu</div></div>';
+                    card('#008080', 'fa-arrow-trend-up', 'Ngành tăng mạnh', secChip(strong.map(function(s) { return s.name; })),
+                        strong.length ? 'TB ' + pct(strong[0].avg_pct) + ' · ' + strong[0].total + ' mã' : '') +
+                    card('#d0314e', 'fa-arrow-trend-down', 'Ngành suy yếu', weak ? '<span class="rc-chip sec">' + esc(weak.name) + '</span>' : '',
+                        weak ? 'TB ' + pct(weak.avg_pct) + ' · ' + weak.down_count + '/' + weak.total + ' mã giảm' : '') +
+                    card('#f5a623', 'fa-fire', 'Volume bất thường', chip(syms(volSpike)),
+                        firstNote(volSpike, '')) +
+                    card('#4a7fc4', 'fa-coins', 'Khối ngoại mua ròng', chip(syms(fbuy)), fbuyNote) +
+                    card('#f0883a', 'fa-arrow-up-right-from-square', 'Breakout kỹ thuật', chip(syms(bo)),
+                        firstNote(bo, boTech.length ? '' : 'Top mã tăng mạnh hôm nay')) +
+                    card('#e5533d', 'fa-triangle-exclamation', 'Tín hiệu rủi ro', chip(syms(risk)),
+                        firstNote(risk, riskSig.length ? '' : 'Top mã giảm mạnh hôm nay')) +
+                    radarExtrasHtml();
                 el.querySelectorAll('.rc-chip[data-symbol]').forEach(function(c) { c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); }); });
+                loadRadarExtras();
+            }
+
+            // ----- Market Radar: 3 block phụ (lãi suất NH 12 tháng / vàng SJC / BTC-ETH-SOL) -----
+            function radarPriceRow(name, value, valueCls) {
+                return '<div class="rc-prow"><span class="rc-pname">' + esc(name) + '</span>' +
+                    '<span class="rc-pval ' + (valueCls || '') + '">' + value + '</span></div>';
+            }
+            // Tăng/giảm so lần cập nhật trước — cùng quy ước với trang Giá Vàng/Bạc.
+            function radarGoldDelta(delta) {
+                if (delta === null || delta === undefined) return '<small class="rc-delta">—</small>';
+                const n = Number(delta) || 0;
+                if (n > 0) return '<small class="rc-delta pos"><i class="fas fa-caret-up"></i> +' + fmtMoney(n) + '</small>';
+                if (n < 0) return '<small class="rc-delta neg"><i class="fas fa-caret-down"></i> −' + fmtMoney(Math.abs(n)) + '</small>';
+                return '<small class="rc-delta">= 0</small>';
+            }
+            function radarGoldRow(name, price, delta) {
+                return '<div class="rc-prow"><span class="rc-pname">' + esc(name) + '</span>' +
+                    '<span class="rc-pval stack"><span>' + fmtMoney(price) + ' đ</span>' + radarGoldDelta(delta) + '</span></div>';
+            }
+            function radarExtrasHtml() {
+                return '<a class="ov-radar-card" href="/lai-ngan-hang"><div class="rc-head"><span class="rc-ico" style="background:#0f7b3a;"><i class="fas fa-piggy-bank"></i></span> Lãi suất 12 tháng<i class="fas fa-chevron-right rc-go"></i></div>' +
+                        '<div class="rc-price" id="rcBanksBody"><div class="rc-note">Đang tải…</div></div>' +
+                        '<div class="rc-note">Gửi online · lãi cao nhất</div></a>' +
+                    '<a class="ov-radar-card" href="/gia-vang-bac"><div class="rc-head"><span class="rc-ico" style="background:#c9a227;"><i class="fas fa-coins"></i></span> Vàng SJC<i class="fas fa-chevron-right rc-go"></i></div>' +
+                        '<div class="rc-price" id="rcGoldBody"><div class="rc-note">Đang tải…</div></div></a>' +
+                    '<a class="ov-radar-card" href="/crypto"><div class="rc-head"><span class="rc-ico" style="background:#f7931a;"><i class="fab fa-bitcoin"></i></span> Coin<i class="fas fa-chevron-right rc-go"></i></div>' +
+                        '<div class="rc-price" id="rcCryptoBody"><div class="rc-note">Đang tải…</div></div></a>';
+            }
+            function loadRadarExtras() {
+                // Top 3 ngân hàng lãi cao nhất kỳ hạn 12 tháng (gửi online).
+                fetchJson('/api/bank-rates/rates?term=12&channel=online&sort=rate_desc').then(function(list) {
+                    const body = document.getElementById('rcBanksBody');
+                    if (!body) return;
+                    const rows = (Array.isArray(list) ? list : []).slice(0, 3);
+                    body.innerHTML = rows.length
+                        ? rows.map(function(r) { return radarPriceRow(r.bank_name || r.bank_code || '', fmt(r.interest_rate, 2) + '%'); }).join('')
+                        : '<div class="rc-note">Chưa có dữ liệu.</div>';
+                    notifyParentHeight();
+                });
+                // Giá vàng miếng SJC (mua vào / bán ra).
+                fetchJson('/api/gold/domestic').then(function(g) {
+                    const body = document.getElementById('rcGoldBody');
+                    if (!body) return;
+                    const brand = ((g && g.brands) || []).filter(function(b) { return String(b.slug || '').toLowerCase() === 'sjc'; })[0];
+                    const p = brand && (brand.products || [])[0];
+                    if (!p) { body.innerHTML = '<div class="rc-note">Chưa có dữ liệu.</div>'; return; }
+                    body.innerHTML = radarGoldRow('Mua vào', p.buy, p.buy_change) +
+                        radarGoldRow('Bán ra', p.sell, p.sell_change);
+                    notifyParentHeight();
+                });
+                // Giá BTC / ETH / SOL (USDT — Binance).
+                fetchJson('/api/crypto/markets').then(function(c) {
+                    const body = document.getElementById('rcCryptoBody');
+                    if (!body) return;
+                    const items = (c && c.items) || [];
+                    const pick = ['BTC', 'ETH', 'SOL'].map(function(s) { return items.filter(function(x) { return x.symbol === s; })[0]; }).filter(Boolean);
+                    if (!pick.length) { body.innerHTML = '<div class="rc-note">Chưa có dữ liệu.</div>'; return; }
+                    body.innerHTML = pick.map(function(x) {
+                        const pctv = Number(x.change_pct) || 0;
+                        return '<div class="rc-prow"><span class="rc-pname">' + esc(x.symbol) + '</span>' +
+                            '<span class="rc-pval ' + (pctv >= 0 ? 'pos' : 'neg') + '">' + fmtMoney(x.price) +
+                            '<small>' + pct(pctv) + '</small></span></div>';
+                    }).join('') + '<div class="rc-note">Giá USDT · Binance</div>';
+                    notifyParentHeight();
+                });
             }
 
             // ---------- News (card grid + ticker %) ----------
@@ -478,10 +619,29 @@
                 cands.forEach(function(t) { if (uniq.indexOf(t) < 0) uniq.push(t); });
                 return uniq.slice(0, 3);
             }
-            function renderNews(list) {
+            // Số tin sẽ hiển thị theo trạng thái block "Cơ hội nổi bật hôm nay".
+            function newsShowCount() { return oppHasStocks === false ? NEWS_LIMIT_NO_OPP : NEWS_LIMIT_WITH_OPP; }
+            function newsTs(n) { const t = Date.parse((n && (n.published_at || n.created_at)) || ''); return isFinite(t) ? t : 0; }
+            // Mỗi chuyên mục lấy `ceil(total/số menu)` tin mới nhất → gộp, sắp theo GIỜ BÀI VIẾT
+            // giảm dần rồi cắt còn đúng `total` (9 hoặc 6).
+            function buildHomeNews() {
+                const total = newsShowCount();
+                const perCat = Math.ceil(total / HOME_NEWS_CATEGORIES.length);
+                const merged = [];
+                HOME_NEWS_CATEGORIES.forEach(function(c) {
+                    (newsByCat[c] || []).slice(0, perCat).forEach(function(n) { merged.push(n); });
+                });
+                merged.sort(function(a, b) { return newsTs(b) - newsTs(a); });
+                return merged.slice(0, total);
+            }
+            // Block cơ hội render xong (có/không có mã) → vẽ lại tin tức với đúng số lượng.
+            function refreshNewsCount() { if (Object.keys(newsByCat).length) renderNews(); }
+            function renderNews(buckets) {
                 const el = document.getElementById('ovNews');
-                if (!list || !list.length) { el.innerHTML = '<div class="ov-empty">Chưa có tin tức.</div>'; return; }
-                el.innerHTML = list.slice(0, 6).map(function(n) {
+                if (buckets) newsByCat = buckets;
+                const list = buildHomeNews();
+                if (!list.length) { el.innerHTML = '<div class="ov-empty">Chưa có tin tức.</div>'; return; }
+                el.innerHTML = list.map(function(n) {
                     const img = n.image_url
                         ? '<img class="ni-img" src="' + esc(n.image_url) + '" alt="" loading="lazy">'
                         : '<div class="ni-imgph"><i class="fas fa-newspaper"></i></div>';
@@ -517,19 +677,48 @@
             }
 
             // ---------- Cơ hội mới ----------
+            // Tên/mô tả/ghi chú bám ĐÚNG tiêu chí thật của backend (get_stock_discover_page):
+            //   growth    = top tăng trưởng lợi nhuận ròng (net_profit_growth)
+            //   value     = P/E thấp + P/B thấp (+ EV/EBITDA)
+            //   cash_flow = điểm sức khỏe tài chính + cổ tức (KHÔNG dùng volume/thanh khoản)
             function renderOpps(d) {
                 const el = document.getElementById('ovOpps');
                 const strategies = (d.strategies || []);
                 const pick = function(key) { const s = strategies.find(function(x) { return x.key === key; }); return s || null; };
                 const growth = pick('growth'), value = pick('value'), cash = pick('cash_flow');
-                const card = function(icon, title, desc, st, note) {
-                    const chips = (st && st.stocks || []).slice(0, 3).map(function(x) { return '<span class="oo-chip" data-symbol="' + esc(x.symbol) + '">' + esc(x.symbol) + '</span>'; }).join('');
-                    return '<div class="ov-opp"><div class="oo-ico">' + icon + '</div><div class="oo-title">' + title + '</div><div class="oo-desc">' + desc + '</div>' +
-                        '<div class="oo-chips">' + chips + '</div><div class="oo-note">' + note + '</div></div>';
+                const num = function(x) { const n = Number(x); return isFinite(n) ? n : null; };
+                const stocksOf = function(st) { return (st && st.stocks) || []; };
+                // Chỉ tính trên các mã ĐANG HIỂN THỊ (3 chip) → ghi chú khớp đúng những gì người dùng thấy.
+                const shown = function(st) { return stocksOf(st).slice(0, 3); };
+                const avgOf = function(arr, fn) {
+                    const vals = (arr || []).map(fn).filter(function(v) { return v !== null; });
+                    if (!vals.length) return null;
+                    return vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
                 };
-                el.innerHTML = card('', 'Tăng trưởng cao', 'Lợi nhuận tăng trưởng mạnh', growth, 'Ưu tiên nhóm có động lực lợi nhuận tốt nhất.') +
-                    card('', 'Định giá hấp dẫn', 'P/E thấp, ROE cao', value, 'Vùng định giá hấp dẫn so với nền tảng cơ bản.') +
-                    card('', 'Dòng tiền mạnh', 'Thanh khoản và volume tăng', cash, 'Dòng tiền đang đổ vào những mã này.');
+                const avg = function(arr, key) { return avgOf(arr, function(s) { return num(s[key]); }); };
+                const signed = function(v, d) { return (v >= 0 ? '+' : '−') + fmt(Math.abs(v), d) + '%'; };
+                const card = function(icon, color, title, desc, st, note) {
+                    const chips = stocksOf(st).slice(0, 3).map(function(x) { return '<span class="oo-chip" data-symbol="' + esc(x.symbol) + '">' + esc(x.symbol) + '</span>'; }).join('');
+                    return '<div class="ov-opp"><div class="oo-ico" style="color:' + color + ';"><i class="fas ' + icon + '"></i></div>' +
+                        '<div class="oo-title">' + title + '</div><div class="oo-desc">' + desc + '</div>' +
+                        '<div class="oo-chips">' + chips + '</div>' + (note ? '<div class="oo-note">' + note + '</div>' : '') + '</div>';
+                };
+                const gAvg = avg(shown(growth), 'net_profit_growth');
+                const vPe = avg(shown(value), 'pe_ratio');
+                const vPb = avg(shown(value), 'pb_ratio');
+                const cShown = shown(cash);
+                const cFh = avgOf(cShown, function(s) { return num((s.points || {}).financial_health); });
+                const cTotal = cShown.length;
+                const cDiv = cShown.filter(function(s) { return num(s.dividend_yield) > 0; }).length;
+                const noteGrowth = (gAvg !== null) ? 'LN ròng TB ' + signed(gAvg, 1) : '';
+                const noteValue = (vPe !== null && vPb !== null) ? 'P/E TB ' + fmt(vPe, 1) + ' · P/B TB ' + fmt(vPb, 2) : '';
+                const noteCash = (cFh !== null)
+                    ? 'Sức khỏe TC TB ' + fmt(cFh, 1) + '/5' + (cTotal ? ' · ' + cDiv + '/' + cTotal + ' mã có cổ tức' : '')
+                    : '';
+                el.innerHTML =
+                    card('fa-rocket', '#008080', 'Tăng trưởng cao', 'Lợi nhuận tăng trưởng mạnh', growth, noteGrowth) +
+                    card('fa-tags', '#4a7fc4', 'Định giá hấp dẫn', 'P/E, P/B thấp so với nền tảng', value, noteValue) +
+                    card('fa-shield-alt', '#0f7b3a', 'Tài chính lành mạnh', 'Sức khỏe tài chính cao, cổ tức đều', cash, noteCash);
                 el.querySelectorAll('.oo-chip[data-symbol]').forEach(function(c) { c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); }); });
             }
 
@@ -577,7 +766,7 @@
                             '<div class="opel-ico"><i class="fas fa-briefcase"></i></div>' +
                             '<div class="opel-title">Danh mục tài sản đang trống</div>' +
                             '<div class="opel-desc">Thêm cổ phiếu đầu tiên để TuniX bắt đầu theo dõi hiệu quả danh mục của bạn.</div>' +
-                            '<a class="op-link" href="/quan-ly-tai-san">Xem chi tiết quản lý tài sản →</a>' +
+                            '<a class="op-link" href="/quan-ly-tai-san/phan-tich-tai-san">Xem chi tiết quản lý tài sản →</a>' +
                         '</div>';
                         return;
                     }
@@ -597,7 +786,7 @@
                         '<div class="op-day ' + (today >= 0 ? 'pos' : 'neg') + '">Hôm nay: ' + (today >= 0 ? '+' : '−') + fmtMoney(Math.abs(today)) + ' (' + pct(todayPct) + ') · P/L ' + pct(pnlPct) + '</div>' +
                         '<div class="op-donut-row"><div class="op-donut">' + donut + '<div class="op-center"><span class="n">' + list.length + '</span><span class="l">vị thế</span></div></div>' +
                         '<div class="op-legend">' + legend + '</div></div>' +
-                        '<a class="op-link" href="/quan-ly-tai-san">Xem chi tiết quản lý tài sản →</a>';
+                        '<a class="op-link" href="/quan-ly-tai-san/phan-tich-tai-san">Xem chi tiết quản lý tài sản →</a>';
                 };
                 if (!token) {
                     // Chưa đăng nhập → hiển thị empty state + nút Đăng nhập để quản lý danh mục.
@@ -680,10 +869,14 @@
                     if (!i || i.value == null) {
                         return '<div class="vi-card vi-none"><div class="vi-label">' + label + '</div><div class="vi-value">--</div><div class="vi-chg">Chưa có dữ liệu</div></div>';
                     }
-                    const up = Number(i.change) >= 0;
+                    const chg = Number(i.change) || 0;
+                    const up = chg >= 0;
+                    // Số 0 phải hiển thị "0,00" (không dùng fmt() vì fmt() trả '--' khi bằng 0).
+                    const chgCls = chg > 0 ? 'pos' : chg < 0 ? 'neg' : '';
+                    const chgSign = chg > 0 ? '+' : chg < 0 ? '−' : '';
                     return '<div class="vi-card"><div class="vi-label">' + label + '</div>' +
                         '<div class="vi-value">' + fmt(i.value, 2) + '</div>' +
-                        '<div class="vi-chg ' + (up ? 'pos' : 'neg') + '">' + (up ? '+' : '−') + fmt(Math.abs(i.change), 2) + ' (' + pct(i.percent_change) + ')</div></div>';
+                        '<div class="vi-chg ' + chgCls + '">' + chgSign + fmtNum(Math.abs(chg), 2) + ' (' + pct(i.percent_change) + ')</div></div>';
                 }).join('');
                 el.innerHTML = cards + '<button class="ov-opt-card" id="ovOptCard"><i class="fas fa-sliders-h"></i> Tùy chọn</button>';
                 const oc = document.getElementById('ovOptCard');
@@ -770,13 +963,25 @@
                 const screenerP = fetchJson('/api/stocks/stock-screener');
                 const oppP = fetchJson('/api/stocks/opportunities');
                 const discP = fetchJson('/api/stocks/stock-discover');
-                const newsP = fetchJson('/api/news?limit=6');
+                // Tin tức quan trọng: mỗi chuyên mục (Chứng khoán/Ngân hàng) lấy tin mới nhất của nó rồi trộn.
+                const newsP = Promise.all(HOME_NEWS_CATEGORIES.map(function(c) {
+                    return fetchJson('/api/news?category=' + c + '&limit=' + NEWS_PER_CATEGORY)
+                        .then(function(list) { return [c, Array.isArray(list) ? list : []]; });
+                })).then(function(pairs) {
+                    const buckets = {};
+                    pairs.forEach(function(p) { buckets[p[0]] = p[1]; });
+                    return buckets;
+                });
 
                 let notableStocks = [];
 
                 // 1) Chỉ số + Market Radar + TuniAI Market View (market-dashboard)
                 dashP.then(function(d) {
-                    if (!d) return;
+                    if (!d) {
+                        // Dashboard lỗi → vẫn dựng Market Radar để 3 block phụ (lãi suất/vàng/crypto) hiển thị.
+                        renderRadar({});
+                        return;
+                    }
                     (d.indices || []).forEach(function(i) { indicesMap[i.key] = i; });
                     renderIndices();
                     loadExtraIndices();
@@ -797,8 +1002,11 @@
                 oppP.then(function(d) {
                     if (d) { renderTodayOpp(d); return; }
                     screenerP.then(function() {
-                        if (notableStocks.length) renderHot(pickNotable(notableStocks));
+                        const fallback = notableStocks.length ? pickNotable(notableStocks) : [];
+                        oppHasStocks = fallback.length > 0;
+                        if (fallback.length) renderHot(fallback);
                         else document.getElementById('ovHot').innerHTML = '<div class="ov-empty">Không tải được dữ liệu. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
+                        refreshNewsCount();
                     });
                 });
 
@@ -806,7 +1014,19 @@
                 discP.then(function(d) { if (d) renderOpps(d); });
 
                 // 5) Tin tức quan trọng
-                newsP.then(function(list) { if (list) renderNews(list); });
+                // Chip mã cổ phiếu của mỗi tin cần bản đồ mã từ screener (NEWS_SYMS). Lần load
+                // ĐẦU TIÊN, screener (payload lớn) thường về SAU tin tức → nếu chỉ render 1 lần
+                // thì tin không có chip mã (phải chuyển trang rồi quay lại mới thấy). Vì vậy:
+                // render ngay khi có tin, rồi VẼ LẠI khi bản đồ mã về.
+                newsP.then(function(buckets) {
+                    if (!buckets) return;
+                    renderNews(buckets);
+                    if (!Object.keys(NEWS_SYMS).length) {
+                        screenerP.then(function() {
+                            if (Object.keys(NEWS_SYMS).length) renderNews();
+                        });
+                    }
+                });
 
                 // Widget danh mục — độc lập với các block trên
                 renderPortfolio();

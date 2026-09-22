@@ -64,3 +64,25 @@ def require_roles(*roles: RoleEnum):
 
     return checker
 
+
+# Vai trò quản trị nội bộ — luôn có quyền dùng tính năng "Tín hiệu".
+ADMIN_ROLES = (RoleEnum.super_admin, RoleEnum.admin)
+
+
+def require_signal_access(user: User = Depends(get_current_user)) -> User:
+    """Quyền dùng tính năng **Tín hiệu** (TuniX Signal Engine).
+
+    Cho phép khi:
+    - role là super-admin/admin (quản trị nội bộ), HOẶC
+    - tài khoản được admin CẤP RIÊNG cờ ``users.signal_access``.
+
+    Không đăng nhập ⇒ 401; đã đăng nhập nhưng chưa được cấp ⇒ **403**.
+    Đây là kiểm tra Ở SERVER — không phụ thuộc việc frontend có ẩn menu hay không.
+    """
+    if user.role in ADMIN_ROLES or bool(getattr(user, "signal_access", False)):
+        return user
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Tài khoản của bạn chưa được cấp quyền dùng tính năng Tín hiệu.",
+    )
+

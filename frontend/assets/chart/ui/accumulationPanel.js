@@ -70,9 +70,32 @@ function accumMonthKeyFrom(y, m0) {
     return y + '-' + String(m0 + 1).padStart(2, '0');
 }
 
+// Chuỗi số từ nguồn dữ liệu: dấu PHẨY phân cách nghìn + dấu CHẤM là phần thập phân
+// ("5,035.18 đồng/CP" ⇒ 5035.18, KHÔNG phải 503518). Dữ liệu kiểu Việt Nam
+// ("5.035,18") cũng phải đúng ⇒ quy tắc: dấu xuất hiện SAU CÙNG là dấu thập phân.
+// Chỉ có 1 loại dấu mà khối cuối đúng 3 chữ số ⇒ phân cách nghìn ("1,000" ⇒ 1000);
+// còn lại là thập phân ("10.5" ⇒ 10.5).
 function parseVnNumber(s) {
     if (s == null) return NaN;
-    const n = Number(String(s).replace(/[,.]/g, ''));
+    let t = String(s).trim().replace(/\s/g, '');
+    if (!t) return NaN;
+    const iComma = t.lastIndexOf(',');
+    const iDot = t.lastIndexOf('.');
+    let dec = '';
+    if (iComma >= 0 && iDot >= 0) {
+        dec = iComma > iDot ? ',' : '.';
+    } else {
+        const sep = iComma >= 0 ? ',' : (iDot >= 0 ? '.' : '');
+        if (sep && t.length - t.lastIndexOf(sep) - 1 !== 3) dec = sep;
+    }
+    if (dec) {
+        const other = dec === ',' ? '.' : ',';
+        const i = t.lastIndexOf(dec);
+        t = t.slice(0, i).split(other).join('').split(dec).join('') + '.' + t.slice(i + 1);
+    } else {
+        t = t.split(',').join('').split('.').join('');
+    }
+    const n = Number(t);
     return Number.isFinite(n) ? n : NaN;
 }
 

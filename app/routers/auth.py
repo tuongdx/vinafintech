@@ -96,8 +96,18 @@ def _revoke(db: Session, token: str) -> None:
 
 
 def _issue_tokens(user: User, remember: bool) -> AuthResponse:
+    """Cấp cặp token cho phiên đăng nhập.
+
+    Phiên được NHỚ tới khi người dùng tự đăng xuất: refresh token có hạn rất dài
+    (`settings.refresh_token_expire_minutes`) và mỗi lần refresh lại được cấp mới,
+    nên chỉ kết thúc khi đăng xuất (token bị thu hồi) hoặc token bị xoá ở trình duyệt.
+
+    Tham số `remember` (tick "Ghi nhớ" ở trang đăng nhập) KHÔNG còn ảnh hưởng thời hạn
+    phiên — giữ lại để tương thích API/schema; frontend dùng nó để quyết định lưu
+    email + mật khẩu cho lần đăng nhập sau.
+    """
     access_minutes = settings.access_token_expire_minutes
-    refresh_minutes = settings.refresh_token_expire_minutes if remember else (60 * 24)  # 1 ngày nếu không ghi nhớ
+    refresh_minutes = settings.refresh_token_expire_minutes
     access = create_access_token(str(user.id), access_minutes, extra={"role": user.role.value})
     refresh = create_refresh_token(str(user.id), refresh_minutes)
     return AuthResponse(access_token=access, refresh_token=refresh, user=UserOut.model_validate(user))

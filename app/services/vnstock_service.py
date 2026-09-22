@@ -20,6 +20,18 @@ _SIMPLIZE_BASE_URL = "https://api2.simplize.vn"
 _SIMPLIZE_WEB_BASE_URL = "https://simplize.vn"
 _SIMPLIZE_TIMEOUT_SECONDS = 12
 _VCIQ_URL = "https://iq.vietcap.com.vn/api/iq-insight-service"
+# VCI iQ insight (KQKD/BCTC, cơ cấu cổ đông) — từ 2026-09 BẮT BUỘC có `Referer`,
+# thiếu Referer trả HTTP 403 (chỉ Origin KHÔNG đủ) ⇒ mọi endpoint VCI iQ rỗng.
+_VCIQ_HEADERS = {
+    "accept": "application/json",
+    "accept-language": "vi-VN,vi;q=0.9,en;q=0.8",
+    "user-agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "referer": "https://iq.vietcap.com.vn/",
+    "origin": "https://iq.vietcap.com.vn",
+}
 # VCI trading REST (price board + intraday) — dùng TRỰC TIẾP để bỏ phí import/khởi tạo thư viện vnstock.
 _VCI_TRADING_URL = "https://trading.vietcap.com.vn/api"
 _VCI_TRADING_TIMEOUT = 15
@@ -879,8 +891,76 @@ def _write_dividend_cache_file() -> None:
         pass
 
 
+def _to_iso_date(raw: str) -> str:
+    """Chuẩn hóa ngày vnstock về 'YYYY-MM-DD' (nguồn VCI trả lẫn ISO và dd/mm/yyyy)."""
+    text = str(raw or "").strip()
+    if len(text) >= 10 and text[4:5] == "-" and text[7:8] == "-":
+        return text[:10]
+    m = re.match(r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$", text)
+    if m:
+        try:
+            return datetime(int(m.group(3)), int(m.group(2)), int(m.group(1))).strftime("%Y-%m-%d")
+        except ValueError:
+            return text
+    return text
+
+
+def _vnstock_event_date(row: Any, keys: tuple[str, ...]) -> str:
+    """Lấy ngày đầu tiên có giá trị trong `keys` (vnstock events) → 'YYYY-MM-DD'."""
+    for key in keys:
+        value = row.get(key) if hasattr(row, "get") else None
+        raw = _strip_html(value)
+        if not raw or raw.lower() in ("nan", "nat", "none"):
+            continue
+        return _to_iso_date(raw)
+    return ""
+
+
+def _fetch_vnstock_dividends(symbol: str) -> list[dict[str, Any]]:
+    """Fallback: lịch sử cổ tức / phát hành thêm từ vnstock (nguồn VCI events).
+
+    LƯU Ý: `Reference().company(sym).events()` mặc định dùng source='kbs' và trả
+    RỖNG với hầu hết mã Việt Nam — BẮT BUỘC truyền source='vci'.
+    """
+    symbol_upper = symbol.upper().strip()
+    if not symbol_upper:
+        return []
+    try:
+        from vnstock import Reference  # lazy import
+
+        df = Reference().company(symbol_upper).events(source="vci")
+    except Exception:
+        return []
+    if df is None or getattr(df, "empty", True):
+        return []
+
+    result: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for _, row in df.iterrows():
+        code = _strip_html(row.get("event_code")).upper()
+        category = _strip_html(row.get("category")).upper()
+        if code not in ("DIV", "ISS") and category != "DIVIDEND":
+            continue
+        content = _strip_html(row.get("event_title_vi")) or _strip_html(row.get("event_name_vi"))
+        if not content:
+            continue
+        date_s = _vnstock_event_date(
+            row,
+            ("exright_date", "record_date", "payout_date", "issue_date", "public_date", "display_date1"),
+        )
+        dedupe_key = (date_s, content)
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        result.append({"symbol": symbol_upper, "date": date_s, "content": content})
+
+    # Mới nhất lên đầu; sự kiện thiếu ngày xuống cuối.
+    result.sort(key=lambda r: str(r.get("date") or ""), reverse=True)
+    return result
+
+
 def get_dividends(symbol: str) -> list[dict[str, Any]]:
-    """Lịch sử trả cổ tức của cổ phiếu (Simplize dividendPayment)."""
+    """Lịch sử trả cổ tức của cổ phiếu (Simplize dividendPayment, fallback vnstock VCI)."""
     symbol_upper = symbol.upper().strip()
     if not symbol_upper:
         return []
@@ -904,6 +984,13 @@ def get_dividends(symbol: str) -> list[dict[str, Any]]:
         _read_dividend_cache_file()[symbol_upper] = rows
         cache.set(cache_key, rows, ttl_seconds=86400)
         _write_dividend_cache_file()
+        return rows
+
+    # Fallback: Simplize rỗng → lấy từ vnstock (VCI events). Chỉ cache RAM 24h,
+    # KHÔNG ghi file cache để lần sau vẫn ưu tiên thử lại Simplize.
+    rows = _fetch_vnstock_dividends(symbol_upper)
+    if rows:
+        cache.set(cache_key, rows, ttl_seconds=86400)
     return rows
 
 
@@ -997,12 +1084,122 @@ def _safe_business_line(symbol: str, summary: dict[str, Any]) -> str:
     return ""
 
 
+def _fmt_number(value: Any, unit: str = "") -> str:
+    """12345 → '12.345 tỷ đồng' (bỏ giá trị <= 0 / không phải số)."""
+    try:
+        n = float(value)
+    except (TypeError, ValueError):
+        return ""
+    if n <= 0:
+        return ""
+    text = f"{n:,.0f}".replace(",", ".")
+    return f"{text} {unit}".strip()
+
+
+def _fetch_vnstock_company_info(symbol: str) -> dict[str, str]:
+    """Hồ sơ doanh nghiệp từ vnstock company.info() — fallback khi Simplize rỗng.
+
+    Bỏ free_float_percentage / free_float: vnstock 4.0.5 trả giá trị sai
+    (lặp lại vốn hóa / mệnh giá) nên không hiển thị để tránh số vô nghĩa.
+    """
+    symbol_upper = symbol.upper().strip()
+    if not symbol_upper:
+        return {}
+    try:
+        from vnstock import Reference  # lazy import
+
+        df = Reference().company(symbol_upper).info()
+    except Exception:
+        return {}
+    if df is None or getattr(df, "empty", True):
+        return {}
+    row = df.iloc[0]
+
+    def g(key: str) -> str:
+        value = row.get(key) if hasattr(row, "get") else None
+        text = _strip_html(value)
+        return "" if text.lower() in ("nan", "nat", "none") else text
+
+    as_of = g("as_of_date")
+    return {
+        "business_model": g("business_model"),
+        "company_type": g("company_type"),
+        "founded_date": g("founded_date"),
+        "listing_date": g("listing_date"),
+        "exchange": g("exchange"),
+        "charter_capital": _fmt_number(row.get("charter_capital"), "tỷ đồng"),
+        "number_of_employees": _fmt_number(row.get("number_of_employees"), "nhân sự"),
+        "listed_volume": _fmt_number(row.get("listed_volume"), "triệu cổ phiếu"),
+        "outstanding_shares": _fmt_number(row.get("outstanding_shares"), "cổ phiếu"),
+        "ceo_name": g("ceo_name"),
+        "tax_id": g("tax_id"),
+        "auditor": g("auditor"),
+        "address": g("address"),
+        "phone": g("phone"),
+        "email": g("email"),
+        "website": g("website"),
+        "as_of_date": as_of[:10] if len(as_of) >= 10 else as_of,
+    }
+
+
+def _vnstock_company_summary(symbol: str) -> dict[str, Any]:
+    """Payload `company-summary` dựng từ vnstock khi Simplize không có dữ liệu."""
+    info = _fetch_vnstock_company_info(symbol)
+    if not info:
+        return {}
+    name = (lookup_symbol_name(symbol) or "").strip() or symbol
+    overall_parts = [
+        info.get("company_type", ""),
+        f"Thành lập {info['founded_date']}" if info.get("founded_date") else "",
+        f"Vốn điều lệ {info['charter_capital']}" if info.get("charter_capital") else "",
+        info.get("number_of_employees", ""),
+        (
+            f"Niêm yết {info['exchange']}"
+            + (f" ({info['listing_date']})" if info.get("listing_date") else "")
+            if info.get("exchange")
+            else ""
+        ),
+        f"Địa chỉ: {info['address']}" if info.get("address") else "",
+    ]
+    return {
+        "symbol": symbol,
+        "name_vi": name,
+        "name_en": "",
+        "industry": "",
+        "sector": "",
+        "website": info.get("website", ""),
+        "main_service": "",
+        "business_line": info.get("business_model", ""),
+        "business_strategy": "",
+        "business_risk": "",
+        "business_overall": " · ".join(p for p in overall_parts if p),
+        "exchange": info.get("exchange", ""),
+        "analysis_updated": info.get("as_of_date", ""),
+        "market_cap": 0.0,
+        "roe": 0.0,
+        "roa": 0.0,
+        "dividend_yield": 0.0,
+        "free_float": 0.0,
+        "pe": 0.0,
+        "pb": 0.0,
+        "eps": 0.0,
+        "book_value": 0.0,
+        "image_url": "",
+        # Bỏ business_model / as_of_date ở `profile` vì đã có ở business_line / analysis_updated
+        # (tránh lặp dữ liệu dài trong payload tool của AI).
+        "profile": {k: v for k, v in info.items() if v and k not in ("business_model", "as_of_date")},
+        "source": "vnstock",
+    }
+
+
 def get_company_summary(symbol: str) -> dict[str, Any]:
-    """Tóm tắt thông tin doanh nghiệp (Simplize summary) cho popup."""
+    """Tóm tắt thông tin doanh nghiệp (Simplize summary, fallback vnstock company.info())."""
     symbol_upper = symbol.upper().strip()
     summary = _get_symbol_summary(symbol_upper)
     if not summary:
-        return {}
+        # Fallback: Simplize rỗng → dựng hồ sơ tối thiểu từ vnstock (không ghi file
+        # cache để lần sau vẫn ưu tiên thử lại Simplize).
+        return _vnstock_company_summary(symbol_upper)
 
     return {
         "symbol": symbol_upper,
@@ -1246,10 +1443,14 @@ def _screener_matches_industry(row: dict[str, Any], industry: str | None) -> boo
     if not industry:
         return True
     industry = str(industry).strip().lower()
+    # Ngành khai báo thủ công (mã IPO mới / mã bị nguồn phân loại sai) được ưu tiên.
+    override = _SECTOR_OVERRIDES.get(str(row.get("ticker") or "").upper()) or {}
     if industry == "ngan-hang":
         # Ngân hàng = ngành con "tài chính ngân hàng" trong nhóm Tài chính.
-        return str(row.get("industrySlug") or "").lower() == "tai-chinh-ngan-hang"
-    return str(row.get("economicSectorSlug") or "").lower() == industry
+        slug = str(override.get("industry") or row.get("industrySlug") or "").lower()
+        return slug == "tai-chinh-ngan-hang"
+    sector = str(override.get("sector") or row.get("economicSectorSlug") or "").lower()
+    return sector == industry
 
 
 def _screener_quality_score(row: dict[str, Any]) -> float:
@@ -1321,6 +1522,112 @@ def _build_screener_stock_row(row: dict[str, Any]) -> dict[str, Any]:
         "pbRatio": _to_float(row.get("pbRatio")),
         "source": "simplize-screener",
     }
+
+
+# ---------------------------------------------------------------------------
+# GÁN NGÀNH THỦ CÔNG CHO MÃ IPO MỚI (chưa được screener Simplize index)
+# ---------------------------------------------------------------------------
+# Mọi nhóm ngành trong app (trang "Cổ phiếu" › Nhóm ngành, "Phân bổ theo ngành" ở
+# Quản lý tài sản, so sánh cùng ngành, AI Screener...) đều suy từ dữ liệu screener
+# Simplize: economicSectorSlug/economicSectorName (nhóm ngành) và
+# industrySlug/industryName (ngành con). Cổ phiếu mới IPO thường CHƯA có trong
+# screener (nguồn index trễ) nên tạm thời không thuộc nhóm ngành nào.
+#
+# Khai báo ở _SECTOR_OVERRIDES để gán ngành NGAY cho các mã đó — không phải chờ
+# nguồn cập nhật, không cần sửa DB. Giá trị khai báo được ƯU TIÊN hơn dữ liệu
+# nguồn, nên cũng dùng được để sửa mã bị nguồn phân loại sai.
+#
+# Slug chuẩn của screener (economicSectorSlug):
+#   cong-nghiep | nguyen-vat-lieu | hang-hoa-khong-thiet-yeu | hang-hoa-thiet-yeu
+#   bat-dong-san | tien-ich | tai-chinh | nang-luong | cham-soc-suc-khoe | cong-nghe
+# industrySlug hay dùng: chung-khoan-va-ngan-hang-dau-tu, tai-chinh-ngan-hang, ...
+#
+# Thêm 1 mã mới = thêm 1 dòng (mã viết HOA):
+#   "XYZ": {
+#       "sector": "tai-chinh", "sectorName": "Tài chính",
+#       "industry": "chung-khoan-va-ngan-hang-dau-tu",
+#       "industryName": "Chứng khoán và Ngân hàng đầu tư",
+#   },
+_SECTOR_OVERRIDES: dict[str, dict[str, str]] = {
+    # --- Tài chính › Chứng khoán và Ngân hàng đầu tư ---
+    "KAI": {
+        "sector": "tai-chinh",
+        "sectorName": "Tài chính",
+        "industry": "chung-khoan-va-ngan-hang-dau-tu",
+        "industryName": "Chứng khoán và Ngân hàng đầu tư",
+    },
+    "LPS": {
+        "sector": "tai-chinh",
+        "sectorName": "Tài chính",
+        "industry": "chung-khoan-va-ngan-hang-dau-tu",
+        "industryName": "Chứng khoán và Ngân hàng đầu tư",
+    },
+    # --- Tài chính › Tài chính ngân hàng ---
+    "PCB": {
+        "sector": "tai-chinh",
+        "sectorName": "Tài chính",
+        "industry": "tai-chinh-ngan-hang",
+        "industryName": "Tài chính ngân hàng",
+    },
+    # --- Công nghiệp › Dịch vụ công nghiệp và Thương mại ---
+    "V68": {
+        "sector": "cong-nghiep",
+        "sectorName": "Công nghiệp",
+        "industry": "dich-vu-cong-nghiep-va-thuong-mai",
+        "industryName": "Dịch vụ công nghiệp và Thương mại",
+    },
+}
+
+
+def sector_override_map() -> dict[str, dict[str, str]]:
+    """Toàn bộ khai báo gán ngành thủ công (mã → thông tin ngành)."""
+    return {sym: dict(ov) for sym, ov in _SECTOR_OVERRIDES.items()}
+
+
+def get_sector_override(symbol: str) -> dict[str, str]:
+    """Thông tin ngành gán thủ công của 1 mã ({} nếu không khai báo)."""
+    return dict(_SECTOR_OVERRIDES.get(str(symbol or "").strip().upper(), {}))
+
+
+def _override_only_symbols(dataset: list[dict[str, Any]]) -> list[str]:
+    """Các mã có khai báo ngành thủ công nhưng CHƯA xuất hiện trong screener."""
+    present = {str(row.get("ticker") or "").upper() for row in dataset if isinstance(row, dict)}
+    return [sym for sym in sorted(_SECTOR_OVERRIDES) if sym not in present]
+
+
+def _override_sector_fields(symbol: str, row: dict[str, Any]) -> tuple[str, str, str, str]:
+    """(sector, sectorName, industry, industryName) sau khi áp override lên 1 row."""
+    override = _SECTOR_OVERRIDES.get(str(symbol or "").upper()) or {}
+    return (
+        str(override.get("sector") or row.get("economicSectorSlug") or "").lower(),
+        str(override.get("sectorName") or row.get("economicSectorName") or "Khác"),
+        str(override.get("industry") or row.get("industrySlug") or "").lower(),
+        str(override.get("industryName") or row.get("industryName") or ""),
+    )
+
+
+def _override_pseudo_row(symbol: str) -> dict[str, Any]:
+    """Row screener tối thiểu (mã/tên/sàn/ngành khai báo thủ công) cho mã chưa có
+    trong dữ liệu nguồn — giúp mã xuất hiện đúng nhóm ngành / bộ lọc."""
+    meta = _lookup_symbol_metadata(symbol)
+    override = _SECTOR_OVERRIDES.get(symbol) or {}
+    return {
+        "ticker": symbol,
+        "companyNameVi": str(meta.get("name") or symbol),
+        "stockExchange": str(meta.get("exchange") or ""),
+        "economicSectorSlug": str(override.get("sector") or ""),
+        "economicSectorName": str(override.get("sectorName") or ""),
+        "industrySlug": str(override.get("industry") or ""),
+        "industryName": str(override.get("industryName") or ""),
+    }
+
+
+def _override_live_quote(symbol: str) -> dict[str, Any]:
+    """Giá realtime best-effort cho mã gán ngành thủ công ({} nếu chưa có giá)."""
+    try:
+        return _last_quote(symbol) or {}
+    except Exception:  # noqa: BLE001
+        return {}
 
 
 def _lookup_symbol_metadata(symbol: str) -> dict[str, str]:
@@ -2701,6 +3008,18 @@ def get_index_detail(key: str, period: str = "1y") -> dict[str, Any]:
                 result["as_of"] = item.get("as_of", "")
                 break
 
+    # 4) Nguồn KHÔNG trả netChange/pctChange → tự suy tăng/giảm từ 2 phiên cuối của lịch sử.
+    #    VD Simplize trả row cho GOLD:VN:SELL chỉ có {ticker, price} (không netChange/pctChange)
+    #    → trước đây thẻ "Vàng trong nước" luôn hiển thị 0% dù giá có biến động.
+    if not result["change"] and not result["percent_change"]:
+        hist = result.get("history") or []
+        if len(hist) >= 2:
+            prev_close = _to_float(hist[-2].get("close"))
+            last_close = _to_float(hist[-1].get("close"))
+            if prev_close > 0 and last_close > 0:
+                result["change"] = round(last_close - prev_close, 4)
+                result["percent_change"] = round((last_close - prev_close) / prev_close * 100, 4)
+
     # Ước lượng GTGD (giá trị giao dịch) cho từng phiên của chỉ số VN → tooltip biểu đồ.
     _enrich_index_value(result, key)
 
@@ -2739,10 +3058,13 @@ def _vci_get_json(path: str, params: dict[str, Any] | None = None) -> dict[str, 
 
     Cùng nguồn dữ liệu mà vnstock Finance dùng nhưng không phụ thuộc phiên bản vnstock,
     nên hoạt động ổn định dù server chạy bằng venv (vnstock 4.x) hay Python toàn cục (vnstock 3.x).
+
+    PHẢI gửi `_VCIQ_HEADERS` (có `referer`): thiếu Referer ⇒ VCI trả 403 ⇒ các block
+    "Phân tích lợi nhuận"/"Cơ cấu cổ đông" và dữ liệu KQKD của TuniAI trống.
     """
     query = f"?{urlencode(params)}" if params else ""
     url = f"{_VCIQ_URL}{path}{query}"
-    response = _get_http_client().get(url, headers={"accept": "application/json", "user-agent": "Mozilla/5.0"})
+    response = _get_http_client().get(url, headers=_VCIQ_HEADERS)
     data = response.json()
     if not isinstance(data, dict):
         return {}
@@ -3277,6 +3599,8 @@ _CAFEF_HEADERS = {
 
 # Loại tài liệu FileBCTC theo category.
 _CAFEF_FILE_TYPE = {"financial": 1, "annual": 3, "agm": 4, "prospectus": 3}
+# Số báo cáo tối đa trả về cho 1 danh mục (frontend hiển thị 5, phần còn lại để cuộn).
+_REPORTS_MAX_ITEMS = 20
 # Từ khóa lọc tên tài liệu theo category.
 _CAFEF_FILTER = {
     "annual": ("báo cáo thường niên", "bao cao thuong nien"),
@@ -3362,7 +3686,8 @@ def _fetch_cafef_documents(symbol: str, category: str) -> list[dict[str, Any]]:
             )
         if category == "financial":
             items.sort(key=_report_period_key, reverse=True)
-        return items[:5]
+        # Trả tối đa 20 báo cáo (trang chi tiết cổ phiếu chỉ hiển thị 5, còn lại cuộn trong block).
+        return items[:_REPORTS_MAX_ITEMS]
     except Exception:
         return []
 
@@ -3437,7 +3762,7 @@ def _fetch_analysis_reports(symbol: str) -> list[dict[str, Any]]:
     for item in items:
         _enrich_analysis_report(item)
     items.sort(key=lambda x: x["date"], reverse=True)
-    return items[:5]
+    return items[:_REPORTS_MAX_ITEMS]
 
 
 def get_company_reports(symbol: str, category: str = "financial") -> dict[str, Any]:
@@ -3705,19 +4030,21 @@ def get_peer_comparison(symbol: str, limit: int = 10) -> dict[str, Any]:
         if str(row.get("ticker") or "").upper() == symbol_upper:
             current_row = row
             break
-    if not current_row:
+    # Mã chưa có trong screener nhưng có khai báo ngành thủ công → vẫn so sánh được.
+    override = _SECTOR_OVERRIDES.get(symbol_upper) or {}
+    if current_row is None and not override:
         return empty
 
-    industry_slug = str(current_row.get("industrySlug") or "")
-    industry_name = str(current_row.get("industryName") or "")
+    industry_slug = str(override.get("industry") or (current_row or {}).get("industrySlug") or "").lower()
+    industry_name = str(override.get("industryName") or (current_row or {}).get("industryName") or "")
     if not industry_slug:
         return empty
 
     peers: list[dict[str, Any]] = []
     for row in dataset:
-        if str(row.get("industrySlug") or "") != industry_slug:
-            continue
         ticker = str(row.get("ticker") or "").upper()
+        if _override_sector_fields(ticker, row)[2] != industry_slug:
+            continue
         market_cap = _to_float(row.get("marketCapVnd"))
         pe = _to_float(row.get("peRatio"))
         margin = _to_float(row.get("profitMarginLtm"))
@@ -3764,9 +4091,12 @@ def filter_stocks(
     """
     dataset = _get_screener_dataset()
     known_symbols = {item["symbol"] for item in _load_symbol_directory()}
+    # Mã IPO mới có khai báo ngành thủ công nhưng chưa vào screener → thêm row tối thiểu.
+    override_only = [sym for sym in _override_only_symbols(dataset) if sym in known_symbols]
+    rows = list(dataset) + [_override_pseudo_row(sym) for sym in override_only]
     result: list[dict[str, Any]] = []
 
-    for row in dataset:
+    for row in rows:
         symbol = str(row.get("ticker") or "").upper()
         if symbol not in known_symbols:
             continue
@@ -3779,7 +4109,10 @@ def filter_stocks(
         if not _screener_matches_risk(row, risk):
             continue
 
-        result.append(_build_screener_stock_row(row))
+        built = _build_screener_stock_row(row)
+        if symbol in override_only:
+            built["source"] = "sector-override"
+        result.append(built)
 
     result.sort(key=lambda item: item["symbol"])
     return result
@@ -3847,8 +4180,7 @@ def get_stock_lists() -> dict[str, Any]:
         price = _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
         pct = _to_float(row.get("pricePctChgIntraDay"))
         cap = _to_float(row.get("marketCapVnd"))
-        sector = str(row.get("economicSectorSlug") or "").lower()
-        sector_name = str(row.get("economicSectorName") or "Khác")
+        sector, sector_name, _industry, _industry_name = _override_sector_fields(symbol, row)
         item = {
             "symbol": symbol,
             "name": str(row.get("companyNameVi") or symbol),
@@ -3859,9 +4191,39 @@ def get_stock_lists() -> dict[str, Any]:
             "sectorName": sector_name,
             "market_cap": cap,
         }
+        if symbol in _SECTOR_OVERRIDES:
+            item["sector_override"] = True
         stocks.append(item)
         if exchange == "HNX":
             hnx_by_cap.append((cap, item))
+        if sector not in sectors_map:
+            sectors_map[sector] = {"slug": sector, "name": sector_name, "stocks": []}
+        sectors_map[sector]["stocks"].append(symbol)
+
+    # Mã IPO mới khai báo ngành thủ công nhưng CHƯA có trong screener → bổ sung vào danh sách.
+    for symbol in _override_only_symbols(dataset):
+        if symbol not in known_symbols:
+            continue
+        meta = _lookup_symbol_metadata(symbol)
+        exchange = _EXCHANGE_CANONICAL.get(str(meta.get("exchange") or "").upper(), "")
+        if exchange not in ("HOSE", "HNX", "UPCOM"):
+            continue
+        last = _override_live_quote(symbol)
+        override = _SECTOR_OVERRIDES.get(symbol) or {}
+        sector = str(override.get("sector") or "").lower()
+        sector_name = str(override.get("sectorName") or "Khác")
+        item = {
+            "symbol": symbol,
+            "name": str(last.get("name") or meta.get("name") or symbol),
+            "exchange": exchange,
+            "price": round(_to_float(last.get("price")), 2),
+            "percent_change": round(_to_float(last.get("pctChange")), 2),
+            "sector": sector,
+            "sectorName": sector_name,
+            "market_cap": 0.0,
+            "sector_override": True,
+        }
+        stocks.append(item)
         if sector not in sectors_map:
             sectors_map[sector] = {"slug": sector, "name": sector_name, "stocks": []}
         sectors_map[sector]["stocks"].append(symbol)
@@ -4065,6 +4427,78 @@ def get_market_dashboard() -> dict[str, Any]:
     except Exception:
         pass
 
+    # 4b) Tín hiệu kỹ thuật toàn thị trường cho block "Market Radar":
+    #     - breakout_tech     : giá sát đỉnh 4 tuần (>=97%) + đang tăng + volume >= 1.2x TB 10 phiên
+    #     - risk_signal       : giá dưới đỉnh 4 tuần >=10% + xu hướng ngắn hạn âm
+    #     - volume_spike_ratio: volume >= 1.5x TB 10 phiên ("bất thường" thật, không phải KL tuyệt đối)
+    #     Lọc sàn HOSE/HNX/UPCOM + vốn hóa >= 100 tỷ để loại mã quá nhỏ/thanh khoản ảo.
+    #     Dữ liệu lấy từ screener Simplize đã cache (không thêm request mạng).
+    breakout_tech: list[dict[str, Any]] = []
+    risk_signal: list[dict[str, Any]] = []
+    volume_spike_ratio: list[dict[str, Any]] = []
+    try:
+        _min_cap = 100e9      # 100 tỷ
+        _min_volume = 100_000  # 100.000 cp/phiên
+        tech: list[dict[str, Any]] = []
+        for row in _get_screener_dataset():
+            if str(row.get("stockExchange") or "").upper() not in ("HOSE", "HNX", "UPCOM"):
+                continue
+            price = _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
+            peak4w = _to_float(row.get("peak4week"))
+            cap = _to_float(row.get("marketCapVnd"))
+            volume = _to_float(row.get("volume"))
+            volume10 = _to_float(row.get("volume10dAvg"))
+            if price <= 0 or peak4w <= 0 or cap < _min_cap:
+                continue
+            tech.append(
+                {
+                    "symbol": str(row.get("ticker") or "").upper(),
+                    "name": str(row.get("companyNameVi") or ""),
+                    "price": round(price, 2),
+                    "percent_change": round(_to_float(row.get("pricePctChgIntraDay")), 2),
+                    "pct_short_term": round(_to_float(row.get("pctChgShortTerm")), 2),
+                    "volume": int(volume),
+                    "volume_ratio": round(volume / volume10, 2) if volume10 else 0.0,
+                    "pct_of_peak4w": round(price / peak4w * 100, 1),
+                }
+            )
+
+        # Mỗi nhóm giữ BẢN COPY riêng — một mã có thể nằm ở nhiều nhóm (VD vừa breakout
+        # vừa volume đột biến) và note của nhóm này sẽ ghi đè note của nhóm kia nếu dùng chung dict.
+        breakout_tech = [
+            dict(t)
+            for t in sorted(
+                [t for t in tech if t["pct_of_peak4w"] >= 97.0 and t["percent_change"] > 0 and t["volume_ratio"] >= 1.2],
+                key=lambda t: t["volume_ratio"],
+                reverse=True,
+            )[:5]
+        ]
+        for t in breakout_tech:
+            t["note"] = f"Sát đỉnh 4 tuần ({t['pct_of_peak4w']:.0f}%) · volume {t['volume_ratio']:.1f}× TB"
+
+        risk_signal = [
+            dict(t)
+            for t in sorted(
+                [t for t in tech if t["pct_of_peak4w"] <= 90.0 and t["pct_short_term"] < 0],
+                key=lambda t: t["pct_short_term"],
+            )[:5]
+        ]
+        for t in risk_signal:
+            t["note"] = f"Dưới đỉnh 4 tuần {100 - t['pct_of_peak4w']:.0f}% · ngắn hạn {t['pct_short_term']:+.1f}%"
+
+        volume_spike_ratio = [
+            dict(t)
+            for t in sorted(
+                [t for t in tech if t["volume"] >= _min_volume and t["volume_ratio"] >= 1.5],
+                key=lambda t: t["volume_ratio"],
+                reverse=True,
+            )[:5]
+        ]
+        for t in volume_spike_ratio:
+            t["note"] = f"Volume {t['volume_ratio']:.1f}× TB 10 phiên"
+    except Exception:
+        pass
+
     hot_sector = None
     for sec in sectors:
         if sec["total"] >= 5:
@@ -4083,6 +4517,9 @@ def get_market_dashboard() -> dict[str, Any]:
             "volume_spike": volume_spike,
             "weak": weak,
             "foreign_buy": flow.get("foreign_buy_top", []),
+            "breakout_tech": breakout_tech,
+            "risk_signal": risk_signal,
+            "volume_spike_ratio": volume_spike_ratio,
         },
         "impact": impact,
     }
@@ -4123,14 +4560,15 @@ def get_stock_screener_page() -> dict[str, Any]:
             continue
         vol = _to_float(row.get("volume"))
         vol10 = _to_float(row.get("volume10dAvg"))
+        sector, sector_name, industry, industry_name = _override_sector_fields(symbol, row)
         item = {
             "symbol": symbol,
             "name": str(row.get("companyNameVi") or symbol),
             "exchange": exchange,
-            "sector": str(row.get("economicSectorSlug") or "").lower(),
-            "sectorName": str(row.get("economicSectorName") or ""),
-            "industry": str(row.get("industrySlug") or "").lower(),
-            "industryName": str(row.get("industryName") or ""),
+            "sector": sector,
+            "sectorName": sector_name,
+            "industry": industry,
+            "industryName": industry_name,
             "price": round(_to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose")), 2),
             "percent_change": round(_to_float(row.get("pricePctChgIntraDay")), 2),
             "change_7d": round(_to_float(row.get("pricePctChg7d")), 2),
@@ -4164,7 +4602,55 @@ def get_stock_screener_page() -> dict[str, Any]:
             },
         }
         item["score"] = _compute_tunix_score(row)
+        if symbol in _SECTOR_OVERRIDES:
+            item["sector_override"] = True
         stocks.append(item)
+
+    # Mã IPO mới khai báo ngành thủ công nhưng CHƯA có trong screener → bổ sung item
+    # tối thiểu (tên/sàn/ngành + giá realtime nếu có) để mã xuất hiện đúng nhóm ngành.
+    # LƯU Ý: tên/sàn lấy từ symbol directory → nên chạy "Quét & thêm cổ phiếu mới" trước.
+    for symbol in _override_only_symbols(dataset):
+        override = _SECTOR_OVERRIDES.get(symbol) or {}
+        meta = _lookup_symbol_metadata(symbol)
+        last = _override_live_quote(symbol)
+        stocks.append(
+            {
+                "symbol": symbol,
+                "name": str(last.get("name") or meta.get("name") or symbol),
+                "exchange": _EXCHANGE_CANONICAL.get(str(meta.get("exchange") or "").upper(), ""),
+                "sector": str(override.get("sector") or "").lower(),
+                "sectorName": str(override.get("sectorName") or ""),
+                "industry": str(override.get("industry") or "").lower(),
+                "industryName": str(override.get("industryName") or ""),
+                "price": round(_to_float(last.get("price")), 2),
+                "percent_change": round(_to_float(last.get("pctChange")), 2),
+                "change_7d": 0,
+                "change_1y": 0,
+                "roe": 0.0,
+                "market_cap": 0.0,
+                "pe_ratio": 0.0,
+                "pb_ratio": 0.0,
+                "ev_ebitda": 0.0,
+                "dividend_yield": 0.0,
+                "revenue_growth": 0.0,
+                "net_profit_growth": 0.0,
+                "eps_growth": 0.0,
+                "volume": 0,
+                "volume_ratio": 0,
+                "risk": "",
+                "points": {
+                    "growth": 0.0,
+                    "performance": 0.0,
+                    "financial_health": 0.0,
+                    "dividend": 0.0,
+                    "valuation": 0.0,
+                    "quality": 0.0,
+                },
+                "score": 0,
+                "sector_override": True,
+                "source": "sector-override",
+            }
+        )
 
     stocks.sort(key=lambda s: s["score"], reverse=True)
 

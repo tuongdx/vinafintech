@@ -24,10 +24,29 @@
         sort: 'rank',
         q: '',
         sym: null,
+        pendingSym: symbolFromUrl(),   // mã cần mở sẵn chi tiết (điều hướng từ trang khác)
         period: DEFAULT_PERIOD,
         loading: false,
         visible: 50
     };
+
+    /* Trang khác (vd Trung tâm cảnh báo) điều hướng tới `crypto.html?symbol=BTC`
+       → mở sẵn phần chi tiết của coin đó sau khi dữ liệu thị trường tải xong. */
+    function symbolFromUrl() {
+        try {
+            var p = new URLSearchParams(window.location.search);
+            var s = (p.get('symbol') || p.get('coin') || '').trim().toUpperCase();
+            return s || null;
+        } catch (e) { return null; }
+    }
+    function clearSymParam() {
+        try {
+            var u = new URL(window.location.href);
+            if (!u.searchParams.has('symbol')) return;
+            u.searchParams.delete('symbol');
+            window.history.replaceState({}, '', u.pathname + (u.search || ''));
+        } catch (e) {}
+    }
 
     function $(id) { return document.getElementById(id); }
     function esc(s) {
@@ -190,6 +209,12 @@
             var upd = $('crUpdated');
             if (upd) upd.innerHTML = '<i class="far fa-clock"></i> Cập nhật: <b>' + fmtVnTime(d.as_of) + '</b>';
             state.loading = false;
+            if (state.pendingSym) {
+                // Điều hướng từ trang khác (?symbol=) — chỉ mở khi coin có trong danh sách thị trường.
+                var pending = state.pendingSym;
+                state.pendingSym = null;
+                if (findItem(pending)) { openDetail(pending); return; }
+            }
             if (state.view === 'list') {
                 renderList();
             } else if (state.sym) {
@@ -354,7 +379,7 @@
             var tr = e.target.closest('tr[data-symbol]');
             if (tr) openDetail(tr.getAttribute('data-symbol'));
         });
-        $('crBack').addEventListener('click', function () { state.sym = null; showList(); });
+        $('crBack').addEventListener('click', function () { state.sym = null; clearSymParam(); showList(); });
         $('crPeriods').addEventListener('click', function (e) {
             var b = e.target.closest('.cr-period[data-period]');
             if (!b) return;
@@ -363,7 +388,7 @@
             loadKlines();
         });
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && state.view === 'detail') { state.sym = null; showList(); }
+            if (e.key === 'Escape' && state.view === 'detail') { state.sym = null; clearSymParam(); showList(); }
         });
     }
 

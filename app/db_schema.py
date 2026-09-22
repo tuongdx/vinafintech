@@ -25,6 +25,8 @@ _USER_COLUMNS: list[tuple[str, str, str]] = [
     ("users", "notify_reports", "BOOLEAN DEFAULT TRUE"),
     ("users", "notify_news", "BOOLEAN DEFAULT TRUE"),
     ("users", "pref_theme", "VARCHAR(10) DEFAULT 'light'"),
+    # Quyền dùng tính năng "Tín hiệu" (admin cấp theo từng tài khoản) — PostgreSQL cần DEFAULT FALSE.
+    ("users", "signal_access", "BOOLEAN DEFAULT FALSE"),
 ]
 
 _NEWS_COLUMNS: list[tuple[str, str, str]] = [
@@ -36,6 +38,8 @@ _NEWS_COLUMNS: list[tuple[str, str, str]] = [
     ("news", "source", "VARCHAR(255)"),
     ("news", "source_url", "VARCHAR(500)"),
     ("news", "views", "INTEGER DEFAULT 0"),
+    # Ngày giờ đăng bài (giờ VN) — import bằng tool sẽ lấy từ file JSON
+    ("news", "published_at", "TIMESTAMP"),
 ]
 
 _FAQ_COLUMNS: list[tuple[str, str, str]] = [
@@ -45,6 +49,14 @@ _FAQ_COLUMNS: list[tuple[str, str, str]] = [
 _CASH_COLUMNS: list[tuple[str, str, str]] = [
     ("cash_transactions", "currency", "VARCHAR(10) DEFAULT 'VND'"),
 ]
+
+_ADMIN_LOG_COLUMNS: list[tuple[str, str, str]] = [
+    # Dữ liệu trước/sau khi thao tác (JSON) — phục vụ cột "Trước khi sửa"/"Sau khi sửa" ở menu Nhật ký
+    ("admin_logs", "before_data", "TEXT"),
+    ("admin_logs", "after_data", "TEXT"),
+]
+
+_ALL_EXTRA_COLUMNS = _USER_COLUMNS + _NEWS_COLUMNS + _FAQ_COLUMNS + _CASH_COLUMNS + _ADMIN_LOG_COLUMNS
 
 
 def ensure_schema() -> None:
@@ -60,8 +72,11 @@ def ensure_schema() -> None:
 
 def _ensure_sqlite_columns() -> None:
     with engine.begin() as conn:
-        for table, column, ddl in (_USER_COLUMNS + _NEWS_COLUMNS + _FAQ_COLUMNS + _CASH_COLUMNS):
-            existing = {row["name"] for row in conn.execute(text(f"PRAGMA table_info({table})")).mappings()}
+        for table, column, ddl in _ALL_EXTRA_COLUMNS:
+            try:
+                existing = {row["name"] for row in conn.execute(text(f"PRAGMA table_info({table})")).mappings()}
+            except Exception:
+                continue
             if column not in existing:
                 conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
 
@@ -69,7 +84,7 @@ def _ensure_sqlite_columns() -> None:
 def _ensure_generic_columns() -> None:
     insp = inspect(engine)
     with engine.begin() as conn:
-        for table, column, ddl in (_USER_COLUMNS + _NEWS_COLUMNS + _FAQ_COLUMNS + _CASH_COLUMNS):
+        for table, column, ddl in _ALL_EXTRA_COLUMNS:
             try:
                 existing = {c["name"] for c in insp.get_columns(table)}
             except Exception:

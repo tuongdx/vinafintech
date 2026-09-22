@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="/static/tienich-calc.js?v=20260906h"></script>
+    <script src="/static/tienich-calc.js?v=20260917a"></script>
     <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
@@ -15,9 +15,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
-    <link rel="stylesheet" href="/static/tienich.css?v=20260908au" />
-    <link rel="stylesheet" href="/static/block-tint.css?v=20260908t" />
-    <link rel="stylesheet" href="/static/exchange.css?v=20260908au" />
+    <link rel="stylesheet" href="/static/tienich.css?v=20260917a" />
+    <link rel="stylesheet" href="/static/tienich-alloc.css?v=20260917a" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
+    <link rel="stylesheet" href="/static/exchange.css?v=20260914f" />
 </head>
 <body>
     <div class="ti-page">
@@ -34,6 +35,7 @@
                     <button type="button" class="ti-chip" data-tool="adj"><i class="fas fa-chart-line"></i> Giá điều chỉnh</button>
                     <button type="button" class="ti-chip" data-tool="dep"><i class="fas fa-piggy-bank"></i> Lợi nhuận tiền gửi</button>
                     <button type="button" class="ti-chip" data-tool="ex"><i class="fas fa-coins"></i> Tỷ giá ngoại tệ</button>
+                    <button type="button" class="ti-chip" data-tool="alloc"><i class="fas fa-balance-scale"></i> Chia đều vốn đầu tư</button>
                 </div>
             </div>
 
@@ -175,6 +177,42 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Tool 4: Chia đều vốn đầu tư — người dùng CHỈ nhập tổng vốn + danh sách mã,
+                 giá hiện tại tự lấy từ API thị trường có sẵn của TuniX (/api/stocks/{mã}/quote). -->
+            <div id="panelAlloc" style="display:none;">
+                <div class="ti-card">
+                    <h3><i class="fas fa-scale-balanced"></i> Chia đều vốn đầu tư</h3>
+                    <div class="ti-row">
+                        <div class="ti-field">
+                            <label>Bạn có bao nhiêu tiền muốn đầu tư? <span class="opt">(tổng vốn · VNĐ) *</span></label>
+                            <div class="ti-input-wrap">
+                                <input id="alTotal" type="text" inputmode="numeric" autocomplete="off" placeholder="VD: 200.000.000" />
+                                <span class="al-vnd">VNĐ</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ti-field">
+                        <label>Bạn muốn mua những mã nào? <span class="opt">(mã cổ phiếu) *</span></label>
+                        <div class="al-sym-row">
+                            <div class="ti-input-wrap">
+                                <input id="alSymbolInput" type="text" autocomplete="off" spellcheck="false" maxlength="80" placeholder="VD: HPG" />
+                            </div>
+                            <button type="button" class="ti-btn ghost" id="alAdd"><i class="fas fa-plus"></i> Thêm mã</button>
+                        </div>
+                        <div class="al-chips" id="alChips"></div>
+                        <div class="al-count" id="alCount"></div>
+                        <div class="ti-hint" id="alSymHint"></div>
+                    </div>
+                    <hr class="ti-sep" />
+                    <div class="ti-actions">
+                        <button type="button" class="ti-btn primary" id="alCalc"><i class="fas fa-calculator"></i> Tính toán</button>
+                    </div>
+                    <div class="ti-hint">Không cần nhập giá: TuniX tự lấy <b>giá hiện tại</b> của từng mã và tự chia đều vốn. Số lượng mua làm tròn xuống theo <b>lô 100</b> cổ phiếu.</div>
+                </div>
+                <div class="err-list" id="alErrors" style="display:none;"></div>
+                <div id="alResult"></div>
+            </div>
         </div>
 
         <div class="ti-note" style="margin-top:18px;">
@@ -182,7 +220,8 @@
         </div>
     </div>
 
-    <script src="/static/tienich.js?v=20260908c"></script>
+    <script src="/static/tienich.js?v=20260917a"></script>
+    <script src="/static/tienich-alloc.js?v=20260917a"></script>
     <script src="/static/exchange.js?v=20260908e"></script>
     <script src="/static/context-menu.js?v=20260827a"></script>
 </body>

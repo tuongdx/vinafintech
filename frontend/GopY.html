@@ -19,7 +19,7 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/typography.css" />
+    <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
 </head>
 <body>
     <div class="app-container">
@@ -112,6 +112,22 @@
                         </form>
                     </div>
 
+                    <!-- Khối thông tin: không nhấc nổi / highlight khi di chuột -->
+                    <style>
+                        #dynamicContent .contact-info .info-card:hover {
+                            transform: none;
+                            box-shadow: none;
+                        }
+                        #dynamicContent .contact-info .info-card:hover .icon-circle {
+                            background: #e8ecf5;
+                            color: #008080;
+                        }
+                        body.dark-mode #dynamicContent .contact-info .info-card:hover .icon-circle {
+                            background: #21262d;
+                            color: #008080;
+                        }
+                    </style>
+
                     <!-- Info -->
                     <div class="contact-info">
                         <div class="info-grid">
@@ -143,7 +159,6 @@
                     </p>
                     <div class="footer-social">
                         <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-facebook"></i></a>
-                        <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-youtube"></i></a>
                         <a href="https://www.tiktok.com/@tunix.vn" target="_blank" rel="noopener"><i class="fab fa-tiktok"></i></a>
                     </div>
                 </div>
@@ -154,6 +169,8 @@
                         <li><span class="footer-label">Bảng điều khiển</span></li>
                         <li><span class="footer-label">Báo cáo tài chính</span></li>
                         <li><span class="footer-label">Công cụ so sánh</span></li>
+                        <li><span class="footer-label">Quản lý tài sản</span><span class="footer-new-badge">mới</span></li>
+                        <li><span class="footer-label">Trung tâm cảnh báo</span><span class="footer-new-badge">mới</span></li>
                         <li><span class="footer-label">TuniAI hỗ trợ phân tích</span><span class="footer-new-badge">mới</span></li>
                     </ul>
                 </div>

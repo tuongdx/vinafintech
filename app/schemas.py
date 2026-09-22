@@ -67,6 +67,8 @@ class UserOut(UserBase):
     plan_expires_at: datetime | None = None
     last_login: datetime | None = None
     created_at: datetime
+    # Quyền dùng tính năng "Tín hiệu" (admin cấp) — frontend dùng để hiện/ẩn menu Tín hiệu.
+    signal_access: bool = False
 
     class Config:
         from_attributes = True
@@ -259,6 +261,13 @@ class NewsOut(BaseModel):
     status: NewsStatusEnum
     author_name: str | None = None
     created_at: datetime
+    # Ngày giờ đăng bài — đúng định dạng file input (VD: 2026-09-12T15:50:01+07:00).
+    # Khi bài chưa có published_at, tự suy ra từ created_at (giờ VN) nên không bao giờ None
+    # với bài đã tạo; vẫn để Optional cho an toàn.
+    published_at: str | None = None
+    published_date: str | None = None
+    published_time: str | None = None
+    published_at_raw: str | None = None
 
     class Config:
         from_attributes = True

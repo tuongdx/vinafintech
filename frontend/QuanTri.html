@@ -1372,6 +1372,112 @@
         body.dark-mode .import-file-name {
             color: #8b949e;
         }
+
+        /* ---- Khung "Xem trước / Kết quả import" (trước đây hard-code nền trắng + không có
+                màu chữ cho dark mode → chữ trắng trên nền trắng, không đọc được) ---- */
+        .import-result-card {
+            background: #ffffff;
+            border: 1px solid #eef2f6;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 16px;
+            color: #1a1f36;
+            transition: all 0.3s ease;
+        }
+        .import-result-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1a1f36;
+        }
+        .import-result-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .import-result-list {
+            font-size: 13px;
+            color: #4a5a72;
+        }
+        .import-result-list-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .import-result-titles {
+            margin: 0;
+            padding-left: 18px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .import-result-titles::-webkit-scrollbar {
+            width: 8px;
+        }
+        .import-result-titles::-webkit-scrollbar-thumb {
+            background: #cdd6e0;
+            border-radius: 8px;
+        }
+        .import-result-errors {
+            color: #d0314e;
+            font-size: 12px;
+        }
+        /* Badge không có biến thể màu (Trạng thái / Danh mục / Tác giả) */
+        .status-badge.neutral {
+            background: #f0f2f6;
+            color: #4a5a72;
+        }
+        body.dark-mode .import-result-card {
+            background: #161b22;
+            border-color: #30363d;
+            color: #c9d1d9;
+        }
+        body.dark-mode .import-result-title {
+            color: #e6edf3;
+        }
+        body.dark-mode .import-result-list {
+            color: #adbac7;
+        }
+        body.dark-mode .import-result-titles::-webkit-scrollbar-thumb {
+            background: #30363d;
+        }
+        body.dark-mode .import-result-errors {
+            color: #f85149;
+        }
+        body.dark-mode .status-badge.neutral {
+            background: #21262d;
+            color: #c9d1d9;
+        }
+
+        /* Cột "Tín hiệu" trong bảng tài khoản: badge trạng thái cấp quyền + nút bật/tắt */
+        .signal-access-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 11.5px;
+            font-weight: 600;
+            background: #eef1f6;
+            color: #5b6b82;
+            border: 1px solid #d8dfe8;
+            white-space: nowrap;
+        }
+        .signal-access-badge.on {
+            background: #e6f7f4;
+            color: #00715f;
+            border-color: #b3e6dc;
+        }
+        body.dark-mode .signal-access-badge {
+            background: #21262d;
+            color: #9fb0c6;
+            border-color: #38414d;
+        }
+        body.dark-mode .signal-access-badge.on {
+            background: #10312b;
+            color: #56d8bd;
+            border-color: #1f6355;
+        }
+
         .switch-btn {
             display: inline-flex;
             align-items: center;
@@ -2649,6 +2755,58 @@
             flex-wrap: wrap;
         }
 
+        /* ===== LOG DETAIL MODAL (Nhật ký: trước / sau khi sửa) ===== */
+        .log-detail-modal .modal-content {
+            max-width: 940px;
+        }
+        .log-detail-modal .log-detail-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            font-size: 12.5px;
+            color: #4a5a72;
+            margin-bottom: 14px;
+        }
+        body.dark-mode .log-detail-modal .log-detail-meta { color: #adbac7; }
+        .log-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .log-detail-pane {
+            border: 1px solid #eef2f6;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fbfcfe;
+        }
+        body.dark-mode .log-detail-pane { background: #0d1117; border-color: #30363d; }
+        .log-detail-pane h4 {
+            font-size: 12.5px;
+            font-weight: 700;
+            padding: 9px 12px;
+            margin: 0;
+            background: #f4f7fb;
+            border-bottom: 1px solid #eef2f6;
+            color: #33415e;
+        }
+        body.dark-mode .log-detail-pane h4 { background: #161b22; border-color: #30363d; color: #e6edf3; }
+        .log-detail-pane pre {
+            margin: 0;
+            padding: 12px;
+            font-size: 12px;
+            line-height: 1.55;
+            max-height: 52vh;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            color: #12203a;
+        }
+        body.dark-mode .log-detail-pane pre { color: #c9d1d9; }
+        @media (max-width: 820px) {
+            .log-detail-grid { grid-template-columns: 1fr; }
+        }
+
         /* ===== FAQ FORM ===== */
         .faq-form-container {
             background: #ffffff;
@@ -3011,8 +3169,9 @@
             background: #008080;
             color: #fff;
         }
+
     </style>
-    <link rel="stylesheet" href="/static/typography.css" />
+    <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
 </head>
 <body>
 
@@ -3083,11 +3242,7 @@
                 </button>
 
                 <div class="nav-label" style="margin-top:12px;">Hệ thống</div>
-                <button class="nav-item disabled" data-panel="settings" onclick="switchPanel('settings')">
-                    <i class="fas fa-cog"></i>
-                    <span>Cài đặt</span>
-                </button>
-                <button class="nav-item disabled" data-panel="logs" onclick="switchPanel('logs')">
+                <button class="nav-item" data-panel="logs" onclick="switchPanel('logs')">
                     <i class="fas fa-history"></i>
                     <span>Nhật ký</span>
                 </button>
@@ -3362,6 +3517,7 @@
                                 <th>Người dùng</th>
                                 <th>Email</th>
                                 <th>Vai trò</th>
+                                <th>Tín hiệu</th>
                                 <th>Gói hội viên</th>
                                 <th>Trạng thái</th>
                                 <th>Ngày tham gia</th>
@@ -3439,8 +3595,8 @@
                                         <option value="ngan-hang">Ngân Hàng</option>
                                         <option value="bat-dong-san">Bất Động Sản</option>
                                         <option value="doanh-nghiep">Doanh Nghiệp</option>
-                                        <option value="dong-tien-thong-minh">Dòng Tiền Thông Minh</option>
-                                        <option value="tai-chinh-quoc-te">Tài Chính Quốc Tế</option>
+                                        <option value="dong-tien-thong-minh">Kinh doanh</option>
+                                        <option value="tai-chinh-quoc-te">Quốc Tế</option>
                                         <option value="cong-nghe">Công Nghệ</option>
                                     </select>
                                 </div>
@@ -3741,6 +3897,30 @@
                     <h2>Tool hỗ trợ viết bài <small style="font-weight:400;font-size:13px;color:#8a99b1;">(Import bài viết từ file JSON)</small></h2>
                 </div>
 
+                <!-- Tool crawl bài viết: admin/super-admin TẢI LÊN — biên tập viên & quản trị nội dung TẢI VỀ -->
+                <div class="faq-form-container show" id="crawlToolCard" style="margin-bottom:18px;">
+                    <div class="form-title">
+                        <span class="form-icon"><i class="fas fa-download"></i></span>
+                        <span>Tool crawl bài viết</span>
+                    </div>
+                    <div class="helper-text" style="margin-bottom:10px;">
+                        Script crawl bài viết dùng để lấy dữ liệu tin tức từ các trang báo (xuất ra file JSON rồi import ở khung bên dưới).
+                        Biên tập viên &amp; quản trị nội dung tải tool về máy để crawl dữ liệu.
+                    </div>
+                    <div class="import-file-row" style="margin-bottom:12px;">
+                        <span class="import-file-name" id="crawlToolInfo">Đang tải thông tin…</span>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="crawlDownloadBtn" onclick="downloadCrawlTool()">
+                            <i class="fas fa-download"></i> Tải tool crawl về máy
+                        </button>
+                        <button type="button" class="btn-primary" id="crawlUploadBtn" onclick="document.getElementById('crawlToolFile').click()">
+                            <i class="fas fa-upload"></i> Tải lên tool crawl bài viết
+                        </button>
+                        <input type="file" id="crawlToolFile" style="display:none;" onchange="uploadCrawlTool()" />
+                    </div>
+                </div>
+
                 <div class="faq-form-container show" id="importFormContainer">
                     <div class="form-title">
                         <span class="form-icon"><i class="fas fa-file-import"></i></span>
@@ -3772,8 +3952,8 @@
                                     <option value="ngan-hang">Ngân Hàng</option>
                                     <option value="bat-dong-san">Bất Động Sản</option>
                                     <option value="doanh-nghiep">Doanh Nghiệp</option>
-                                    <option value="dong-tien-thong-minh">Dòng Tiền Thông Minh</option>
-                                    <option value="tai-chinh-quoc-te">Tài Chính Quốc Tế</option>
+                                    <option value="dong-tien-thong-minh">Kinh doanh</option>
+                                    <option value="tai-chinh-quoc-te">Quốc Tế</option>
                                     <option value="cong-nghe">Công Nghệ</option>
                                 </select>
                                 <div class="helper-text">Mặc định: Chứng Khoán — bài viết sẽ ở danh mục được chọn.</div>
@@ -3898,32 +4078,87 @@
             </div>
 
             <!-- ============================================================ -->
-            <!-- PANEL: SETTINGS (disabled) -->
-            <!-- ============================================================ -->
-            <div class="panel" id="panelSettings">
-                <div style="background:#fff;border-radius:16px;padding:40px;text-align:center;border:1px solid #eef2f6;transition:all 0.3s ease;">
-                    <i class="fas fa-cog" style="font-size:48px;color:#8a99b1;margin-bottom:16px;"></i>
-                    <h3 style="font-size:18px;font-weight:600;transition:color 0.3s ease;">Cài đặt hệ thống</h3>
-                    <p style="color:#8a99b1;font-size:14px;margin-top:8px;">Tính năng này chỉ dành cho Super Admin.</p>
-                    <div style="margin-top:16px;background:#fef9e7;border-radius:8px;padding:12px;display:inline-block;border:1px solid #f39c12;">
-                        <i class="fas fa-lock" style="color:#f39c12;"></i>
-                        <span style="font-size:13px;color:#7d6608;">Bạn cần quyền Super Admin để truy cập</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ============================================================ -->
-            <!-- PANEL: LOGS (disabled) -->
+            <!-- PANEL: LOGS (LỊCH SỬ THAO TÁC CỦA NGƯỜI DÙNG TRANG QUẢN TRỊ) -->
             <!-- ============================================================ -->
             <div class="panel" id="panelLogs">
-                <div style="background:#fff;border-radius:16px;padding:40px;text-align:center;border:1px solid #eef2f6;transition:all 0.3s ease;">
-                    <i class="fas fa-history" style="font-size:48px;color:#8a99b1;margin-bottom:16px;"></i>
-                    <h3 style="font-size:18px;font-weight:600;transition:color 0.3s ease;">Nhật ký hoạt động</h3>
-                    <p style="color:#8a99b1;font-size:14px;margin-top:8px;">Tính năng này chỉ dành cho Super Admin.</p>
-                    <div style="margin-top:16px;background:#fef9e7;border-radius:8px;padding:12px;display:inline-block;border:1px solid #f39c12;">
-                        <i class="fas fa-lock" style="color:#f39c12;"></i>
-                        <span style="font-size:13px;color:#7d6608;">Bạn cần quyền Super Admin để truy cập</span>
+                <div class="panel-header">
+                    <h2>Nhật ký hoạt động</h2>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button class="btn-success" onclick="exportAdminLogs()">
+                            <i class="fas fa-file-excel"></i> Xuất Excel
+                        </button>
+                        <button class="btn-danger" onclick="clearAdminLogs()">
+                            <i class="fas fa-trash-alt"></i> Xoá theo bộ lọc
+                        </button>
+                        <button class="btn-secondary" onclick="loadAdminLogs()">
+                            <i class="fas fa-sync"></i> Làm mới
+                        </button>
                     </div>
+                </div>
+
+                <div class="helper-text" style="margin:-4px 0 12px;">
+                    <i class="fas fa-info-circle"></i> Ghi lại lịch sử thao tác <strong>thêm / sửa / xoá</strong> (và duyệt, xuất bản…)
+                    của người dùng trang quản trị: người thực hiện, thời gian, thao tác và tính năng tương ứng.
+                    <br /><i class="fas fa-lightbulb"></i> <strong>Xuất Excel</strong> và <strong>Xoá</strong> áp dụng theo bộ lọc đang chọn
+                    (không lọc gì = toàn bộ nhật ký). Chỉ Super Admin được xoá / xuất.
+                </div>
+
+                <div class="stock-filters">
+                    <div class="filter-cell">
+                        <label>Thao tác</label>
+                        <select id="logActionFilter" onchange="applyLogFilters()">
+                            <option value="">Tất cả</option>
+                        </select>
+                    </div>
+                    <div class="filter-cell">
+                        <label>Tính năng</label>
+                        <select id="logFeatureFilter" onchange="applyLogFilters()">
+                            <option value="">Tất cả</option>
+                        </select>
+                    </div>
+                    <div class="filter-cell">
+                        <label>Từ ngày</label>
+                        <input type="date" id="logDateFrom" onchange="applyLogFilters()" />
+                    </div>
+                    <div class="filter-cell">
+                        <label>Đến ngày</label>
+                        <input type="date" id="logDateTo" onchange="applyLogFilters()" />
+                    </div>
+                    <div class="filter-cell">
+                        <label>Tìm kiếm</label>
+                        <input type="text" id="logSearchInput" placeholder="Người dùng / đường dẫn…" oninput="onLogSearchInput()" />
+                    </div>
+                    <div class="filter-cell filter-actions">
+                        <label>&nbsp;</label>
+                        <button type="button" class="btn-secondary" style="padding:7px 12px;font-size:12px;" onclick="resetLogFilters()">
+                            <i class="fas fa-times"></i> Xóa bộ lọc
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stock-summary" id="logSummary"></div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Người thao tác</th>
+                                <th>Thao tác</th>
+                                <th>Tính năng</th>
+                                <th>Trước khi sửa</th>
+                                <th>Sau khi sửa</th>
+                                <th style="width:56px;text-align:center;">Xoá</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;">
+                    <button type="button" class="btn-secondary" id="logPrevBtn" onclick="logPage(-1)"><i class="fas fa-chevron-left"></i> Trang trước</button>
+                    <span id="logPageInfo" style="font-size:13px;color:#8a99b1;"></span>
+                    <button type="button" class="btn-secondary" id="logNextBtn" onclick="logPage(1)">Trang sau <i class="fas fa-chevron-right"></i></button>
                 </div>
             </div>
 
@@ -3982,6 +4217,32 @@
                     <button class="btn-success" id="ticketResolveBtn" onclick="resolveTicket()"><i class="fas fa-check"></i> Đánh dấu đã giải quyết</button>
                     <button class="btn-secondary" onclick="closeTicketDetail()">Đóng</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== LOG DETAIL MODAL (Nhật ký: trước / sau khi sửa) ===== -->
+    <div class="ticket-detail-modal log-detail-modal" id="logDetailModal" onclick="if (event.target === this) closeLogDetail();">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="logDetailTitle">Chi tiết thay đổi</h3>
+                <button class="btn-close-form" onclick="closeLogDetail()" style="padding:4px 12px;font-size:12px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="log-detail-meta" id="logDetailMeta"></div>
+            <div class="log-detail-grid">
+                <div class="log-detail-pane">
+                    <h4>Trước khi sửa</h4>
+                    <pre id="logDetailBefore"></pre>
+                </div>
+                <div class="log-detail-pane">
+                    <h4>Sau khi sửa</h4>
+                    <pre id="logDetailAfter"></pre>
+                </div>
+            </div>
+            <div class="form-actions" style="display:flex;gap:10px;margin-top:16px;">
+                <button class="btn-secondary" onclick="closeLogDetail()">Đóng</button>
             </div>
         </div>
     </div>
@@ -4123,6 +4384,7 @@
                 expiry: isAdmin ? null : (formatDate(u.plan_expires_at) || null),
                 is_active: u.is_active,
                 plan_expires_at: u.plan_expires_at,
+                signal_access: u.signal_access === true,
                 phone: u.phone
             };
         }
@@ -4156,8 +4418,9 @@
                         category: n.category || 'chung-khoan',
                         author: n.author_name || '—',
                         status: n.status || 'pending-approval',
-                        date: formatDate(n.created_at) || '—',
-                        createdAt: n.created_at,
+                        // Ngày đăng = ngày giờ đăng thật (published_at), bài cũ dùng created_at
+                        date: formatDate(n.published_at || n.created_at) || '—',
+                        createdAt: n.published_at || n.created_at,
                         reviewer: null,
                         featuredImage: n.image_url || '',
                         content: n.content || '',
@@ -4269,6 +4532,22 @@
                 currentUser.role === 'editor';
         }
 
+        // Mở panel "Tool hỗ trợ viết bài": người viết tin HOẶC nhóm quản trị (để tải tool crawl lên)
+        function canViewWritingTool() {
+            return canUseWritingTool() || canManageCrawlTool();
+        }
+
+        // Tool crawl bài viết: admin/super-admin được TẢI LÊN (thay file tool)
+        function canManageCrawlTool() {
+            return currentUser.role === 'super-admin' || currentUser.role === 'admin';
+        }
+
+        // Tool crawl bài viết: biên tập viên & quản trị nội dung được TẢI VỀ máy
+        function canDownloadCrawlTool() {
+            return currentUser.role === 'super-admin' || currentUser.role === 'admin' ||
+                currentUser.role === 'content-manager' || currentUser.role === 'editor';
+        }
+
         function canApproveNews() {
             return currentUser.role === 'super-admin' || currentUser.role === 'content-manager';
         }
@@ -4365,7 +4644,7 @@
             setNavDisabled('navUsers', !canManageUsers());
             setNavDisabled('navNews', !canManageNews());
             setNavDisabled('navStocks', !canManageStocks());
-            setNavDisabled('navWritingTool', !canUseWritingTool());
+            setNavDisabled('navWritingTool', !canViewWritingTool());
             setNavDisabled('navFeatures', !canManageFeatures());
             setNavDisabled('navTickets', !canViewFeedback());
             setNavDisabled('navFaq', !canManageFaq());
@@ -4374,6 +4653,8 @@
             setBtnDisabled('addUserBtn', !canManageUsers());
             setBtnDisabled('createNewsBtn', !canCreateNews());
             setBtnDisabled('addFaqBtn', !canManageFaq());
+            // Ẩn/hiện khối "Tool crawl bài viết" + form import theo quyền
+            applyWritingToolUI();
             // Nút xóa toàn bộ bài viết: chỉ Super Admin
             const delAllNewsBtn = document.getElementById('deleteAllNewsBtn');
             if (delAllNewsBtn) delAllNewsBtn.style.display = currentUser.role === 'super-admin' ? '' : 'none';
@@ -4466,6 +4747,28 @@
             }
         }
 
+        // ============================================================
+        // Cấp / thu quyền dùng tính năng "Tín hiệu" cho 1 tài khoản (users.signal_access)
+        // ============================================================
+        async function toggleSignalAccess(id, enabled) {
+            const user = usersData.find(u => u.id === id);
+            if (!user) return;
+            const verb = enabled ? 'BẬT' : 'TẮT';
+            const ok = await confirmDialog(verb + ' quyền dùng tính năng "Tín hiệu" cho ' + (user.name || user.email) + '?\n\n' +
+                (enabled ? 'Sau khi bật, tài khoản này sẽ thấy menu "Tín hiệu" sau khi tải lại trang.'
+                         : 'Tài khoản này sẽ không còn thấy menu "Tín hiệu" nữa.'));
+            if (!ok) return;
+            try {
+                const updated = await authApi('/users/' + id + '/signal-access?enabled=' + (enabled ? 'true' : 'false'), 'PATCH');
+                user.signal_access = !!(updated && updated.signal_access);
+                renderUsers();
+                showToast('✅ Đã ' + (enabled ? 'bật' : 'tắt') + ' quyền Tín hiệu cho ' + (user.name || user.email), 'success');
+            } catch (e) {
+                showToast('❌ ' + (e.message || 'Không cập nhật được quyền Tín hiệu.'), 'error');
+            }
+        }
+        window.toggleSignalAccess = toggleSignalAccess;
+
         function renderUsers() {
             const tbody = document.getElementById('userTableBody');
             if (!tbody) return;
@@ -4523,11 +4826,23 @@
                     planClass = planColors[user.plan] || 'free';
                 }
 
+                // Quyền dùng tính năng "Tín hiệu": admin luôn có; thành viên phải được cấp (users.signal_access)
+                const hasSignal = isAdmin || user.signal_access === true;
+                const canGrantSignal = canManageUsers() && canManageThisUser(user) && user.role !== 'super-admin';
+                const signalCell = '<span class="signal-access-badge' + (hasSignal ? ' on' : '') + '">' +
+                        '<i class="fas fa-satellite-dish"></i> ' + (hasSignal ? 'Đã bật' : 'Chưa bật') + '</span>' +
+                    (canGrantSignal
+                        ? ' <button title="' + (hasSignal ? 'Tắt' : 'Bật') + ' quyền Tín hiệu" onclick="toggleSignalAccess(' + user.id + ', ' + (hasSignal ? 'false' : 'true') + ')"' +
+                          ' style="background:none;border:none;cursor:pointer;color:#008080;font-size:15px;padding:0 2px;">' +
+                          '<i class="fas ' + (hasSignal ? 'fa-toggle-on' : 'fa-toggle-off') + '"></i></button>'
+                        : '');
+
                 html += `
                             <tr>
                                 <td><strong>${user.name}</strong></td>
                                 <td>${user.email}</td>
                                 <td><span class="role-tag ${roleClassMap[user.role] || 'member'}">${roleMap[user.role] || user.role}</span></td>
+                                <td>${signalCell}</td>
                                 <td><span class="plan-badge-sm ${planClass}">${planDisplay}</span></td>
                                 <td><span class="status-badge ${statusClassMap[user.status] || 'pending'}">${statusMap[user.status] || user.status}</span></td>
                                 <td>${user.joined}</td>
@@ -4625,7 +4940,7 @@
             if (newsSortField) {
                 const sField = newsSortField;
                 const sDir = newsSortDir;
-                const catMap = { 'chung-khoan': 'Chứng Khoán', 'ngan-hang': 'Ngân Hàng', 'bat-dong-san': 'Bất Động Sản', 'doanh-nghiep': 'Doanh Nghiệp', 'dong-tien-thong-minh': 'Dòng Tiền Thông Minh', 'tai-chinh-quoc-te': 'Tài Chính Quốc Tế', 'cong-nghe': 'Công Nghệ', 'tin-tuc': 'Tin tức' };
+                const catMap = { 'chung-khoan': 'Chứng Khoán', 'ngan-hang': 'Ngân Hàng', 'bat-dong-san': 'Bất Động Sản', 'doanh-nghiep': 'Doanh Nghiệp', 'dong-tien-thong-minh': 'Kinh doanh', 'tai-chinh-quoc-te': 'Quốc Tế', 'cong-nghe': 'Công Nghệ', 'tin-tuc': 'Tin tức' };
                 filtered = filtered.slice().sort(function(a, b) {
                     let va, vb;
                     if (sField === 'date') {
@@ -4715,8 +5030,8 @@
             if (!tbody) return;
 
             const categoryMap = { 'chung-khoan': 'Chứng Khoán', 'ngan-hang': 'Ngân Hàng', 'bat-dong-san': 'Bất Động Sản',
-                'doanh-nghiep': 'Doanh Nghiệp', 'dong-tien-thong-minh': 'Dòng Tiền Thông Minh',
-                'tai-chinh-quoc-te': 'Tài Chính Quốc Tế', 'cong-nghe': 'Công Nghệ', 'tin-tuc': 'Tin tức' };
+                'doanh-nghiep': 'Doanh Nghiệp', 'dong-tien-thong-minh': 'Kinh doanh',
+                'tai-chinh-quoc-te': 'Quốc Tế', 'cong-nghe': 'Công Nghệ', 'tin-tuc': 'Tin tức' };
             const statusMap = {
                 'draft': 'Nháp',
                 'pending-approval': 'Chờ duyệt',
@@ -5149,13 +5464,12 @@
             { panel: 'users', label: 'Tài khoản', desc: 'Quản lý người dùng & hội viên', icon: 'fa-users', color: '#008080', guard: canManageUsers },
             { panel: 'news', label: 'Tin tức', desc: 'Quản lý bài viết', icon: 'fa-newspaper', color: '#f39c12', guard: canManageNews },
             { panel: 'stocks', label: 'Cổ phiếu', desc: 'Danh sách & quét mã mới', icon: 'fa-chart-line', color: '#8e44ad', guard: canManageStocks },
-            { panel: 'writingTool', label: 'Tool viết bài', desc: 'Hỗ trợ viết & import tin', icon: 'fa-pen', color: '#2e86de', guard: canUseWritingTool },
+            { panel: 'writingTool', label: 'Tool viết bài', desc: 'Hỗ trợ viết & import tin', icon: 'fa-pen', color: '#2e86de', guard: canViewWritingTool },
             { panel: 'features', label: 'Tính năng khoá hội viên', desc: 'Các tính năng đang khoá hội viên', icon: 'fa-lock', color: '#16a085', guard: canManageFeatures },
             { panel: 'tickets', label: 'Góp ý', desc: 'Phản hồi của người dùng', icon: 'fa-comment-dots', color: '#0e7490', guard: canViewFeedback },
             { panel: 'faq', label: 'Quản lý FAQ', desc: 'Câu hỏi thường gặp', icon: 'fa-circle-question', color: '#c0392b', guard: canManageFaq },
             { panel: 'contact', label: 'Liên hệ', desc: 'Tin nhắn liên hệ', icon: 'fa-envelope-open-text', color: '#d35400', guard: canViewContact },
-            { panel: 'settings', label: 'Cài đặt', desc: 'Cấu hình hệ thống', icon: 'fa-cog', color: '#6b7a8f', coming: true },
-            { panel: 'logs', label: 'Nhật ký', desc: 'Nhật ký hoạt động', icon: 'fa-history', color: '#6b7a8f', coming: true }
+            { panel: 'logs', label: 'Nhật ký', desc: 'Lịch sử thao tác quản trị', icon: 'fa-history', color: '#6b7a8f' }
         ];
 
         function renderDashFeatures() {
@@ -5184,7 +5498,7 @@
                 tickets: canViewFeedback,
                 faq: canManageFaq,
                 contact: canViewContact,
-                writingTool: canUseWritingTool
+                writingTool: canViewWritingTool
             };
             const guard = guardMap[panel];
             if (guard && !guard()) {
@@ -5496,7 +5810,7 @@
                 showWarning('Bạn không có quyền quản lý danh sách cổ phiếu.');
                 return;
             }
-            if (panelId === 'writingTool' && !canUseWritingTool()) {
+            if (panelId === 'writingTool' && !canViewWritingTool()) {
                 showWarning('Bạn không có quyền sử dụng Tool hỗ trợ viết bài.');
                 return;
             }
@@ -5516,11 +5830,10 @@
                 showWarning('Bạn không có quyền xem tin nhắn liên hệ.');
                 return;
             }
-            if ((panelId === 'settings' || panelId === 'logs') && currentUser.role !== 'super-admin') {
+            if (panelId === 'logs' && currentUser.role !== 'super-admin') {
                 showWarning('Tính năng này chỉ dành cho Super Admin.');
                 return;
             }
-
             hideWarning();
 
             // Ghi lịch sử điều hướng (trừ khi đang quay lại/tiến tới)
@@ -5551,7 +5864,6 @@
                 'tickets': 'Quản lý góp ý',
                 'faq': 'Quản lý FAQ',
                 'contact': 'Tin nhắn liên hệ',
-                'settings': 'Cài đặt hệ thống',
                 'logs': 'Nhật ký hoạt động'
             };
             document.getElementById('pageTitle').innerHTML = titles[panelId] || 'Dashboard';
@@ -5561,6 +5873,8 @@
             if (panelId === 'users') { loadUsers(); loadDeleteRequests(); }
             if (panelId === 'news') loadNews();
             if (panelId === 'stocks') loadStocks();
+            if (panelId === 'writingTool') loadCrawlToolMeta();
+            if (panelId === 'logs') { logMetaLoaded = false; logOffset = 0; loadAdminLogs(); }
             if (panelId === 'features') renderFeatures();
             if (panelId === 'tickets') loadFeedback();
             if (panelId === 'faq') loadFaqs();
@@ -6475,7 +6789,7 @@
                 // Thao tác: chỉ mã tự cập nhật mới có nút Xóa (chỉ Super Admin)
                 let actionHtml = '<span style="color:#b0b9c8;font-size:12px;">—</span>';
                 if (isCustom && canDeleteStocks()) {
-                    actionHtml = `<button class="btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteStockSymbol('${symbol}')"><i class="fas fa-trash"></i> Xóa</button>`;
+                    actionHtml = `<div class="action-btns"><button class="danger" title="Xóa" onclick="deleteStockSymbol('${symbol}')"><i class="fas fa-trash"></i></button></div>`;
                 }
 
                 return `<tr>
@@ -6653,26 +6967,27 @@
                 ? data.titles.map(t => `<li>${escapeHtml(t)}</li>`).join('')
                 : '<li>—</li>';
             const errs = Array.isArray(data.error_details) && data.error_details.length
-                ? `<p style="color:#d0314e;font-size:12px;">${data.error_details.map(escapeHtml).join('<br>')}</p>`
+                ? `<p class="import-result-errors">${data.error_details.map(escapeHtml).join('<br>')}</p>`
                 : '';
 
             el.innerHTML = `
-                <div style="background:#ffffff;border:1px solid #eef2f6;border-radius:16px;padding:20px;margin-top:16px;transition:all 0.3s ease;">
-                    <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">
+                <div class="import-result-card">
+                    <h3 class="import-result-title">
                         ${isPreview ? '👁️ Xem trước file JSON' : '📥 Kết quả import bài viết'}
                     </h3>
-                    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+                    <div class="import-result-badges">
                         <span class="status-badge active">Tổng: ${data.total}</span>
                         <span class="status-badge published">Sẽ thêm/Đã thêm: ${data.inserted}</span>
                         <span class="status-badge pending">Bỏ qua (trùng): ${data.skipped}</span>
+                        ${data.updated ? `<span class="status-badge approved">Cập nhật ngày giờ: ${data.updated}</span>` : ''}
                         ${data.errors ? `<span class="status-badge rejected">Lỗi: ${data.errors}</span>` : ''}
-                        <span class="status-badge">Trạng thái: ${statusLabel}</span>
-                        <span class="status-badge">Danh mục: ${escapeHtml(data.category)}</span>
-                        <span class="status-badge">Tác giả: ${escapeHtml(data.author)}</span>
+                        <span class="status-badge neutral">Trạng thái: ${statusLabel}</span>
+                        <span class="status-badge neutral">Danh mục: ${escapeHtml(data.category)}</span>
+                        <span class="status-badge neutral">Tác giả: ${escapeHtml(data.author)}</span>
                     </div>
-                    <div style="font-size:13px;color:#4a5a72;">
-                        <div style="font-weight:600;margin-bottom:4px;">${isPreview ? 'Sẽ import các bài:' : 'Các bài đã xử lý:'}</div>
-                        <ol style="margin:0;padding-left:18px;max-height:200px;overflow-y:auto;">${titles}</ol>
+                    <div class="import-result-list">
+                        <div class="import-result-list-title">${isPreview ? 'Sẽ import các bài:' : 'Các bài đã xử lý:'}</div>
+                        <ol class="import-result-titles">${titles}</ol>
                     </div>
                     ${errs}
                 </div>`;
@@ -6721,6 +7036,461 @@
                 showToast('❌ ' + (err.message || 'Không thể import bài viết.'), 'error');
             } finally {
                 if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-file-import"></i> Chuyển bài viết sang menu Tin tức'; }
+            }
+        }
+
+        // ============================================================
+        // 11c-2. TOOL CRAWL BÀI VIẾT (admin upload — BTV/QT nội dung tải về)
+        // ============================================================
+
+        // Ẩn/hiện khối tool crawl + form import theo quyền (admin chỉ thấy phần tool crawl)
+        function applyWritingToolUI() {
+            const card = document.getElementById('crawlToolCard');
+            if (card) card.style.display = canViewWritingTool() ? '' : 'none';
+            const upBtn = document.getElementById('crawlUploadBtn');
+            if (upBtn) upBtn.style.display = canManageCrawlTool() ? '' : 'none';
+            const dlBtn = document.getElementById('crawlDownloadBtn');
+            if (dlBtn) dlBtn.style.display = canDownloadCrawlTool() ? '' : 'none';
+
+            const canImport = canUseWritingTool();
+            const impForm = document.getElementById('importFormContainer');
+            if (impForm) impForm.style.display = canImport ? '' : 'none';
+            if (!canImport) {
+                const res = document.getElementById('importResult');
+                if (res) res.innerHTML = '';
+            }
+        }
+
+        function fmtFileSize(n) {
+            const size = Number(n) || 0;
+            if (size < 1024) return size + ' B';
+            if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB';
+            return (size / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // Hiển thị ngày giờ theo giờ VN (UTC+7) — backend trả ISO UTC
+        function fmtCrawlDate(iso) {
+            if (!iso) return '';
+            const s = /(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : iso + 'Z';
+            const d = new Date(s);
+            if (isNaN(d.getTime())) return '';
+            const vn = new Date(d.getTime() + 7 * 3600 * 1000);
+            const p = x => (x < 10 ? '0' : '') + x;
+            return p(vn.getUTCDate()) + '/' + p(vn.getUTCMonth() + 1) + '/' + vn.getUTCFullYear() +
+                ' · ' + p(vn.getUTCHours()) + ':' + p(vn.getUTCMinutes());
+        }
+
+        // GET có Bearer token, trả Response (dùng để tải file nhị phân)
+        async function authApiBlob(path, retried = false) {
+            const token = localStorage.getItem('tunix_access_token') || '';
+            const res = await fetch('/api' + path, { headers: { Authorization: 'Bearer ' + token } });
+            if (!res.ok) {
+                if (res.status === 401 && !retried) {
+                    const refreshed = await refreshAccessToken();
+                    if (refreshed) return authApiBlob(path, true);
+                    localStorage.removeItem('tunix_access_token');
+                    localStorage.removeItem('tunix_refresh_token');
+                    localStorage.removeItem('tunix_user');
+                    window.location.replace('/admin/login?next=' + encodeURIComponent(window.location.pathname));
+                    throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                }
+                let detail = 'Yêu cầu thất bại.';
+                try { const d = await res.json(); detail = d.detail || detail; } catch (e) {}
+                const err = new Error(detail);
+                err.status = res.status;
+                throw err;
+            }
+            return res;
+        }
+
+        // Tải thông tin file tool crawl hiện có + áp quyền hiển thị
+        async function loadCrawlToolMeta() {
+            applyWritingToolUI();
+            const info = document.getElementById('crawlToolInfo');
+            const dlBtn = document.getElementById('crawlDownloadBtn');
+            if (!info) return;
+            if (!canDownloadCrawlTool()) { info.textContent = ''; return; }
+            info.textContent = 'Đang tải thông tin…';
+            if (dlBtn) dlBtn.disabled = true;
+            try {
+                const data = await authApi('/admin/tools/crawl-tool');
+                if (data && data.exists) {
+                    info.innerHTML = '<i class="fas fa-file-code"></i> <b>' + escapeHtml(data.filename) + '</b>' +
+                        ' · ' + fmtFileSize(data.size) +
+                        (data.updated_at ? ' · cập nhật ' + escapeHtml(fmtCrawlDate(data.updated_at)) : '') +
+                        (data.uploaded_by ? ' · bởi ' + escapeHtml(data.uploaded_by) : '');
+                    if (dlBtn) dlBtn.disabled = false;
+                } else {
+                    info.textContent = canManageCrawlTool()
+                        ? 'Chưa có file — hãy tải tool crawl lên để biên tập viên có thể tải về.'
+                        : 'Admin chưa tải tool crawl bài viết lên hệ thống.';
+                    if (dlBtn) dlBtn.disabled = true;
+                }
+            } catch (err) {
+                info.textContent = err.message || 'Không tải được thông tin tool crawl.';
+                if (dlBtn) dlBtn.disabled = true;
+            }
+        }
+
+        // Biên tập viên / quản trị nội dung: tải file tool crawl về máy
+        async function downloadCrawlTool() {
+            if (!canDownloadCrawlTool()) {
+                showWarning('Bạn không có quyền tải tool crawl bài viết.');
+                return;
+            }
+            hideWarning();
+            const btn = document.getElementById('crawlDownloadBtn');
+            const old = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải...'; }
+            try {
+                const res = await authApiBlob('/admin/tools/crawl-tool/download');
+                const blob = await res.blob();
+                const cd = res.headers.get('content-disposition') || '';
+                let name = 'tool-crawl-bai-viet';
+                const star = /filename\*=UTF-8''([^;]+)/i.exec(cd);
+                const plain = /filename="?([^";]+)"?/i.exec(cd);
+                if (star) { try { name = decodeURIComponent(star[1]); } catch (e) { name = star[1]; } }
+                else if (plain) name = plain[1];
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+                showToast('✅ Đã tải "' + name + '" về máy.', 'success');
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không tải được tool crawl.'), 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = old; }
+            }
+        }
+
+        // Admin / super-admin: tải tool crawl lên (hoặc thay thế file cũ)
+        async function uploadCrawlTool() {
+            if (!canManageCrawlTool()) {
+                showWarning('Chỉ quản trị viên được tải tool crawl lên hệ thống.');
+                return;
+            }
+            hideWarning();
+            const input = document.getElementById('crawlToolFile');
+            if (!input || !input.files || !input.files.length) return;
+            const file = input.files[0];
+            const btn = document.getElementById('crawlUploadBtn');
+            const old = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải lên...'; }
+            try {
+                const fd = new FormData();
+                fd.append('file', file);
+                const data = await authApiForm('/admin/tools/crawl-tool', fd);
+                showToast('✅ Đã tải lên "' + data.filename + '" (' + fmtFileSize(data.size) + ').', 'success');
+                loadCrawlToolMeta();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không tải lên được tool crawl.'), 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = old; }
+                input.value = '';
+            }
+        }
+
+        // ============================================================
+        // 11d. NHẬT KÝ HOẠT ĐỘNG QUẢN TRỊ (lịch sử thao tác của người dùng admin)
+        // ============================================================
+        const LOG_PAGE_SIZE = 30;
+        let logOffset = 0;
+        let logTotal = 0;
+        let logItems = [];
+        let logMetaLoaded = false;
+        let logSearchTimer = null;
+
+        // Màu badge theo thao tác (dùng lại class status-badge có sẵn)
+        const LOG_ACTION_CLS = {
+            create: 'published', update: 'approved', delete: 'rejected',
+            approve: 'active', publish: 'active', reject: 'pending',
+            reply: 'pending', scan: 'pending'
+        };
+
+        // Hiển thị thời gian theo giờ VN (UTC+7) — backend trả ISO UTC
+        function fmtLogTime(iso) {
+            if (!iso) return '—';
+            const s = /(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : iso + 'Z';
+            const d = new Date(s);
+            if (isNaN(d.getTime())) return '—';
+            const vn = new Date(d.getTime() + 7 * 3600 * 1000);
+            const p = x => (x < 10 ? '0' : '') + x;
+            return p(vn.getUTCDate()) + '/' + p(vn.getUTCMonth() + 1) + '/' + vn.getUTCFullYear() +
+                ' ' + p(vn.getUTCHours()) + ':' + p(vn.getUTCMinutes()) + ':' + p(vn.getUTCSeconds());
+        }
+
+        // Ô "Trước khi sửa" / "Sau khi sửa": hiển thị dạng dễ đọc (VD "Vai trò: Quản trị viên")
+        function logChangeCell(r, idx, kind) {
+            const changes = Array.isArray(r.changes) ? r.changes : [];
+            const rows = changes.map(function (c) {
+                const val = kind === 'before' ? c.before : c.after;
+                if (!val) return '';
+                return '<div style="font-size:12px;color:#5a6b85;line-height:1.5;word-break:break-word;">' +
+                    '<b>' + escapeHtml(c.label) + '</b>: ' + escapeHtml(val) + '</div>';
+            }).join('');
+            if (!rows) return '<span style="color:#8a99b1;">—</span>';
+            const seeBtn = '<button type="button" class="btn-secondary" style="padding:2px 8px;font-size:11px;margin-top:4px;" onclick="openLogDetail(' +
+                idx + ',\'' + kind + '\')">Xem</button>';
+            return rows + '<div>' + seeBtn + '</div>';
+        }
+
+        function logRowHtml(r, idx) {
+            const label = r.action_label || r.action || '—';
+            const cls = LOG_ACTION_CLS[r.action] || '';
+            // Cột "Người thao tác": dòng 1 = Tên (vai trò), dòng 2 = email
+            const roleLabel = r.user_role_label || r.user_role || '';
+            const who = escapeHtml(r.user_name || r.user_email || '—') +
+                (roleLabel ? ' <span style="color:#008080;font-weight:600;">(' + escapeHtml(roleLabel) + ')</span>' : '');
+            const mail = r.user_email
+                ? '<div style="font-size:12px;color:#8a99b1;word-break:break-word;">' + escapeHtml(r.user_email) + '</div>'
+                : '';
+            const name = who + mail;
+            return '<tr>' +
+                '<td style="white-space:nowrap;">' + escapeHtml(fmtLogTime(r.created_at)) + '</td>' +
+                '<td>' + name + '</td>' +
+                '<td><span class="status-badge ' + cls + '">' + escapeHtml(label) + '</span></td>' +
+                '<td>' + escapeHtml(r.feature_label || r.feature || '—') + '</td>' +
+                '<td>' + logChangeCell(r, idx, 'before') + '</td>' +
+                '<td>' + logChangeCell(r, idx, 'after') + '</td>' +
+                '<td><div class="action-btns" style="justify-content:center;">' +
+                '<button class="danger" title="Xóa" onclick="deleteAdminLog(' +
+                    Number(r.id) + ')"><i class="fas fa-trash"></i></button>' +
+                '</div></td>' +
+                '</tr>';
+        }
+
+        // ===== Modal chi tiết trước / sau khi sửa =====
+        function fmtLogJson(jsonStr) {
+            if (!jsonStr) return '(không có dữ liệu)';
+            try { return JSON.stringify(JSON.parse(jsonStr), null, 2); } catch (e) { return jsonStr; }
+        }
+
+        function openLogDetail(idx, kind) {
+            const r = logItems[idx];
+            if (!r) return;
+            const title = document.getElementById('logDetailTitle');
+            if (title) title.textContent = 'Chi tiết: ' + (r.action_label || r.action || '') + ' · ' + (r.feature_label || r.feature || '');
+            const meta = document.getElementById('logDetailMeta');
+            if (meta) {
+                meta.innerHTML =
+                    '<span><strong>Người thao tác:</strong> ' + escapeHtml(r.user_name || r.user_email || '—') + '</span>' +
+                    '<span><strong>Email:</strong> ' + escapeHtml(r.user_email || '—') + '</span>' +
+                    '<span><strong>Vai trò:</strong> ' + escapeHtml(r.user_role || '—') + '</span>' +
+                    '<span><strong>Thời gian:</strong> ' + escapeHtml(fmtLogTime(r.created_at)) + '</span>' +
+                    '<span><strong>Đối tượng:</strong> ' + escapeHtml(r.target || '—') + '</span>';
+            }
+            const before = document.getElementById('logDetailBefore');
+            const after = document.getElementById('logDetailAfter');
+            if (before) before.textContent = fmtLogJson(r.before_data);
+            if (after) after.textContent = fmtLogJson(r.after_data);
+            if (kind === 'after' && after) after.scrollIntoView({ block: 'nearest' });
+            const modal = document.getElementById('logDetailModal');
+            if (modal) modal.classList.add('show');
+        }
+
+        function closeLogDetail() {
+            const modal = document.getElementById('logDetailModal');
+            if (modal) modal.classList.remove('show');
+        }
+
+        // Nạp danh sách thao tác / tính năng đã từng ghi để dựng bộ lọc
+        async function loadLogMeta() {
+            if (logMetaLoaded) return;
+            try {
+                const meta = await authApi('/logs/activity/meta');
+                const aSel = document.getElementById('logActionFilter');
+                if (aSel) {
+                    aSel.innerHTML = '<option value="">Tất cả</option>' +
+                        (meta.actions || []).map(a =>
+                            '<option value="' + escapeHtml(a.key) + '">' + escapeHtml(a.label) + ' (' + a.count + ')</option>'
+                        ).join('');
+                }
+                const fSel = document.getElementById('logFeatureFilter');
+                if (fSel) {
+                    fSel.innerHTML = '<option value="">Tất cả</option>' +
+                        (meta.features || []).map(f =>
+                            '<option value="' + escapeHtml(f.key) + '">' + escapeHtml(f.label) + ' (' + f.count + ')</option>'
+                        ).join('');
+                }
+                logMetaLoaded = true;
+            } catch (e) { /* bộ lọc lỗi thì vẫn xem được danh sách */ }
+        }
+
+        function onLogSearchInput() {
+            if (logSearchTimer) clearTimeout(logSearchTimer);
+            logSearchTimer = setTimeout(function () { logOffset = 0; loadAdminLogs(); }, 400);
+        }
+
+        function applyLogFilters() { logOffset = 0; loadAdminLogs(); }
+
+        // Bộ lọc hiện tại → query string (dùng chung cho xem / xuất Excel / xoá)
+        function logFilterParams(withPaging) {
+            const params = new URLSearchParams();
+            const a = document.getElementById('logActionFilter');
+            const f = document.getElementById('logFeatureFilter');
+            const from = document.getElementById('logDateFrom');
+            const to = document.getElementById('logDateTo');
+            const s = document.getElementById('logSearchInput');
+            if (a && a.value) params.set('action', a.value);
+            if (f && f.value) params.set('feature', f.value);
+            if (from && from.value) params.set('date_from', from.value);
+            if (to && to.value) params.set('date_to', to.value);
+            if (s && s.value.trim()) params.set('q', s.value.trim());
+            if (withPaging) {
+                params.set('limit', String(LOG_PAGE_SIZE));
+                params.set('offset', String(logOffset));
+            }
+            return params;
+        }
+
+        // Mô tả bộ lọc đang chọn (cho hộp thoại xác nhận)
+        function logFilterDescription() {
+            const parts = [];
+            const a = document.getElementById('logActionFilter');
+            const f = document.getElementById('logFeatureFilter');
+            const from = document.getElementById('logDateFrom');
+            const to = document.getElementById('logDateTo');
+            const s = document.getElementById('logSearchInput');
+            if (a && a.value) parts.push('thao tác "' + a.options[a.selectedIndex].text.replace(/ \(\d+\)$/, '') + '"');
+            if (f && f.value) parts.push('tính năng "' + f.options[f.selectedIndex].text.replace(/ \(\d+\)$/, '') + '"');
+            if (from && from.value) parts.push('từ ' + from.value);
+            if (to && to.value) parts.push('đến ' + to.value);
+            if (s && s.value.trim()) parts.push('từ khoá "' + s.value.trim() + '"');
+            return parts.length ? ('bộ lọc (' + parts.join(', ') + ')') : 'TOÀN BỘ nhật ký';
+        }
+
+        function resetLogFilters() {
+            const a = document.getElementById('logActionFilter'); if (a) a.value = '';
+            const f = document.getElementById('logFeatureFilter'); if (f) f.value = '';
+            const from = document.getElementById('logDateFrom'); if (from) from.value = '';
+            const to = document.getElementById('logDateTo'); if (to) to.value = '';
+            const s = document.getElementById('logSearchInput'); if (s) s.value = '';
+            logOffset = 0;
+            loadAdminLogs();
+        }
+
+        // Xuất Excel theo bộ lọc hiện tại (không lọc gì = xuất tất cả)
+        async function exportAdminLogs() {
+            if (currentUser.role !== 'super-admin') {
+                showWarning('Chỉ Super Admin được xuất nhật ký.');
+                return;
+            }
+            hideWarning();
+            try {
+                const res = await authApiBlob('/logs/activity/export?' + logFilterParams(false).toString());
+                const blob = await res.blob();
+                const cd = res.headers.get('content-disposition') || '';
+                const plain = /filename="?([^";]+)"?/i.exec(cd);
+                const name = plain ? plain[1] : 'nhat-ky-hoat-dong.xlsx';
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+                showToast('✅ Đã xuất file "' + name + '".', 'success');
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không xuất được file Excel.'), 'error');
+            }
+        }
+
+        // Xoá nhật ký theo bộ lọc (hoặc toàn bộ nếu không lọc)
+        async function clearAdminLogs() {
+            if (currentUser.role !== 'super-admin') {
+                showWarning('Chỉ Super Admin được xoá nhật ký.');
+                return;
+            }
+            hideWarning();
+            const params = logFilterParams(false);
+            const hasFilter = params.toString().length > 0;
+            const desc = logFilterDescription();
+            const ok = await confirmDialog('Xoá nhật ký theo ' + desc + '? Thao tác này không thể hoàn tác.');
+            if (!ok) return;
+            if (!hasFilter) params.set('all', 'true');
+            try {
+                const data = await authApi('/logs/activity?' + params.toString(), 'DELETE');
+                showToast('✅ Đã xoá ' + (data && data.deleted || 0) + ' dòng nhật ký.', 'success');
+                logOffset = 0;
+                logMetaLoaded = false;
+                loadAdminLogs();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không xoá được nhật ký.'), 'error');
+            }
+        }
+
+        // Xoá 1 dòng nhật ký
+        async function deleteAdminLog(id) {
+            if (currentUser.role !== 'super-admin') {
+                showWarning('Chỉ Super Admin được xoá nhật ký.');
+                return;
+            }
+            hideWarning();
+            const ok = await confirmDialog('Xoá dòng nhật ký này? Thao tác này không thể hoàn tác.');
+            if (!ok) return;
+            try {
+                await authApi('/logs/activity/' + encodeURIComponent(id), 'DELETE');
+                showToast('✅ Đã xoá 1 dòng nhật ký.', 'success');
+                logMetaLoaded = false;
+                loadAdminLogs();
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Không xoá được dòng nhật ký.'), 'error');
+            }
+        }
+
+        function logPage(dir) {
+            const next = logOffset + dir * LOG_PAGE_SIZE;
+            if (next < 0 || next >= logTotal) return;
+            logOffset = next;
+            loadAdminLogs();
+        }
+
+        async function loadAdminLogs() {
+            const tbody = document.getElementById('logTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a99b1;padding:18px;">' +
+                '<i class="fas fa-spinner fa-spin"></i> Đang tải…</td></tr>';
+            loadLogMeta();
+            try {
+                const params = logFilterParams(true);
+
+                const data = await authApi('/logs/activity?' + params.toString());
+                const items = (data && data.items) || [];
+                logTotal = (data && data.total) || 0;
+                logItems = items;
+
+                if (!items.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a99b1;padding:22px;">' +
+                        'Chưa có thao tác nào được ghi nhận.</td></tr>';
+                } else {
+                    tbody.innerHTML = items.map(function (r, i) { return logRowHtml(r, i); }).join('');
+                }
+
+                const sum = document.getElementById('logSummary');
+                if (sum) sum.innerHTML = '<span class="status-badge active">Tổng: ' + logTotal + '</span>';
+                const info = document.getElementById('logPageInfo');
+                if (info) {
+                    if (!logTotal) {
+                        info.textContent = '0 bản ghi';
+                    } else {
+                        const from = logOffset + 1;
+                        const to = Math.min(logOffset + LOG_PAGE_SIZE, logTotal);
+                        info.textContent = from + '–' + to + ' / ' + logTotal;
+                    }
+                }
+                const prev = document.getElementById('logPrevBtn');
+                const next = document.getElementById('logNextBtn');
+                if (prev) prev.disabled = logOffset <= 0;
+                if (next) next.disabled = logOffset + LOG_PAGE_SIZE >= logTotal;
+            } catch (err) {
+                logItems = [];
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#d0314e;padding:22px;">' +
+                    escapeHtml(err.message || 'Không tải được nhật ký.') + '</td></tr>';
             }
         }
 

@@ -44,8 +44,11 @@
         }
 
         /* Khi nhúng trong left-col của index.html: card sát biên trái (khớp header/footer)
-           và gap phải = gap của StockDetail (20px). */
+           và gap phải = gap của StockDetail (20px).
+           BỎ max-width 1200px để bài viết RỘNG BẰNG cột nội dung website
+           (giống StockDetail / tin-tuc / các trang khác — đều max-width:none khi embedded). */
         .embedded .app-wrapper {
+            max-width: none;
             padding: 0 0 40px;
         }
 
@@ -782,7 +785,7 @@
             color: #e6edf3;
         }
     </style>
-    <link rel="stylesheet" href="/static/typography.css" />
+    <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
 </head>
 <body>
 
@@ -1075,6 +1078,11 @@
                     function esc(s) {
                         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                     }
+                    // Báo cho shell (index.html) biết CHUYÊN MỤC của bài → header focus đúng tab danh mục
+                    // (giống khi người dùng bấm chọn chuyên mục đó). KHÔNG đổi URL vì đang ở bài viết.
+                    if (window.parent && window.parent !== window) {
+                        try { window.parent.postMessage({ type: 'tunix-article-cat', cat: n.category || '' }, '*'); } catch (e) {}
+                    }
                     const title = document.getElementById('ndTitle');
                     const author = document.getElementById('ndAuthor');
                     const time = document.getElementById('ndTime');
@@ -1087,7 +1095,9 @@
                     if (author) author.textContent = n.author_name || 'TuniX';
                     if (time) {
                         time.innerHTML = '<i class="far fa-clock"></i> ' +
-                            (n.created_at ? new Date(n.created_at).toLocaleString('vi-VN') : '');
+                            (n.published_at || n.created_at
+                                ? new Date(n.published_at || n.created_at).toLocaleString('vi-VN')
+                                : '');
                     }
                     const figure = image ? image.closest('.featured-image') : null;
                     if (image && n.image_url) {
@@ -1147,7 +1157,9 @@
                                 const thumb = rn.image_url
                                     ? '<img src="' + esc(rn.image_url) + '" alt="" />'
                                     : '<i class="fas fa-newspaper" style="font-size:20px;color:#6b7a8f;display:flex;align-items:center;justify-content:center;height:100%;"></i>';
-                                const time = rn.created_at ? new Date(rn.created_at).toLocaleString('vi-VN') : '';
+                                const time = (rn.published_at || rn.created_at)
+                                    ? new Date(rn.published_at || rn.created_at).toLocaleString('vi-VN')
+                                    : '';
                                 const rUrl = rn.slug ? '/' + rn.slug + '-' + rn.id + '.html' : '/tintuc?id=' + rn.id;
                                 return '<article class="related-item" data-id="' + rn.id + '" data-slug="' + esc(rn.slug || '') + '" style="cursor:pointer;">' +
                                     '<div class="thumb">' + thumb + '</div>' +

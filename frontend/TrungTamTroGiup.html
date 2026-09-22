@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     
-    <link rel="stylesheet" href="/static/typography.css" />
+    <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
 </head>
 <body>
     <div class="app-container">
@@ -53,7 +53,7 @@
                 <!-- Header -->
                 <div class="help-header guide-header">
                     <h1>Trung tâm trợ giúp</h1>
-                    <p class="help-subtitle guide-subtitle">Tìm câu trả lời cho mọi thắc mắc về TuniX</p>
+                    <p class="help-subtitle guide-subtitle">Giải đáp về tính năng, tài khoản và gói Hội viên của TuniX</p>
                 </div>
 
                 <!-- Categories -->
@@ -61,22 +61,22 @@
                     <a href="#" class="category-card" data-category="getting-started">
                         <div class="icon-circle"><i class="fas fa-rocket"></i></div>
                         <h3>Bắt đầu</h3>
-                        <p>Hướng dẫn đăng ký và sử dụng cơ bản</p>
+                        <p>Đăng ký, đăng nhập và các khu vực chính</p>
                     </a>
                     <a href="#" class="category-card" data-category="account">
                         <div class="icon-circle"><i class="fas fa-user-cog"></i></div>
                         <h3>Tài khoản</h3>
-                        <p>Quản lý thông tin và bảo mật</p>
+                        <p>Thông tin cá nhân, mật khẩu và bảo mật</p>
                     </a>
                     <a href="#" class="category-card" data-category="features">
                         <div class="icon-circle"><i class="fas fa-chart-pie"></i></div>
                         <h3>Tính năng</h3>
-                        <p>Hướng dẫn sử dụng các công cụ</p>
+                        <p>Các khu vực và công cụ của TuniX</p>
                     </a>
                     <a href="#" class="category-card" data-category="billing">
-                        <div class="icon-circle"><i class="fas fa-credit-card"></i></div>
-                        <h3>Thanh toán</h3>
-                        <p>Gói dịch vụ và phương thức thanh toán</p>
+                        <div class="icon-circle"><i class="fas fa-crown"></i></div>
+                        <h3>Hội viên</h3>
+                        <p>Gói Miễn phí, gói Hội viên và quyền lợi</p>
                     </a>
                 </div>
 
@@ -86,58 +86,80 @@
                         <i class="fas fa-question-circle"></i> Câu hỏi thường gặp
                     </div>
 
-                    <div class="faq-item">
+                    <div class="faq-item" data-category="getting-started">
                         <div class="question" onclick="toggleFaq(this)">
-                            Làm thế nào để đăng ký tài khoản TuniX?
+                            Làm thế nào để tạo tài khoản?
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="answer">
-                            Bạn có thể đăng ký tài khoản TuniX bằng cách nhấp vào icon account ở góc phải trang chủ. Điền đầy đủ thông tin bao gồm tên, email, số điện thoại(không bắt buộc) và mật khẩu. Sau khi xác nhận email, tài khoản của bạn sẽ được kích hoạt ngay lập tức.
+                            Bấm icon tài khoản ở góc phải thanh trên cùng → chọn Đăng ký ngay, điền Họ tên, Email, Số điện thoại (không bắt buộc) và mật khẩu tối thiểu 6 ký tự. Sau khi đồng ý điều khoản, TuniX gửi email xác thực — mở email và bấm liên kết để kích hoạt tài khoản; nếu chưa nhận được, bấm Gửi lại email xác thực.
                         </div>
                     </div>
 
-                    <div class="faq-item">
+                    <div class="faq-item" data-category="getting-started">
                         <div class="question" onclick="toggleFaq(this)">
-                            TuniX có cung cấp dữ liệu thời gian thực không?
+                            TuniX có những khu vực chính nào?
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="answer">
-                            Có. TuniX cung cấp dữ liệu giá và khối lượng giao dịch theo thời gian thực từ các sàn HOSE, HNX và UPCoM. Dữ liệu được cập nhật liên tục với độ trễ tối thiểu 15-30 giây.
+                            Menu chính gồm: Thị trường (chỉ số, dòng tiền, tin nổi bật), Cổ phiếu (theo nhóm ngành, bộ lọc, chi tiết mã và biểu đồ kỹ thuật), Khám phá (cơ hội nổi bật, bản đồ cơ hội, chiến lược, xếp hạng), Lãi ngân hàng, Giá Vàng/Bạc, Crypto, Quản lý tài sản (danh mục, cảnh báo AI, phân tích tài sản), Tiện ích (giá điều chỉnh, lãi tiền gửi, tỷ giá) và TuniAI.
                         </div>
                     </div>
 
-                    <div class="faq-item">
+                    <div class="faq-item" data-category="account">
                         <div class="question" onclick="toggleFaq(this)">
-                            Tôi có thể sử dụng TuniX trên điện thoại không?
+                            Làm sao để đổi mật khẩu?
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="answer">
-                            Có. TuniX có ứng dụng di động cho cả iOS và Android. Bạn có thể tải xuống từ App Store hoặc Google Play. Ngoài ra, trang web cũng được tối ưu hóa để sử dụng trên trình duyệt di động.
+                            Mở menu tài khoản (bấm tên hoặc ảnh đại diện ở góc phải) → Thông tin tài khoản → bấm Đổi mật khẩu, nhập mật khẩu hiện tại và mật khẩu mới rồi lưu lại.
                         </div>
                     </div>
 
-                    <div class="faq-item">
+                    <div class="faq-item" data-category="features">
                         <div class="question" onclick="toggleFaq(this)">
-                            Các gói dịch vụ của TuniX bao gồm những gì?
+                            TuniAI là gì và dùng được những gì?
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="answer">
-                            <p>TuniX cung cấp 2 gói dịch vụ:</p>
+                            TuniAI là trợ lý AI của TuniX: hỏi đáp về cổ phiếu, báo cáo tài chính, phân tích biểu đồ, tìm cổ phiếu theo tiêu chí, tình hình thị trường và cả danh mục bạn đang nắm giữ/theo dõi. Tài khoản Miễn phí được 1 câu hỏi và 2 cuộc trò chuyện mới mỗi tháng; gói Hội viên hỏi không giới hạn.
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="features">
+                        <div class="question" onclick="toggleFaq(this)">
+                            Tôi có thể theo dõi danh mục đầu tư của mình trên TuniX không?
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="answer">
+                            Có. Trong Quản lý tài sản, bạn ghi nhận cổ phiếu, crypto, vàng/bạc và tiền gửi ngân hàng; quản lý tiền mặt VND/USDT; theo dõi thêm những mã chưa sở hữu; xem bảng danh mục với lãi/lỗ, vùng hỗ trợ – kháng cự và trạng thái kỹ thuật; xem sự kiện liên quan và phân tích tài sản tổng thể.
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="billing">
+                        <div class="question" onclick="toggleFaq(this)">
+                            Các gói dịch vụ của TuniX gồm những gì?
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="answer">
+                            <p>TuniX có 2 hình thức sử dụng:</p>
                             <ul>
-                                <li><strong>Miễn phí:</strong> Dữ liệu cơ bản, biểu đồ, tin tức, phân tích nâng cao, báo cáo chuyên sâu, công cụ so sánh</li>
-                                <li><strong>Pro:</strong> Phân tích AI(đang phát triển), ưu tiên hỗ trợ</li>
+                                <li><strong>Miễn phí (mặc định khi đăng ký):</strong> dùng đầy đủ dữ liệu và công cụ của website — Thị trường, Cổ phiếu (biểu đồ kỹ thuật, chỉ báo), Khám phá, Lãi ngân hàng, Giá Vàng/Bạc, Crypto, Tiện ích, Tin tức và Quản lý tài sản (danh mục, tiền mặt, danh mục theo dõi, phân tích tài sản). TuniAI có hạn mức <strong>1 câu hỏi + 2 cuộc trò chuyện mới mỗi tháng</strong>.</li>
+                                <li><strong>Hội viên - Gói tháng:</strong> 99.000đ/tháng, gia hạn mỗi tháng.</li>
+                                <li><strong>Hội viên - Gói năm:</strong> 999.000đ/năm, thanh toán 1 lần cho 12 tháng (tiết kiệm hơn gói tháng).</li>
                             </ul>
-							<p style="margin-top:6px;font-size:12px;color:#8a99b1;">💡 TuniX chưa cung cấp gói Pro vì vậy tất cả các tính năng hiện tại đang ở trạng thái miễn phí.</p>
+                            <p style="margin-top:6px;">Mở gói Hội viên, bạn được: <strong>TuniAI không giới hạn</strong> câu hỏi, <strong>Trung tâm cảnh báo</strong> đầy đủ (cảnh báo cổ phiếu và tín hiệu crypto do AI phân tích, có nút Quét), cùng toàn bộ nhóm chiến lược và bảng xếp hạng nâng cao ở trang Khám phá.</p>
+                            <p style="margin-top:6px;font-size:12px;color:#8a99b1;">💡 Đăng ký Hội viên tại icon tài khoản (góc phải trang chủ) → <strong>Hội viên</strong>, hoặc bấm nút <strong>Nâng cấp Hội viên</strong> ở những khu vực đang bị khoá.</p>
                         </div>
                     </div>
 
-                    <div class="faq-item">
+                    <div class="faq-item" data-category="billing">
                         <div class="question" onclick="toggleFaq(this)">
-                            Tôi có thể hủy đăng ký gói dịch vụ bất cứ lúc nào không?
+                            Tôi đăng ký hoặc gia hạn gói Hội viên ở đâu?
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="answer">
-                            Có. Bạn có thể hủy đăng ký bất cứ lúc nào trong phần Quản lý tài khoản. Việc hủy sẽ có hiệu lực vào cuối chu kỳ thanh toán hiện tại. Bạn sẽ không bị tính phí cho các chu kỳ tiếp theo.
+                            Mở menu tài khoản → Hội viên, chọn Gói tháng hoặc Gói năm rồi xác nhận. Gói được kích hoạt ngay và thông tin gói (ngày bắt đầu, ngày hết hạn) hiển thị tại đây. Bạn cũng có thể bấm nút “Nâng cấp Hội viên” ở các khu vực đang bị khoá.
                         </div>
                     </div>
                 </div>
@@ -155,6 +177,19 @@
                     </a>
                 </div>
 
+                <div class="info-grid" style="margin-top:16px;">
+                    <a href="/HuongDanSuDung" class="info-card">
+                        <div class="icon-circle"><i class="fas fa-book-open"></i></div>
+                        <h4>Hướng dẫn sử dụng</h4>
+                        <p>Hướng dẫn từng khu vực của TuniX</p>
+                    </a>
+                    <a href="/GopY" class="info-card">
+                        <div class="icon-circle"><i class="fas fa-lightbulb"></i></div>
+                        <h4>Góp ý cho TuniX</h4>
+                        <p>Đề xuất tính năng hoặc báo lỗi bạn gặp</p>
+                    </a>
+                </div>
+
             </div>
         </div>
 
@@ -168,7 +203,6 @@
                     </p>
                     <div class="footer-social">
                         <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-facebook"></i></a>
-                        <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-youtube"></i></a>
                         <a href="https://www.tiktok.com/@tunix.vn" target="_blank" rel="noopener"><i class="fab fa-tiktok"></i></a>
                     </div>
                 </div>
@@ -179,6 +213,8 @@
                         <li><span class="footer-label">Bảng điều khiển</span></li>
                         <li><span class="footer-label">Báo cáo tài chính</span></li>
                         <li><span class="footer-label">Công cụ so sánh</span></li>
+                        <li><span class="footer-label">Quản lý tài sản</span><span class="footer-new-badge">mới</span></li>
+                        <li><span class="footer-label">Trung tâm cảnh báo</span><span class="footer-new-badge">mới</span></li>
                         <li><span class="footer-label">TuniAI hỗ trợ phân tích</span><span class="footer-new-badge">mới</span></li>
                     </ul>
                 </div>
@@ -200,7 +236,7 @@
                         <li><a href="/MienTruTrachNhiem">Miễn trừ trách nhiệm</a></li>
                     </ul>
                     <div style="margin-top: 16px; opacity: 0.45; filter: grayscale(1); pointer-events: none;" aria-disabled="true"><!-- APP CHƯA RA MẮT - BỎ opacity/filter/pointer-events ĐỂ KÍCH HOẠT -->
-                        <span style="font-size: 12px; color: #6b7a8f; display: block; margin-bottom: 8px;">Tải ứng dụng</span>
+                        <span style="font-size: 12px; color: #6b7a8f; display: block; margin-bottom: 8px;">Tải ứng dụng (sắp ra mắt)</span>
                         <div class="footer-app-links">
                             <a href="#"><i class="fab fa-apple"></i> App Store</a>
                             <a href="#"><i class="fab fa-google-play"></i> Google Play</a>
@@ -273,46 +309,10 @@
             icon.classList.toggle('active');
         }
 
-        // Category click - simulate filtering
-        document.querySelectorAll('.category-card').forEach(card => {
-            card.addEventListener('click', function(e) {
-                e.preventDefault();
-                const category = this.dataset.category;
-                const categoryMap = {
-                    'getting-started': ['Làm thế nào để đăng ký tài khoản TuniX?', 'Tôi có thể sử dụng TuniX trên điện thoại không?'],
-                    'account': ['Làm thế nào để đăng ký tài khoản TuniX?', 'Tôi có thể hủy đăng ký gói dịch vụ bất cứ lúc nào không?'],
-                    'features': ['TuniX có cung cấp dữ liệu thời gian thực không?', 'Các gói dịch vụ của TuniX bao gồm những gì?'],
-                    'billing': ['Các gói dịch vụ của TuniX bao gồm những gì?', 'Tôi có thể hủy đăng ký gói dịch vụ bất cứ lúc nào không?']
-                };
+        // Lọc FAQ theo danh mục được xử lý ở shell (index.html → bindFaqCategories)
+        // vì script trong trang này KHÔNG chạy khi nội dung được nhúng vào #dynamicContent.
 
-                const keywords = categoryMap[category] || [];
-                if (keywords.length > 0) {
-                    // Close all
-                    document.querySelectorAll('.faq-item .answer').forEach(a => a.classList.remove('open'));
-                    document.querySelectorAll('.faq-item .question i').forEach(i => i.classList.remove('active'));
-
-                    // Open matching FAQs
-                    const faqItems = document.querySelectorAll('.faq-item');
-                    let found = false;
-                    faqItems.forEach(item => {
-                        const questionText = item.querySelector('.question').textContent.trim();
-                        if (keywords.some(k => questionText.includes(k.replace('?', '')) || questionText.includes(k))) {
-                            const answer = item.querySelector('.answer');
-                            const icon = item.querySelector('.question i');
-                            answer.classList.add('open');
-                            icon.classList.add('active');
-                            found = true;
-                        }
-                    });
-
-                    if (!found) {
-                        alert('Chưa có câu hỏi thường gặp cho danh mục này. Vui lòng liên hệ hỗ trợ.');
-                    }
-                }
-            });
-        });
-
-        // Auto open first FAQ
+        // Auto open first FAQ (chỉ có tác dụng khi mở file trực tiếp, không nhúng shell)
         document.addEventListener('DOMContentLoaded', function() {
             const firstAnswer = document.querySelector('.faq-item .answer');
             const firstIcon = document.querySelector('.faq-item .question i');

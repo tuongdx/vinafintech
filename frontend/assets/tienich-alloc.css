@@ -1,0 +1,68 @@
+/* TuniX — Tiện ích → "Chia đều vốn đầu tư" (prefix `al-`).
+   Chỉ chứa style RIÊNG của công cụ này; các khối chung (.ti-card, .ti-field,
+   .ti-input-wrap, .ti-btn, .ti-kpis/.kpi, .err-list, .ti-hint…) dùng từ tienich.css. */
+
+/* ---------- Ô nhập mã + chip ---------- */
+.al-sym-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+.al-sym-row .ti-input-wrap { flex: 1 1 220px; min-width: 180px; }
+.al-sym-row .ti-btn { flex: 0 0 auto; }
+.al-vnd { flex: 0 0 auto; padding: 0 11px 0 4px; color: #8a99b1; font-size: 13px; }
+body.dark-mode .al-vnd { color: #8a99b1; }
+
+.al-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.al-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(0, 128, 128, 0.08);
+    border: 1px solid rgba(0, 128, 128, 0.28);
+    color: #008080; font-weight: 800; font-size: 13px;
+    border-radius: 20px; padding: 4px 5px 4px 12px;
+}
+body.dark-mode .al-chip { background: rgba(0, 128, 128, 0.16); border-color: rgba(0, 128, 128, 0.4); color: #4db6b6; }
+.al-chip-x {
+    border: none; background: transparent; cursor: pointer; line-height: 1;
+    font-size: 15px; padding: 1px 6px; border-radius: 50%;
+    color: inherit; font-family: inherit;
+}
+.al-chip-x:hover { background: rgba(208, 49, 78, 0.12); color: #d0314e; }
+body.dark-mode .al-chip-x:hover { background: rgba(208, 49, 78, 0.22); color: #ff8b8b; }
+.al-count { font-size: 12px; color: #8a99b1; font-weight: 700; }
+
+/* ---------- Khối kết quả ---------- */
+.al-meta {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: 12.5px; color: #5a6b85; margin-bottom: 12px;
+}
+body.dark-mode .al-meta { color: #9fb0c7; }
+.al-meta b { color: #0b3b38; }
+body.dark-mode .al-meta b { color: #e6edf3; }
+.al-meta i { color: #008080; margin-right: 3px; }
+.al-meta .al-dot { color: #c3ccd9; }
+.al-refresh { margin-left: auto; }
+
+.al-tblwrap {
+    overflow-x: auto; border: 1px solid #e9edf2; border-radius: 12px; background: #fff;
+}
+body.dark-mode .al-tblwrap { background: #10151c; border-color: #30363d; }
+.al-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.al-tbl th {
+    background: #f6f8fb; text-align: left; white-space: nowrap;
+    padding: 9px 12px; font-size: 11px; font-weight: 800; color: #6b7a8f;
+    text-transform: uppercase; letter-spacing: 0.2px;
+    border-bottom: 1px solid #e9edf2;
+}
+body.dark-mode .al-tbl th { background: #161b22; color: #9fb0c7; border-bottom-color: #30363d; }
+.al-tbl td { padding: 10px 12px; border-bottom: 1px solid #f2f4f8; white-space: nowrap; color: #1a1f36; }
+body.dark-mode .al-tbl td { border-bottom-color: #21262d; color: #e6edf3; }
+.al-tbl tbody tr:last-child td { border-bottom: none; }
+.al-tbl tbody tr:hover td { background: #f7fbfb; }
+body.dark-mode .al-tbl tbody tr:hover td { background: #10151c; }
+.al-tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+.al-tbl .al-sym { font-weight: 800; color: #008080; font-size: 13.5px; }
+body.dark-mode .al-tbl .al-sym { color: #4db6b6; }
+.al-tbl .al-remain { color: #b06a00; font-weight: 700; }
+body.dark-mode .al-tbl .al-remain { color: #f0c674; }
+.al-sub { font-size: 11px; font-weight: 500; color: #8a99b1; margin-top: 2px; white-space: normal; }
+
+@media (max-width: 760px) {
+    .al-refresh { margin-left: 0; }
+}

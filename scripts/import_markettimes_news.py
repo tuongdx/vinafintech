@@ -10,6 +10,8 @@ Mapping:
   tags          -> News.tags       (list -> chuỗi phân tách bằng dấu phẩy, bỏ tag rỗng)
   url           -> News.source_url
   content_html  -> News.content    (giữ text + ảnh, bỏ link nếu có, bỏ banner/quảng cáo)
+  published_at  -> News.published_at (ngày giờ đăng, giữ đúng ngày giờ trong file;
+                   file không có thì lấy thời điểm import - giờ VN)
 
 Trạng thái ban đầu: pending_approval (chờ duyệt).
 Author mặc định: "Ban biên tập TuniX".
@@ -28,6 +30,7 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
 from app.models import News, NewsStatusEnum
+from app.services import news_time
 
 JSON_PATH = Path(r"C:\4.Deverlop\1.Python\Crawl-tintuc\markettimes_finance_articles.json")
 
@@ -109,21 +112,28 @@ def import_news(db: Session) -> None:
     if not isinstance(data, list):
         raise ValueError("JSON không phải danh sách bài viết")
 
-    # Tránh nhập trùng theo source_url
-    existing_urls = {
-        row.source_url
-        for row in db.query(News.source_url).filter(News.source_url.isnot(None)).all()
+    # Tránh nhập trùng theo source_url (đồng thời dùng để bổ sung ngày giờ đăng còn thiếu)
+    existing_news = {
+        row.source_url: row
+        for row in db.query(News).filter(News.source_url.isnot(None)).all()
     }
 
-    inserted = skipped = 0
+    inserted = skipped = updated = 0
     for i, item in enumerate(data, start=1):
         title = (item.get("title") or "").strip()
         url = (item.get("url") or "").strip()
         if not title:
             print(f"  [{i}] BỎ QUA: thiếu title")
             continue
-        if url in existing_urls:
-            print(f"  [{i}] BỎ QUA (đã tồn tại source_url): {title[:60]}")
+        published_at = news_time.parse_published_at(item)
+        if url in existing_news:
+            row = existing_news[url]
+            if published_at is not None and row.published_at != published_at:
+                row.published_at = published_at
+                updated += 1
+                print(f"  [{i}] CẬP NHẬT NGÀY GIỜ: {published_at:%Y-%m-%d %H:%M} - {title[:50]}")
+            else:
+                print(f"  [{i}] BỎ QUA (đã tồn tại source_url): {title[:60]}")
             skipped += 1
             continue
 
@@ -142,14 +152,15 @@ def import_news(db: Session) -> None:
             source_url=url,
             author_name="Ban biên tập TuniX",
             status=NewsStatusEnum.pending_approval,
+            published_at=published_at or news_time.now_vn(),
         )
         db.add(news)
-        existing_urls.add(url)
+        existing_news[url] = news
         inserted += 1
         print(f"  [{i}] ĐÃ THÊM: {title[:70]}")
 
     db.commit()
-    print(f"\nTổng: đã thêm {inserted}, bỏ qua {skipped} bài (trùng).")
+    print(f"\nTổng: đã thêm {inserted}, cập nhật ngày giờ {updated}, bỏ qua {skipped} bài (trùng).")
 
 
 def main() -> None:

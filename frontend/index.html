@@ -771,7 +771,15 @@
             display: none;
             max-height: 320px;
             overflow-y: auto;
+            /* Ẩn thanh cuộn nhưng vẫn cuộn được (danh sách gợi ý tìm kiếm) */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
             padding: 6px;
+        }
+        .header-search-dropdown::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
         }
         .hsd-item {
             padding: 9px 12px;
@@ -1130,11 +1138,30 @@
             color: #008080;
         }
 
-        /* Ẩn thanh cuộn nhưng vẫn cuộn được khi xem trang công cụ (Tiện ích / Lãi ngân hàng).
-           Chỉ áp dụng khi html/body có class tx-hide-scroll (set theo trang đang load). */
-        html.tx-hide-scroll, html.tx-hide-scroll body { scrollbar-width: none; -ms-overflow-style: none; }
+        /* Ẩn thanh cuộn trang (trang tài khoản / cài đặt / đổi mật khẩu) — NHƯNG GIỮ khoảng trống
+           15px của scrollbar để layout không nới rộng (khi chuyển trang sẽ không bị "lệch ngang").
+           Cùng kỹ thuật với .article-mode bên dưới: track + thumb TRONG SUỐT nên không thấy
+           thanh cuộn ở cả light mode và dark mode (không dùng display:none vì sẽ mất chỗ). */
+        html.tx-hide-scroll,
+        body.tx-hide-scroll {
+            scrollbar-width: auto;
+            scrollbar-color: transparent transparent;
+            -ms-overflow-style: auto;
+        }
         html.tx-hide-scroll::-webkit-scrollbar,
-        html.tx-hide-scroll body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        body.tx-hide-scroll::-webkit-scrollbar {
+            width: 15px;
+            height: 15px;
+            background: transparent;
+        }
+        html.tx-hide-scroll::-webkit-scrollbar-track,
+        body.tx-hide-scroll::-webkit-scrollbar-track,
+        html.tx-hide-scroll::-webkit-scrollbar-thumb,
+        body.tx-hide-scroll::-webkit-scrollbar-thumb,
+        html.tx-hide-scroll::-webkit-scrollbar-corner,
+        body.tx-hide-scroll::-webkit-scrollbar-corner {
+            background: transparent;
+        }
 
         /* MAIN GRID: 1 cột (right-col tạm ẩn — sẽ dùng lại sau) */
         .main-grid {
@@ -1180,6 +1207,34 @@
             margin-top: 0;
             padding-top: 0;
         }
+
+        /* Thanh tiến trình điều hướng (kiểu SPA): hiện khi trang mới đang tải. */
+        #navProgress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            z-index: 10000;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity .2s ease;
+            pointer-events: none;
+        }
+        #navProgress.on { opacity: 1; }
+        #navProgress span {
+            display: block;
+            width: 35%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(0,128,128,0), #008080 35%, #00d6b8);
+            animation: navProgressSlide 1.05s ease-in-out infinite;
+        }
+        @keyframes navProgressSlide {
+            0%   { transform: translateX(-100%); }
+            100% { transform: translateX(320%); }
+        }
+        #frameStore { display: none; }
+        #frameHost { display: block; }
 
         /* RIGHT COLUMN — TẠM ẨN (sẽ dùng lại sau), giữ nguyên HTML để dễ khôi phục */
         .right-col {
@@ -2601,10 +2656,12 @@
             color: #f87171;
         }
     </style>
-    <link rel="stylesheet" href="/static/typography.css" />
+    <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
     <link rel="stylesheet" href="/static/support-legal.css?v=7" />
 </head>
 <body>
+    <!-- Thanh tiến trình điều hướng (kiểu SPA) -->
+    <div id="navProgress" aria-hidden="true"><span></span></div>
     <div class="app-container">
 
         <!-- HEADER + thanh danh mục tin tức: dính cố định khi cuộn -->
@@ -2650,13 +2707,13 @@
                 <span class="mm-sep"></span>
                 <a href="/co-phieu" class="mm-item" data-action="co-phieu">Cổ phiếu</a>
                 <span class="mm-sep"></span>
+                <a href="/kham-pha" class="mm-item" data-action="kham-pha">Khám phá</a>
+                <span class="mm-sep"></span>
                 <a href="/lai-ngan-hang" class="mm-item" data-action="lai-ngan-hang">Lãi ngân hàng</a>
                 <span class="mm-sep"></span>
                 <a href="/gia-vang-bac" class="mm-item" data-action="gia-vang-bac">Giá Vàng/Bạc</a>
                 <span class="mm-sep"></span>
                 <a href="/crypto" class="mm-item" data-action="crypto">Crypto</a>
-                <span class="mm-sep"></span>
-                <a href="/kham-pha" class="mm-item" data-action="kham-pha">Khám phá</a>
                 <span class="mm-sep"></span>
                 <span class="mm-dd" id="mmQlts">
                     <a href="/quan-ly-tai-san" class="mm-item" data-action="quan-ly-tai-san">Quản lý tài sản <i class="fas fa-chevron-down mm-caret"></i></a>
@@ -2676,9 +2733,14 @@
                         <a role="menuitem" href="/tien-ich/gia-dieu-chinh-co-phieu" class="mm-sub-item" data-ti-sub="adj"><i class="fas fa-chart-line"></i> Giá điều chỉnh cổ phiếu</a>
                         <a role="menuitem" href="/tien-ich/loi-nhuan-tien-gui" class="mm-sub-item" data-ti-sub="dep"><i class="fas fa-piggy-bank"></i> Lợi nhuận tiền gửi</a>
                         <a role="menuitem" href="/tien-ich/ty-gia-ngoai-te" class="mm-sub-item" data-ti-sub="ex"><i class="fas fa-coins"></i> Tỷ giá ngoại tệ</a>
+                        <a role="menuitem" href="/tien-ich/chia-deu-von-dau-tu" class="mm-sub-item" data-ti-sub="alloc"><i class="fas fa-balance-scale"></i> Chia đều vốn đầu tư</a>
                     </span>
                 </span>
                 <span class="mm-sep"></span>
+                <!-- Menu "Tín hiệu" — CHỈ hiện khi đã đăng nhập VÀ được admin cấp quyền (users.signal_access).
+                     JS bật/tắt ở applySignalNav() (mặc định ẩn để không lộ với người chưa được cấp). -->
+                <a href="/tin-hieu" class="mm-item" data-action="tin-hieu" id="mmTinHieu" style="display:none;"><i class="fas fa-satellite-dish"></i> Tín hiệu</a>
+                <span class="mm-sep" id="mmTinHieuSep" style="display:none;"></span>
                 <a href="/tuniai" class="mm-item mm-ai" data-action="tuniai"><i class="fas fa-robot"></i> TuniAI</a>
             </nav>
 
@@ -2959,7 +3021,6 @@
                     </p>
                     <div class="footer-social">
                         <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-facebook"></i></a>
-                        <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-youtube"></i></a>
                         <a href="https://www.tiktok.com/@tunix.vn" target="_blank" rel="noopener"><i class="fab fa-tiktok"></i></a>
                     </div>
                 </div>
@@ -2970,6 +3031,8 @@
                         <li><span class="footer-label">Bảng điều khiển</span></li>
                         <li><span class="footer-label">Báo cáo tài chính</span></li>
                         <li><span class="footer-label">Công cụ so sánh</span></li>
+                        <li><span class="footer-label">Quản lý tài sản</span><span class="footer-new-badge">mới</span></li>
+                        <li><span class="footer-label">Trung tâm cảnh báo</span><span class="footer-new-badge">mới</span></li>
                         <li><span class="footer-label">TuniAI hỗ trợ phân tích</span><span class="footer-new-badge">mới</span></li>
                     </ul>
                 </div>
@@ -2991,7 +3054,7 @@
                         <li><a href="/MienTruTrachNhiem">Miễn trừ trách nhiệm</a></li>
                     </ul>
                     <div style="margin-top: 16px; opacity: 0.45; filter: grayscale(1); pointer-events: none;" aria-disabled="true"><!-- APP CHƯA RA MẮT - BỎ opacity/filter/pointer-events ĐỂ KÍCH HOẠT -->
-                        <span style="font-size: 12px; color: #6b7a8f; display: block; margin-bottom: 8px;">Tải ứng dụng</span>
+                        <span style="font-size: 12px; color: #6b7a8f; display: block; margin-bottom: 8px;">Tải ứng dụng (sắp ra mắt)</span>
                         <div class="footer-app-links">
                             <a href="#"><i class="fab fa-apple"></i> App Store</a>
                             <a href="#"><i class="fab fa-google-play"></i> Google Play</a>
@@ -3046,6 +3109,30 @@
             DieuKhoanSuDung: '/frontend/DieuKhoanSuDung.html',
             ChinhSachBaoMat: '/frontend/ChinhSachBaoMat.html',
             MienTruTrachNhiem: '/frontend/MienTruTrachNhiem.html',
+        };
+        // Bản sao khoá chữ thường của PAGE_FILE_MAP để tra cứu không phân biệt hoa/thường.
+        const PAGE_FILE_MAP_LC = Object.keys(PAGE_FILE_MAP).reduce(function (acc, k) {
+            acc[k.toLowerCase()] = PAGE_FILE_MAP[k]; return acc;
+        }, {});
+        // Bảng dự phòng: slug URL → file HTML, dùng khi URL không khớp nhánh nào ở trên
+        // (tránh rơi về trang chủ sai) — so khớp KHÔNG phân biệt hoa/thường.
+        const SHELL_SLUG_TO_FILE = {
+            'home': '/Home',
+            'thi-truong': '/frontend/ThiTruong.html',
+            'co-phieu': '/frontend/CoPhieu.html',
+            'kham-pha': '/frontend/KhamPha.html',
+            'lai-ngan-hang': '/frontend/lai-ngan-hang.html',
+            'gia-vang-bac': '/frontend/gold.html',
+            'crypto': '/frontend/crypto.html',
+            'tuniai': '/frontend/TuniAI.html',
+            'quan-ly-tai-san': '/frontend/quanlytaisan.html',
+            'tin-hieu': '/frontend/tin-hieu.html',
+            'tien-ich': '/frontend/tienich.html',
+            'ty-gia-ngoai-te': '/frontend/exchange.html',
+            'taikhoan': '/frontend/taikhoan.html',
+            'caidat': '/frontend/caidat.html',
+            'doimatkhau': '/frontend/doimatkhau.html',
+            'tin-tuc': '/frontend/tin-tuc.html'
         };
 
         const API_BASE = window.location.origin === 'null' ? 'http://localhost:8000' : window.location.origin;
@@ -3216,6 +3303,7 @@
         let historyReady = false;   // bật sau khi routing trang đầu → không tạo entry lúc khởi tạo
         let handlingPop = false;    // đang xử lý popstate → không push thêm entry
         let lastHistoryPage = null; // trang đã ghi lịch sử gần nhất (tránh entry trùng)
+        let lastRoutedPath = '';    // pathname của trang đang hiển thị (để phân biệt đổi fragment vs đổi trang)
         let appPushedCount = 0;     // số entry trong-app đã tạo (dùng cho nút "Quay lại" menu chuột phải)
         function pushHistoryEntry(page) {
             if (page === lastHistoryPage) return;
@@ -3238,14 +3326,39 @@
         // Nút back/forward của trình duyệt → nạp lại trang theo URL (routeFromUrl định nghĩa bên dưới).
         window.addEventListener('popstate', function() {
             handlingPop = true;
-            try { routeFromUrl(); } finally { handlingPop = false; }
+            try {
+                // Chỉ đổi fragment (#mục-lục) trên CÙNG một trang → cuộn tới mục đó,
+                // không nạp lại trang (nạp lại sẽ đẩy người dùng về đầu trang).
+                if (location.hash && location.pathname === lastRoutedPath) {
+                    const target = document.getElementById(location.hash.slice(1));
+                    if (target) { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+                }
+                routeFromUrl();
+            } finally { handlingPop = false; }
         });
+
+        // Mục lục / liên kết trong trang (href="#id") → cuộn tới phần nội dung bằng JS.
+        // KHÔNG để trình duyệt điều hướng fragment mặc định: thao tác đó phát sinh popstate
+        // → shell route lại trang và nhảy về đầu trang.
+        document.addEventListener('click', function (e) {
+            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            const link = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+            if (!link) return;
+            const href = link.getAttribute('href') || '';
+            if (href.length < 2) return;
+            const target = document.getElementById(href.slice(1));
+            if (!target) return;
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Cập nhật hash để chia sẻ/gh bookmark được, nhưng không tạo entry mới (tránh popstate).
+            try { history.replaceState(history.state, '', href); } catch (err) {}
+        }, false);
         window.tunixGoBackInApp = goBackInApp;
         window.tunixGoForwardInApp = goForwardInApp;
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260908aw';
+        const CACHE_VERSION = '20260917a';
         // Slug URL đẹp cho các section Quản lý tài sản
         window.__QLTS_SLUGS = {
             overview: 'phan-tich-tai-san',
@@ -3263,7 +3376,8 @@
         window.__TI_SLUGS = {
             adj: 'gia-dieu-chinh-co-phieu',
             dep: 'loi-nhuan-tien-gui',
-            ex: 'ty-gia-ngoai-te'
+            ex: 'ty-gia-ngoai-te',
+            alloc: 'chia-deu-von-dau-tu'
         };
         window.__TI_SLUG_TO_TOOL = {};
         Object.keys(window.__TI_SLUGS).forEach(function(k) { window.__TI_SLUG_TO_TOOL[window.__TI_SLUGS[k]] = k; });
@@ -3373,8 +3487,8 @@
         const settingsCog = document.getElementById('settingsCog');
         if (settingsCog) {
             settingsCog.addEventListener('click', function() {
-                loadContent('/caidat');
-                window.history.replaceState({}, '', '/?page=caidat');
+                loadContent('/frontend/caidat.html');
+                window.history.replaceState({}, '', '/caidat');
             });
         }
 
@@ -3441,11 +3555,12 @@
             setHeaderContext(false);
         }
         window.openLaiNganHangPage = openLaiNganHangPage;
-        function openCryptoPage() {
-            // Mở trang "Crypto" trong shell — URL đẹp /crypto.
+        function openCryptoPage(symbol) {
+            // Mở trang "Crypto" trong shell — URL đẹp /crypto. `symbol` (tuỳ chọn) → mở sẵn chi tiết coin.
             if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
             if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
-            loadContent('/frontend/crypto.html');
+            const sym = String(symbol || '').trim().toUpperCase();
+            loadContent('/frontend/crypto.html' + (sym ? '?symbol=' + encodeURIComponent(sym) : ''));
             window.history.replaceState({}, '', '/crypto');
             setHeaderContext(false);
         }
@@ -3485,6 +3600,50 @@
             window.history.replaceState({}, '', '/kham-pha');
             setHeaderContext(false);
         }
+        // ===== Menu "Tín hiệu" (TuniX Signal Engine) =====
+        // Chỉ hiện khi ĐÃ ĐĂNG NHẬP và tài khoản ĐƯỢC CẤP QUYỀN (users.signal_access) hoặc là quản trị viên.
+        // Quyền thật được SERVER kiểm tra ở /api/signals (require_signal_access) — đây chỉ là đồng bộ hiển thị.
+        const SIGNAL_NAV_ROLES = ['super-admin', 'admin'];
+        function signalNavAllowed(user) {
+            if (!user) return false;
+            return user.signal_access === true || SIGNAL_NAV_ROLES.indexOf(user.role) !== -1;
+        }
+        function signalNavToggle(show) {
+            const item = document.getElementById('mmTinHieu');
+            const sep = document.getElementById('mmTinHieuSep');
+            if (item) item.style.display = show ? '' : 'none';
+            if (sep) sep.style.display = show ? '' : 'none';
+        }
+        function applySignalNav() {
+            const token = localStorage.getItem('tunix_access_token');
+            if (!token) { signalNavToggle(false); return; }
+            let user = null;
+            try { user = JSON.parse(localStorage.getItem('tunix_user') || 'null'); } catch (e) { user = null; }
+            signalNavToggle(signalNavAllowed(user));
+            // Admin có thể VỪA bật quyền cho tài khoản này → đối chiếu lại /me 1 lần mỗi lần tải trang.
+            if (window.__signalNavRefreshed) return;
+            window.__signalNavRefreshed = true;
+            fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token }, cache: 'no-store' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (fresh) {
+                    if (!fresh) return;
+                    try { localStorage.setItem('tunix_user', JSON.stringify(fresh)); } catch (e) { /* ignore */ }
+                    signalNavToggle(signalNavAllowed(fresh));
+                })
+                .catch(function () { /* giữ nguyên trạng thái suy ra từ cache */ });
+        }
+        window.applySignalNav = applySignalNav;
+        applySignalNav();
+
+        function openTinHieuPage() {
+            // Mở trang "Tín hiệu" trong shell — URL đẹp /tin-hieu (trang tự kiểm tra quyền với server).
+            if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
+            if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
+            loadContent('/frontend/tin-hieu.html');
+            window.history.replaceState({}, '', '/tin-hieu');
+            setHeaderContext(false);
+        }
+
         function openTuniAiPage() {
             // Mở trang "TuniAI" (dedicated) trong shell — URL đẹp /tuniai.
             if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
@@ -3549,6 +3708,7 @@
             else if (/^\/crypto/.test(pg) || /crypto\.html/.test(pg)) active = 'crypto';
             else if (/^\/kham-pha/.test(pg) || /KhamPha\.html/.test(pg)) active = 'kham-pha';
             else if (/^\/tuniai/.test(pg) || /TuniAI\.html/.test(pg)) active = 'tuniai';
+            else if (/^\/tin-hieu(?:\.html)?(?:[?#].*)?$/.test(pg) || /tin-hieu\.html/.test(pg)) active = 'tin-hieu';
             else if (/^\/ty-gia-ngoai-te/.test(pg) || /exchange\.html/.test(pg)) active = 'tien-ich';
             else if (/^\/tien-ich(?:\/|$|[?#])/.test(pg) || /tienich\.html/.test(pg)) active = 'tien-ich';
             else if (/^\/quan-ly-tai-san(?:\/|$|[?#])/.test(pg) || /quanlytaisan\.html/.test(pg)) active = 'quan-ly-tai-san';
@@ -3590,6 +3750,8 @@
                     window.history.replaceState({}, '', '/quan-ly-tai-san');
                 } else if (action === 'tuniai') {
                     openTuniAiPage();
+                } else if (action === 'tin-hieu') {
+                    openTinHieuPage();
                 }
             });
             // Prefetch nội dung khi hover menu → làm ấm cache, chuyển trang tức thì hơn.
@@ -3602,6 +3764,7 @@
                 'crypto': '/frontend/crypto.html',
                 'kham-pha': '/frontend/KhamPha.html',
                 'tuniai': '/frontend/TuniAI.html',
+                'tin-hieu': '/frontend/tin-hieu.html',
                 'quan-ly-tai-san': '/frontend/quanlytaisan.html',
                 'tien-ich': '/frontend/tienich.html'
             };
@@ -3609,7 +3772,25 @@
                 if (!url) return;
                 try {
                     const sep = url.includes('?') ? '&' : '?';
-                    fetch(url + sep + 'v=' + CACHE_VERSION, { cache: 'force-cache', credentials: 'same-origin' }).catch(function() {});
+                    fetch(url + sep + 'v=' + CACHE_VERSION, { cache: 'force-cache', credentials: 'same-origin' })
+                        .then(function(r) { return r.ok ? r.text() : ''; })
+                        .then(function(html) { if (html) warmPageAssets(html); })
+                        .catch(function() {});
+                    // Tạo sẵn iframe ẩn → trang kịp nạp HTML/CSS/JS + gọi API trước khi người dùng bấm.
+                    prewarmPage(url);
+                } catch (e) {}
+            }
+            // Làm ấm CSS/JS của trang đích để lúc mở không phải chờ tài nguyên.
+            function warmPageAssets(html) {
+                try {
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const urls = [];
+                    doc.querySelectorAll('link[rel="stylesheet"][href]').forEach(function(l) { urls.push(l.getAttribute('href')); });
+                    doc.querySelectorAll('script[src]').forEach(function(s) { urls.push(s.getAttribute('src')); });
+                    urls.slice(0, 12).forEach(function(u) {
+                        if (!u || u.indexOf('http') === 0 || u.indexOf('//') === 0) return;
+                        fetch(u, { cache: 'force-cache', credentials: 'same-origin' }).catch(function() {});
+                    });
                 } catch (e) {}
             }
             mainMenu.querySelectorAll('.mm-item').forEach(function(it) {
@@ -3839,8 +4020,8 @@
             { slug: 'ngan-hang',              label: 'Ngân Hàng',          icon: 'fa-university' },
             { slug: 'bat-dong-san',           label: 'Bất Động Sản',       icon: 'fa-building' },
             { slug: 'doanh-nghiep',           label: 'Doanh Nghiệp',       icon: 'fa-briefcase' },
-            { slug: 'dong-tien-thong-minh',   label: 'Dòng Tiền Thông Minh', icon: 'fa-money-bill-wave' },
-            { slug: 'tai-chinh-quoc-te',      label: 'Tài Chính Quốc Tế',  icon: 'fa-globe' },
+            { slug: 'dong-tien-thong-minh',   label: 'Kinh doanh',         icon: 'fa-money-bill-wave' },
+            { slug: 'tai-chinh-quoc-te',      label: 'Quốc Tế',            icon: 'fa-globe' },
             { slug: 'cong-nghe',              label: 'Công Nghệ',          icon: 'fa-microchip' },
         ];
         // Danh sách slug chuyên mục + URL đẹp (/ngan-hang thay vì /tin-tuc?cat=ngan-hang)
@@ -3863,6 +4044,12 @@
                     c.label +
                     '</div>';
             }).join('<span class="mm-sep"></span>');
+            // Đưa tab đang focus vào vùng nhìn (thanh danh mục cuộn ngang khi màn hẹp) —
+            // dùng 'nearest' để không làm nhảy trang khi tab vốn đã hiển thị.
+            const activeTab = bar.querySelector('.cat-tab.active');
+            if (activeTab && typeof activeTab.scrollIntoView === 'function') {
+                activeTab.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+            }
             bar.querySelectorAll('.cat-tab').forEach(function (tab) {
                 tab.addEventListener('click', function () {
                     if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
@@ -3917,7 +4104,9 @@
         function relatedNewsItemHtml(n) {
             const img = n.image_url ? '<img src="' + n.image_url + '" alt="" />' : '<i class="fas fa-newspaper"></i>';
             const cat = n.category || 'Tin tức';
-            const date = n.created_at ? new Date(n.created_at).toLocaleDateString('vi-VN') : '';
+            // Ngày giờ đăng: ưu tiên published_at (ngày giờ trong file input khi đăng bằng tool)
+            const stamp = n.published_at || n.created_at;
+            const date = stamp ? new Date(stamp).toLocaleDateString('vi-VN') : '';
             const url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
             return '<div class="news-item">' +
                 '<div class="news-image">' + img + '</div>' +
@@ -3965,19 +4154,258 @@
         }
         window.updateRightColumnForStock = updateRightColumnForStock;
 
-        // Bật/tắt ẩn thanh cuộn shell theo trang.
-        // TRƯỚC đây ẩn thanh cuộn shell cho Tiện ích + Lãi ngân hàng → khi chuyển từ trang DÀI
-        // (Thị trường/Cổ phiếu có thanh cuộn) sang 2 trang này, scrollbar biến mất làm nội dung
-        // giãn rộng ~15px → trang bị "lệch" ngang. Giờ THỐNG NHẤT: mọi trang GIỮ thanh cuộn
-        // website; các trang công cụ tự ẩn scrollbar NỘI BỘ bằng CSS riêng (như Vàng/Crypto/Tỷ giá).
+        // Bật/tắt ẩn thanh cuộn dọc của shell theo trang.
+        // Chỉ ẩn ở nhóm trang ngắn: tài khoản / cài đặt / đổi mật khẩu.
+        // KHÔNG dùng JS bù padding nữa: CSS (html/body.tx-hide-scroll) giữ nguyên khoảng trống
+        // 15px của scrollbar và chỉ làm track/thumb trong suốt ⇒ không thấy thanh cuộn ở cả
+        // light & dark mode, mà chiều rộng nội dung vẫn y như các trang khác (không lệch ngang).
+        const HIDE_SCROLLBAR_PAGES = ['taikhoan', 'caidat', 'doimatkhau'];
+        let pageHidesScrollbar = false;
+
+        function applyScrollbarMode() {
+            document.documentElement.classList.toggle('tx-hide-scroll', pageHidesScrollbar);
+            document.body.classList.toggle('tx-hide-scroll', pageHidesScrollbar);
+        }
+        // Giữ tên cũ để các chỗ gọi sẵn có vẫn hoạt động (gọi lại sau mỗi lần nội dung đổi).
+        const syncScrollbarCompensation = applyScrollbarMode;
+
         function updateScrollBarMode(page) {
-            document.documentElement.classList.remove('tx-hide-scroll');
-            document.body.classList.remove('tx-hide-scroll');
+            const p = String(page || '').toLowerCase();
+            pageHidesScrollbar = HIDE_SCROLLBAR_PAGES.some(function (name) { return p.indexOf(name) !== -1; });
+            applyScrollbarMode();
         }
         window.updateScrollBarMode = updateScrollBarMode;
+        window.syncScrollbarCompensation = applyScrollbarMode;
+
+        // ============================================================
+        // ĐIỀU HƯỚNG KIỂU SPA — giữ "sống" iframe của các trang đã xem
+        // ------------------------------------------------------------
+        // TRƯỚC: mỗi lần bấm menu tạo iframe mới → trang phải parse HTML, nạp
+        // CSS/JS và gọi lại toàn bộ API ⇒ cảm giác "load lại cả trang".
+        // GIỜ: iframe được cache theo URL; quay lại trang cũ chỉ ẩn/hiện (tức thì),
+        // giữ nguyên dữ liệu, vị trí cuộn và trạng thái UI của trang đó.
+        // ============================================================
+        const FRAME_CACHE_LIMIT = 6;      // số trang nhúng giữ trong bộ nhớ
+        const frameCache = new Map();     // key -> { frame, key, height, scrollY, loaded, viewed }
+        let activeFrameKey = null;        // frame đang hiển thị
+        let pendingFrameKey = null;       // frame đang chờ tải xong để thay nội dung
+        let navProgressTimer = null;
+
+        // Bỏ tham số version + chuẩn hoá nhẹ (/frontend/X.html ≡ /X.html) để 1 trang chỉ có 1 iframe.
+        function frameKeyOf(page) {
+            let s = String(page || '').replace(/([?&])v=[^&]*/g, '$1').replace(/[?&]+$/, '');
+            s = s.replace('/frontend/', '/').replace(/\.html(?=$|[?#])/, '');
+            return s;
+        }
+
+        // ---- Host CỐ ĐỊNH trong left-col: iframe không bao giờ bị di chuyển/xoá ----
+        // (Di chuyển iframe trong DOM khiến trình duyệt tải lại cả trang ⇒ mất tác dụng cache.)
+        function frameHostEl() {
+            let host = document.getElementById('frameHost');
+            if (!host) {
+                host = document.createElement('div');
+                host.id = 'frameHost';
+                const container = document.getElementById('dynamicContent');
+                if (container) container.appendChild(host);
+            }
+            return host;
+        }
+        // Nơi ghi nội dung HTML tĩnh (bài viết, trợ giúp, FAQ…) — tách khỏi iframe để không xoá cache.
+        function staticHostEl() {
+            let host = document.getElementById('staticHost');
+            if (!host) {
+                host = document.createElement('div');
+                host.id = 'staticHost';
+                host.style.display = 'none';
+                const container = document.getElementById('dynamicContent');
+                if (container) container.appendChild(host);
+            }
+            return host;
+        }
+
+        function startNavProgress() {
+            const bar = document.getElementById('navProgress');
+            if (bar) bar.classList.add('on');
+            clearTimeout(navProgressTimer);
+            navProgressTimer = setTimeout(finishNavProgress, 8000); // an toàn: không treo thanh
+        }
+        function finishNavProgress() {
+            const bar = document.getElementById('navProgress');
+            if (bar) bar.classList.remove('on');
+            clearTimeout(navProgressTimer);
+        }
+
+        function saveActiveScroll() {
+            if (!activeFrameKey) return;
+            const entry = frameCache.get(activeFrameKey);
+            if (entry) entry.scrollY = window.scrollY || window.pageYOffset || 0;
+        }
+
+        function evictFrames() {
+            if (frameCache.size <= FRAME_CACHE_LIMIT) return;
+            Array.from(frameCache.keys()).forEach(function (k) {
+                if (frameCache.size <= FRAME_CACHE_LIMIT) return;
+                if (k === activeFrameKey || k === pendingFrameKey) return;
+                const entry = frameCache.get(k);
+                if (entry.frame.parentElement) entry.frame.parentElement.removeChild(entry.frame);
+                frameCache.delete(k);
+            });
+        }
+
+        // Tạo iframe ẩn cho 1 trang nhúng; chưa hiển thị cho tới khi activateFrame().
+        function createFrame(page, key) {
+            const sep = page.includes('?') ? '&' : '?';
+            const iframe = document.createElement('iframe');
+            iframe.setAttribute('src', page + sep + 'v=' + CACHE_VERSION);
+            iframe.setAttribute('title', 'TuniX Embedded Content');
+            iframe.setAttribute('allow', 'fullscreen');
+            iframe.dataset.frameKey = key;
+            iframe.style.display = 'none';
+            iframe.style.width = '100%';
+            iframe.style.height = '560px';
+            iframe.style.minHeight = '560px';
+            iframe.style.border = 'none';
+            iframe.style.background = 'transparent';
+            iframe.style.transition = 'height .18s ease';
+            iframe.addEventListener('load', function () { onFrameLoaded(key); });
+            frameCache.set(key, { frame: iframe, key: key, height: 560, scrollY: 0, loaded: false, viewed: false });
+            evictFrames();
+            return iframe;
+        }
+
+        // Hiển thị iframe đã có trong cache (KHÔNG tải lại trang).
+        function activateFrame(key, resetScroll) {
+            const entry = frameCache.get(key);
+            if (!entry) return false;
+            saveActiveScroll();
+            // Đổi host đang hiển thị: iframe ↔ nội dung HTML tĩnh (không di chuyển iframe).
+            frameHostEl().style.display = 'block';
+            staticHostEl().style.display = 'none';
+            frameCache.forEach(function (e, k) {
+                if (k === key) {
+                    e.frame.style.display = 'block';
+                    e.frame.style.height = Math.max(560, Math.ceil(e.height || 560)) + 'px';
+                    e.frame.id = 'contentEmbedFrame'; // code cũ vẫn dùng id này cho frame đang xem
+                } else {
+                    e.frame.style.display = 'none';
+                    e.frame.removeAttribute('id');
+                }
+            });
+            activeFrameKey = key;
+            // Frame đang hiện thì KHÔNG còn "chờ hiện" nữa → xoá cờ để timeout an toàn 6s của
+            // chính nó không bật lại sau này (nếu không, sau ~6s nó sẽ tự `activateFrame` lại
+            // frame cũ và đè lên trang người dùng vừa mở).
+            if (pendingFrameKey === key) pendingFrameKey = null;
+            // Trang tin tức/bài viết lấy lại từ cache KHÔNG chạy lại script ⇒ khôi phục focus
+            // tab danh mục mà frame đã báo trước đó (nếu không sẽ mất focus khi quay lại bài cũ).
+            if (Object.prototype.hasOwnProperty.call(entry, 'newsCat')) setHeaderCat(entry.newsCat);
+            if (typeof syncEmbeddedContentTheme === 'function') syncEmbeddedContentTheme(isDarkMode ? 'dark' : 'light');
+            if (resetScroll || !entry.viewed) {
+                window.scrollTo(0, 0);
+                try { entry.frame.contentWindow.scrollTo(0, 0); } catch (e2) {}
+            } else if (entry.scrollY > 0) {
+                window.scrollTo(0, entry.scrollY); // quay lại đúng chỗ đang đọc
+            }
+            entry.viewed = true;
+            return true;
+        }
+
+        // Ẩn toàn bộ iframe (vẫn giữ nguyên trong DOM + cache) trước khi hiện nội dung HTML tĩnh.
+        function parkFrames() {
+            frameHostEl().style.display = 'none';
+            staticHostEl().style.display = 'block';
+            frameCache.forEach(function (e) {
+                e.frame.style.display = 'none';
+                e.frame.removeAttribute('id');
+            });
+            activeFrameKey = null;
+        }
+
+        // Tạo sẵn iframe ẩn (không hiện) để trang tải trước khi người dùng bấm.
+        function prewarmPage(page) {
+            const key = frameKeyOf(page);
+            if (!key || frameCache.has(key)) return;
+            const frame = createFrame(page, key);
+            frameHostEl().appendChild(frame);
+        }
+
+        function findFrameKeyByWindow(win) {
+            let found = null;
+            frameCache.forEach(function (e, k) { if (e.frame.contentWindow === win) found = k; });
+            return found;
+        }
+
+        // Ghi nhớ chuyên mục tin tức mà MỖI iframe đã báo (tunix-cat-changed / tunix-article-cat).
+        // Frame nằm trong cache không chạy lại script khi được hiện lại ⇒ activateFrame() cần
+        // giá trị này để khôi phục đúng tab danh mục đang active trên header.
+        function rememberFrameCat(source, cat) {
+            const k = findFrameKeyByWindow(source);
+            if (!k) return;
+            const entry = frameCache.get(k);
+            if (entry) entry.newsCat = cat || '';
+        }
+
+        // Bỏ qua message từ iframe đang ẩn/prewarm (không cho chúng điều khiển shell).
+        // NGOẠI LỆ — frame ĐANG CHỜ HIỆN (pendingFrameKey): iframe mới chỉ được activate ở sự kiện
+        // `load`, nhưng trang bài viết gửi 'tunix-article-cat' NGAY khi fetch xong (thường xong
+        // TRƯỚC `load`) ⇒ nếu chặn thì header mất focus chuyên mục — đúng lỗi "bài thì có focus,
+        // bài thì không". Frame pending là frame người dùng vừa yêu cầu nên message của nó là hợp lệ.
+        function isFromHiddenFrame(source) {
+            if (!source) return false;
+            const k = findFrameKeyByWindow(source);
+            if (!k) return false; // không phải iframe của shell → giữ hành vi cũ
+            if (k === pendingFrameKey) return false; // frame sắp được hiện → vẫn có quyền báo shell
+            return k !== activeFrameKey;
+        }
+
+        function onFrameLoaded(key) {
+            const entry = frameCache.get(key);
+            if (!entry) return;
+            entry.loaded = true;
+            if (key !== activeFrameKey) {
+                // Trang vừa bấm đã tải xong → mới thay nội dung (không còn màn trắng).
+                if (key === pendingFrameKey) {
+                    pendingFrameKey = null;
+                    activateFrame(key, true);
+                    finishNavProgress();
+                    if (typeof syncScrollbarCompensation === 'function') syncScrollbarCompensation();
+                }
+                return;
+            }
+            entry.frame.style.height = Math.max(560, Math.ceil(entry.height || 560)) + 'px';
+            if (typeof syncEmbeddedContentTheme === 'function') syncEmbeddedContentTheme(isDarkMode ? 'dark' : 'light');
+            try { entry.frame.contentWindow.scrollTo(0, 0); } catch (e) {}
+            finishNavProgress();
+            if (typeof syncScrollbarCompensation === 'function') syncScrollbarCompensation();
+        }
+
+        // Nếu trang mới tải quá lâu (mạng chậm/lỗi) → hiện luôn để không kẹt ở trang cũ.
+        function schedulePendingTimeout(key) {
+            setTimeout(function () {
+                if (pendingFrameKey !== key) return;
+                pendingFrameKey = null;
+                // Trang đã được HIỆN từ trước (lần đầu vào site `activateFrame(key)` ngay, hoặc
+                // iframe `load` không bao giờ bắn vì còn ảnh/tài nguyên tải dở) ⇒ người dùng đã
+                // nhìn thấy trang và có thể đang cuộn. Chỉ tắt thanh tiến trình, TUYỆT ĐỐI không
+                // cuộn — nếu không sẽ "nhảy về đầu trang" sau đúng 6s (lỗi user báo 2026-09-15).
+                if (key === activeFrameKey) { finishNavProgress(); return; }
+                activateFrame(key, true);
+                finishNavProgress();
+            }, 6000);
+        }
 
         // Hàm load nội dung động vào left-col
         function loadContent(page) {
+            // Chuẩn hoá URL đẹp của trang nội dung → file HTML tương ứng, tránh nạp lại shell vào chính nó.
+            const PRETTY_TO_FILE = {
+                '/caidat': '/frontend/caidat.html',
+                '/taikhoan': '/frontend/taikhoan.html',
+                '/doimatkhau': '/frontend/doimatkhau.html'
+            };
+            const pathOnly = String(page || '').split('?')[0].split('#')[0];
+            if (PRETTY_TO_FILE[pathOnly]) {
+                page = PRETTY_TO_FILE[pathOnly] + String(page || '').slice(pathOnly.length);
+            }
             const container = document.getElementById('dynamicContent');
             if (!container) return;
             // Lưu trang đang hiển thị — dùng để quay lại trang trước đó sau khi thoát fullscreen icon nến.
@@ -4003,42 +4431,45 @@
             updateRightColumnForStock(relatedSymbol);
 
             // Home va StockDetail duoc nhung bang iframe de giu nguyen HTML/CSS/JS.
-            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/quan-ly-tai-san(?:[?#].*)?$/.test(page) || /^\/frontend\/quanlytaisan\.html(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/tuniai(?:[?#].*)?$/.test(page) || /^\/frontend\/TuniAI\.html(?:[?#].*)?$/.test(page) || /^\/tien-ich(?:[?#].*)?$/.test(page) || /^\/frontend\/tienich\.html(?:[?#].*)?$/.test(page) || /^\/lai-ngan-hang(?:[?#].*)?$/.test(page) || /^\/frontend\/lai-ngan-hang\.html(?:[?#].*)?$/.test(page) || /^\/gia-vang-bac(?:[?#].*)?$/.test(page) || /^\/frontend\/gold\.html(?:[?#].*)?$/.test(page) || /^\/crypto(?:[?#].*)?$/.test(page) || /^\/frontend\/crypto\.html(?:[?#].*)?$/.test(page) || /^\/ty-gia-ngoai-te(?:[?#].*)?$/.test(page) || /^\/frontend\/exchange\.html(?:[?#].*)?$/.test(page);
+            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/frontend\/caidat\.html(?:[?#].*)?$/.test(page) || /^\/frontend\/taikhoan\.html(?:[?#].*)?$/.test(page) || /^\/frontend\/doimatkhau\.html(?:[?#].*)?$/.test(page) || /^\/quan-ly-tai-san(?:[?#].*)?$/.test(page) || /^\/frontend\/quanlytaisan\.html(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/tuniai(?:[?#].*)?$/.test(page) || /^\/frontend\/TuniAI\.html(?:[?#].*)?$/.test(page) || /^\/tien-ich(?:[?#].*)?$/.test(page) || /^\/frontend\/tienich\.html(?:[?#].*)?$/.test(page) || /^\/lai-ngan-hang(?:[?#].*)?$/.test(page) || /^\/frontend\/lai-ngan-hang\.html(?:[?#].*)?$/.test(page) || /^\/gia-vang-bac(?:[?#].*)?$/.test(page) || /^\/frontend\/gold\.html(?:[?#].*)?$/.test(page) || /^\/crypto(?:[?#].*)?$/.test(page) || /^\/frontend\/crypto\.html(?:[?#].*)?$/.test(page) || /^\/ty-gia-ngoai-te(?:[?#].*)?$/.test(page) || /^\/frontend\/exchange\.html(?:[?#].*)?$/.test(page) || /^\/tin-hieu(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-hieu\.html(?:[?#].*)?$/.test(page);
             // Ẩn thanh cuộn trang khi đang xem chi tiết bài viết
             const isArticlePage = /^\/tintuc(?:[?#].*)?$/.test(page);
             document.body.classList.toggle('article-mode', isArticlePage);
             document.documentElement.classList.toggle('article-mode', isArticlePage);
+            // ĐIỀU HƯỚNG MỚI → huỷ trạng thái "đang chờ hiện" của lần trước. Nếu không xoá,
+            // timeout an toàn 6s của TRANG CŨ vẫn thấy `pendingFrameKey === key cũ` và sẽ gọi
+            // `activateFrame(key cũ)` → TỰ BẬT LẠI TRANG CŨ, đè trang vừa mở. Đây đúng là lỗi
+            // "bấm menu Cổ phiếu nhưng ~5s sau nội dung lại là Trang chủ" (2026-09-15).
+            pendingFrameKey = null;
             if (isEmbeddedPage) {
-                // Tham số version ổn định (CACHE_VERSION) → trình duyệt cache lại được giữa các lần
-                // chuyển trang, chỉ bump khi deploy bản mới.
-                const cacheBust = CACHE_VERSION;
-                const sep = page.includes('?') ? '&' : '?';
-                const frameSrc = `${page}${sep}v=${cacheBust}`;
-                container.innerHTML = `
-                    <iframe
-                        id="contentEmbedFrame"
-                        src="${frameSrc}"
-                        title="TuniX Embedded Content"
-                        style="display:block;width:100%;height:560px;min-height:560px;border:none;background:transparent;transition:height .18s ease;"
-                        allow="fullscreen"
-                    ></iframe>
-                `;
-
-                const frame = document.getElementById('contentEmbedFrame');
-                if (frame) {
-                    frame.addEventListener('load', () => {
-                        syncEmbeddedContentTheme(isDarkMode ? 'dark' : 'light');
-                        if (frame.contentWindow) {
-                            frame.contentWindow.scrollTo(0, 0);
-                        }
-                        scrollPageToTop();
-                    });
+                // ---- Điều hướng kiểu SPA: tái sử dụng iframe đã tải (KHÔNG reload lại trang) ----
+                const key = frameKeyOf(page);
+                const cached = frameCache.get(key);
+                if (cached) {
+                    if (!cached.loaded) startNavProgress(); else finishNavProgress();
+                    activateFrame(key);
+                    return;
                 }
+
+                // Trang chưa từng xem: tạo iframe ẩn, chỉ thay nội dung khi tải xong
+                // → giữ trang cũ trên màn hình, không còn khoảng trắng/nhấp nháy.
+                startNavProgress();
+                pendingFrameKey = key;
+                const newFrame = createFrame(page, key);
+                frameHostEl().appendChild(newFrame);
+                if (!activeFrameKey || !frameCache.has(activeFrameKey)) {
+                    activateFrame(key); // lần đầu vào site: hiện luôn cho có khung
+                }
+                schedulePendingTimeout(key);
                 return;
             }
 
+            // Trang HTML tĩnh: cất iframe (vẫn giữ cache để quay lại tức thì) rồi ghi nội dung vào #staticHost.
+            parkFrames();
+            const staticHost = staticHostEl();
+
             // Hiển thị loading
-            container.innerHTML = '<div style="padding:40px;text-align:center;color:#8a99b1;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+            staticHost.innerHTML = '<div style="padding:40px;text-align:center;color:#8a99b1;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
 
             // Sử dụng fetch để lấy nội dung (version ổn định để cache lại được)
             const cacheBust = CACHE_VERSION;
@@ -4063,19 +4494,20 @@
 
                     // Ưu tiên block nội dung chính của trang, tránh lặp header/footer của trang con.
                     if (dashboard) {
-                        container.innerHTML = dashboard.outerHTML;
+                        staticHost.innerHTML = dashboard.outerHTML;
                     } else if (supportOrLegalContent) {
-                        container.innerHTML = supportOrLegalContent.outerHTML;
+                        staticHost.innerHTML = supportOrLegalContent.outerHTML;
                     } else {
-                        container.innerHTML = bodyContent;
+                        staticHost.innerHTML = bodyContent;
                     }
                     // Gọi lại các hàm khởi tạo cho nội dung mới
                     reinitializeContent();
                     scrollPageToTop();
+                    if (typeof syncScrollbarCompensation === 'function') syncScrollbarCompensation();
                 })
                 .catch(error => {
                     console.error('Lỗi:', error);
-                    container.innerHTML = '<div style="padding:40px;text-align:center;color:#e74c3c;"><i class="fas fa-exclamation-circle"></i> Không thể tải nội dung. Vui lòng thử lại.</div>';
+                    staticHost.innerHTML = '<div style="padding:40px;text-align:center;color:#e74c3c;"><i class="fas fa-exclamation-circle"></i> Không thể tải nội dung. Vui lòng thử lại.</div>';
                 });
         }
 
@@ -4117,7 +4549,8 @@
             if (!faqList && !faqSection) return;
 
             try {
-                const res = await fetch('/api/faqs'); // cache trình duyệt 600s (server đã set Cache-Control)
+                // no-store: nội dung FAQ sửa trong trang quản trị phải hiện ngay (không chờ cache 10 phút)
+                const res = await fetch('/api/faqs', { cache: 'no-store' });
                 if (!res.ok) return;
                 const data = await res.json();
                 const list = Array.isArray(data) ? data : [];
@@ -4183,6 +4616,13 @@
                 const query = this.value.trim().toLowerCase();
                 if (!query) return;
 
+                // Bỏ bộ lọc danh mục trước khi tìm để không bỏ sót câu hỏi đang bị ẩn
+                document.querySelectorAll('#dynamicContent .category-card').forEach((c) => {
+                    c.dataset.active = '';
+                    c.style.boxShadow = '';
+                });
+                document.querySelectorAll('#dynamicContent .faq-item').forEach((item) => { item.style.display = ''; });
+
                 let found = false;
                 document.querySelectorAll('#dynamicContent .faq-item').forEach((item) => {
                     const question = item.querySelector('.question')?.textContent.toLowerCase() || '';
@@ -4199,34 +4639,35 @@
                 }
             });
 
+            // Thẻ danh mục ở "Trung tâm trợ giúp": lọc câu hỏi theo data-category.
+            // Bấm lại thẻ đang chọn → bỏ lọc (hiện tất cả). Mở sẵn câu hỏi đầu tiên của danh mục.
             document.querySelectorAll('#dynamicContent .category-card').forEach((card) => {
                 card.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const category = this.dataset.category;
-                    const categoryMap = {
-                        'getting-started': ['đăng ký', 'điện thoại'],
-                        'account': ['đăng ký', 'hủy đăng ký'],
-                        'features': ['thời gian thực', 'gói dịch vụ'],
-                        'billing': ['gói dịch vụ', 'hủy đăng ký'],
-                    };
-                    const keywords = categoryMap[category] || [];
-                    let found = false;
+                    const wasActive = this.dataset.active === '1';
+                    const target = wasActive ? '' : (this.dataset.category || '');
 
-                    document.querySelectorAll('#dynamicContent .faq-item').forEach((item) => {
-                        const question = item.querySelector('.question')?.textContent.toLowerCase() || '';
-                        const itemCategory = item.dataset.category || '';
-                        const matches = (itemCategory && itemCategory === category) ||
-                            keywords.some((keyword) => question.includes(keyword));
-                        if (matches) {
-                            item.style.display = '';
-                            found = true;
-                        } else {
-                            item.style.display = 'none';
-                        }
+                    document.querySelectorAll('#dynamicContent .category-card').forEach((c) => {
+                        const on = !wasActive && c === this;
+                        c.dataset.active = on ? '1' : '';
+                        c.style.boxShadow = on ? '0 0 0 3px rgba(0, 128, 128, 0.18)' : '';
                     });
 
-                    if (!found) {
-                        alert('Chưa có nội dung phù hợp cho danh mục này.');
+                    let first = null;
+                    document.querySelectorAll('#dynamicContent .faq-item').forEach((item) => {
+                        const show = !target || (item.dataset.category || '') === target;
+                        item.style.display = show ? '' : 'none';
+                        const ans = item.querySelector('.answer');
+                        const ico = item.querySelector('.question i');
+                        if (ans) ans.classList.remove('open');
+                        if (ico) ico.classList.remove('active');
+                        if (show && !first) first = item;
+                    });
+
+                    if (first) {
+                        const q = first.querySelector('.question');
+                        if (q) toggleFaqInIndex(q);
+                        first.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 });
             });
@@ -4544,6 +4985,7 @@
                 '/lai-ngan-hang': '/frontend/lai-ngan-hang.html',
                 '/gia-vang-bac': '/frontend/gold.html',
                 '/crypto': '/frontend/crypto.html',
+                '/tin-hieu': '/frontend/tin-hieu.html',
                 '/kham-pha': '/frontend/KhamPha.html',
                 '/tuniai': '/frontend/TuniAI.html',
                 '/tin-tuc': '/frontend/tin-tuc.html',
@@ -4574,11 +5016,21 @@
         window.addEventListener('message', function(event) {
             const data = event.data;
             if (!data) return;
+            // iframe đang ẩn/prewarm không được điều khiển shell (chỉ frame đang xem mới có quyền).
+            if (isFromHiddenFrame(event.source)) return;
             if (data.type === 'tunix-go-back') {
                 goBackInApp();
                 return;
             }
-            if (data.type === 'tunix-ti-nav' && (data.tool === 'adj' || data.tool === 'dep' || data.tool === 'ex')) {
+            if (data.type === 'tunix-qlts-nav' && data.slug) {
+                // Trang Quản lý tài sản báo "bấm button chuyển mục" → CHỈ cập nhật URL đẹp
+                // (iframe đã tự đổi mục, KHÔNG loadContent để không nạp lại trang).
+                if (/^\/quan-ly-tai-san(?:\/|$)/.test(window.location.pathname)) {
+                    window.history.replaceState({}, '', '/quan-ly-tai-san/' + String(data.slug));
+                }
+                return;
+            }
+            if (data.type === 'tunix-ti-nav' && (data.tool === 'adj' || data.tool === 'dep' || data.tool === 'ex' || data.tool === 'alloc')) {
                 // Trang Tiện ích báo bấm chip đổi công cụ → cập nhật URL đẹp /tien-ich/{slug} (không reload iframe).
                 if (/^\/tien-ich(?:\/|$)/.test(window.location.pathname)) {
                     const p = window.tiPathFromTool ? window.tiPathFromTool(data.tool) : ('/tien-ich?tool=' + data.tool);
@@ -4616,6 +5068,11 @@
                 }
                 return;
             }
+            if (data.type === 'tunix-open-crypto' && data.symbol) {
+                // Click mã crypto từ trang khác (vd Trung tâm cảnh báo) → mở trang Crypto + chi tiết coin
+                openCryptoPage(data.symbol);
+                return;
+            }
             if (data.type === 'tunix-symbol-changed' && data.symbol) {
                 // iframe StockDetail báo đổi mã NGAY TRONG TRANG (vd đổi mã khi fullscreen)
                 // → đồng bộ mã hiện tại để icon nến fullscreen đúng mã.
@@ -4643,6 +5100,7 @@
             }
             if (data.type === 'tunix-cat-changed' && typeof data.cat === 'string') {
                 // Trang tin tức báo chuyên mục đang chọn → highlight tab trên header
+                rememberFrameCat(event.source, data.cat);
                 setHeaderCat(data.cat);
                 // Chuẩn hóa URL đẹp cho chuyên mục (trừ khi đang tìm kiếm)
                 if (!new URLSearchParams(window.location.search).has('q')) {
@@ -4651,6 +5109,14 @@
                         window.history.replaceState({}, '', pretty);
                     }
                 }
+                return;
+            }
+            if (data.type === 'tunix-article-cat') {
+                // Trang chi tiết bài viết báo chuyên mục của bài → focus đúng tab danh mục trên header.
+                // KHÁC 'tunix-cat-changed': không đổi URL (đang ở URL bài viết /{slug}-{id}.html).
+                const articleCat = typeof data.cat === 'string' ? data.cat : '';
+                rememberFrameCat(event.source, articleCat);
+                setHeaderCat(articleCat);
                 return;
             }
             if (data.type === 'tunix-search-clear') {
@@ -4665,12 +5131,19 @@
                 return;
             }
             if (data.type !== 'tunix-home-height' && data.type !== 'tunix-embed-height') return;
+            if (typeof data.height !== 'number' || data.height <= 0) return;
+            const safeHeight = Math.max(560, Math.ceil(data.height));
+            const senderKey = findFrameKeyByWindow(event.source);
+            if (senderKey) {
+                const entry = frameCache.get(senderKey);
+                if (entry) entry.height = safeHeight; // nhớ chiều cao kể cả khi đang ẩn (prewarm)
+                if (senderKey !== activeFrameKey) return; // frame ẩn: chỉ ghi nhớ, không đổi layout
+            }
             const frame = document.getElementById('contentEmbedFrame');
             if (!frame) return;
-            if (typeof data.height === 'number' && data.height > 0) {
-                const safeHeight = Math.max(560, Math.ceil(data.height));
-                frame.style.height = `${safeHeight}px`;
-            }
+            frame.style.height = `${safeHeight}px`;
+            finishNavProgress();
+            if (typeof syncScrollbarCompensation === 'function') syncScrollbarCompensation();
         });
 
         // Trang chủ hiển thị đồng thời layout index + nội dung Home ở left-col,
@@ -4685,7 +5158,7 @@
         const cophieuMatch = window.location.pathname.match(/^\/cophieu-([A-Za-z0-9.]+)$/i);
         const coPhieuIndStockMatch = window.location.pathname.match(/^\/co-phieu\/nganh\/([^/]+)\/([^/]+)\/([A-Za-z0-9.]+)$/i);
         const coPhieuStockMatch = window.location.pathname.match(/^\/co-phieu\/(?!nganh(?:\/|$))([A-Za-z0-9.]+)$/i);
-        const pathPage = window.location.pathname.replace(/^\//, '');
+        const pathPage = window.location.pathname.replace(/^\//, '').replace(/\/+$/, '');
         if (initialSymbol) {
             openStockDetailInIndex(initialSymbol, initialParams.get('fs') === '1');
         } else if (coPhieuIndStockMatch) {
@@ -4747,12 +5220,25 @@
             // Trang TuniAI: /tuniai → nạp dedicated AI page vào left-col.
             loadContent('/frontend/TuniAI.html');
             setHeaderContext(false);
-        } else if (initialPage === 'caidat') {
-            loadContent('/caidat');
-        } else if (initialPage === 'taikhoan') {
-            loadContent('/taikhoan');
-        } else if (initialPage === 'doimatkhau') {
-            loadContent('/doimatkhau');
+        } else if (pathPage === 'tin-hieu' || initialPage === 'tin-hieu') {
+            // Trang Tín hiệu: /tin-hieu → nạp vào left-col (trang tự kiểm tra quyền với server).
+            loadContent('/frontend/tin-hieu.html');
+            setHeaderContext(false);
+        } else if (pathPage === 'taikhoan' || initialPage === 'taikhoan') {
+            // Trang tài khoản: /taikhoan (URL đẹp) — nạp vào left-col, giữ shell.
+            loadContent('/frontend/taikhoan.html');
+            setHeaderContext(false);
+            window.history.replaceState({}, '', '/taikhoan');
+        } else if (pathPage === 'caidat' || initialPage === 'caidat') {
+            // Trang cài đặt: /caidat (URL đẹp) — nạp vào left-col, giữ shell.
+            loadContent('/frontend/caidat.html');
+            setHeaderContext(false);
+            window.history.replaceState({}, '', '/caidat');
+        } else if (pathPage === 'doimatkhau' || initialPage === 'doimatkhau') {
+            // Trang đổi mật khẩu: /doimatkhau (URL đẹp) — nạp vào left-col, giữ shell.
+            loadContent('/frontend/doimatkhau.html');
+            setHeaderContext(false);
+            window.history.replaceState({}, '', '/doimatkhau');
         } else if (/^quan-ly-tai-san\/[a-z0-9-]+$/.test(pathPage)) {
             // URL đẹp section Quản lý tài sản: /quan-ly-tai-san/{slug} → nạp trang đúng section, giữ URL.
             const slugPart = String(pathPage).split('/')[1].toLowerCase();
@@ -4775,19 +5261,25 @@
             // Trang Tỷ giá ngoại tệ: /ty-gia-ngoai-te → nạp vào left-col.
             loadContent('/frontend/exchange.html');
             setHeaderContext(false);
-        } else if (PAGE_FILE_MAP[pathPage]) {
-            // URL đẹp /Trang
-            loadContent(PAGE_FILE_MAP[pathPage]);
+        } else if (PAGE_FILE_MAP[pathPage] || PAGE_FILE_MAP_LC[pathPage.toLowerCase()] || SHELL_SLUG_TO_FILE[pathPage.toLowerCase()]) {
+            // URL đẹp /Trang (không phân biệt hoa/thường) hoặc slug đã biết → nạp đúng file,
+            // KHÔNG để rơi về trang chủ khi URL chỉ khác dấu/hoa-thường.
+            const target = PAGE_FILE_MAP[pathPage] || PAGE_FILE_MAP_LC[pathPage.toLowerCase()] || SHELL_SLUG_TO_FILE[pathPage.toLowerCase()];
+            loadContent(target);
+            setHeaderContext(false);
         } else if (initialPage && PAGE_FILE_MAP[initialPage]) {
             // URL cũ ?page=X → chuẩn hóa về /X
             loadContent(PAGE_FILE_MAP[initialPage]);
             window.history.replaceState({}, '', '/' + initialPage);
         } else {
+            // Không nhận diện được URL → mở trang chủ (có ghi log để dễ truy vết).
+            console.warn('[router] URL không nhận diện được, mở trang chủ:', window.location.pathname);
             loadContent('/Home');
         }
         } // hết routeFromUrl
         // Routing trang đầu đã xong → từ giờ mỗi loadContent tạo entry lịch sử trình duyệt.
         routeFromUrl();
+        lastRoutedPath = location.pathname;
         historyReady = true;
 
         // ===== FULL-SCREEN MODAL nhận từ iframe StockDetail =====
@@ -4819,6 +5311,7 @@
         window.addEventListener('message', function(event) {
             const data = event.data;
             if (!data || typeof data !== 'object') return;
+            if (isFromHiddenFrame(event.source)) return;
             handleStockModalMessage(data);
         });
 
@@ -5009,6 +5502,7 @@
             window.addEventListener('message', function(event) {
                 const data = event.data;
                 if (data && data.type === 'tunix-user-updated') {
+                    if (isFromHiddenFrame(event.source)) return;
                     renderMenu();
                 }
             });
@@ -5048,6 +5542,8 @@
                 const user = cachedUser();
                 const hasToken = !!localStorage.getItem('tunix_access_token');
                 updateBanner();
+                // Menu "Tín hiệu" chỉ hiện với tài khoản đã đăng nhập VÀ được cấp quyền
+                if (typeof window.applySignalNav === 'function') window.applySignalNav();
                 // Có token nhưng chưa có user cache (vd vừa đăng nhập bằng Google) →
                 // tự nạp /me để menu account hiển thị đúng như đăng nhập bình thường
                 if (!user && hasToken) {
@@ -5125,17 +5621,17 @@
                         const act = this.getAttribute('data-act');
                         if (act === 'profile') {
                             if (window.loadContent) {
-                                window.loadContent('/taikhoan');
-                                window.history.replaceState({}, '', '/?page=taikhoan');
+                                window.loadContent('/frontend/taikhoan.html');
+                                window.history.replaceState({}, '', '/taikhoan');
                             } else {
-                                window.location.href = '/?page=taikhoan';
+                                window.location.href = '/taikhoan';
                             }
                         } else if (act === 'member') {
                             // Mục "Hội viên": đăng ký hội viên / xem thông tin gói.
                             if (window.TuniXMembership) {
                                 window.TuniXMembership.openMembershipCenter();
                             } else if (window.loadContent) {
-                                window.loadContent('/taikhoan');
+                                window.loadContent('/frontend/taikhoan.html');
                             }
                         } else if (act === 'admin') {
                             setAdminCookie();
@@ -5170,7 +5666,7 @@
             // ---- Nhớ đăng nhập: khi mở lại app (tắt/bật trình duyệt, tắt tab) ----
             // nếu access token hết hạn nhưng còn refresh token (30 ngày khi tick "Nhớ đăng nhập")
             // → tự refresh để giữ phiên, thay vì đăng xuất.
-            function tokenExpired() {
+            function tokenExpired(skewMs) {
                 const t = localStorage.getItem('tunix_access_token');
                 if (!t) return true;
                 try {
@@ -5178,7 +5674,7 @@
                     const pad = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
                     const payload = JSON.parse(atob(pad));
                     if (!payload.exp) return false;
-                    return (payload.exp * 1000) <= Date.now() + 30000;
+                    return (payload.exp * 1000) <= Date.now() + (skewMs || 30000);
                 } catch (e) { return false; }
             }
             function ensureFreshAuth() {
@@ -5189,6 +5685,22 @@
                     window.refreshAccessToken().then(function() { renderMenu(); });
                 }
             }
+            // ---- Duy trì phiên "nhớ đăng nhập" khi tab còn mở ----
+            // Phiên chỉ kết thúc khi người dùng tự ĐĂNG XUẤT, nên access token (60 phút) phải
+            // được làm mới định kỳ. Refresh sớm 15 phút trước khi hết hạn để các trang con
+            // (iframe) luôn nhận được token còn hiệu lực, tránh 401 bất ngờ.
+            function keepSessionFresh() {
+                if (!localStorage.getItem('tunix_refresh_token')) return;
+                if (localStorage.getItem('tunix_access_token') && !tokenExpired(15 * 60 * 1000)) return;
+                if (window.refreshAccessToken) {
+                    window.refreshAccessToken().then(function(ok) { if (ok) renderMenu(); });
+                }
+            }
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') keepSessionFresh();
+            });
+            window.addEventListener('focus', keepSessionFresh);
+            setInterval(keepSessionFresh, 20 * 60 * 1000);
             if (localStorage.getItem('tunix_refresh_token')) {
                 ensureFreshAuth();
             }
@@ -5205,7 +5717,8 @@
                     ? '<img src="' + n.image_url + '" alt="" />'
                     : '<i class="fas fa-newspaper"></i>';
                 const cat = n.category || 'Tin tức';
-                const date = n.created_at ? new Date(n.created_at).toLocaleDateString('vi-VN') : '';
+                const stamp = n.published_at || n.created_at;
+                const date = stamp ? new Date(stamp).toLocaleDateString('vi-VN') : '';
                 const url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
                 return '<div class="news-item">' +
                     '<div class="news-image">' + img + '</div>' +
@@ -5424,6 +5937,7 @@
             window.addEventListener('message', function(event) {
                 const data = event.data;
                 if (data && data.type === 'tunix-notify') {
+                    if (isFromHiddenFrame(event.source)) return;
                     loadNotifications();
                 }
             });

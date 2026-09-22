@@ -24,7 +24,7 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f4f6f9;
+            background: transparent;
             color: #1a1f36;
             padding: 0;
             margin: 0;
@@ -77,7 +77,7 @@
         .login-msg a { color: #008080; font-weight: 600; text-decoration: none; }
 
         /* Dark */
-        body.dark-mode { background: #0d1117; color: #e6edf3; }
+        body.dark-mode { background: transparent; color: #e6edf3; }
         body.dark-mode .profile-card { background: #161b22; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
         body.dark-mode .profile-sub { color: #adbac7; }
         body.dark-mode .field label { color: #adbac7; }
@@ -177,9 +177,9 @@
                     // Điều hướng tới trang đổi mật khẩu
                     if (window.parent && window.parent !== window && window.parent.loadContent) {
                         window.parent.loadContent('/doimatkhau');
-                        window.parent.history.replaceState({}, '', '/?page=doimatkhau');
+                        window.parent.history.replaceState({}, '', '/doimatkhau');
                     } else {
-                        window.location.href = '/?page=doimatkhau';
+                        window.location.href = '/doimatkhau';
                     }
                 });
                 document.getElementById('saveProfileBtn').addEventListener('click', async function() {

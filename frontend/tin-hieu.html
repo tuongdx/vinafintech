@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
+    <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
+    <title>Tín hiệu - TuniX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /></noscript>
+    <link rel="stylesheet" href="/static/tin-hieu.css?v=20260914g" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
+</head>
+<body>
+    <div class="th-page">
+        <div class="th-hero">
+            <h1><i class="fas fa-satellite-dish"></i> Tín hiệu</h1>
+            <div class="th-sub">
+                TuniX Signal Engine — phân tích đa yếu tố (xu hướng, momentum, dòng tiền, sức mạnh tương đối)
+                và <b>xác nhận nhiều điều kiện</b> trước khi đưa ra tín hiệu cho từng cổ phiếu.
+            </div>
+            <div class="th-meta">
+                <span class="th-pill"><i class="far fa-clock"></i> Quét gần nhất: <b id="thUpdated">…</b></span>
+                <span class="th-pill"><i class="fas fa-shield-halved"></i> Trạng thái dữ liệu: <b id="thDataState">…</b></span>
+            </div>
+        </div>
+
+        <!-- Không đủ quyền (chỉ hiện khi server từ chối) -->
+        <div class="th-card" id="thLocked" style="display:none;">
+            <div class="th-locked">
+                <div class="ico"><i class="fas fa-lock"></i></div>
+                <h2>Tính năng Tín hiệu chưa được bật cho tài khoản này</h2>
+                <p>
+                    Tính năng Tín hiệu chỉ hiển thị với tài khoản đã đăng nhập <b>và được quản trị viên cấp quyền</b>.
+                    Vui lòng liên hệ ban quản trị TuniX nếu bạn muốn sử dụng.
+                </p>
+                <a class="th-btn ghost" href="/Home" target="_top"><i class="fas fa-house"></i> Về trang chủ</a>
+            </div>
+        </div>
+
+        <div id="thMain">
+            <!-- 1. Tổng quan -->
+            <div class="th-card">
+                <h3><i class="fas fa-gauge-high"></i> Tổng quan tín hiệu</h3>
+                <div class="sig-stats" id="sigOverview">
+                    <div class="sig-stat"><div class="lbl">Đang tải</div><div class="val">…</div></div>
+                </div>
+                <div class="sig-rotation" id="sigRotation">
+                    <span class="sig-chip weak">Chưa quét</span> Bấm <b>Quét thị trường</b> để tạo/cập nhật tín hiệu.
+                </div>
+            </div>
+
+            <!-- 2. Danh sách tín hiệu -->
+            <div class="th-card">
+                <h3><i class="fas fa-list-check"></i> Danh sách tín hiệu</h3>
+                <div class="th-actions">
+                    <button type="button" class="th-btn" id="sigScanBtn" onclick="sigScan()">
+                        <i class="fas fa-satellite-dish"></i> Quét thị trường
+                    </button>
+                    <button type="button" class="th-btn ghost" onclick="sigReload()">
+                        <i class="fas fa-rotate"></i> Tải lại
+                    </button>
+                </div>
+
+                <div class="sig-filters">
+                    <input id="sigSymbol" placeholder="Mã (VD FPT)" maxlength="12" style="text-transform:uppercase;width:130px;" />
+                    <select id="sigStrategy">
+                        <option value="">Tất cả chiến thuật</option>
+                        <option value="UPTREND">Uptrend</option>
+                        <option value="BOTTOM_FISHING">Bottom Fishing</option>
+                        <option value="SWING">Swing</option>
+                    </select>
+                    <select id="sigSignal">
+                        <option value="">Mọi tín hiệu</option>
+                        <option value="BUY">BUY</option>
+                        <option value="SELL">SELL</option>
+                    </select>
+                    <select id="sigState">
+                        <option value="">Mọi trạng thái</option>
+                        <option value="WATCH">Đang theo dõi</option>
+                        <option value="SETUP_FORMING">Đang hình thành</option>
+                        <option value="CONFIRMED">Đã xác nhận</option>
+                        <option value="ACTIVE">Đang hiệu lực</option>
+                        <option value="WEAKENING">Suy yếu</option>
+                        <option value="EXIT">Đã thoát</option>
+                        <option value="INVALIDATED">Vô hiệu</option>
+                    </select>
+                    <input id="sigMinScore" type="number" min="0" max="100" placeholder="Điểm ≥" style="width:92px;" />
+                    <label class="sig-check"><input type="checkbox" id="sigActiveOnly" /> Chỉ đang mở</label>
+                    <button type="button" class="th-btn ghost" onclick="sigLoad(0)"><i class="fas fa-filter"></i> Lọc</button>
+                </div>
+
+                <div class="sig-tablewrap">
+                    <table class="sig-table">
+                        <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Chiến thuật</th>
+                                <th>Tín hiệu</th>
+                                <th>Score</th>
+                                <th>Độ tin cậy</th>
+                                <th>Entry</th>
+                                <th>Stop Loss</th>
+                                <th>Trailing</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sigTableBody">
+                            <tr><td colspan="10" class="th-empty">Đang tải…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="sig-pager" id="sigPager"></div>
+                <div class="th-helper">
+                    <i class="fas fa-circle-info"></i> Bấm vào một dòng để xem <b>chi tiết &amp; lý do hình thành tín hiệu</b>
+                    (các điều kiện đã hội tụ, chỉ số, mức giao dịch tham chiếu). Nội dung mang tính tham khảo nội bộ, không phải khuyến nghị đầu tư.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CHI TIẾT -->
+    <div class="sig-modal" id="sigModal">
+        <div class="sig-modal-card">
+            <div class="sig-modal-head">
+                <h3 id="sigModalTitle">Chi tiết tín hiệu</h3>
+                <button type="button" class="sig-x" onclick="sigCloseDetail()" aria-label="Đóng"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="sig-meta-row" id="sigModalMeta"></div>
+            <div id="sigModalBody"></div>
+        </div>
+    </div>
+
+    <script src="/static/tin-hieu.js?v=20260914a"></script>
+    <script src="/static/context-menu.js?v=20260827a"></script>
+</body>
+</html>

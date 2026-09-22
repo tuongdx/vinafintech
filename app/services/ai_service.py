@@ -20,6 +20,7 @@ from app.core.config import settings
 from app.db import SessionLocal
 from app.models import CryptoWatchlist, News, NewsStatusEnum, PortfolioHolding, Setting, UserAsset, UserAssetClass
 from app.services import crypto_service
+from app.services import news_time
 from app.services import vnstock_service as vns
 from app.services.support_resistance import SupportResistanceService
 
@@ -338,7 +339,7 @@ def _query_news(symbol: str = "", limit: int = 8) -> list[dict[str, Any]]:
         q = db.query(News).filter(News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published]))
         if sym:
             q = q.filter((News.tags.ilike(f"%{sym}%")) | (News.title.ilike(f"%{sym}%")))
-        rows = q.order_by(News.id.desc()).limit(limit).all()
+        rows = news_time.latest_first(q).limit(limit).all()
         return [
             {
                 "id": n.id,
@@ -347,7 +348,7 @@ def _query_news(symbol: str = "", limit: int = 8) -> list[dict[str, Any]]:
                 "category": n.category or "tin-tuc",
                 "tags": n.tags,
                 "source": n.source,
-                "date": str(n.created_at),
+                "date": str(news_time.from_row(n) or n.created_at),
             }
             for n in rows
         ]
@@ -392,7 +393,7 @@ def _news_content(news_id: int) -> dict[str, Any]:
         "id": n.id,
         "title": n.title,
         "category": n.category or "tin-tuc",
-        "date": str(n.created_at),
+        "date": str(news_time.from_row(n) or n.created_at),
         "content": _clean_text(n.content)[:2500],
     }
 
@@ -418,6 +419,10 @@ def _screener_sector_map() -> dict[str, str]:
             sec = str(row.get("economicSectorName") or "").strip()
             if sec:
                 out[sym] = sec
+        # Ưu tiên ngành khai báo thủ công (mã IPO mới chưa có trong screener).
+        for sym, override in vns.sector_override_map().items():
+            if override.get("sectorName"):
+                out[sym] = override["sectorName"]
         return out
     except Exception:
         return {}
@@ -1214,6 +1219,7 @@ QUY TẮC BẮT BUỘC:
    - CHỌN LOẠI:
      • Dùng "pie" khi là TỶ TRỌNG / CƠ CẤU / phần trăm cộng gần 100% (danh mục theo ngành, nguồn doanh thu, loại tài sản, khối ngoại mua/bán...).
      • Dùng "bar" khi là SO SÁNH các giá trị cùng đơn vị (lợi nhuận/doanh thu theo quý hay năm, P/E các ngân hàng, doanh thu giữa các mã, thanh khoản các phiên...). KHÔNG trộn đơn vị khác nhau vào chung 1 biểu đồ.
+     • Chuỗi THỜI GIAN (theo quý/năm/tháng — nhất là KẾT QUẢ KINH DOANH theo quý) PHẢI sắp xếp CŨ NHẤT bên trái → MỚI NHẤT bên phải: labels tăng dần theo thời gian (VD ["Q3/2024","Q4/2024","Q1/2025","Q2/2025"]), TUYỆT ĐỐI không để kỳ mới nhất đứng đầu; values của MỌI series phải khớp đúng thứ tự labels đó.
    - CÁCH XUẤT: chèn MỘT khối code ngay sau đoạn chữ mô tả số liệu đó (câu trả lời có thể chứa NHIỀU khối), bắt đầu bằng 3 dấu backtick + "chart" viết liền, nội dung là JSON HỢP LỆ 1 dòng — KHÔNG chú thích, KHÔNG ký tự thừa. Giá trị là SỐ THUẦN (bỏ đơn vị; phần thập phân dùng dấu chấm, KHÔNG dấu phẩy / không dấu chấm ngàn; ví dụ 1.200 tỷ → 1200), màu HEX tùy chọn.
      • "bar": {"type":"bar","title":"...","labels":["Q1","Q2"],"series":[{"name":"2025","values":[100,120]},{"name":"2026","values":[110,150]}]}
      • "pie": {"type":"pie","title":"...","data":[{"label":"Ngân hàng","value":40,"color":"#008080"},{"label":"BĐS","value":30,"color":"#f39c12"}]}

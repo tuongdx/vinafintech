@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     
-    <link rel="stylesheet" href="/static/typography.css" />
+    <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
 </head>
 <body>
     <div class="app-container">
@@ -110,24 +110,35 @@
                         </form>
                     </div>
 
+                    <!-- Khối thông tin: không nhấc nổi / highlight khi di chuột -->
+                    <style>
+                        #dynamicContent .contact-info .info-card:hover {
+                            transform: none;
+                            box-shadow: none;
+                        }
+                        #dynamicContent .contact-info .info-card:hover .icon-circle {
+                            background: #e8ecf5;
+                            color: #008080;
+                        }
+                        body.dark-mode #dynamicContent .contact-info .info-card:hover .icon-circle {
+                            background: #21262d;
+                            color: #008080;
+                        }
+                    </style>
+
                     <!-- Info -->
                     <div class="contact-info">
-                        <div class="info-grid">
-                            <div class="info-card" style="opacity:0.45;filter:grayscale(1);" title="Sắp ra mắt" aria-disabled="true">
-                                <div class="icon-circle"><i class="fas fa-comment-dots"></i></div>
-                                <h4>Chat trực tuyến</h4>
-                                <p>Hỗ trợ tức thời<br />Sắp ra mắt</p>
+                        <div class="info-grid" style="grid-template-columns: minmax(0, 1fr);">
+                            <!-- Gộp chung 1 khối: giờ làm việc + địa chỉ văn phòng -->
+                            <div class="info-card" style="align-items: flex-start; justify-content: flex-start; text-align: left;">
+                                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                    <div class="icon-circle" style="margin: 0;"><i class="fas fa-clock"></i></div>
+                                    <h4 style="margin: 0;">Giờ làm việc:</h4>
+                                    <p style="margin: 0; font-weight: 600;">Thứ 2 - Thứ 6 <span style="font-weight: 400; color: #8a99b1;">•</span> 8:00 - 18:00</p>
+                                </div>
+                                <div style="width: 100%; border-top: 1px solid rgba(138, 153, 177, 0.3); margin: 12px 0;"></div>
+                                <p><i class="fas fa-map-marker-alt"></i> <strong>Địa chỉ văn phòng:</strong> F10 toà S301, Thành phố thông minh Vinhome, phường Tây Mỗ, Thành phố Hà Nội.</p>
                             </div>
-                            <div class="info-card">
-                                <div class="icon-circle"><i class="fas fa-clock"></i></div>
-                                <h4>Giờ làm việc</h4>
-                                <p>Thứ 2 - Thứ 6<br />8:00 - 18:00</p>
-                            </div>
-                        </div>
-
-                        <div class="office-info">
-                            <p><i class="fas fa-map-marker-alt"></i> <strong>Địa chỉ văn phòng:</strong> Tầng 1, Tòa nhà TuongDX, 1 Đường Tiêu Xá, phường Hà Nam, Thành phố Hải Phòng</p>
-                            <p style="margin-top:4px;"><i class="fas fa-globe"></i> <strong>Website:</strong> <a href="#" style="color:#008080;text-decoration:none;">www.tunix.vn</a></p>
                         </div>
                     </div>
 
@@ -146,7 +157,6 @@
                     </p>
                     <div class="footer-social">
                         <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-facebook"></i></a>
-                        <a href="#" aria-disabled="true" title="Sắp ra mắt" style="opacity:0.45;filter:grayscale(1);pointer-events:none;"><i class="fab fa-youtube"></i></a>
                         <a href="https://www.tiktok.com/@tunix.vn" target="_blank" rel="noopener"><i class="fab fa-tiktok"></i></a>
                     </div>
                 </div>
@@ -157,6 +167,8 @@
                         <li><span class="footer-label">Bảng điều khiển</span></li>
                         <li><span class="footer-label">Báo cáo tài chính</span></li>
                         <li><span class="footer-label">Công cụ so sánh</span></li>
+                        <li><span class="footer-label">Quản lý tài sản</span><span class="footer-new-badge">mới</span></li>
+                        <li><span class="footer-label">Trung tâm cảnh báo</span><span class="footer-new-badge">mới</span></li>
                         <li><span class="footer-label">TuniAI hỗ trợ phân tích</span><span class="footer-new-badge">mới</span></li>
                     </ul>
                 </div>
@@ -178,7 +190,7 @@
                         <li><a href="/MienTruTrachNhiem">Miễn trừ trách nhiệm</a></li>
                     </ul>
                     <div style="margin-top: 16px; opacity: 0.45; filter: grayscale(1); pointer-events: none;" aria-disabled="true"><!-- APP CHƯA RA MẮT - BỎ opacity/filter/pointer-events ĐỂ KÍCH HOẠT -->
-                        <span style="font-size: 12px; color: #6b7a8f; display: block; margin-bottom: 8px;">Tải ứng dụng</span>
+                        <span style="font-size: 12px; color: #6b7a8f; display: block; margin-bottom: 8px;">Tải ứng dụng (sắp ra mắt)</span>
                         <div class="footer-app-links">
                             <a href="#"><i class="fab fa-apple"></i> App Store</a>
                             <a href="#"><i class="fab fa-google-play"></i> Google Play</a>

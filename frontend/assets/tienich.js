@@ -44,16 +44,32 @@
             sub: 'Tính tiền lãi ngân hàng theo lãi suất, kỳ hạn, hình thức trả lãi (lãi đơn / lãi kép).'
         },
         ex: {
-            title: '🪙 Tỷ giá ngoại tệ', icon: 'fa-coins',
+            title: '💱 Tỷ giá ngoại tệ', icon: 'fa-coins',
             head: 'Tỷ giá ngoại tệ',
             sub: 'Xem tỷ giá và hoán đổi giữa VND với các ngoại tệ phổ biến (USD, JPY, KRW, CNY, SGD, EUR, GBP, TWD, AUD).'
+        },
+        alloc: {
+            title: '⚖️ Chia đều vốn đầu tư', icon: 'fa-balance-scale',
+            head: 'Chia đều vốn đầu tư',
+            sub: 'Nhập tổng tiền và các mã muốn mua — TuniX tự lấy giá hiện tại, tự chia đều vốn và tính số lượng mua theo lô 100.'
         }
     };
     function showTool(tool) {
-        $('panelAdj').style.display = tool === 'adj' ? 'block' : 'none';
-        $('panelDep').style.display = tool === 'dep' ? 'block' : 'none';
-        if ($('panelEx')) $('panelEx').style.display = tool === 'ex' ? 'block' : 'none';
-        const meta = TOOL_META[tool] || TOOL_META.adj;
+        // Panel của từng công cụ. Thiếu panel = HTML phiên bản CŨ bị cache ở trình duyệt
+        // (xem ghi chú: công cụ mới phải được bump ?v= khi sửa tienich.html/tienich.js).
+        const panels = { adj: $('panelAdj'), dep: $('panelDep'), ex: $('panelEx'), alloc: $('panelAlloc') };
+        let key = TOOL_META[tool] ? tool : 'adj';
+        // PHÒNG HỜ: công cụ được yêu cầu nhưng PANEL không tồn tại trong HTML hiện có
+        // → mở công cụ đầu tiên CÓ panel, để vùng công cụ KHÔNG bị trống (trước đây trang
+        // chỉ còn đúng dòng ghi chú cuối trang ⇒ người dùng tưởng tính năng bị ẩn theo tài khoản).
+        if (!panels[key]) {
+            const first = Object.keys(panels).filter(function (k) { return !!panels[k]; })[0];
+            if (first) key = first;
+        }
+        Object.keys(panels).forEach(function (k) {
+            if (panels[k]) panels[k].style.display = k === key ? 'block' : 'none';
+        });
+        const meta = TOOL_META[key] || TOOL_META.adj;
         // Toolbar title: chỉ giữ emoji + tên công cụ (bỏ icon FA trước title vì trùng/không cần).
         $('toolTitle').innerHTML = '<span>' + esc(meta.title) + '</span>';
         // Khối xanh đầu trang đổi text theo công cụ (cùng vị trí/màu, chỉ khác tiêu đề).
@@ -62,7 +78,7 @@
         const hs = document.querySelector('.ti-head .ti-sub');
         if (hs) hs.textContent = meta.sub || '';
         document.querySelectorAll('.ti-chip').forEach(function (c) {
-            c.classList.toggle('on', c.getAttribute('data-tool') === tool);
+            c.classList.toggle('on', c.getAttribute('data-tool') === key);
         });
         setTimeout(notifyParentHeight, 60);
     }
@@ -339,13 +355,13 @@
     updateDepHint();
     addEvent('cash');
 
-    // Hiển thị thẳng một công cụ (mặc định Giá điều chỉnh); menu con truyền ?tool=adj|dep|ex để mở đúng màn hình.
+    // Hiển thị thẳng một công cụ; menu con truyền ?tool=adj|dep|ex|alloc để mở đúng màn hình.
+    // Dùng TOOL_META làm nguồn duy nhất ⇒ công cụ mới thêm vào TOOL_META là deep-link được ngay
+    // (trước đây là chuỗi if/else nên công cụ mới dễ bị rơi vào nhánh mặc định).
     (function () {
         try {
             const t = new URLSearchParams(location.search).get('tool');
-            if (t === 'dep') showTool('dep');
-            else if (t === 'ex') showTool('ex');
-            else showTool('adj');
+            showTool(TOOL_META[t] ? t : 'adj');
         } catch (e) {
             showTool('adj');
         }
@@ -370,7 +386,7 @@
         const data = event.data;
         if (!data) return;
         // Shell báo đổi công cụ (đã mở sẵn trang Tiện ích) → hiển thị đúng màn hình.
-        if (data.type === 'tunix-ti-tool' && (data.tool === 'adj' || data.tool === 'dep' || data.tool === 'ex')) {
+        if (data.type === 'tunix-ti-tool' && (data.tool === 'adj' || data.tool === 'dep' || data.tool === 'ex' || data.tool === 'alloc')) {
             showTool(data.tool);
             return;
         }

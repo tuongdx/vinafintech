@@ -74,7 +74,7 @@ mở /cophieu-{MÃ}
 | `DATABASE_URL` | `sqlite:///./tunix.db` | prod dùng Postgres Render |
 | `SECRET_KEY`, `ALGORITHM` | change_me / HS256 | JWT |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | 60 | access token |
-| `REFRESH_TOKEN_EXPIRE_MINUTES` | 60480 (7 ngày) | refresh token |
+| `REFRESH_TOKEN_EXPIRE_MINUTES` | 52560000 (~100 năm) | refresh token — phiên "nhớ" tới khi đăng xuất |
 | `RESET_TOKEN_EXPIRE_MINUTES` | 30 | token reset mật khẩu |
 | `FRONTEND_URL` | `http://localhost:8000` | redirect OAuth + link reset |
 | `VNSOCKET_API_KEY` / `REDIS_URL` | "" | (dự phòng, chưa dùng) |
@@ -102,7 +102,7 @@ mở /cophieu-{MÃ}
 | **user_delete_requests** | target_user_id, requested_by_id, reason, status (pending/approved/rejected), reviewed_by_id, created_at, reviewed_at |
 | **revoked_tokens** | jti (unique), expires_at, created_at |
 | **password_reset_tokens** | user_id, token (unique), expires_at, used_at, created_at |
-| **news** | id, title, summary, content, category, image_url, author_name, image_caption, tags, source, source_url, views, author_id, status, created_at |
+| **news** | id, title, summary, content, category, image_url, author_name, image_caption, tags, source, source_url, views, author_id, status, created_at, published_at (ngày giờ ĐĂNG, giờ VN — lấy từ file JSON khi import bằng tool; NULL thì suy ra `created_at` + 7h) |
 | **support_tickets** | subject, message, user_id, assignee_id, status (open/assigned/resolved/closed), created_at |
 | **support_replies** | ticket_id, user_id, message, created_at |
 | **faqs** | question, answer, category, is_visible |
@@ -173,9 +173,12 @@ mở /cophieu-{MÃ}
 
 ### 4.6 Nội dung & hỗ trợ
 - `news`: `GET /news?page=&category=&q=` (phân trang), `/all`, `/pending`, `/popular`, `/related?symbol=`, `/{id}`, `POST/PUT/DELETE`, `/{id}/approve`.
+  Mọi bài trả về kèm 4 trường ngày giờ đăng đúng định dạng file input:
+  `published_at` / `published_at_raw` = `2026-09-12T15:50:01+07:00`, `published_date` = `2026-09-12`, `published_time` = `15:50`.
+  Danh sách sắp xếp theo `published_at` giảm dần (bài cũ chưa có thì theo `created_at`).
 - `tickets`: `GET/POST`, `/{id}/replies`, `/{id}/assign`, `/{id}/resolve`.
 - `contact`, `feedback`, `faqs`, `plans`, `features`: CRUD cơ bản (admin tạo/sửa).
-- `dashboard/stats`, `logs`, `tools/import-news`, `stocks_admin` (CRUD mã, `/lookup`).
+- `dashboard/stats`, `logs`, `tools/import-news` (import JSON → news, tự đọc `published_at`; bài trùng URL được bổ sung lại ngày giờ), `stocks_admin` (CRUD mã, `/lookup`).
 
 ---
 
@@ -309,7 +312,7 @@ breadth:  { up, down, flat }   (best-effort, tốn kém)
   - `startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT`
   - Env: `APP_ENV=production`, `SECRET_KEY` (generateValue), `DATABASE_URL` (from DB), `FRONTEND_URL=https://tunix.onrender.com`, `DEEPSEEK_API_KEY` (sync:false — set thủ công).
 
-**Luồng deploy**: `git push origin main` → Render autoDeploy. Scripts: `scripts/migrate_to_render.py`, `push_news_to_render.py`, `create_superadmin.py`.
+**Luồng deploy**: `git push origin main` → Render autoDeploy. Scripts: `scripts/migrate_to_render.py`, `push_news_to_render.py`, `create_superadmin.py`, `import_markettimes_news.py`, `backfill_news_published_at.py` (bổ sung ngày giờ đăng cho bài cũ — chạy 1 lần sau khi có cột `news.published_at`).
 
 ---
 

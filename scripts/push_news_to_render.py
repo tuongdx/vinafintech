@@ -82,6 +82,7 @@ def main() -> None:
                 author_id=None,
                 status=r.status,
                 created_at=r.created_at,
+                published_at=getattr(r, "published_at", None),
             ))
             existing.add(r.source_url)
             added += 1

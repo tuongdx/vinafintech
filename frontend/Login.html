@@ -620,7 +620,7 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="/static/typography.css" />
+    <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
 </head>
 <body>
     <div class="auth-card">
@@ -647,19 +647,19 @@
         </div>
 
         <!-- Login Form -->
-        <form id="loginForm" autocomplete="off">
+        <form id="loginForm" autocomplete="on" method="post" action="/api/auth/login">
             <div class="input-group">
                 <label for="loginEmail">Email</label>
                 <div class="input-icon-wrapper">
                     <i class="fas fa-envelope"></i>
-                    <input type="email" id="loginEmail" placeholder="example@tunix.vn" required />
+                    <input type="email" id="loginEmail" name="username" autocomplete="username" placeholder="example@tunix.vn" required />
                 </div>
             </div>
             <div class="input-group">
                 <label for="loginPassword">Mật khẩu</label>
                 <div class="input-icon-wrapper">
                     <i class="fas fa-lock"></i>
-                    <input type="password" id="loginPassword" placeholder="••••••••" required />
+                    <input type="password" id="loginPassword" name="password" autocomplete="current-password" placeholder="••••••••" required />
                     <span class="password-toggle" id="togglePassword">
                         <i class="fas fa-eye"></i>
                     </span>
@@ -670,11 +670,15 @@
                 <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Đăng nhập</span>
             </button>
             <div class="auth-extra">
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
-                    <input type="checkbox" checked /> Ghi nhớ
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;" title="Nhớ tài khoản + mật khẩu để đăng nhập nhanh lần sau">
+                    <input type="checkbox" id="rememberLogin" checked /> Ghi nhớ
                 </label>
                 <a href="/forgot-password" class="forgot-link">Quên mật khẩu?</a>
             </div>
+            <p id="savedLoginNote" style="display:none;font-size:12px;color:#8a99b1;text-align:center;margin-top:10px;">
+                Đã nhớ đăng nhập cho <b id="savedLoginEmail"></b>.
+                <a href="#" id="clearSavedLogin" style="color:#008080;font-weight:600;">Xoá thông tin đã lưu</a>
+            </p>
         </form>
 
         <div class="verify-note" id="verifyNote" style="display:none;">
@@ -885,7 +889,6 @@
                 const email = document.getElementById('loginEmail').value.trim();
                 const password = document.getElementById('loginPassword').value.trim();
                 const remember = document.querySelector('#loginForm input[type=checkbox]').checked;
-
                 if (!email || !password) {
                     showMessage('Vui lòng nhập đầy đủ email và mật khẩu.', 'error');
                     return;
@@ -919,6 +922,13 @@
                         localStorage.setItem('tunix_access_token', data.access_token);
                         localStorage.setItem('tunix_refresh_token', data.refresh_token);
                         localStorage.setItem('tunix_user', JSON.stringify(data.user));
+                        // Tick "Ghi nhớ" → lưu email + mật khẩu cho lần đăng nhập sau;
+                        // bỏ tick → xoá thông tin đã lưu trước đó.
+                        if (remember) {
+                            writeSavedLogin(email, password);
+                        } else {
+                            clearSavedLogin();
+                        }
                         showMessage('✅ Đăng nhập thành công! Chào mừng bạn quay lại TuniX.', 'success');
                         const next = parseNextUrl();
                         setTimeout(() => { window.location.href = next; }, 600);
@@ -1012,6 +1022,84 @@
                     if (googleBtn) googleBtn.addEventListener('click', openGooglePopup);
                 });
 
+            // ============================================================
+            // NHỚ TÀI KHOẢN + MẬT KHẨU (khi tick "Ghi nhớ")
+            // - Chỉ lưu trên TRÌNH DUYỆT này (localStorage), KHÔNG gửi/lưu ở server.
+            // - Dữ liệu được LÀM MỜ (base64 + XOR) để tránh đọc trực tiếp trong DevTools;
+            //   đây KHÔNG phải mã hoá an toàn — máy dùng chung vẫn nên bỏ tick "Ghi nhớ".
+            // - Form có autocomplete="username"/"current-password" để trình quản lý mật khẩu
+            //   của trình duyệt (Chrome/Edge) cũng có thể tự lưu.
+            // ============================================================
+            const SAVED_LOGIN_KEY = 'tunix_saved_login';
+            const SAVED_LOGIN_XOR = 'TuniX-LoginRemember-2026';
+            function obfuscateText(text) {
+                let out = '';
+                for (let i = 0; i < text.length; i++) {
+                    out += String.fromCharCode(text.charCodeAt(i) ^ SAVED_LOGIN_XOR.charCodeAt(i % SAVED_LOGIN_XOR.length));
+                }
+                return btoa(unescape(encodeURIComponent(out)));
+            }
+            function deobfuscateText(encoded) {
+                const raw = decodeURIComponent(escape(atob(encoded)));
+                let out = '';
+                for (let i = 0; i < raw.length; i++) {
+                    out += String.fromCharCode(raw.charCodeAt(i) ^ SAVED_LOGIN_XOR.charCodeAt(i % SAVED_LOGIN_XOR.length));
+                }
+                return out;
+            }
+            function readSavedLogin() {
+                try {
+                    const raw = localStorage.getItem(SAVED_LOGIN_KEY);
+                    if (!raw) return null;
+                    const data = JSON.parse(deobfuscateText(raw));
+                    if (!data || !data.e || !data.p) return null;
+                    return data;
+                } catch (err) { return null; }
+            }
+            function writeSavedLogin(email, password) {
+                try {
+                    localStorage.setItem(SAVED_LOGIN_KEY, obfuscateText(JSON.stringify({ e: email, p: password, t: Date.now() })));
+                } catch (err) { /* trình duyệt chặn localStorage → bỏ qua */ }
+            }
+            function clearSavedLogin() {
+                try { localStorage.removeItem(SAVED_LOGIN_KEY); } catch (err) {}
+                renderSavedLoginNote();
+            }
+            function renderSavedLoginNote() {
+                const note = document.getElementById('savedLoginNote');
+                const mail = document.getElementById('savedLoginEmail');
+                if (!note) return;
+                const saved = readSavedLogin();
+                if (!saved) { note.style.display = 'none'; return; }
+                if (mail) mail.textContent = saved.e;
+                note.style.display = '';
+            }
+            function prefillSavedLogin() {
+                const saved = readSavedLogin();
+                if (saved) {
+                    const emailEl = document.getElementById('loginEmail');
+                    const passEl = document.getElementById('loginPassword');
+                    const rememberEl = document.getElementById('rememberLogin');
+                    if (emailEl && !emailEl.value) emailEl.value = saved.e;
+                    if (passEl && !passEl.value) passEl.value = saved.p;
+                    if (rememberEl) rememberEl.checked = true;
+                }
+                renderSavedLoginNote();
+            }
+            const clearSavedLink = document.getElementById('clearSavedLogin');
+            if (clearSavedLink) {
+                clearSavedLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    clearSavedLogin();
+                    const emailEl = document.getElementById('loginEmail');
+                    const passEl = document.getElementById('loginPassword');
+                    if (emailEl) emailEl.value = '';
+                    if (passEl) passEl.value = '';
+                    showMessage('Đã xoá thông tin đăng nhập đã lưu trên trình duyệt này.', 'success');
+                    if (emailEl) emailEl.focus();
+                });
+            }
+
             // ---- Enter key on email input ----
             document.getElementById('loginEmail').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -1025,9 +1113,11 @@
                 }
             });
 
-            // Auto focus email
+            // Auto focus email + tự điền thông tin đã lưu (tick "Ghi nhớ" ở lần đăng nhập trước)
             document.addEventListener('DOMContentLoaded', function() {
-                document.getElementById('loginEmail').focus();
+                prefillSavedLogin();
+                const emailEl = document.getElementById('loginEmail');
+                if (emailEl && !emailEl.value) emailEl.focus();
             });
         })();
     </script>

@@ -14,7 +14,8 @@ from app.core.security import decode_token
 from app.db import SessionLocal
 from app.db_schema import ensure_schema
 from app.models import RoleEnum, User
-from app.routers import ai, alerts, asset_events, assets, auth, bank_rates, chart, contact, crypto, crypto_signals, crypto_watchlist, dashboard, exchange, faqs, features, feedback, gold, logs, membership, news, notifications, plans, portfolio, stocks, stocks_admin, stock_signals, tickets, tools, users, watchlist
+from app.services import admin_log
+from app.routers import ai, alerts, asset_events, assets, auth, bank_rates, chart, contact, crypto, crypto_signals, crypto_watchlist, dashboard, exchange, faqs, features, feedback, gold, logs, membership, news, notifications, plans, portfolio, signal_public, signals_admin, stock_signals, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
 
@@ -128,6 +129,13 @@ def _stable_api_max_age(path: str) -> int | None:
 @app.middleware("http")
 async def cache_and_timing(request: Request, call_next):
     start = time.perf_counter()
+
+    # Nhật ký trang quản trị: chuẩn bị ngữ cảnh TRƯỚC khi route chạy (đọc body JSON =
+    # dữ liệu sau khi sửa + chụp bản ghi hiện tại = dữ liệu trước khi sửa/xoá).
+    admin_ctx = None
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        admin_ctx = await admin_log.prepare(request)
+
     response = await call_next(request)
     duration_ms = (time.perf_counter() - start) * 1000
 
@@ -137,10 +145,15 @@ async def cache_and_timing(request: Request, call_next):
 
     if request.method == "GET" and response.status_code == 200:
         path = request.url.path
-        # Asset tĩnh (JS/CSS/ảnh) — không phải HTML — cache trình duyệt 1 giờ
-        # (StaticFiles vẫn gửi ETag nên sau 1h chỉ cần revalidate 304, rẻ).
+        # Asset tĩnh (JS/CSS/ảnh) — không phải HTML.
+        # Nếu URL có tham số version (?v=...) thì nội dung là BẤT BIẾN → cache 1 năm
+        # (không cần revalidate) ⇒ chuyển trang sau này không tốn request nào cho asset.
+        # Không có ?v= → cache 1 giờ (StaticFiles vẫn gửi ETag nên revalidate rất rẻ).
         if (path.startswith("/static/") or path.startswith("/frontend/assets/")) and not path.endswith(".html"):
-            response.headers.setdefault("Cache-Control", "public, max-age=3600")
+            if "v=" in (request.url.query or ""):
+                response.headers.setdefault("Cache-Control", "public, max-age=31536000, immutable")
+            else:
+                response.headers.setdefault("Cache-Control", "public, max-age=3600")
         elif path.startswith("/api/"):
             if request.headers.get("authorization"):
                 # API yêu cầu đăng nhập trả dữ liệu cá nhân (danh mục, watchlist,
@@ -148,15 +161,42 @@ async def cache_and_timing(request: Request, call_next):
                 # người dùng thêm/sửa/xoá (nếu không Chrome heuristic cache tới 60s).
                 response.headers["Cache-Control"] = "no-store"
             else:
-                # API công khai ổn định: cache trình duyệt ngắn.
+                # API công khai ổn định: cache trình duyệt ngắn + cho phép phục vụ bản cũ
+                # trong lúc làm mới nền (stale-while-revalidate) ⇒ lần xem lại tức thì.
                 max_age = _stable_api_max_age(path)
                 if max_age is not None:
-                    response.headers.setdefault("Cache-Control", f"public, max-age={max_age}")
+                    if max_age == 0:
+                        response.headers.setdefault("Cache-Control", "no-cache")
+                    else:
+                        swr = max(max_age, 300)
+                        response.headers.setdefault(
+                            "Cache-Control", f"public, max-age={max_age}, stale-while-revalidate={swr}"
+                        )
         else:
-            # Trang HTML (shell + trang con): cache ngắn 60s → chuyển trang/load lại nhanh,
-            # không phải tải lại toàn bộ HTML mỗi lần. Khi deploy bản mới, bump version
-            # cache-bust phía frontend (index.html) để toàn bộ làm mới.
-            response.headers["Cache-Control"] = "public, max-age=60"
+            # Trang HTML — CHỈ đặt Cache-Control MẶC ĐỊNH (setdefault): route phía trên đã cố ý đặt
+            # "no-store" cho SHELL (index.html) thì TUYỆT ĐỐI không được ghi đè.
+            # ⚠️ Bài học: trước đây nhánh này ghi đè no-store bằng "max-age=60, stale-while-revalidate=600"
+            # ⇒ trình duyệt phục vụ SHELL CŨ tới 10 phút sau khi deploy ⇒ tab đang mở chạy JS điều hướng
+            # cũ (bấm menu Thị trường/Cổ phiếu lại ra trang chủ). Không bao giờ cache shell.
+            seg = path.strip("/").split("/")[0]
+            is_shell = (
+                path == "/"
+                or path == "/frontend/index.html"
+                or seg in INDEX_SHELL_PAGES
+                or path in ADMIN_PAGE_PATHS
+            )
+            if is_shell:
+                response.headers.setdefault("Cache-Control", "no-cache")
+            elif "v=" in (request.url.query or ""):
+                # Nội dung nhúng có ?v=CACHE_VERSION → URL đã gắn phiên bản, đổi version là đổi URL
+                # ⇒ cache dài để mở lại trang tức thì, không cần revalidate.
+                response.headers.setdefault("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400")
+            else:
+                response.headers.setdefault("Cache-Control", "public, max-age=60, stale-while-revalidate=600")
+
+    # Ghi nhật ký thao tác quản trị (ai làm, lúc nào, thao tác gì, tính năng nào, trước/sau khi sửa).
+    if admin_ctx:
+        await admin_log.record(admin_ctx, response.status_code)
 
     return response
 
@@ -192,6 +232,10 @@ app.include_router(crypto.router, prefix=api)
 app.include_router(gold.router, prefix=api)
 app.include_router(exchange.router, prefix=api)
 app.include_router(assets.router, prefix=api)
+# TuniX Signal Engine — API Tín hiệu (yêu cầu đăng nhập + quyền được cấp: role admin hoặc
+# cờ users.signal_access do admin bật) + API public phân tích (không có BUY/SELL)
+app.include_router(signals_admin.router, prefix=api)
+app.include_router(signal_public.router, prefix=api)
 
 frontend_path = Path(settings.frontend_dir)
 if frontend_path.exists():
@@ -225,6 +269,29 @@ def on_startup() -> None:
             session.close()
     except Exception:  # noqa: BLE001 — không để lỗi seed làm hỏng startup
         pass
+    # Đăng ký 3 chiến thuật của TuniX Signal Engine (idempotent) vào bảng signal_strategies.
+    try:
+        from app.services.signal_engine import repository as signal_repository
+
+        session = SessionLocal()
+        try:
+            signal_repository.seed_strategies(session)
+        finally:
+            session.close()
+    except Exception:  # noqa: BLE001 — không để lỗi seed làm hỏng startup
+        pass
+    # Sửa nhãn NGUỒN bài viết An ninh Tiền tệ (Chứng khoán/Ngân hàng/Doanh nghiệp)
+    # từng bị gán nhầm 'MarketTimes' do import cũ hard-code nguồn (idempotent).
+    try:
+        from app.services import news_source
+
+        session = SessionLocal()
+        try:
+            news_source.apply_legacy_fix(session)
+        finally:
+            session.close()
+    except Exception:  # noqa: BLE001 — không để lỗi migrate làm hỏng startup
+        pass
     # Đồng bộ dữ liệu THẬT từ 24HMoney ở nền (chạy sau boot vài giây, TTL mặc định 24h,
     # 1 request/kỳ — không chặn startup, không spam nguồn).
     try:
@@ -245,6 +312,7 @@ def _warm_home_caches() -> None:
     def _warm() -> None:
         from concurrent.futures import ThreadPoolExecutor
 
+        from app.routers.asset_events import get_upcoming_events as upcoming_events_fn
         from app.services.opportunity_service import get_top_opportunities
 
         jobs = [
@@ -260,6 +328,7 @@ def _warm_home_caches() -> None:
             ("market-map", vs.get_market_map),
             ("exchange-chart", lambda: vs.get_exchange_chart("HOSE")),
             ("top-stocks", lambda: vs.get_top_stocks("breakout", "1w")),
+            ("asset-events-upcoming", upcoming_events_fn),
         ]
 
         def run(item):
@@ -309,6 +378,10 @@ PAGE_MAP: dict[str, str] = {
     "taikhoan": "taikhoan.html",
     "doimatkhau": "doimatkhau.html",
     "quan-ly-tai-san": "quanlytaisan.html",
+    # Trang Tín hiệu (TuniX Signal Engine): /tin-hieu giữ nguyên shell, nội dung nạp vào iframe left-col.
+    # Menu CHỈ hiện với tài khoản đã đăng nhập VÀ được admin cấp quyền (users.signal_access);
+    # API /api/signals kiểm tra quyền ở server (require_signal_access).
+    "tin-hieu": "tin-hieu.html",
     "tien-ich": "tienich.html",
     # Trang Tỷ giá ngoại tệ: /ty-gia-ngoai-te giữ nguyên shell, nội dung nạp vào iframe left-col.
     "ty-gia-ngoai-te": "exchange.html",
@@ -341,6 +414,11 @@ INDEX_SHELL_PAGES = {
     "DieuKhoanSuDung",
     "ChinhSachBaoMat",
     "MienTruTrachNhiem",
+    # Trang tài khoản / cài đặt / đổi mật khẩu: URL đẹp /taikhoan, /caidat, /doimatkhau
+    # giữ nguyên shell, nội dung nạp vào iframe left-col (deep-link + F5 vẫn đúng trang).
+    "taikhoan",
+    "caidat",
+    "doimatkhau",
     # Trang tin tức: /tin-tuc giữ nguyên shell (header + right-col), nội dung nạp vào left-col.
     "tin-tuc",
     # Trang thị trường: /thi-truong giữ nguyên shell, nội dung nạp vào left-col.
@@ -359,6 +437,8 @@ INDEX_SHELL_PAGES = {
     "tuniai",
     # Trang Quản lý tài sản: /quan-ly-tai-san giữ nguyên shell, nội dung nạp vào iframe left-col.
     "quan-ly-tai-san",
+    # Trang Tín hiệu: /tin-hieu giữ nguyên shell, nội dung nạp vào iframe left-col.
+    "tin-hieu",
     # Trang Tiện ích: /tien-ich giữ nguyên shell, nội dung nạp vào iframe left-col.
     "tien-ich",
     # Trang Tỷ giá ngoại tệ: /ty-gia-ngoai-te giữ nguyên shell, nội dung nạp vào iframe left-col.

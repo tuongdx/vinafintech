@@ -16,7 +16,10 @@ class Settings(BaseSettings):
 
     # Auth / token
     access_token_expire_minutes: int = 60
-    refresh_token_expire_minutes: int = 60 * 24 * 30
+    # Refresh token = "vé nhớ đăng nhập". Phiên sống tới khi người dùng TỰ ĐĂNG XUẤT
+    # (đăng xuất thu hồi token trong bảng revoked_tokens) hoặc xoá dữ liệu trình duyệt.
+    # Dùng 100 năm thay cho "vô hạn" để JWT vẫn có `exp` hợp lệ.
+    refresh_token_expire_minutes: int = 60 * 24 * 365 * 100
     reset_token_expire_minutes: int = 30
     # Frontend public URL (dùng cho redirect OAuth & link reset)
     frontend_url: str = "http://localhost:8000"
@@ -73,6 +76,8 @@ class Settings(BaseSettings):
     alert_rsi_oversold: float = 30.0
     alert_history_period: str = "1y"              # khung dữ liệu để tính vùng S/R
     asset_event_window_days: int = 183            # chỉ lấy sự kiện tài sản sắp tới / trong ~6 tháng gần
+    asset_event_upcoming_universe: int = 150      # số mã quét "Lịch sự kiện thị trường" (trang Thị trường)
+    asset_event_upcoming_ttl: int = 3600          # cache lịch sự kiện sắp diễn ra (giây)
 
     # Tỷ giá ngoại tệ (Tiện ích) — nhà cung cấp có thể đổi qua ENV mà không sửa code
     exchange_rate_api_url: str = "https://open.er-api.com/v6/latest/USD"  # {apikey} chèn nếu có

@@ -1022,7 +1022,7 @@ export class FullscreenWorkspace {
         }
         this._els.news.innerHTML = this._news.map((n) => {
             const title = n.title || '--';
-            const time = timeAgo(n.created_at);
+            const time = timeAgo(n.published_at || n.created_at);
             const tag = (n.tags || '').split(',').map((s) => s.trim()).filter(Boolean);
             const symTag = tag.length ? tag[0] : '';
             return '<a href="#" class="fsb-news-item" data-id="' + Number(n.id) + '" data-slug="' + esc(n.slug || '') + '" title="' + esc(title) + '">' +

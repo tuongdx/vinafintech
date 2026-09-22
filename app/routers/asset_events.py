@@ -11,6 +11,10 @@ từ dữ liệu THẬT (không tạo dữ liệu giả trong production). Các 
     UNUSUAL_PRICE_MOVEMENT← biến động giá bất thường (quote realtime)
 Yêu cầu đăng nhập (JWT). Data model: ``AssetEvent`` (app/models.py) — bảng sẵn sàng
 để lưu/persist nếu cần; API hiện tại tính trực tiếp từ nguồn thật để luôn mới & trung thực.
+
+GET /api/asset-events/upcoming — Lịch sự kiện SẮP DIỄN RA của nhóm cổ phiếu vốn hoá lớn
+(PUBLIC, KHÔNG cần đăng nhập) — dùng cho block "Lịch sự kiện thị trường" ở trang Thị trường.
+Chỉ trả sự kiện có ngày trong TƯƠNG LAI (sắp diễn ra trước); có cache + warm lúc startup.
 """
 from __future__ import annotations
 
@@ -24,6 +28,7 @@ from app.core.config import settings
 from app.core.dependencies import get_current_user
 from app.db import get_db
 from app.models import News, NewsStatusEnum, User
+from app.services import news_time
 from app.services import vnstock_service as vns
 from app.services.alert_service import alert_service
 
@@ -155,19 +160,20 @@ def _unusual_move_events(sym: str) -> list[dict]:
 def _news_events(db: Session, sym: str, limit: int = 3) -> list[dict]:
     """IMPORTANT_NEWS — tin trong news DB có mã trong tags/tiêu đề."""
     matched = (
-        db.query(News)
-        .filter(
-            News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published]),
-            (News.tags.ilike(f"%{sym}%")) | (News.title.ilike(f"%{sym}%")),
+        news_time.latest_first(
+            db.query(News).filter(
+                News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published]),
+                (News.tags.ilike(f"%{sym}%")) | (News.title.ilike(f"%{sym}%")),
+            )
         )
-        .order_by(News.id.desc())
         .limit(limit)
         .all()
     )
     events: list[dict] = []
     for n in matched:
+        published = news_time.from_row(n)
         events.append(_mk(sym, "IMPORTANT_NEWS", n.title, n.summary or n.title,
-                          n.created_at.isoformat() if n.created_at else "",
+                          published.isoformat() if published else "",
                           {"source": "news", "category": n.category or "tin-tuc", "slug": _slug(n.title)},
                           news_id=n.id))
     return events
@@ -181,6 +187,63 @@ def _slug(text: str) -> str:
     text = "".join(c for c in text if not unicodedata.combining(c)).lower()
     text = re.sub(r"[^a-z0-9]+", "-", text)
     return text.strip("-")
+
+
+def _market_universe(limit: int) -> list[str]:
+    """Nhóm mã để quét lịch sự kiện: VN30 + top vốn hoá từ screener (đã cache)."""
+    syms: list[str] = []
+    for t in vns._VN30_TICKERS:
+        if t not in syms:
+            syms.append(t)
+    try:
+        sd = vns.get_stock_screener_page()
+        stocks = sorted((sd.get("stocks") or []), key=lambda s: -(s.get("market_cap") or 0))
+    except Exception:  # noqa: BLE001 — screener lỗi vẫn dùng VN30
+        stocks = []
+    for s in stocks:
+        t = str(s.get("symbol") or "").strip().upper()
+        if t and t not in syms:
+            syms.append(t)
+        if len(syms) >= limit:
+            break
+    return syms[:limit]
+
+
+def get_upcoming_events(limit: int = 5, universe: int = 0) -> list[dict]:
+    """Sự kiện SẮP DIỄN RA (ngày sự kiện >= hôm nay) của nhóm cổ phiếu vốn hoá lớn.
+
+    Nguồn THẬT: lịch cổ tức / chốt quyền / chia tách / phát hành (Simplize dividendPayment,
+    đã có cache 24h theo mã). Chỉ trả sự kiện có ngày trong TƯƠNG LAI, sắp diễn ra trước.
+    Kết quả được cache để không phải quét lại toàn bộ nhóm mã ở mỗi request.
+    """
+    n = universe or settings.asset_event_upcoming_universe
+    cache_key = f"asset-events-upcoming:{n}:{limit}"
+    cached = vns.cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    events: list[dict] = []
+    syms = _market_universe(n)
+    if syms:
+        with ThreadPoolExecutor(max_workers=12) as ex:
+            for _sym, evs in zip(syms, ex.map(_dividend_events, syms)):
+                events.extend(evs)
+
+    today = news_time.now_vn().date().isoformat()
+    upcoming = [e for e in events if (e.get("event_date") or "")[:10] >= today]
+    upcoming.sort(key=lambda e: e.get("event_date") or "")
+    out = upcoming[: max(1, min(limit, 50))]
+    vns.cache.set(cache_key, out, ttl_seconds=settings.asset_event_upcoming_ttl)
+    return out
+
+
+@router.get("/upcoming")
+def upcoming_events(limit: int = 5, universe: int = 0):
+    """Lịch sự kiện SẮP DIỄN RA của nhóm cổ phiếu vốn hoá lớn (PUBLIC, không cần đăng nhập).
+
+    Dùng cho block "Lịch sự kiện thị trường" ở trang Thị trường.
+    """
+    return get_upcoming_events(limit, universe)
 
 
 @router.get("")

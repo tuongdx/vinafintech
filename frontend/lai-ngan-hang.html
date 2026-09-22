@@ -14,8 +14,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
-    <link rel="stylesheet" href="/static/lai-ngan-hang.css?v=20260908av" />
-    <link rel="stylesheet" href="/static/block-tint.css?v=20260908t" />
+    <link rel="stylesheet" href="/static/lai-ngan-hang.css?v=20260914f" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
 </head>
 <body>
     <div class="lnh-page">
@@ -116,9 +116,19 @@
             </div>
             <div id="lnhCompareResult"></div>
         </div>
+
+        <!-- ============ 4. Tin tức ngân hàng ============ -->
+        <div class="lnh-card">
+            <h3>Tin tức ngân hàng</h3>
+            <div class="lnh-news-wrap" id="lnhNewsWrap">
+                <button type="button" class="lnh-nnav prev" id="lnhNewsPrev" aria-label="Trang tin trước"><i class="fas fa-chevron-left"></i></button>
+                <div class="lnh-news" id="lnhNews"><div class="lnh-news-empty"><i class="fas fa-spinner fa-spin"></i> Đang tải…</div></div>
+                <button type="button" class="lnh-nnav next" id="lnhNewsNext" aria-label="Trang tin tiếp theo"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
     </div>
 
-    <script src="/static/lai-ngan-hang.js?v=20260907d"></script>
+    <script src="/static/lai-ngan-hang.js?v=20260913c"></script>
     <script src="/static/context-menu.js?v=20260827a"></script>
 </body>
 </html>

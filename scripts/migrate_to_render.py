@@ -147,6 +147,7 @@ def main() -> None:
                 image_caption=r.image_caption, tags=r.tags, source=r.source,
                 source_url=r.source_url, views=r.views, author_id=author_id,
                 status=r.status, created_at=r.created_at,
+                published_at=getattr(r, "published_at", None),
             ))
             n += 1
         ts.flush()

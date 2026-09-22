@@ -1,7 +1,7 @@
 from datetime import datetime
 import enum
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -68,6 +68,9 @@ class User(Base):
     notify_reports: Mapped[bool] = mapped_column(Boolean, default=True)
     notify_news: Mapped[bool] = mapped_column(Boolean, default=True)
     pref_theme: Mapped[str] = mapped_column(String(10), default="light")
+    # Quyền dùng tính năng "Tín hiệu" (TuniX Signal Engine) — CHỈ admin cấp cho từng tài khoản.
+    # Mặc định TẮT; super-admin/admin luôn có quyền (không phụ thuộc cờ này).
+    signal_access: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     social_accounts: Mapped[list["SocialAccount"]] = relationship(
@@ -167,6 +170,9 @@ class News(Base):
     author_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     status: Mapped[NewsStatusEnum] = mapped_column(Enum(NewsStatusEnum), default=NewsStatusEnum.pending_approval)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    # Ngày giờ ĐĂNG bài (naive theo GIỜ VIỆT NAM) — lấy từ file JSON khi import bằng tool,
+    # bài cũ/None sẽ suy ra từ created_at + 7h (xem app/services/news_time.py).
+    published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     author: Mapped[User | None] = relationship("User")
 
@@ -602,3 +608,227 @@ class AssetEvent(Base):
     # JSON: {source, dividend_amount, ex_date, ...}
     event_metadata: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ToolFile(Base):
+    """File công cụ dùng chung (VD: script crawl bài viết) do admin tải lên.
+
+    Lưu trong DB (BYTEA/BLOB) thay vì đĩa vì Render có filesystem tạm thời — file sẽ mất
+    sau mỗi lần deploy/restart. Biên tập viên & quản trị nội dung tải về máy của họ.
+    """
+
+    __tablename__ = "tool_files"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    key: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(120), default="application/octet-stream")
+    size: Mapped[int] = mapped_column(Integer, default=0)
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    uploaded_by: Mapped[str] = mapped_column(String(255), default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class AdminLog(Base):
+    """Nhật ký thao tác của người dùng trong trang QUẢN TRỊ (menu "Nhật ký").
+
+    Ghi tự động ở middleware `app/main.py` cho các request THAY ĐỔI dữ liệu
+    (POST/PUT/PATCH/DELETE) thành công (2xx) tới endpoint thuộc trang quản trị:
+    ai làm (user/email/vai trò), lúc nào, thao tác gì (thêm/sửa/xoá/duyệt...),
+    thuộc tính năng nào (tin tức, tài khoản, cổ phiếu...).
+    """
+
+    __tablename__ = "admin_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    # Không dùng ForeignKey để giữ lại nhật ký ngay cả khi tài khoản bị xoá.
+    user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    user_email: Mapped[str] = mapped_column(String(255), default="", index=True)
+    user_name: Mapped[str] = mapped_column(String(255), default="")
+    user_role: Mapped[str] = mapped_column(String(50), default="")
+    action: Mapped[str] = mapped_column(String(30), default="", index=True)
+    feature: Mapped[str] = mapped_column(String(60), default="", index=True)
+    feature_label: Mapped[str] = mapped_column(String(120), default="")
+    target: Mapped[str] = mapped_column(String(255), default="")
+    method: Mapped[str] = mapped_column(String(10), default="")
+    path: Mapped[str] = mapped_column(String(255), default="")
+    status_code: Mapped[int] = mapped_column(Integer, default=0)
+    ip: Mapped[str] = mapped_column(String(64), default="")
+    # Dữ liệu bản ghi TRƯỚC khi sửa/xoá và dữ liệu GỬI LÊN khi thêm/sửa (JSON, đã che field nhạy cảm)
+    before_data: Mapped[str] = mapped_column(Text, default="")
+    after_data: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+# ---------------------------------------------------------------------------
+# TuniX Signal Engine (menu "Tín hiệu" — ADMIN)
+# ---------------------------------------------------------------------------
+# LƯU Ý: đây là bảng MỚI nên `create_all` (qua ensure_schema lúc startup) tự tạo —
+# không cần ALTER TABLE. Nếu sau này THÊM CỘT vào bảng đã tồn tại thì phải khai báo
+# thêm vào `_ALL_EXTRA_COLUMNS` trong app/db_schema.py.
+
+
+class SignalStrategy(Base):
+    """Đăng ký chiến thuật của Signal Engine (uptrend / bottom_fishing / swing).
+
+    Lưu để Admin thấy chiến thuật nào đang bật + snapshot cấu hình tại lần chạy.
+    """
+
+    __tablename__ = "signal_strategies"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(40), unique=True, nullable=False, index=True)
+    display_name: Mapped[str] = mapped_column(String(120), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    config_json: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class SignalFeatureSnapshot(Base):
+    """Feature snapshot theo mã + thời điểm (spec §21/§27) — để biết "lúc đó hệ thống thấy gì"."""
+
+    __tablename__ = "signal_features"
+    __table_args__ = (UniqueConstraint("symbol", "interval", "as_of", name="uq_signal_features_symbol_time"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    symbol: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    interval: Mapped[str] = mapped_column(String(10), default="1d")
+    as_of: Mapped[str] = mapped_column(String(40), default="", index=True)
+    bars: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(40), default="OK")
+    features_json: Mapped[str] = mapped_column(Text, default="")
+    data_quality_json: Mapped[str] = mapped_column(Text, default="")
+    config_version: Mapped[str] = mapped_column(String(40), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class SignalPrediction(Base):
+    """Prediction của từng model AI (spec §21/§25). Hiện chưa có model train ⇒ bảng thường rỗng.
+
+    Ghi cả các lần model KHÔNG chạy (status=MODEL_NOT_TRAINED) để thống kê độ phủ trung thực.
+    """
+
+    __tablename__ = "signal_predictions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    symbol: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    as_of: Mapped[str] = mapped_column(String(40), default="", index=True)
+    model: Mapped[str] = mapped_column(String(60), default="", index=True)
+    status: Mapped[str] = mapped_column(String(40), default="MODEL_NOT_TRAINED")
+    direction: Mapped[str] = mapped_column(String(20), default="")
+    probability_up: Mapped[float | None] = mapped_column(Float, nullable=True)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    horizon_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    detail_json: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class Signal(Base):
+    """Signal hiện hành/đã đóng — SNAPSHOT đầy đủ tại thời điểm tạo (spec §21).
+
+    Trường quyết định (``signal``, ``entry``, ``stop_loss``, ``take_profit``,
+    ``trailing_stop``) CHỈ được trả cho ADMIN (serializer public loại bỏ).
+    """
+
+    __tablename__ = "signals"
+    __table_args__ = (UniqueConstraint("symbol", "strategy", "as_of", name="uq_signals_symbol_strategy_time"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    symbol: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    strategy: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    as_of: Mapped[str] = mapped_column(String(40), default="", index=True)
+    state: Mapped[str] = mapped_column(String(30), default="NO_SETUP", index=True)
+    signal: Mapped[str] = mapped_column(String(10), default="")            # BUY | SELL | ""   (ADMIN)
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    setup_strength: Mapped[str] = mapped_column(String(20), default="")
+    risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    risk_level: Mapped[str] = mapped_column(String(20), default="")
+    market_regime: Mapped[str] = mapped_column(String(30), default="")
+    entry: Mapped[float | None] = mapped_column(Float, nullable=True)          # ADMIN
+    stop_loss: Mapped[float | None] = mapped_column(Float, nullable=True)      # ADMIN
+    take_profit: Mapped[float | None] = mapped_column(Float, nullable=True)    # ADMIN
+    trailing_stop: Mapped[float | None] = mapped_column(Float, nullable=True)  # ADMIN
+    price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    confirmations: Mapped[int] = mapped_column(Integer, default=0)
+    total_conditions: Mapped[int] = mapped_column(Integer, default=0)
+    bad_signal_count: Mapped[int] = mapped_column(Integer, default=0)
+    exit_condition: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    config_version: Mapped[str] = mapped_column(String(40), default="")
+    features_json: Mapped[str] = mapped_column(Text, default="")
+    ai_json: Mapped[str] = mapped_column(Text, default="")
+    conditions_json: Mapped[str] = mapped_column(Text, default="")
+    # "Why this signal was generated?" — chuỗi lý do đã diễn giải (spec §18/§27)
+    reasons_json: Mapped[str] = mapped_column(Text, default="")
+    audit_json: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    exit_price: Mapped[float | None] = mapped_column(Float, nullable=True)     # ADMIN
+    exit_reason: Mapped[str] = mapped_column(String(120), default="")
+    result: Mapped[str] = mapped_column(String(20), default="")                # WIN | LOSS | OPEN | UNKNOWN
+    return_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    holding_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class SignalCondition(Base):
+    """Từng điều kiện của 1 signal (đạt/không đạt/thiếu dữ liệu) — phục vụ "Why this signal"."""
+
+    __tablename__ = "signal_conditions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    signal_id: Mapped[int | None] = mapped_column(ForeignKey("signals.id"), nullable=True, index=True)
+    symbol: Mapped[str] = mapped_column(String(20), default="", index=True)
+    strategy: Mapped[str] = mapped_column(String(40), default="", index=True)
+    key: Mapped[str] = mapped_column(String(60), default="")
+    label: Mapped[str] = mapped_column(String(200), default="")
+    group: Mapped[str] = mapped_column(String(20), default="technical")
+    required: Mapped[bool] = mapped_column(Boolean, default=False)
+    state: Mapped[str] = mapped_column(String(20), default="UNAVAILABLE")
+    passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    value_json: Mapped[str] = mapped_column(Text, default="")
+    threshold: Mapped[str] = mapped_column(String(200), default="")
+    reason: Mapped[str] = mapped_column(String(300), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class SignalHistory(Base):
+    """Lịch sử chuyển trạng thái / đóng signal (spec §24) — cũng là audit trail (spec §27)."""
+
+    __tablename__ = "signal_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    signal_id: Mapped[int | None] = mapped_column(ForeignKey("signals.id"), nullable=True, index=True)
+    symbol: Mapped[str] = mapped_column(String(20), default="", index=True)
+    strategy: Mapped[str] = mapped_column(String(40), default="", index=True)
+    from_state: Mapped[str] = mapped_column(String(30), default="")
+    to_state: Mapped[str] = mapped_column(String(30), default="", index=True)
+    signal: Mapped[str] = mapped_column(String(10), default="")
+    reason: Mapped[str] = mapped_column(String(300), default="")
+    price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    exit_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    return_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    holding_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    result: Mapped[str] = mapped_column(String(20), default="")
+    detail_json: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class BacktestResult(Base):
+    """Kết quả backtest chống look-ahead (spec §22-§23)."""
+
+    __tablename__ = "backtest_results"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    symbol: Mapped[str] = mapped_column(String(20), default="", index=True)
+    strategy: Mapped[str] = mapped_column(String(40), default="", index=True)
+    start_date: Mapped[str] = mapped_column(String(40), default="")
+    end_date: Mapped[str] = mapped_column(String(40), default="")
+    status: Mapped[str] = mapped_column(String(40), default="OK")
+    params_json: Mapped[str] = mapped_column(Text, default="")
+    stats_json: Mapped[str] = mapped_column(Text, default="")
+    trades_json: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
