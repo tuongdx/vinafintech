@@ -8,21 +8,48 @@
         return typeof window.headerSearchIsNews === 'function' && window.headerSearchIsNews();
     }
 
-    function goToIndexStock(symbol) {
+    function goToIndexStock(symbol, url) {
         const normalized = String(symbol || '').trim().toUpperCase();
         if (!normalized) {
             return;
         }
-        // Ưu tiên mở chi tiết cổ phiếu NHÚNG trong trang Cổ phiếu (menu Cổ phiếu)
+        // Ưu tiên mở chi tiết cổ phiếu NHÚNG trong trang Cổ phiếu (menu Cổ phiếu).
+        // `url` = URL đẹp cấp ngành /co-phieu/nganh/{sector}/{industry}/{MÃ} (nếu biết ngành).
         if (typeof window.openCoPhieuStock === 'function') {
-            window.openCoPhieuStock(normalized);
+            window.openCoPhieuStock(normalized, url || '');
             return;
         }
         if (typeof window.openStockDetailInIndex === 'function') {
             window.openStockDetailInIndex(normalized);
             return;
         }
-        window.location.href = `/cophieu-${encodeURIComponent(normalized)}`;
+        window.location.href = url || `/cophieu-${encodeURIComponent(normalized)}`;
+    }
+
+    // URL đẹp của 1 mã: biết ngành → /co-phieu/nganh/{sector}/{industry}/{MÃ}
+    // (đúng URL mà trang Cổ phiếu dùng khi duyệt theo ngành); chưa biết → /co-phieu/{MÃ}.
+    function stockUrlFor(item) {
+        const sym = String(item && item.symbol || '').trim().toUpperCase();
+        if (!sym) {
+            return '';
+        }
+        const sector = String(item.sector || '').trim();
+        const industry = String(item.industry || '').trim();
+        if (sector && industry) {
+            return '/co-phieu/nganh/' + encodeURIComponent(sector) + '/' + encodeURIComponent(industry) + '/' + encodeURIComponent(sym);
+        }
+        return '/co-phieu/' + encodeURIComponent(sym);
+    }
+
+    // Lấy URL đã dựng sẵn của 1 mã từ dropdown (khi người dùng gõ rồi Enter).
+    function urlFromDropdown(symbol) {
+        const sym = String(symbol || '').trim().toUpperCase().replace(/"/g, '');
+        if (!sym) {
+            return '';
+        }
+        const dd = document.getElementById('headerSearchDropdown');
+        const el = dd ? dd.querySelector('.hsd-item[data-symbol="' + sym + '"]') : null;
+        return el ? (el.getAttribute('data-url') || '') : '';
     }
 
     function openNewsSearch(query) {
@@ -93,7 +120,8 @@
                     }
                     dd.innerHTML = items.map(function (it) {
                         const sym = String(it.symbol || '').trim().toUpperCase();
-                        return '<a class="hsd-item" data-symbol="' + escapeHtml(sym) + '" href="/co-phieu/' + encodeURIComponent(sym) + '">' +
+                        const url = stockUrlFor(it) || ('/co-phieu/' + encodeURIComponent(sym));
+                        return '<a class="hsd-item" data-symbol="' + escapeHtml(sym) + '" data-url="' + escapeHtml(url) + '" href="' + escapeHtml(url) + '">' +
                             '<span class="hsd-title">' + escapeHtml(sym) + '</span>' +
                             (it.name ? '<span class="hsd-meta">' + escapeHtml(it.name) + '</span>' : '') +
                             '</a>';
@@ -129,7 +157,7 @@
             if (isNewsMode()) {
                 openNewsSearch(query);
             } else {
-                goToIndexStock(query);
+                goToIndexStock(query, urlFromDropdown(query));
             }
         });
 
@@ -151,7 +179,7 @@
             hideDropdown();
             if (symbol) {
                 e.preventDefault();
-                goToIndexStock(symbol);
+                goToIndexStock(symbol, item.getAttribute('data-url') || '');
             }
         });
 

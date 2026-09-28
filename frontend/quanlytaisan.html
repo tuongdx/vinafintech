@@ -200,6 +200,15 @@
         .act-btn.del { color: #d0314e; }
         .act-btn.del:hover { background: #fde9e9; }
         .act-btn.ok { color: #00a08a; }
+        /* Nhãn điều chỉnh theo cổ tức cạnh giá vốn */
+        .pf-adj {
+            display: inline-flex; align-items: center; gap: 4px; margin-left: 6px;
+            font-size: 10px; font-weight: 700; letter-spacing: 0.2px; white-space: nowrap;
+            color: #008080; background: rgba(0, 128, 128, 0.10);
+            border: 1px solid rgba(0, 128, 128, 0.28); border-radius: 20px; padding: 2px 7px;
+        }
+        .pf-adj i { font-size: 9px; }
+        .pf-adj.up { color: #b07800; background: rgba(245, 166, 35, 0.12); border-color: rgba(245, 166, 35, 0.35); }
         .act-btn.ok:hover { background: #e2f5f1; }
         .pf-tab-body .nowrap { white-space: nowrap; }
         .cash-hist-btn { margin-left: 12px; border: 1px solid #c7d2e0; background: #fff; color: #008080; padding: 5px 12px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; }
@@ -407,6 +416,15 @@
         .pf-stat-label { font-size: 12px; color: #6b7a8f; font-weight: 600; display: flex; align-items: center; gap: 5px; }
         .pf-stat-value { font-size: 23px; font-weight: 800; margin-top: 6px; letter-spacing: 0.2px; line-height: 1.2; }
         .pf-stat-sub { font-size: 12.5px; font-weight: 700; margin-top: 4px; }
+        /* Cổ tức ĐÃ CHỐT QUYỀN nhưng CHƯA tới ngày chia (chờ nhận) */
+        .pf-stat-pend { font-size: 11.5px; font-weight: 700; color: #b07800; margin-top: 6px; }
+        .pf-stat-pend i { margin-right: 4px; }
+        body.dark-mode .pf-stat-pend { color: #e6c36a; }
+        .pf-pend { display: block; font-size: 10.5px; font-weight: 700; color: #b07800; background: rgba(245,166,35,0.12); border: 1px solid rgba(245,166,35,0.32); border-radius: 12px; padding: 1px 7px; margin-top: 3px; white-space: nowrap; cursor: help; }
+        .pf-pend i { margin-right: 3px; }
+        body.dark-mode .pf-pend { color: #e6c36a; background: rgba(230,195,106,0.12); border-color: rgba(230,195,106,0.32); }
+        .pf-astat .pf-pend-val { color: #b07800; }
+        body.dark-mode .pf-astat .pf-pend-val { color: #e6c36a; }
         .pf-prof { color: #00A884; }
         .pf-loss { color: #E5484D; }
         .pf-neutral { color: #6B7280; }
@@ -467,6 +485,8 @@
         body.dark-mode .btn-ghost { background: #21262d; color: #e6edf3; }
         body.dark-mode .btn-ghost:hover { background: #30363d; }
         body.dark-mode .act-btn { color: #c9d1d9; }
+        body.dark-mode .pf-adj { color: #4dd8c4; background: rgba(77, 216, 196, 0.12); border-color: rgba(77, 216, 196, 0.35); }
+        body.dark-mode .pf-adj.up { color: #e6c36a; background: rgba(230, 195, 106, 0.12); border-color: rgba(230, 195, 106, 0.35); }
         body.dark-mode .act-btn:hover { background: #21262d; }
         body.dark-mode .act-btn.del { color: #f87171; }
         body.dark-mode .act-btn.del:hover { background: #2b1518; }
@@ -615,7 +635,7 @@
             let stockSignalsData = null;  // kết quả quét cảnh báo Cổ phiếu (AI)
             const chartCache = {};
             const TIP_PNL = 'Tổng lãi/lỗ = Giá trị hiện tại của danh mục − Tổng vốn đã đầu tư. TuniX tính theo giá thị trường realtime so với giá vốn các vị thế đang nắm giữ.';
-            const TIP_INVESTED = 'Tổng vốn đã dùng để mua cổ phiếu đang nắm giữ (số lượng × giá vốn bình quân).';
+            const TIP_INVESTED = 'Tổng vốn đã dùng để mua cổ phiếu đang nắm giữ (số lượng × giá vốn bình quân). Giá vốn được TuniX TỰ ĐIỀU CHỈNH theo cổ tức/chia tách sau ngày mua: cổ tức tiền mặt làm giảm giá vốn, cổ tức/thưởng bằng cổ phiếu làm tăng số lượng — nên tổng vốn ở đây đã trừ phần cổ tức tiền mặt đã nhận.';
             const TIP_RETURN = 'Tỷ suất lợi nhuận = Tổng lãi/lỗ ÷ Tổng vốn đã đầu tư × 100.';
             const PERIODS = { '1D': '1w', '1W': '1m', '1M': '3m', '3M': '6m', '6M': '1y', '1Y': '2y', 'All': '5y' };
             const PALETTE = ['#008080', '#00a08a', '#4a7fc4', '#f5a623', '#7b61c4', '#d0314e', '#4f8f68', '#8a99b1', '#c98a16', '#5a8dc9'];
@@ -807,28 +827,92 @@
             });
 
             // ---------- Totals ----------
+            // Cổ tức CHỜ NHẬN: đã qua ngày GDKHQ nhưng CHƯA tới ngày chia → server tính theo
+            // công thức cổ tức (tiền + cổ phiếu thưởng) nhưng CHƯA cộng vào số lượng/giá vốn.
+            // Cộng vào tổng để giá giảm ở ngày GDKHQ không tạo "lỗ ảo".
+            function pendOf(h) {
+                const a = (h && h.adjustment) || {};
+                const cash = Number(a.pending_cash) || 0;
+                const shares = Number(a.pending_shares) || 0;
+                const price = Number(h && h.price) || 0;
+                return { cash: cash, shares: shares, price: price, value: cash + shares * price, events: a.pending_events || [] };
+            }
+            function pendText(h) {
+                const p = pendOf(h);
+                if (p.cash <= 0 && p.shares <= 0) return '';
+                const bits = [];
+                if (p.shares > 0) bits.push('+' + fmtDec(p.shares, 4) + ' cp');
+                if (p.cash > 0) bits.push('+' + fmtMoney(p.cash) + ' đ');
+                const ev = p.events[0] || {};
+                const when = ev.pay_date ? ' chia ' + fmtVnDate(ev.pay_date) : '';
+                return bits.join(' · ') + when;
+            }
             function totals() {
                 let totalValue = 0, totalCost = 0, totalPnl = 0, todayPnl = 0;
+                let pending = 0, pendingCash = 0;
                 holdings.forEach(function(h) {
                     const mv = Number(h.market_value) || 0, c = Number(h.cost) || 0;
                     totalValue += mv; totalCost += c; totalPnl += Number(h.pnl) || 0;
                     todayPnl += mv * (Number(h.percent_change) || 0) / 100;
+                    const p = pendOf(h);
+                    pending += p.value;
+                    pendingCash += p.cash;
                 });
-                const pnlPct = totalCost ? (totalPnl / totalCost * 100) : 0;
+                // Giá trị/lãi-lỗ HIỆU LỰC = thị trường + cổ tức chờ nhận (không còn lỗ ảo sau ngày GDKHQ).
+                const effValue = totalValue + pending;
+                const effPnl = totalPnl + pending;
+                const pnlPct = totalCost ? (effPnl / totalCost * 100) : 0;
                 const todayPct = (totalValue - todayPnl) ? (todayPnl / (totalValue - todayPnl) * 100) : 0;
-                return { totalValue: totalValue, totalCost: totalCost, totalPnl: totalPnl, pnlPct: pnlPct, todayPnl: todayPnl, todayPct: todayPct };
+                let dividends = 0;
+                holdings.forEach(function(h) { dividends += Number((h.adjustment || {}).cash_received) || 0; });
+                return {
+                    totalValue: totalValue, totalCost: totalCost, totalPnl: effPnl,
+                    pnlPct: pnlPct, todayPnl: todayPnl, todayPct: todayPct, dividends: dividends,
+                    pending: pending, pendingCash: pendingCash, effValue: effValue
+                };
+            }
+
+            // ---------- Điều chỉnh theo cổ tức (server tính — xem app/services/dividend_adjust.py) ----------
+            // h.quantity / h.avg_price   = bản ĐÃ điều chỉnh (cổ tức tiền mặt giảm giá vốn,
+            //                              cổ tức/thưởng bằng cổ phiếu tăng số lượng)
+            // h.raw_quantity / raw_avg_price = số liệu GỐC người dùng đã nhập (dùng khi sửa/bán)
+            function rawQty(h) { return Number(h && (h.raw_quantity != null ? h.raw_quantity : h.quantity)) || 0; }
+            function rawAvg(h) { return Number(h && (h.raw_avg_price != null ? h.raw_avg_price : h.avg_price)) || 0; }
+            function adjEventsText(h) {
+                const a = (h && h.adjustment) || {};
+                return (a.events || []).map(function(e) {
+                    const bits = [];
+                    if (Number(e.cash) > 0) bits.push(fmtMoney(e.cash) + ' đ/cp tiền mặt');
+                    if (Number(e.stock_pct) > 0) bits.push(fmtPct(e.stock_pct) + ' cổ phiếu');
+                    return fmtVnDate(e.date) + ': ' + bits.join(' + ');
+                }).filter(Boolean).join(' • ');
+            }
+            // Nhãn "Sắp chia cổ tức" ở MỌI bảng (kể cả bảng này) do script dùng chung
+            // /static/dividend-badge.js đảm nhiệm — chỗ trống là <span data-div="MÃ">.
+            // Ghi thẳng số liệu ĐÃ điều chỉnh vào danh mục (1 lần bấm) — dùng khi người dùng muốn
+            // chốt lại số lượng/giá vốn mới (VD: đã nhận cổ phiếu thưởng ở tài khoản chứng khoán).
+            function applyAdjusted(h) {
+                if (!h) return;
+                if (!window.confirm('Ghi số liệu đã điều chỉnh của ' + h.symbol + ' vào danh mục?\n\nSố lượng: ' + fmtMoney(h.quantity) + ' cp\nGiá vốn: ' + fmtMoney(h.avg_price) + ' đ')) return;
+                fetch('/api/portfolio/' + h.id, {
+                    method: 'PUT', headers: authHeaders(),
+                    body: JSON.stringify({ quantity: Number(h.quantity) || 0, avg_price: Number(h.avg_price) || 0 })
+                })
+                    .then(function(r) { if (!r.ok) throw new Error('Cập nhật thất bại'); return r.json(); })
+                    .then(function() { toast('✅ Đã ghi số liệu đã điều chỉnh vào danh mục'); refreshStockCard(); })
+                    .catch(function(e) { toast('❌ ' + (e && e.message ? e.message : 'Lỗi'), true); });
             }
 
             // ---------- Summary ----------
             function renderSummary() {
                 const t = totals();
                 const cash = cashTotalVnd();
-                const assetValue = (Number(t.totalValue) || 0) + cash;
+                const assetValue = (Number(t.effValue) || 0) + cash;
                 return '<div class="pf-summary">' +
-                    '<div class="pf-sum-card acc"><div class="pf-sum-label">Tổng giá trị</div><div class="pf-sum-value">' + fmtMoney(assetValue) + ' <span style="font-size:13px;font-weight:600;">đ</span></div><div class="pf-sum-sub">' + holdings.length + ' vị thế' + (cash > 0 ? ' · Tiền mặt ' + fmtMoney(cash) : '') + '</div></div>' +
+                    '<div class="pf-sum-card acc"><div class="pf-sum-label">Tổng giá trị</div><div class="pf-sum-value">' + fmtMoney(assetValue) + ' <span style="font-size:13px;font-weight:600;">đ</span></div><div class="pf-sum-sub">' + holdings.length + ' vị thế' + (cash > 0 ? ' · Tiền mặt ' + fmtMoney(cash) : '') + (t.pending > 0 ? ' · chờ nhận ' + fmtMoney(t.pending) : '') + '</div></div>' +
                     '<div class="pf-sum-card"><div class="pf-sum-label">Lợi nhuận</div><div class="pf-sum-value ' + (t.totalPnl >= 0 ? 'pos' : 'neg') + '">' + (t.totalPnl >= 0 ? '+' : '−') + fmtMoney(Math.abs(t.totalPnl)) + '</div><div class="pf-sum-sub ' + (t.pnlPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(t.pnlPct) + '</div></div>' +
                     '<div class="pf-sum-card"><div class="pf-sum-label">Lợi nhuận hôm nay</div><div class="pf-sum-value ' + (t.todayPnl >= 0 ? 'pos' : 'neg') + '">' + (t.todayPnl >= 0 ? '+' : '−') + fmtMoney(Math.abs(t.todayPnl)) + '</div><div class="pf-sum-sub ' + (t.todayPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(t.todayPct) + '</div></div>' +
-                    '<div class="pf-sum-card"><div class="pf-sum-label">Tổng vốn đầu tư</div><div class="pf-sum-value">' + fmtMoney(t.totalCost) + ' <span style="font-size:13px;font-weight:600;">đ</span></div><div class="pf-sum-sub">' + fmtPct(t.pnlPct) + ' so vốn</div></div>' +
+                    '<div class="pf-sum-card"><div class="pf-sum-label">Tổng vốn đầu tư</div><div class="pf-sum-value">' + fmtMoney(t.totalCost) + ' <span style="font-size:13px;font-weight:600;">đ</span></div><div class="pf-sum-sub">' + fmtPct(t.pnlPct) + ' so vốn' + (t.dividends > 0 ? ' · cổ tức đã trừ ' + fmtMoney(t.dividends) + ' đ' : '') + '</div></div>' +
                 '</div>';
             }
 
@@ -988,8 +1072,12 @@
                             const pnlCls = Number(h.pnl) >= 0 ? 'pos' : 'neg';
                             const pctCls = Number(h.percent_change) >= 0 ? 'pos' : 'neg';
                             const weight = (Number(h.market_value) || 0) / total * 100;
+                            const adj = (h.adjustment || {});
+                            const pend = pendText(h);
                             return '<tr data-symbol="' + esc(h.symbol) + '">' +
-                                '<td><div class="td-sym">' + esc(h.symbol) + '<span class="name">' + esc(h.name) + '</span></div></td>' +
+                                '<td><div class="td-sym">' + esc(h.symbol) + '<span data-div="' + esc(h.symbol) + '"></span><span class="name">' + esc(h.name) + '</span>' +
+                                    (pend ? '<span class="pf-pend" title="Cổ tức đã chốt quyền, chưa tới ngày chia — sẽ cộng vào số lượng/giá vốn đúng ngày chia"><i class="fas fa-hourglass-half"></i> Chờ nhận: ' + esc(pend) + '</span>' : '') +
+                                '</div></td>' +
                                 '<td>' + fmtMoney(h.avg_price) + '</td>' +
                                 '<td>' + fmtMoney(h.price) + ' <span class="' + pctCls + '" style="font-size:11.5px;">' + fmtPct(h.percent_change) + '</span></td>' +
                                 '<td>' + fmtMoney(h.quantity) + '</td>' +
@@ -997,6 +1085,7 @@
                                 '<td class="' + pnlCls + '">' + (Number(h.pnl) >= 0 ? '+' : '−') + fmtMoney(Math.abs(h.pnl)) + ' <span style="font-size:11.5px;">(' + fmtPct(h.pnl_pct) + ')</span></td>' +
                                 '<td>' + weight.toFixed(1) + '%</td>' +
                                 '<td><div class="td-actions">' +
+                                    (adj.adjusted ? '<button type="button" class="act-btn" data-apply="' + h.id + '" title="Ghi số liệu đã điều chỉnh (số lượng/giá vốn) vào danh mục"><i class="fas fa-rotate"></i></button>' : '') +
                                     '<button type="button" class="act-btn" data-edit="' + h.id + '" title="Cập nhật"><i class="fas fa-pen"></i></button>' +
                                     '<button type="button" class="act-btn del" data-del="' + h.id + '" title="Xóa"><i class="fas fa-trash"></i></button>' +
                                 '</div></td>' +
@@ -1008,7 +1097,8 @@
                     '<div class="pf-ah"><h2><i class="fas fa-chart-line" style="color:#008080;font-size:14px;margin-right:6px;"></i>Danh sách cổ phiếu</h2>' +
                     '<div class="pf-astats">' +
                         '<div class="pf-astat"><span class="pf-albl">Tổng đầu tư</span><b>' + fmtMoney(tt.totalCost) + ' đ</b></div>' +
-                        '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtMoney(tt.totalValue) + ' đ</b></div>' +
+                        (tt.pending > 0 ? '<div class="pf-astat"><span class="pf-albl">Cổ tức chờ nhận</span><b class="pf-pend-val">+' + fmtMoney(tt.pending) + ' đ</b></div>' : '') +
+                        '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtMoney(tt.effValue) + ' đ</b></div>' +
                     '</div></div>' +
                     tableHtml +
                     '<div class="pf-stock-form" id="pfFormCard">' + stockFormInner() + '</div>' +
@@ -1017,8 +1107,9 @@
             function stockFormInner() {
                 const editing = holdings.find(function(h) { return h.id === editId; });
                 const sym = editing ? editing.symbol : '';
-                const qty = editing ? editing.quantity : '';
-                const avg = editing ? editing.avg_price : '';
+                // Sửa thì LUÔN hiện SỐ LIỆU GỐC đã nhập (không phải số đã điều chỉnh theo cổ tức).
+                const qty = editing ? rawQty(editing) : '';
+                const avg = editing ? rawAvg(editing) : '';
                 const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý danh mục thật"' : '';
                 const title = editing ? 'Cập nhật ' + esc(sym) : 'Mua/Bán cổ phiếu';
                 const submitLabel = editing ? 'Lưu' : (tradeMode === 'sell' ? 'Bán' : 'Mua');
@@ -1042,6 +1133,9 @@
                         submitField +
                     '</div>' +
                     (editing ? '' : '<div class="pf-price-hint" id="pfPriceHint"></div>') +
+                    (editing && (editing.adjustment || {}).adjusted
+                        ? '<div class="pf-form-hint" style="margin-top:8px;">ℹ️ Ô nhập giữ <b>số liệu gốc</b> bạn đã nhập. Danh mục đang hiển thị <b>giá vốn/số lượng đã điều chỉnh</b> theo cổ tức: ' + esc(adjEventsText(editing)) + '</div>'
+                        : '') +
                     (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '');
             }
 
@@ -2506,7 +2600,7 @@
             }
             function wlItemHtml(sym, showRemove) {
                 return '<tr data-symbol="' + esc(sym) + '">' +
-                    '<td><div class="td-sym">' + esc(sym) + '<span class="name wl-name"></span></div></td>' +
+                    '<td><div class="td-sym">' + esc(sym) + '<span data-div="' + esc(sym) + '"></span><span class="name wl-name"></span></div></td>' +
                     '<td class="wl-price" style="font-weight:800;">--</td>' +
                     '<td class="wl-prev">--</td>' +
                     '<td class="wl-chg" style="font-weight:700;">--</td>' +
@@ -2859,8 +2953,11 @@
                         const pct = isHolding ? (Number(h.pnl_pct) || 0) : null;
                         const cls = isHolding ? (pnl >= 0 ? 'pos' : 'neg') : '';
                         const dash = '<span style="color:#b6c2d2;">-</span>';
+                        const pend = isHolding ? pendText(h) : '';
                         html += '<tr data-symbol="' + esc(row.sym) + '">' +
-                            '<td><div class="td-sym">' + esc(row.sym) + (name ? '<span class="name">' + esc(name) + '</span>' : '') + '</div></td>' +
+                            '<td><div class="td-sym">' + esc(row.sym) + '<span data-div="' + esc(row.sym) + '"></span>' + (name ? '<span class="name">' + esc(name) + '</span>' : '') +
+                                (pend ? '<span class="pf-pend" title="Cổ tức đã chốt quyền, chưa tới ngày chia — sẽ cộng vào số lượng/giá vốn đúng ngày chia"><i class="fas fa-hourglass-half"></i> Chờ nhận: ' + esc(pend) + '</span>' : '') +
+                            '</div></td>' +
                             '<td>' + (isHolding ? fmtMoney(h.avg_price) : dash) + '</td>' +
                             '<td>' + (prevClose ? fmtMoney(prevClose) : dash) + '</td>' +
                             '<td style="font-weight:800;">' + (price ? fmtMoney(price) : dash) + '</td>' +
@@ -2945,8 +3042,9 @@
                     '<div class="pf-perf-main">' +
                         '<div class="pf-perf-stat">' +
                             '<div class="pf-stat-label">Tổng giá trị tài sản</div>' +
-                            '<div class="pf-stat-value">' + fmtMoney(t.totalValue) + ' <span style="font-size:13px;font-weight:600;">đ</span></div>' +
+                            '<div class="pf-stat-value">' + fmtMoney(t.effValue) + ' <span style="font-size:13px;font-weight:600;">đ</span></div>' +
                             '<div class="pf-stat-sub ' + (t.pnlPct > 0 ? 'pf-prof' : t.pnlPct < 0 ? 'pf-loss' : 'pf-neutral') + '">' + (t.pnlPct >= 0 ? '↑' : '↓') + ' ' + pctTxt + ' từ vốn đầu tư</div>' +
+                            (t.pending > 0 ? '<div class="pf-stat-pend"><i class="fas fa-hourglass-half"></i> Cổ tức chờ nhận: +' + fmtMoney(t.pending) + ' đ</div>' : '') +
                         '</div>' +
                         '<div class="pf-perf-stat hero">' +
                             '<div class="pf-stat-label">Tổng lãi/lỗ <span class="pf-tip" data-tip="' + esc(TIP_PNL) + '">i</span></div>' +
@@ -2963,7 +3061,7 @@
                         '</div>' +
                     '</div>' +
                     '<div class="pf-perf-sub">' +
-                        '<div class="pf-sub-item"><div class="pf-sub-label">Tổng vốn đầu tư <span class="pf-tip" data-tip="' + esc(TIP_INVESTED) + '">i</span></div><div class="pf-sub-value">' + fmtMoney(t.totalCost) + ' đ</div></div>' +
+                        '<div class="pf-sub-item"><div class="pf-sub-label">Tổng vốn đầu tư <span class="pf-tip" data-tip="' + esc(TIP_INVESTED) + '">i</span></div><div class="pf-sub-value">' + fmtMoney(t.totalCost) + ' đ</div>' + (t.pending > 0 ? '<div style="font-size:11px;color:#8a99b1;margin-top:2px;">đã gồm ' + fmtMoney(t.pending) + ' đ cổ tức chờ nhận</div>' : '') + (t.dividends > 0 ? '<div style="font-size:11px;color:#8a99b1;margin-top:2px;">đã trừ ' + fmtMoney(t.dividends) + ' đ cổ tức</div>' : '') + '</div>' +
                         '<div class="pf-sub-item"><div class="pf-sub-label">Tỷ suất lợi nhuận <span class="pf-tip" data-tip="' + esc(TIP_RETURN) + '">i</span></div><div class="pf-sub-value ' + cls + '">' + pctTxt + '</div></div>' +
                         '<div class="pf-sub-item"><div class="pf-sub-label">Thời gian đầu tư</div><div class="pf-sub-value">' + durTxt + '</div></div>' +
                         '<div class="pf-sub-item"><div class="pf-sub-label">Số mã đang nắm giữ</div><div class="pf-sub-value">' + holdings.length + ' mã</div></div>' +
@@ -3488,6 +3586,12 @@
                 send('/api/portfolio', 'POST', { symbol: symbol, quantity: quantity, avg_price: price, fee: fee });
             }
             function bindTable() {
+                document.querySelectorAll('[data-apply]').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        applyAdjusted(holdings.find(function(x) { return x.id === Number(btn.getAttribute('data-apply')); }));
+                    });
+                });
                 document.querySelectorAll('[data-edit]').forEach(function(btn) {
                     btn.addEventListener('click', function(e) { e.stopPropagation(); editId = Number(btn.getAttribute('data-edit')); render(); });
                 });
@@ -3694,6 +3798,7 @@
         })();
     </script>
     <script src="/static/membership-gate.js?v=20260905f"></script>
-    <script src="/static/context-menu.js?v=20260827a"></script>
+    <script src="/static/context-menu.js?v=20260928a"></script>
+    <script src="/static/dividend-badge.js?v=20260926c"></script>
 </body>
 </html>

@@ -26,8 +26,6 @@ body.dark-mode .ti-head .ti-sub { color: rgba(255,255,255,0.92); }
 
 /* ---------- Khung công cụ ---------- */
 .ti-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 12px; flex-wrap: wrap; }
-.ti-toolbar .tt-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 17px; }
-.tt-name i { color: #008080; }
 .ti-switch { display: flex; gap: 6px; flex-wrap: wrap; }
 .ti-chip {
     border: 1px solid #dbe4ec; background: #fff; color: #5a6b85; border-radius: 20px;

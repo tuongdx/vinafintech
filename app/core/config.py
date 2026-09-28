@@ -76,8 +76,9 @@ class Settings(BaseSettings):
     alert_rsi_oversold: float = 30.0
     alert_history_period: str = "1y"              # khung dữ liệu để tính vùng S/R
     asset_event_window_days: int = 183            # chỉ lấy sự kiện tài sản sắp tới / trong ~6 tháng gần
-    asset_event_upcoming_universe: int = 150      # số mã quét "Lịch sự kiện thị trường" (trang Thị trường)
-    asset_event_upcoming_ttl: int = 3600          # cache lịch sự kiện sắp diễn ra (giây)
+    asset_event_upcoming_universe: int = 150      # số mã quét DỰ PHÒNG khi nguồn toàn thị trường lỗi
+    asset_event_upcoming_ttl: int = 86400         # cache lịch sự kiện (giây) — snapshot làm mới mỗi ngày
+    asset_event_refresh_hour: int = 12            # giờ VN dựng lại lịch sự kiện toàn thị trường (12h trưa)
 
     # Tỷ giá ngoại tệ (Tiện ích) — nhà cung cấp có thể đổi qua ENV mà không sửa code
     exchange_rate_api_url: str = "https://open.er-api.com/v6/latest/USD"  # {apikey} chèn nếu có

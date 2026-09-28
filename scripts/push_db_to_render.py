@@ -50,8 +50,9 @@ for _stream in (sys.stdout, sys.stderr):
     except Exception:  # noqa: BLE001 — Python cũ / stream bị redirect
         pass
 
-from sqlalchemy import MetaData, create_engine, func, inspect, select, text  # noqa: E402
+from sqlalchemy import LargeBinary, MetaData, create_engine, func, inspect, select, text  # noqa: E402
 from sqlalchemy.dialects.postgresql import insert as pg_insert  # noqa: E402
+from sqlalchemy.exc import InterfaceError, OperationalError  # noqa: E402
 
 from app.db import Base  # noqa: E402
 from app import models  # noqa: F401,E402  (import để đăng ký toàn bộ model)
@@ -135,6 +136,11 @@ def main() -> int:
     parser.add_argument("--yes", action="store_true", help="Không hỏi xác nhận (dùng khi chạy tự động)")
     parser.add_argument("--dry-run", action="store_true", help="Chỉ in danh sách bảng + số dòng, không ghi")
     parser.add_argument("--allow-any-host", action="store_true", help="Cho phép host không phải *.render.com")
+    parser.add_argument("--skip", default="", help="Danh sách bảng bỏ qua, cách nhau dấu phẩy (vd: tool_files,tmp_x)")
+    parser.add_argument("--keep-blobs", action="store_true",
+                        help="Vẫn đẩy các bảng có BLOB lớn (mặc định bỏ qua vì dễ làm Render cắt SSL)")
+    parser.add_argument("--max-blob-mb", type=float, default=8.0,
+                        help="Ngưỡng BLOB tối đa (MB) cho 1 bảng; quá ngưỡng sẽ bị bỏ qua (mặc định 8)")
     args = parser.parse_args()
 
     target_url = load_target_url(args.url)
@@ -175,11 +181,33 @@ def main() -> int:
         return 1
 
     src_engine = create_engine(f"sqlite:///{source_path}")
-    tgt_engine = create_engine(target_url, pool_pre_ping=True, connect_args={"connect_timeout": 20})
+    # Render (Singapore): bật keepalive + recycle để SSL không bị cắt giữa chừng
+    # (bảng tool_files chứa file zip ~20MB nên gửi qua mạng khá nặng).
+    tgt_engine = create_engine(
+        target_url,
+        pool_pre_ping=True,
+        pool_recycle=90,
+        connect_args={
+            "connect_timeout": 30,
+            "keepalives": 1,
+            "keepalives_idle": 20,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
+        },
+    )
 
     src_meta = MetaData()
     src_meta.reflect(bind=src_engine)
     model_tables = {t.name: t for t in Base.metadata.sorted_tables}
+
+    def _table_for(name: str):
+        """Bảng theo model (kiểu dữ liệu chuẩn) nếu có, không thì dùng bảng reflect.
+
+        KHÔNG dùng `a or b` với đối tượng Table: SQLAlchemy ném TypeError
+        'Boolean value of this clause is not defined'.
+        """
+        table = model_tables.get(name)
+        return table if table is not None else src_meta.tables[name]
 
     src_names = [n for n in src_meta.tables if n not in _SKIP_TABLES]
     order = [t.name for t in Base.metadata.sorted_tables if t.name in src_names]
@@ -238,15 +266,22 @@ def main() -> int:
 
     copied_tables: list[str] = []
     report: list[tuple[str, int, int, int]] = []
+    skip_names = {s.strip() for s in args.skip.split(",") if s.strip()}
 
-    with src_engine.connect() as sc, tgt_engine.begin() as tc:
-        # 1) replace: xoá đích theo thứ tự NGƯỢC (bảng con trước) để không vướng FK.
-        if args.mode == "replace":
-            for name in reversed(order):
-                if name in tgt_existing:
+    # --- replace: xoá đích trước, theo thứ tự NGƯỢC (bảng con trước) để không vướng FK ---
+    if args.mode == "replace":
+        for name in reversed(order):
+            if name not in tgt_existing or name in skip_names:
+                continue
+            try:
+                with tgt_engine.begin() as tc:
                     tc.execute(text(f'DELETE FROM "{name}"'))
+            except Exception as exc:  # noqa: BLE001
+                print(f"   ⚠️  Không xoá được {name}: {str(exc)[:70]}")
 
-        # 2) copy từng bảng, giữ nguyên id.
+    with src_engine.connect() as sc:
+        # 2) copy từng bảng, giữ nguyên id. MỖI BẢNG 1 TRANSACTION RIÊNG để 1 bảng lỗi
+        #    (hoặc bị Render cắt SSL) không làm mất toàn bộ công sức các bảng trước.
         for name in order:
             tgt_cols = target_cols.get(name) or []
             if not tgt_cols:
@@ -254,53 +289,107 @@ def main() -> int:
                 continue
             # Đọc bằng bảng theo MODEL (đúng kiểu JSON/DateTime/Boolean/Enum) để dữ liệu
             # sang Postgres không bị double-encode; bảng không có model thì dùng bảng reflect.
-            src_table = model_tables.get(name) or src_meta.tables[name]
+            src_table = _table_for(name)
             src_cols = [c.name for c in src_table.columns]
             cols = [c for c in src_cols if c in tgt_cols]
             dropped = [c for c in src_cols if c not in tgt_cols]
             if dropped:
                 print(f"   ⚠️  {name}: bỏ cột không có ở đích {dropped}")
 
-            tgt_table = model_tables.get(name) or src_meta.tables[name]
+            tgt_table = _table_for(name)
             use_on_conflict = args.mode == "merge" and len(tgt_table.primary_key.columns) > 0
+            has_blob = any(isinstance(c.type, LargeBinary) for c in tgt_table.columns)
 
             start = time.time()
             src_count = sc.execute(select(func.count()).select_from(src_table)).scalar() or 0
+
+            # Bỏ qua theo yêu cầu, hoặc bỏ qua bảng có BLOB quá lớn (gửi 20MB qua SSL tới Render
+            # thường bị cắt kết nối → kéo theo các bảng sau lỗi khoá ngoại).
+            if name in skip_names:
+                print(f"   ↷ {name:28} bỏ qua theo --skip (nguồn={src_count})")
+                report.append((name, src_count, -1, 0))
+                continue
+            if has_blob and not args.keep_blobs:
+                max_blob = 0
+                for col in tgt_table.columns:
+                    if isinstance(col.type, LargeBinary):
+                        try:
+                            val = sc.execute(
+                                select(func.max(func.length(src_table.c[col.name])))
+                            ).scalar()
+                            max_blob = max(max_blob, int(val or 0))
+                        except Exception:  # noqa: BLE001
+                            pass
+                if max_blob > args.max_blob_mb * 1024 * 1024:
+                    print(f"   ↷ {name:28} bỏ qua: có BLOB {max_blob/1024/1024:.1f} MB "
+                          f"> {args.max_blob_mb:.0f} MB (dùng --keep-blobs nếu muốn đẩy)")
+                    report.append((name, src_count, -1, 0))
+                    continue
             if not cols:
                 print(f"   ·  {name:28} bỏ qua (không có cột dùng chung)")
                 report.append((name, src_count, 0, 0))
                 continue
 
-            def _insert_rows(rows: list[dict]) -> None:
-                stmt = pg_insert(tgt_table).values(rows)
-                if use_on_conflict:
-                    stmt = stmt.on_conflict_do_nothing()
-                tc.execute(stmt)
-
             insert_stmt = select(*[src_table.c[c] for c in cols])
-            written = 0
-            failed = 0
-            try:
-                # SAVEPOINT theo bảng: 1 bảng lỗi không làm hỏng cả giao dịch.
-                with tc.begin_nested():
-                    for part in sc.execute(insert_stmt).partitions(CHUNK_SIZE):
-                        rows = [dict(zip(cols, row)) for row in part]
-                        if rows:
-                            _insert_rows(rows)
-                            written += len(rows)
-            except Exception as exc:  # noqa: BLE001
-                print(f"   ⚠️  {name}: insert theo lô lỗi ({str(exc)[:70]}) → thử lại từng dòng")
-                written = 0
-                for part in sc.execute(insert_stmt).partitions(CHUNK_SIZE):
-                    for row in part:
-                        try:
-                            with tc.begin_nested():
-                                _insert_rows([dict(zip(cols, row))])
-                            written += 1
-                        except Exception:  # noqa: BLE001 — bỏ qua dòng lỗi, đếm lại
-                            failed += 1
 
-            tgt_count = tc.execute(select(func.count()).select_from(tgt_table)).scalar() or 0
+            def _run_copy(per_row: bool, chunk: int) -> tuple[int, int]:
+                """Ghi 1 bảng trong 1 transaction riêng. Trả (số dòng ghi, số dòng lỗi)."""
+                written = failed = 0
+                with tgt_engine.begin() as tc:
+                    def _ins(rows: list[dict]) -> None:
+                        stmt = pg_insert(tgt_table).values(rows)
+                        if use_on_conflict:
+                            stmt = stmt.on_conflict_do_nothing()
+                        tc.execute(stmt)
+
+                    for part in sc.execute(insert_stmt).partitions(chunk):
+                        if not per_row:
+                            rows = [dict(zip(cols, row)) for row in part]
+                            if rows:
+                                _ins(rows)
+                                written += len(rows)
+                        else:
+                            for row in part:
+                                try:
+                                    with tc.begin_nested():
+                                        _ins([dict(zip(cols, row))])
+                                    written += 1
+                                except Exception:  # noqa: BLE001 — bỏ qua dòng lỗi, đếm lại
+                                    failed += 1
+                return written, failed
+
+            written = failed = 0
+            done = False
+            # BLOB lớn (tool_files) → gửi từng dòng; bảng thường → lô 200 dòng.
+            chunk = 1 if has_blob else CHUNK_SIZE
+            for attempt in (1, 2):
+                try:
+                    written, failed = _run_copy(per_row=False, chunk=chunk)
+                    done = True
+                    break
+                except (OperationalError, InterfaceError) as exc:
+                    print(f"   ⚠️  {name}: kết nối bị cắt ({str(exc)[:60]}) → thử lại (lần {attempt})")
+                    tgt_engine.dispose()
+                    time.sleep(2)
+                except Exception as exc:  # noqa: BLE001 — lỗi dữ liệu → ghi từng dòng
+                    print(f"   ⚠️  {name}: lỗi khi ghi lô ({str(exc)[:70]}) → ghi từng dòng")
+                    tgt_engine.dispose()
+                    try:
+                        written, failed = _run_copy(per_row=True, chunk=chunk)
+                        done = True
+                    except Exception as exc2:  # noqa: BLE001
+                        print(f"   ❌ {name}: bỏ qua bảng này ({str(exc2)[:70]})")
+                    break
+            if not done:
+                print(f"   ❌ {name}: KHÔNG ghi được (đã thử 2 lần)")
+                report.append((name, src_count, 0, src_count))
+                continue
+
+            try:
+                with tgt_engine.connect() as tcc:
+                    tgt_count = tcc.execute(select(func.count()).select_from(tgt_table)).scalar() or 0
+            except Exception:  # noqa: BLE001
+                tgt_count = written
             report.append((name, src_count, tgt_count, failed))
             flag = "✅" if failed == 0 and tgt_count >= src_count else "⚠️ "
             extra_txt = f" lỗi={failed}" if failed else ""
@@ -310,8 +399,12 @@ def main() -> int:
     reset_sequences(tgt_engine, copied_tables)
 
     print("\n== Đối chiếu ==")
-    mismatch = [(n, s, t, f) for n, s, t, f in report if t < s or f]
-    print(f"   {len(report)} bảng | khớp: {len(report) - len(mismatch)} | thiếu/lỗi: {len(mismatch)}")
+    skipped = [(n, s) for n, s, t, f in report if t == -1]
+    mismatch = [(n, s, t, f) for n, s, t, f in report if t != -1 and (t < s or f)]
+    print(f"   {len(report)} bảng | bỏ qua: {len(skipped)} | khớp: {len(report) - len(mismatch) - len(skipped)} "
+          f"| thiếu/lỗi: {len(mismatch)}")
+    for n, s in skipped:
+        print(f"     ↷ {n}: bỏ qua (nguồn {s} dòng)")
     for n, s, t, f in mismatch:
         detail = f"lỗi {f} dòng" if f else "thiếu dòng"
         print(f"     ⚠️  {n}: nguồn {s} > đích {t} ({detail})")

@@ -3098,7 +3098,7 @@
            Các selector #tunixAiFab/#tunixAiPanel/.ai-* không còn được dùng trong HTML. */
         /* (removed) */
     </style>
-    <script src="/static/header-search.js?v=20260822"></script>
+    <script src="/static/header-search.js?v=20260926a"></script>
     <script>
         const PAGE_FILE_MAP = {
             TrungTamTroGiup: '/frontend/TrungTamTroGiup.html',
@@ -3358,7 +3358,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260917a';
+        const CACHE_VERSION = '20260928e';
         // Slug URL đẹp cho các section Quản lý tài sản
         window.__QLTS_SLUGS = {
             overview: 'phan-tich-tai-san',
@@ -3574,11 +3574,52 @@
             setHeaderContext(false);
         }
         window.openGiaVangBacPage = openGiaVangBacPage;
-        function openCoPhieuStock(symbol) {
+        // Cache URL cấp ngành theo mã (trong phiên) — click lần sau không phải chờ tra.
+        window.__tunixStockUrlCache = window.__tunixStockUrlCache || {};
+        let openStockSeq = 0;
+
+        // Tra URL đẹp cấp ngành của 1 mã: /api/stocks/search trả kèm sector/industry.
+        function resolveStockPrettyUrl(sym) {
+            const cache = window.__tunixStockUrlCache;
+            if (Object.prototype.hasOwnProperty.call(cache, sym)) {
+                return Promise.resolve(cache[sym]);
+            }
+            return fetch('/api/stocks/search?q=' + encodeURIComponent(sym), { cache: 'no-store' })
+                .then(function (r) { return r.ok ? r.json() : []; })
+                .then(function (items) {
+                    const hit = (Array.isArray(items) ? items : []).find(function (x) {
+                        return String((x && x.symbol) || '').trim().toUpperCase() === sym;
+                    });
+                    const url = (hit && hit.sector && hit.industry)
+                        ? '/co-phieu/nganh/' + encodeURIComponent(hit.sector) + '/' + encodeURIComponent(hit.industry) + '/' + encodeURIComponent(sym)
+                        : '';
+                    cache[sym] = url;
+                    return url;
+                })
+                .catch(function () { return ''; });
+        }
+
+        function openCoPhieuStock(symbol, url) {
             // Mở chi tiết cổ phiếu NHÚNG trong trang Cổ phiếu (breadcrumb ngành ... > MÃ) — dùng cho mọi trang list.
+            // URL luôn là DẠNG CẤP NGÀNH /co-phieu/nganh/{sector}/{industry}/{MÃ}:
+            //  - `url` đã biết (ô tìm kiếm header) → điều hướng ngay;
+            //  - chưa biết → tra nhanh sector/industry rồi điều hướng ĐÚNG 1 lần.
             const normalized = String(symbol || '').trim().toUpperCase();
             if (!normalized) return;
             currentChartSymbol = normalized;
+            const known = (String(url || '').trim().charAt(0) === '/') ? String(url).trim() : '';
+            if (known) {
+                openCoPhieuStockNow(normalized, known);
+                return;
+            }
+            const seq = ++openStockSeq;
+            resolveStockPrettyUrl(normalized).then(function (resolved) {
+                if (seq !== openStockSeq) return; // đã bấm mã khác trong lúc chờ → bỏ qua
+                openCoPhieuStockNow(normalized, resolved || '');
+            });
+        }
+
+        function openCoPhieuStockNow(normalized, prettyUrl) {
             // Clear ô tìm kiếm header sau khi điều hướng đến chi tiết cổ phiếu
             if (typeof window.clearHeaderSearch === 'function') {
                 window.clearHeaderSearch();
@@ -3586,8 +3627,12 @@
                 const searchInput = document.querySelector('.header-search input');
                 if (searchInput) searchInput.value = '';
             }
-            loadContent('/frontend/CoPhieu.html?stock=' + encodeURIComponent(normalized));
-            window.history.replaceState({}, '', '/co-phieu/' + encodeURIComponent(normalized));
+            // Chỉ nhận URL nội bộ (bắt đầu bằng '/') để tránh replaceState sai origin.
+            const pretty = (String(prettyUrl || '').trim().charAt(0) === '/') ? String(prettyUrl).trim() : '';
+            const indMatch = pretty.match(/^\/co-phieu\/nganh\/([^/]+)\/([^/]+)\//i);
+            const ind = indMatch ? 'nganh/' + indMatch[1] + '/' + indMatch[2] : '';
+            loadContent('/frontend/CoPhieu.html?' + (ind ? 'ind=' + ind + '&' : '') + 'stock=' + encodeURIComponent(normalized));
+            window.history.replaceState({}, '', pretty || ('/co-phieu/' + encodeURIComponent(normalized)));
             setHeaderContext(false);
             if (typeof updateRightColumnForStock === 'function') updateRightColumnForStock(normalized);
         }
@@ -4192,10 +4237,95 @@
         let navProgressTimer = null;
 
         // Bỏ tham số version + chuẩn hoá nhẹ (/frontend/X.html ≡ /X.html) để 1 trang chỉ có 1 iframe.
+        // RIÊNG trang Cổ phiếu: MỘT iframe duy nhất cho MỌI view (screener / ngành / chi tiết mã).
+        // Trước đây mỗi view là 1 key (?ind=…, ?ind=…&stock=…) ⇒ tồn tại nhiều iframe CÙNG tài liệu,
+        // mà iframe lại tự đổi view bên trong (breadcrumb / nhấp mã) ⇒ iframe “bẩn”: nội dung không
+        // còn khớp key của nó. Hệ quả: về trang chủ rồi bấm lại 1 mã → URL đúng nhưng màn hình vẫn là
+        // danh sách ngành. Nay view bên trong do SHELL điều khiển qua postMessage 'tunix-co-phieu-goto'.
+        const CO_PHIEU_KEY = '/CoPhieu';
         function frameKeyOf(page) {
             let s = String(page || '').replace(/([?&])v=[^&]*/g, '$1').replace(/[?&]+$/, '');
             s = s.replace('/frontend/', '/').replace(/\.html(?=$|[?#])/, '');
+            if (/^\/CoPhieu\b/.test(s) || /^\/co-phieu\b/.test(s)) return CO_PHIEU_KEY;
             return s;
+        }
+
+        // ---------- View bên trong trang Cổ phiếu (screener ⇄ ngành ⇄ chi tiết mã) ----------
+        // Từ CHUỖI TRANG nội bộ (vd /frontend/CoPhieu.html?ind=nganh/a/b&stock=HAH)
+        function coPhieuViewOf(page) {
+            const s = String(page || '');
+            if (!/\/CoPhieu\b|^\/co-phieu\b/i.test(s)) return null;
+            let path = [], stock = null;
+            try {
+                const q = new URLSearchParams(s.split('?')[1] || '');
+                const ind = (q.get('ind') || '').trim();
+                if (ind) path = ind.split('/').filter(Boolean);
+                const st = (q.get('stock') || '').trim().toUpperCase();
+                if (st) stock = st;
+            } catch (e) {}
+            return { path: path, stock: stock };
+        }
+        // Từ URL ĐẸP (vd /co-phieu/nganh/cong-nghiep/co-so-ha-tang-giao-thong-van-tai/HAH)
+        function coPhieuViewFromUrl(u) {
+            const m = String(u || '').split('?')[0].match(/^\/co-phieu(?:\/(.+))?$/i);
+            if (!m) return null;
+            const segs = (m[1] || '').split('/').filter(Boolean);
+            if (!segs.length) return { path: [], stock: null };
+            if (segs[0].toLowerCase() === 'nganh') {
+                const rest = segs.slice(1);
+                if (rest.length >= 3) return { path: ['nganh', rest[0], rest[1]], stock: String(rest[rest.length - 1]).toUpperCase() };
+                return { path: ['nganh'].concat(rest), stock: null };
+            }
+            if (segs.length === 1) return { path: [], stock: segs[0].toUpperCase() };
+            return null;
+        }
+        function coPhieuViewKey(v) {
+            return v ? (v.path.join('/') + '|' + (v.stock || '')) : '';
+        }
+        function postCoPhieuView(entry, view) {
+            if (!entry || !view) return;
+            try {
+                entry.frame.contentWindow.postMessage({ type: 'tunix-co-phieu-goto', path: view.path || [], stock: view.stock || null }, '*');
+            } catch (e) {}
+        }
+        // Đặt view mong muốn cho iframe Cổ phiếu: gửi ngay nếu iframe đã load, chờ load nếu chưa.
+        function setCoPhieuView(entry, view) {
+            if (!entry || !view) return;
+            if (coPhieuViewKey(entry.view) === coPhieuViewKey(view)) return;
+            entry.view = view;
+            applyCoPhieuRightColumn(view);
+            if (entry.loaded) postCoPhieuView(entry, view); else entry.pendingView = view;
+        }
+        // Cột phải: view có mã → "Tin liên quan - MÃ"; view danh sách/ngành → bỏ mã.
+        // (Cần thiết vì back/forward đổi view bên trong iframe mà không đi qua openCoPhieuStockNow.)
+        function applyCoPhieuRightColumn(view) {
+            if (typeof updateRightColumnForStock !== 'function') return;
+            updateRightColumnForStock((view && view.stock) || '');
+        }
+        // Iframe Cổ phiếu tự đổi view (breadcrumb / nhấp mã) → ghi nhớ để lần sau không hiện nhầm view cũ.
+        function syncCoPhieuFrameView(url) {
+            const entry = frameCache.get(CO_PHIEU_KEY);
+            if (!entry) return;
+            const v = coPhieuViewFromUrl(url);
+            if (v) entry.view = v;
+        }
+        // Điều hướng CẤP CON trong trang Cổ phiếu phải tạo entry lịch sử (xem ghi chú ở message handler).
+        function pushCoPhieuHistory(url) {
+            if (!url) return;
+            const cur = window.location.pathname + window.location.search;
+            if (url === cur) return;
+            const curView = coPhieuViewFromUrl(window.location.pathname);
+            const newView = coPhieuViewFromUrl(url);
+            // Chỉ BỔ SUNG đường dẫn ngành cho CÙNG một mã (vd /co-phieu/HAH → /co-phieu/nganh/a/b/HAH)
+            // → replaceState để không sinh entry trùng lặp.
+            if (curView && newView && curView.stock && curView.stock === newView.stock) {
+                window.history.replaceState({}, '', url);
+            } else if (historyReady && !handlingPop) {
+                try { window.history.pushState(null, '', url); appPushedCount++; } catch (e) { window.history.replaceState({}, '', url); }
+            } else {
+                window.history.replaceState({}, '', url);
+            }
+            lastRoutedPath = window.location.pathname;
         }
 
         // ---- Host CỐ ĐỊNH trong left-col: iframe không bao giờ bị di chuyển/xoá ----
@@ -4362,6 +4492,9 @@
             const entry = frameCache.get(key);
             if (!entry) return;
             entry.loaded = true;
+            // Trang Cổ phiếu: view mong muốn được đặt trong lúc iframe CHƯA load xong → gửi bù ngay bây giờ
+            // (gửi trước khi trang con đăng ký listener 'message' sẽ bị mất).
+            if (entry.pendingView) { const pv = entry.pendingView; entry.pendingView = null; postCoPhieuView(entry, pv); }
             if (key !== activeFrameKey) {
                 // Trang vừa bấm đã tải xong → mới thay nội dung (không còn màn trắng).
                 if (key === pendingFrameKey) {
@@ -4400,7 +4533,9 @@
             const PRETTY_TO_FILE = {
                 '/caidat': '/frontend/caidat.html',
                 '/taikhoan': '/frontend/taikhoan.html',
-                '/doimatkhau': '/frontend/doimatkhau.html'
+                '/doimatkhau': '/frontend/doimatkhau.html',
+                // Phòng vệ: nếu có nơi gọi loadContent('/co-phieu') thì nạp trang nhúng, KHÔNG lồng shell vào iframe.
+                '/co-phieu': '/frontend/CoPhieu.html'
             };
             const pathOnly = String(page || '').split('?')[0].split('#')[0];
             if (PRETTY_TO_FILE[pathOnly]) {
@@ -4444,10 +4579,15 @@
             if (isEmbeddedPage) {
                 // ---- Điều hướng kiểu SPA: tái sử dụng iframe đã tải (KHÔNG reload lại trang) ----
                 const key = frameKeyOf(page);
+                const wantView = coPhieuViewOf(page);   // null nếu không phải trang Cổ phiếu
                 const cached = frameCache.get(key);
                 if (cached) {
+                    // Đổi view bên trong CÙNG một iframe (Cổ phiếu) ⇒ coi như sang trang mới: về đầu trang.
+                    // Không reset thì activateFrame() sẽ khôi phục vị trí cuộn của VIEW CŨ.
+                    const viewChanged = !!(wantView && coPhieuViewKey(cached.view) !== coPhieuViewKey(wantView));
                     if (!cached.loaded) startNavProgress(); else finishNavProgress();
-                    activateFrame(key);
+                    activateFrame(key, viewChanged);
+                    setCoPhieuView(cached, wantView);
                     return;
                 }
 
@@ -4456,6 +4596,8 @@
                 startNavProgress();
                 pendingFrameKey = key;
                 const newFrame = createFrame(page, key);
+                const newEntry = frameCache.get(key);
+                if (newEntry && wantView) { newEntry.view = wantView; applyCoPhieuRightColumn(wantView); } // src của iframe đã mang sẵn view này
                 frameHostEl().appendChild(newFrame);
                 if (!activeFrameKey || !frameCache.has(activeFrameKey)) {
                     activateFrame(key); // lần đầu vào site: hiện luôn cho có khung
@@ -5125,8 +5267,13 @@
                 return;
             }
             if (data.type === 'tunix-co-phieu-nav' && data.url) {
-                // Trang Cổ phiếu báo điều hướng phân cấp ngành → cập nhật URL (không reload iframe) + cuộn lên đầu
-                window.history.replaceState({}, '', data.url);
+                // Trang Cổ phiếu báo điều hướng CẤP CON trong cùng iframe (screener ⇄ ngành ⇄ chi tiết mã).
+                // 1) Ghi nhớ view iframe đang hiển thị → lần sau activate lại KHÔNG hiện nhầm view cũ
+                //    (lỗi: về trang chủ rồi bấm lại 1 mã, URL đúng mà màn hình vẫn là danh sách ngành).
+                syncCoPhieuFrameView(data.url);
+                // 2) PUSH một entry lịch sử. Trước đây chỉ replaceState ⇒ mốc cũ bị GHI ĐÈ nên "Quay lại"
+                //    nhảy thẳng về trang chủ thay vì về view vừa xem trước đó (chi tiết mã HAH).
+                pushCoPhieuHistory(data.url);
                 scrollPageToTop();
                 return;
             }
@@ -5949,7 +6096,7 @@
     </script>
 
     <script src="/static/membership-gate.js?v=20260905f"></script>
-    <script src="/static/context-menu.js?v=20260827a"></script>
+    <script src="/static/context-menu.js?v=20260928a"></script>
 </body>
 </body>
 </html>

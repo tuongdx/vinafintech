@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel, EmailStr
 
 from app.models import NewsStatusEnum, PlanTierEnum, RoleEnum, TicketStatusEnum
@@ -135,8 +137,14 @@ class PortfolioHoldingOut(BaseModel):
     symbol: str
     name: str = ""
     exchange: str = ""
+    # quantity/avg_price = GIÁ VỐN ĐIỀU CHỈNH sau cổ tức (dùng để hiển thị + tính lãi/lỗ).
     quantity: float
     avg_price: float
+    # Số liệu GỐC người dùng đã nhập trong DB (dùng khi sửa / bán vị thế).
+    raw_quantity: float = 0.0
+    raw_avg_price: float = 0.0
+    # Thông tin điều chỉnh theo sự kiện cổ tức/thưởng (rỗng nếu không có sự kiện nào).
+    adjustment: dict[str, Any] = {}
     price: float = 0.0
     change: float = 0.0
     percent_change: float = 0.0

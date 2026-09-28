@@ -32,6 +32,8 @@ import { HotkeyManager } from './core/hotkeys.js';
 import { FullscreenManager } from './core/fullscreen.js';
 import { SettingsPanel } from './ui/settingsPanel.js';
 import { LastPriceLine } from './core/lastPriceLine.js';
+// `?v=` BẮT BUỘC: /static/* không version bị HTTP cache 1 giờ. Bump khi sửa positionLine.js.
+import { PositionLine } from './core/positionLine.js?v=20260927d';
 import { HistoryLoader } from './core/historyLoader.js';
 import { FullscreenWorkspace } from './ui/fullscreenWorkspace.js';
 
@@ -58,6 +60,7 @@ export function createStockDetailChart(options) {
     const legendEl = options.legendEl || null;
     const sidebarEl = options.sidebarEl || null;
     const bottomEl = options.bottomEl || null;
+    const posBadgeEl = options.posBadgeEl || null;
     let engine = null;
     let drawingManager = null;
     let drawingEngine = null;
@@ -83,6 +86,7 @@ export function createStockDetailChart(options) {
     let fsBtn = null;
     let settingsPanel = null;
     let lastPriceLine = null;
+    let positionLine = null;
     let historyLoader = null;
     let statusEl = null;
     let workspace = null;
@@ -147,6 +151,7 @@ export function createStockDetailChart(options) {
         if (indicatorEngine) indicatorEngine.setData(candles);
         if (analysisEngine) analysisEngine.setData(candles);
         if (lastPriceLine) lastPriceLine.update();
+        if (positionLine) positionLine.render();   // giá vốn: cập nhật lại màu/% theo nến mới
         refreshLegend();
         if (drawingEngine) drawingEngine.render();
     }
@@ -528,6 +533,26 @@ export function createStockDetailChart(options) {
         if (lastPriceLine) { try { lastPriceLine.destroy(); } catch (e) { /* ignore */ } lastPriceLine = null; }
     }
 
+    // ---------- Vạch vị thế (đường giá vốn của mã đang xem) ----------
+    // Chỉ vẽ khi người dùng đã đăng nhập và CÓ vị thế ở mã đó — số liệu lấy từ /api/portfolio/position/{symbol}
+    // (đã điều chỉnh cổ tức). Dùng price line native nên tự có mặt ở chế độ toàn màn hình.
+    function ensurePositionLine() {
+        if (!engine || !engine.getChart()) return;
+        if (!positionLine) {
+            positionLine = new PositionLine({
+                chartEngine: engine,
+                badgeEl: posBadgeEl,
+                getSymbol: () => state.getSymbol(),
+            });
+        }
+        positionLine.ensure(state.getSymbol());
+        if (window && window.__tunixChartDebug) window.__tunixChartDebug.positionLine = positionLine;
+    }
+
+    function destroyPositionLine() {
+        if (positionLine) { try { positionLine.destroy(); } catch (e) { /* ignore */ } positionLine = null; }
+    }
+
     // Reset BIỂU ĐỒ về mặc định — chỉ reset chart (không reload cả trang, không hỏi xác nhận).
     function resetChart() {
         // 1) Xoá mọi thiết lập đã lưu (drawings/indicators/analysis/compare/layout/settings)
@@ -865,6 +890,7 @@ export function createStockDetailChart(options) {
             ensureFullscreen();
             ensureSettings();
             ensureLastPriceLine();
+            ensurePositionLine();
             ensureWorkspace();
             recalcChartHeight();
         } catch (e) {
@@ -972,6 +998,7 @@ export function createStockDetailChart(options) {
             ensureFullscreen();
             ensureSettings();
             ensureLastPriceLine();
+            ensurePositionLine();
             ensureHistoryLoader();
             // So sánh: refetch theo timeframe mới để đồng bộ dữ liệu
             if (comparisonEngine && comparisonEngine.getSymbols().length) {
@@ -1018,6 +1045,7 @@ export function createStockDetailChart(options) {
         destroyFullscreen();
         destroySettings();
         destroyLastPriceLine();
+        destroyPositionLine();
         destroyReset();
         destroyPaneResizer();
         destroyComparison();

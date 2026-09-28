@@ -175,6 +175,12 @@ def build_summary(
     return_pct = calculate_return_percentage(holdings, transactions)
     start = calculate_start_date(holdings)
     bw = _best_worst(holdings)
+    # Cổ tức tiền mặt đã nhận: đã trừ khỏi giá vốn điều chỉnh (xem dividend_adjust) nên
+    # KHÔNG cộng lại vào lãi/lỗ — chỉ trả ra để hiển thị cho người dùng biết.
+    dividends_received = round(
+        sum(_f((h.get("adjustment") or {}).get("cash_received")) for h in holdings), 2
+    )
+    adjusted_holdings = sum(1 for h in holdings if (h.get("adjustment") or {}).get("adjusted"))
     return {
         "has_data": bool(holdings),
         "total_invested": invested,
@@ -188,4 +194,6 @@ def build_summary(
         "worst": bw["worst"],
         "quotes_ok": quotes_ok,
         "total_quotes": total_quotes,
+        "dividends_received": dividends_received,
+        "adjusted_holdings": adjusted_holdings,
     }

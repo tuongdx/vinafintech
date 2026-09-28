@@ -65,7 +65,16 @@ def _write(db: Session, user_id: int, currency: str, amount: float) -> float:
     return amount
 
 
-def _log(db: Session, user_id: int, currency: str, change: float, balance_after: float, kind: str, label: str) -> None:
+def _log(
+    db: Session,
+    user_id: int,
+    currency: str,
+    change: float,
+    balance_after: float,
+    kind: str,
+    label: str,
+    ref_key: str = "",
+) -> None:
     db.add(
         CashTransaction(
             user_id=user_id,
@@ -74,12 +83,34 @@ def _log(db: Session, user_id: int, currency: str, change: float, balance_after:
             change=_round(change, currency),
             balance_after=_round(balance_after, currency),
             label=(label or "").strip()[:255] or "",
+            ref_key=(ref_key or "").strip()[:120],
         )
     )
     db.commit()
 
 
-def credit(db: Session, user_id: int, currency: str, delta: float, kind: str = "adjust", label: str = "") -> float:
+def has_ref(db: Session, user_id: int, ref_key: str) -> bool:
+    """Đã có bút toán TỰ ĐỘNG với khoá `ref_key` chưa (chống cộng trùng khi mở trang nhiều lần)."""
+    key = (ref_key or "").strip()[:120]
+    if not key:
+        return False
+    return (
+        db.query(CashTransaction.id)
+        .filter(CashTransaction.user_id == user_id, CashTransaction.ref_key == key)
+        .first()
+        is not None
+    )
+
+
+def credit(
+    db: Session,
+    user_id: int,
+    currency: str,
+    delta: float,
+    kind: str = "adjust",
+    label: str = "",
+    ref_key: str = "",
+) -> float:
     """Cộng `delta` (>=0) vào quỹ `currency` — bán tài sản / đáo hạn / nạp tiền. Trả số dư mới."""
     cur = currency if currency in _DEC else CUR_VND
     delta = _round(delta, cur)
@@ -87,7 +118,7 @@ def credit(db: Session, user_id: int, currency: str, delta: float, kind: str = "
         return get_balance(db, user_id, cur)
     old = get_balance(db, user_id, cur)
     new = _write(db, user_id, cur, old + delta)
-    _log(db, user_id, cur, delta, new, kind, label)
+    _log(db, user_id, cur, delta, new, kind, label, ref_key)
     return new
 
 

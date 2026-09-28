@@ -12,14 +12,18 @@ từ dữ liệu THẬT (không tạo dữ liệu giả trong production). Các 
 Yêu cầu đăng nhập (JWT). Data model: ``AssetEvent`` (app/models.py) — bảng sẵn sàng
 để lưu/persist nếu cần; API hiện tại tính trực tiếp từ nguồn thật để luôn mới & trung thực.
 
-GET /api/asset-events/upcoming — Lịch sự kiện SẮP DIỄN RA của nhóm cổ phiếu vốn hoá lớn
-(PUBLIC, KHÔNG cần đăng nhập) — dùng cho block "Lịch sự kiện thị trường" ở trang Thị trường.
-Chỉ trả sự kiện có ngày trong TƯƠNG LAI (sắp diễn ra trước); có cache + warm lúc startup.
+GET /api/asset-events/upcoming — Lịch sự kiện SẮP DIỄN RA của TOÀN BỘ cổ phiếu trên 3 sàn
+(HOSE/HNX/UPCOM) — PUBLIC, KHÔNG cần đăng nhập — dùng cho block "Lịch sự kiện thị trường" ở
+trang Thị trường. Nguồn: bảng sự kiện quyền toàn thị trường VNDirect (`dividend_adjust`),
+snapshot dựng lại vào **12h trưa (giờ VN) hằng ngày** (thread nền `start_daily_refresh`).
 """
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+import re
+import threading
+import time
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -28,6 +32,7 @@ from app.core.config import settings
 from app.core.dependencies import get_current_user
 from app.db import get_db
 from app.models import News, NewsStatusEnum, User
+from app.services import dividend_adjust
 from app.services import news_time
 from app.services import vnstock_service as vns
 from app.services.alert_service import alert_service
@@ -209,39 +214,188 @@ def _market_universe(limit: int) -> list[str]:
     return syms[:limit]
 
 
-def get_upcoming_events(limit: int = 5, universe: int = 0) -> list[dict]:
-    """Sự kiện SẮP DIỄN RA (ngày sự kiện >= hôm nay) của nhóm cổ phiếu vốn hoá lớn.
+# ---------------------------------------------------------------------------
+# LỊCH SỰ KIỆN THỊ TRƯỜNG — TOÀN BỘ CỔ PHIẾU 3 SÀN, LÀM MỚI 12H TRƯA HẰNG NGÀY
+# ---------------------------------------------------------------------------
+# Nguồn: bảng sự kiện quyền TOÀN THỊ TRƯỜNG của VNDirect finfo
+# (`dividend_adjust.calendar_events` — 2 request cho mọi mã, có file cache + backoff khi
+# nguồn lỗi) ⇒ phủ đủ HOSE/HNX/UPCOM mà KHÔNG phải quét từng mã (800+ mã là bất khả thi).
+# Snapshot được dựng lại vào 12h trưa (giờ VN) mỗi ngày: trước 12h dùng bản 12h HÔM QUA,
+# từ 12h dùng bản mới. Xem `_snapshot_day()` + `start_daily_refresh()`.
+_EVENTS_SNAPSHOT_KEY = "asset-events-upcoming:market"
+_EVENTS_FALLBACK_TTL = 600          # nguồn lỗi ⇒ thử lại sau 10 phút (dùng danh sách dự phòng)
+_EVENTS_MAX_LIMIT = 60              # số sự kiện tối đa trả về cho block
+_EVENTS_REFRESH_LOCK = threading.Lock()
+_EVENTS_REFRESH_STARTED = False
 
-    Nguồn THẬT: lịch cổ tức / chốt quyền / chia tách / phát hành (Simplize dividendPayment,
-    đã có cache 24h theo mã). Chỉ trả sự kiện có ngày trong TƯƠNG LAI, sắp diễn ra trước.
-    Kết quả được cache để không phải quét lại toàn bộ nhóm mã ở mỗi request.
+
+def _snapshot_day(now: datetime | None = None) -> str:
+    """Mốc snapshot lịch sự kiện: 12h trưa hôm nay — trước 12h vẫn tính mốc 12h HÔM QUA."""
+    now = now or news_time.now_vn()
+    day = now.date() if now.hour >= settings.asset_event_refresh_hour else now.date() - timedelta(days=1)
+    return day.isoformat()
+
+
+def _vn_dmy(iso: str) -> str:
+    """'2026-10-05' → '05/10/2026' (rỗng nếu không phải ISO ngày)."""
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})", iso or "")
+    return f"{m.group(3)}/{m.group(2)}/{m.group(1)}" if m else ""
+
+
+def _market_event(sym: str, raw: dict) -> dict:
+    """1 đợt sự kiện quyền (VNDirect) → sự kiện cho block "Lịch sự kiện thị trường"."""
+    cash = float(raw.get("cash") or 0)
+    stock_pct = float(raw.get("stock_pct") or 0)
+    ex_date = str(raw.get("date") or "")[:10]        # ngày GDKHQ = mốc sự kiện
+    pay_date = str(raw.get("pay_date") or "")[:10]
+    parts: list[str] = []
+    if cash > 0:
+        parts.append("Cổ tức tiền mặt " + f"{cash:,.0f}".replace(",", ".") + " đ/CP")
+    if stock_pct > 0:
+        parts.append(f"Cổ tức/thưởng cổ phiếu {stock_pct:g}%")
+    desc = " · ".join(parts)
+    if ex_date:
+        desc += (" · " if desc else "") + "Ngày GDKHQ: " + _vn_dmy(ex_date)
+    if pay_date:
+        desc += (" · " if desc else "") + "Ngày trả: " + _vn_dmy(pay_date)
+    if stock_pct > 0 and cash <= 0:
+        etype, title = "STOCK_SPLIT", f"Chia tách cổ phiếu {sym}"
+    else:
+        etype, title = "DIVIDEND", f"Cổ tức {sym}"
+    return _mk(
+        sym, etype, title, desc, ex_date,
+        {"source": "vndirect-events", "ex_date": ex_date, "pay_date": pay_date or None,
+         "cash": cash, "stock_pct": stock_pct},
+        sort_date=ex_date,
+    )
+
+
+def _build_market_events() -> list[dict] | None:
+    """Mọi sự kiện quyền SẮP TỚI của TOÀN BỘ cổ phiếu HOSE/HNX/UPCOM (nguồn VNDirect).
+
+    None = CHƯA lấy được nguồn (caller tự quyết định fallback); [] = nguồn OK nhưng không
+    có sự kiện nào từ hôm nay trở đi.
     """
-    n = universe or settings.asset_event_upcoming_universe
-    cache_key = f"asset-events-upcoming:{n}:{limit}"
-    cached = vns.cache.get(cache_key)
-    if cached is not None:
-        return cached
-
+    try:
+        calendar = dividend_adjust.calendar_events(force=True)
+    except Exception:  # noqa: BLE001 — nguồn ngoài lỗi không được làm hỏng trang
+        return None
+    if calendar is None:
+        return None
+    today = news_time.now_vn().date().isoformat()
     events: list[dict] = []
-    syms = _market_universe(n)
-    if syms:
-        with ThreadPoolExecutor(max_workers=12) as ex:
-            for _sym, evs in zip(syms, ex.map(_dividend_events, syms)):
-                events.extend(evs)
+    for sym, rows in calendar.items():
+        if not isinstance(rows, list):
+            continue
+        for raw in rows:
+            if not isinstance(raw, dict):
+                continue
+            ex_date = str(raw.get("date") or "")[:10]
+            if not ex_date or ex_date < today:
+                continue  # chỉ giữ sự kiện từ hôm nay trở đi
+            events.append(_market_event(str(sym).upper(), raw))
+    events.sort(key=lambda e: (e.get("event_date") or "", e["symbol"]))
+    return events
 
+
+def _legacy_market_events(universe: int) -> list[dict]:
+    """Dự phòng khi nguồn toàn thị trường lỗi: quét cổ tức VN30 + top vốn hoá (cách cũ)."""
+    events: list[dict] = []
+    syms = _market_universe(universe)
+    if not syms:
+        return events
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        for _sym, evs in zip(syms, ex.map(_dividend_events, syms)):
+            events.extend(evs)
     today = news_time.now_vn().date().isoformat()
     upcoming = [e for e in events if (e.get("event_date") or "")[:10] >= today]
     upcoming.sort(key=lambda e: e.get("event_date") or "")
-    out = upcoming[: max(1, min(limit, 50))]
-    vns.cache.set(cache_key, out, ttl_seconds=settings.asset_event_upcoming_ttl)
-    return out
+    return upcoming
+
+
+def _upcoming_snapshot(universe: int = 0) -> list[dict]:
+    """Snapshot (cache) lịch sự kiện sắp tới toàn thị trường theo mốc 12h trưa."""
+    n = universe or settings.asset_event_upcoming_universe
+    cache_key = f"{_EVENTS_SNAPSHOT_KEY}:{_snapshot_day()}"
+    cached = vns.cache.get(cache_key)
+    if cached is None:
+        market = _build_market_events()
+        if market is None:  # nguồn lỗi → dùng dự phòng, thử lại sau 10 phút
+            cached = _legacy_market_events(n)
+            vns.cache.set(cache_key, cached, ttl_seconds=_EVENTS_FALLBACK_TTL)
+        else:
+            cached = market
+            vns.cache.set(cache_key, cached, ttl_seconds=settings.asset_event_upcoming_ttl)
+    return cached
+
+
+def get_upcoming_events(limit: int = 5, universe: int = 0) -> list[dict]:
+    """Sự kiện SẮP DIỄN RA của TOÀN BỘ cổ phiếu trên 3 sàn (HOSE/HNX/UPCOM).
+
+    Nguồn THẬT: bảng sự kiện quyền toàn thị trường VNDirect — chốt quyền / cổ tức tiền mặt /
+    cổ tức-thưởng bằng cổ phiếu (xem `_build_market_events`). Một snapshot dùng chung cho mọi
+    mã, thay cho việc quét từng mã.
+
+    Snapshot dựng lại vào **12h trưa (giờ VN) hằng ngày** (`refresh_upcoming_events` chạy
+    trong thread nền + `_snapshot_day()` đổi mốc đúng 12h) ⇒ trước 12h dùng bản của 12h hôm
+    qua, từ 12h trở đi là dữ liệu mới. Nguồn lỗi ⇒ tạm dùng danh sách dự phòng VN30 + top
+    vốn hoá và thử lại sau 10 phút.
+    """
+    return _upcoming_snapshot(universe)[: max(1, min(limit, _EVENTS_MAX_LIMIT))]
+
+
+def refresh_upcoming_events() -> int:
+    """Dựng lại snapshot lịch sự kiện toàn thị trường NGAY (bỏ qua cache).
+
+    Gọi bởi scheduler 12h trưa hằng ngày và lúc warm startup. Trả số sự kiện sắp tới;
+    trả 0 nếu nguồn lỗi (KHÔNG ghi đè snapshot cũ để block vẫn còn dữ liệu).
+    """
+    events = _build_market_events()
+    if events is None:
+        return 0
+    vns.cache.set(
+        f"{_EVENTS_SNAPSHOT_KEY}:{_snapshot_day()}",
+        events,
+        ttl_seconds=settings.asset_event_upcoming_ttl,
+    )
+    return len(events)
+
+
+def _seconds_until_refresh() -> float:
+    """Số giây tới mốc làm mới kế tiếp (12h trưa giờ VN)."""
+    now = news_time.now_vn()
+    target = now.replace(hour=settings.asset_event_refresh_hour, minute=0, second=0, microsecond=0)
+    if target <= now:
+        target += timedelta(days=1)
+    return max(1.0, (target - now).total_seconds())
+
+
+def _refresh_loop() -> None:
+    """Thread nền: ngủ tới 12h trưa rồi dựng lại snapshot, lặp lại mỗi ngày."""
+    while True:
+        try:
+            time.sleep(_seconds_until_refresh())
+            refresh_upcoming_events()
+        except Exception:  # noqa: BLE001 — không để thread chết vì lỗi nguồn
+            time.sleep(300)
+
+
+def start_daily_refresh() -> None:
+    """Bật làm mới lịch sự kiện toàn thị trường vào 12h trưa (giờ VN) mỗi ngày (idempotent)."""
+    global _EVENTS_REFRESH_STARTED
+    with _EVENTS_REFRESH_LOCK:
+        if _EVENTS_REFRESH_STARTED:
+            return
+        _EVENTS_REFRESH_STARTED = True
+    threading.Thread(target=_refresh_loop, daemon=True, name="asset-events-daily").start()
 
 
 @router.get("/upcoming")
 def upcoming_events(limit: int = 5, universe: int = 0):
-    """Lịch sự kiện SẮP DIỄN RA của nhóm cổ phiếu vốn hoá lớn (PUBLIC, không cần đăng nhập).
+    """Lịch sự kiện SẮP DIỄN RA của TOÀN BỘ cổ phiếu 3 sàn HOSE/HNX/UPCOM (PUBLIC).
 
-    Dùng cho block "Lịch sự kiện thị trường" ở trang Thị trường.
+    Dùng cho block "Lịch sự kiện thị trường" ở trang Thị trường — snapshot toàn thị trường
+    được dựng lại vào 12h trưa (giờ VN) hằng ngày.
     """
     return get_upcoming_events(limit, universe)
 

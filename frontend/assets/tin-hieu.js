@@ -183,7 +183,7 @@
 
     function rowHtml(r) {
         return '<tr onclick="sigOpenDetail(' + r.id + ')" title="Xem chi tiết &amp; lý do hình thành tín hiệu">' +
-            '<td><b>' + esc(r.symbol) + '</b></td>' +
+            '<td><b>' + esc(r.symbol) + '</b><span data-div="' + esc(r.symbol) + '"></span></td>' +
             '<td>' + esc(STRATEGY_LABEL[r.strategy] || r.strategy || '—') + '</td>' +
             '<td>' + signalHtml(r.signal) + '</td>' +
             '<td>' + num(r.score, 1) + '</td>' +

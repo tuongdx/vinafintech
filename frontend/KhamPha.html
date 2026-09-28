@@ -228,6 +228,28 @@
         .kp-table .rk-score.s50 { color: #f5a623; }
         .kp-table .rk-score.s0 { color: #d0314e; }
 
+        /* Nhãn REALTIME + mốc thời gian của block xếp hạng */
+        .kp-live {
+            display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; vertical-align: middle;
+            font-size: 10.5px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+            color: #008080; background: rgba(0, 128, 128, 0.10); border: 1px solid rgba(0, 128, 128, 0.30);
+            border-radius: 20px; padding: 3px 9px;
+        }
+        .kp-live i { font-size: 7px; animation: kpPulse 1.6s ease-in-out infinite; }
+        @keyframes kpPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.22; } }
+        .kp-live.paused { color: #b07800; background: rgba(245, 166, 35, 0.12); border-color: rgba(245, 166, 35, 0.35); }
+        .kp-live.paused i { animation: none; }
+        .kp-rank-foot {
+            margin-top: 10px; font-size: 11.5px; color: #8a99b1;
+            display: flex; justify-content: flex-end; align-items: center; gap: 6px; text-align: right;
+        }
+        .kp-rank-foot b { color: #4a5a72; font-weight: 700; }
+        /* Nhấp nháy ô giá khi số vừa đổi ở lần cập nhật realtime */
+        .kp-table tbody td.cell-up { animation: kpCellUp 1.2s ease-out; }
+        .kp-table tbody td.cell-down { animation: kpCellDown 1.2s ease-out; }
+        @keyframes kpCellUp { 0% { background: rgba(0, 128, 128, 0.22); } 100% { background: transparent; } }
+        @keyframes kpCellDown { 0% { background: rgba(208, 49, 78, 0.20); } 100% { background: transparent; } }
+
         /* ===== AI side ===== */
         .kp-ai {
             background: linear-gradient(180deg, #fff, #f0fbf9);
@@ -296,6 +318,10 @@
         body.dark-mode .kp-table tbody td { border-bottom-color: #21262d; }
         body.dark-mode .kp-table tbody tr:hover { background: #1a1f26; }
         body.dark-mode .kp-table .rk-name { color: #8b949e; }
+        body.dark-mode .kp-live { color: #4dd8c4; background: rgba(77, 216, 196, 0.12); border-color: rgba(77, 216, 196, 0.35); }
+        body.dark-mode .kp-live.paused { color: #e6c36a; background: rgba(230, 195, 106, 0.12); border-color: rgba(230, 195, 106, 0.35); }
+        body.dark-mode .kp-rank-foot { color: #8b949e; }
+        body.dark-mode .kp-rank-foot b { color: #adbac7; }
         body.dark-mode .kp-ai { background: #161b22; border-color: rgba(0,128,128,0.4); }
         body.dark-mode .kp-ai textarea { background: #0d1117; border-color: #30363d; color: #e6edf3; }
         body.dark-mode .kp-ai .ka-prompt { background: #0d1117; border-color: #30363d; color: #adbac7; }
@@ -366,9 +392,10 @@
 
         <!-- XẾP HẠNG -->
         <section class="kp-sec">
-            <h2>Xếp hạng TuniX</h2>
+            <h2>Xếp hạng TuniX<span class="kp-live" id="kpRankLive"><i class="fas fa-circle"></i> Realtime</span></h2>
             <div class="kp-rank-tabs" id="kpRankTabs"></div>
             <div class="kp-table-wrap" id="kpRank"></div>
+            <div class="kp-rank-foot" id="kpRankAsOf"></div>
         </section>
     </div>
 
@@ -384,6 +411,11 @@
             const sparkCache = {};
             let rankings = [];
             let activeRank = 'growth';
+            // ---- Trạng thái cập nhật realtime của block "Xếp hạng TuniX" ----
+            const RANK_POLL_MS = 30000;   // chu kỳ làm mới giá/% thay đổi
+            let rankAsOf = '';            // mốc dữ liệu bảng giá (ISO) do server trả về
+            let rankCells = {};           // { tab: { symbol: {price, pct} } } — so sánh để nhấp nháy
+            let rankTimer = null, rankInFlight = false, rankVisible = false;
 
             function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
             function fmt(v, d) { const n = Number(v); if (!isFinite(n) || n === 0) return '--'; return n.toLocaleString('vi-VN', { maximumFractionDigits: d == null ? 2 : d }); }
@@ -859,25 +891,34 @@
                 const fk = RANK_FEATURE[rk.key];
                 const locked = gate ? !gate.featureOpen(fk || rk.key) : false;
                 const showScoreCol = rk.key !== 'score'; // tab "Top Score" không lặp cột Score
+                const prevCells = rankCells[rk.key] || {};
+                const nextCells = {};
                 const tableHtml = '<table class="kp-table">' +
                     '<thead><tr><th>#</th><th>Mã</th><th>Tên</th><th>Giá</th><th>% thay đổi</th><th>' + esc(rk.metric) + '</th>' + (showScoreCol ? '<th>Score</th>' : '') + '</tr></thead>' +
-                    '<tbody>' + rk.rows.map(function(r, i) {
+                    '<tbody>' + (rk.rows || []).map(function(r, i) {
                         let valHtml;
                         if (rk.key === 'valuation') valHtml = r.value > 0 ? '<span class="rk-val">' + fmt(r.value, 1) + '</span>' : '<span class="rk-val">--</span>';
                         else if (rk.key === 'cash_flow') valHtml = r.value > 0 ? '<span class="rk-val pos">' + fmt(r.value, 2) + '%</span>' : '<span class="rk-val">--</span>';
                         else if (rk.key === 'score') valHtml = '<span class="rk-val">' + r.value + '</span>';
                         else valHtml = '<span class="rk-val ' + cls(r.value) + '">' + pct(r.value) + '</span>';
                         const scls = (r.score || 0) >= 70 ? 's70' : (r.score || 0) >= 50 ? 's50' : 's0';
+                        // So với lần render trước của CHÍNH tab này → nhấp nháy ô giá vừa đổi.
+                        const cur = { price: Number(r.price) || 0, pct: Number(r.percent_change) || 0 };
+                        const prev = prevCells[r.symbol];
+                        nextCells[r.symbol] = cur;
+                        let priceCls = '';
+                        if (prev && prev.price !== cur.price) priceCls = cur.price >= prev.price ? 'cell-up' : 'cell-down';
                         return '<tr data-symbol="' + esc(r.symbol) + '">' +
                             '<td class="rk-rank">' + (i + 1) + '</td>' +
-                            '<td class="rk-sym">' + esc(r.symbol) + '</td>' +
+                            '<td class="rk-sym">' + esc(r.symbol) + '<span data-div="' + esc(r.symbol) + '"></span></td>' +
                             '<td class="rk-name" title="' + esc(r.name) + '">' + esc(r.name) + '</td>' +
-                            '<td>' + fmt(r.price, 0) + '</td>' +
+                            '<td' + (priceCls ? ' class="' + priceCls + '"' : '') + '>' + fmt(r.price, 0) + '</td>' +
                             '<td class="' + cls(r.percent_change) + '">' + pct(r.percent_change) + '</td>' +
                             '<td>' + valHtml + '</td>' +
                             (showScoreCol ? '<td class="rk-score ' + scls + '">' + (r.score || 0) + '</td>' : '') +
                         '</tr>';
                     }).join('') + '</tbody></table>';
+                rankCells[rk.key] = nextCells;
                 // Free + tab bị khóa → bọc bảng vào zone rồi làm mờ (thanh tab ở trên vẫn thấy).
                 rankEl.innerHTML = locked ? '<div class="rk-zone">' + tableHtml + '</div>' : tableHtml;
                 if (!locked) {
@@ -888,6 +929,86 @@
                     const zone = rankEl.querySelector('.rk-zone');
                     if (zone) gate.lockBlur(zone, true);
                 }
+            }
+
+            // ---------- Xếp hạng realtime (polling) ----------
+            // Giá/% thay đổi được làm mới từ bảng giá thị trường qua endpoint nhẹ
+            // /api/stocks/stock-rankings. Chỉ poll khi block ĐANG hiển thị (tiết kiệm
+            // request khi người dùng còn ở đầu trang hoặc đã chuyển trang khác).
+            function setRankLive(ok) {
+                const el = document.getElementById('kpRankLive');
+                if (!el) return;
+                el.classList.toggle('paused', !ok);
+                el.innerHTML = ok
+                    ? '<i class="fas fa-circle"></i> Realtime'
+                    : '<i class="fas fa-circle"></i> Tạm dừng';
+            }
+            function parseIsoFlexKp(t) {
+                // ISO của Python có thể có 6 chữ số phần giây (.022147) → V8 Date.parse
+                // trả NaN, nên cắt về 3 chữ số (mili-giây) trước khi parse.
+                if (!t) return NaN;
+                return Date.parse(String(t).replace(/(\.\d{3})\d+/, '$1'));
+            }
+            function fmtVnSecKp(t) {
+                const ms = parseIsoFlexKp(t);
+                if (isNaN(ms)) return '';
+                const vn = new Date(ms + 7 * 3600 * 1000); // VN = UTC+7
+                return pad2(vn.getUTCDate()) + '/' + pad2(vn.getUTCMonth() + 1) + '/' + vn.getUTCFullYear()
+                    + ' · ' + pad2(vn.getUTCHours()) + ':' + pad2(vn.getUTCMinutes()) + ':' + pad2(vn.getUTCSeconds());
+            }
+            function renderRankAsOf(d) {
+                const el = document.getElementById('kpRankAsOf');
+                if (!el) return;
+                const market = fmtVnSecKp(rankAsOf);            // mốc dữ liệu thị trường (nếu có)
+                const fetched = fmtVnSecKp(d && d.updated_at);  // thời điểm server lấy bảng giá
+                const txt = market ? 'Dữ liệu bảng giá: <b>' + esc(market) + '</b>'
+                    : (fetched ? 'Cập nhật: <b>' + esc(fetched) + '</b>' : '');
+                const liveCount = (d && d.live_rows != null && d.total_rows)
+                    ? (d.live_rows + '/' + d.total_rows + ' mã có giá realtime') : '';
+                el.innerHTML = '<i class="far fa-clock"></i> ' + txt
+                    + (liveCount ? ' · ' + esc(liveCount) : '')
+                    + ' · tự động làm mới mỗi ' + (RANK_POLL_MS / 1000) + ' giây';
+            }
+            async function refreshRankings() {
+                if (rankInFlight) return;
+                rankInFlight = true;
+                try {
+                    const res = await fetch('/api/stocks/stock-rankings', { cache: 'no-store' });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const d = await res.json();
+                    if (!Array.isArray(d.rankings) || !d.rankings.length) throw new Error('empty');
+                    rankings = d.rankings;
+                    rankAsOf = d.as_of || '';
+                    renderRankTabs();
+                    renderRankTable();
+                    renderRankAsOf(d);
+                    setRankLive(true);
+                    notifyParentHeight();
+                } catch (e) {
+                    // Lỗi mạng/nguồn dữ liệu: giữ nguyên số liệu cũ, chỉ báo đang tạm dừng.
+                    setRankLive(false);
+                } finally {
+                    rankInFlight = false;
+                }
+            }
+            function startRankPolling() {
+                if (rankTimer) return;
+                rankTimer = setInterval(function() {
+                    if (document.hidden || !rankVisible) return;
+                    refreshRankings();
+                }, RANK_POLL_MS);
+            }
+            function watchRankVisibility() {
+                const target = rankEl ? (rankEl.parentElement || rankEl) : null;
+                if (!target || !window.IntersectionObserver) { rankVisible = true; return; }
+                const io = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(e) { rankVisible = e.isIntersecting; });
+                    if (rankVisible) refreshRankings();   // vừa cuộn tới → đồng bộ ngay
+                }, { threshold: 0.01 });
+                io.observe(target);
+                document.addEventListener('visibilitychange', function() {
+                    if (!document.hidden && rankVisible) refreshRankings();
+                });
             }
 
             // ---------- AI ----------
@@ -948,6 +1069,13 @@
                     rankings = d.rankings || [];
                     renderRankTabs();
                     renderRankTable();
+                    renderRankAsOf(null);
+                    // Xếp hạng: bật vòng cập nhật realtime (giá/% thay đổi theo bảng giá).
+                    // Gọi 1 lần ngay sau khi trang tải xong để block đã có giá realtime
+                    // trước khi người dùng cuộn tới; sau đó chỉ poll khi block hiển thị.
+                    watchRankVisibility();
+                    startRankPolling();
+                    refreshRankings();
                     renderPrompts(d.ai_prompts || []);
                 } catch (e) {
                     featuredEl.innerHTML = '<div class="kp-empty">Không tải được dữ liệu. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
@@ -992,6 +1120,7 @@
             load();
         })();
     </script>
-    <script src="/static/context-menu.js?v=20260827a"></script>
+    <script src="/static/context-menu.js?v=20260928a"></script>
+    <script src="/static/dividend-badge.js?v=20260926c"></script>
 </body>
 </html>

@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 from fastapi.responses import Response
+import re
 
+from app.services import dividend_adjust
 from app.services.opportunity_service import get_top_opportunities
 from app.services.support_resistance import sr_service
 from app.services.vnstock_service import (
@@ -28,6 +30,7 @@ from app.services.vnstock_service import (
     get_stock_discover_page,
     get_stock_fundamentals,
     get_stock_lists,
+    get_stock_rankings_live,
     get_stock_screener_page,
     get_top_stocks,
     get_watchlist,
@@ -194,6 +197,27 @@ def stock_lists():
 def stock_screener():
     """Toàn bộ screener kèm điểm TuniX + nhóm 'Cổ phiếu nổi bật' cho trang Cổ phiếu."""
     return get_stock_screener_page()
+
+
+@router.get("/upcoming-dividends")
+def upcoming_dividends(symbols: str = ""):
+    """Cổ tức SẮP chia của danh sách mã — PUBLIC, không cần đăng nhập.
+
+    Dùng cho nhãn "Sắp chia cổ tức" ở mọi bảng trong toàn site.
+    Trả {MÃ: {date, ex_date, pay_date, cash, stock_pct, label}} — chỉ gồm mã đang trong
+    cửa sổ hiển thị: **5 ngày trước ngày GDKHQ → hết ngày GDKHQ** (xem
+    `dividend_adjust._in_upcoming_window`); hết ngày GDKHQ là tự mất.
+    CHỈ đọc dữ liệu đã cache (RAM/.cache) để trả về nhanh; mã chưa có được nạp nền.
+    """
+    syms = [s for s in re.split(r"[,\s]+", symbols or "") if s][:150]
+    return dividend_adjust.upcoming_for(syms)
+
+
+@router.get("/stock-rankings")
+def stock_rankings():
+    """Bảng xếp hạng TuniX REALTIME (5 bảng × 8 dòng) cho block "Xếp hạng TuniX"
+    ở trang Khám phá: giá/% thay đổi lấy từ bảng giá, endpoint nhẹ để poll định kỳ."""
+    return get_stock_rankings_live()
 
 
 @router.get("/stock-discover")

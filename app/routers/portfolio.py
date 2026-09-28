@@ -7,6 +7,7 @@
 Yêu cầu đăng nhập (JWT). Giá/lãi-lỗ lấy realtime từ vnstock_service (get_quote, cache 15s).
 """
 from concurrent.futures import ThreadPoolExecutor
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,10 +18,12 @@ from app.db import get_db
 from app.models import PortfolioHolding, User
 from app.schemas import PortfolioHoldingCreate, PortfolioHoldingOut, PortfolioHoldingUpdate, PortfolioSell
 from app.services import cash_service
+from app.services import dividend_adjust
 from app.services import portfolio_performance as pps
 from app.services import vnstock_service as vns
 from app.services.alert_service import alert_service
 
+logger = logging.getLogger("tunix.portfolio")
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
 
@@ -41,10 +44,27 @@ def _quote_parts(symbol: str) -> dict[str, Any]:
     return {"name": symbol, "exchange": "", "price": 0.0, "change": 0.0, "percent_change": 0.0}
 
 
-def _enrich(row: PortfolioHolding, quote: dict[str, Any] | None) -> PortfolioHoldingOut:
+def _enrich(
+    row: PortfolioHolding,
+    quote: dict[str, Any] | None,
+    adj: dict[str, Any] | None = None,
+) -> PortfolioHoldingOut:
+    """Vị thế + giá realtime + lãi/lỗ, ĐÃ ĐIỀU CHỈNH theo cổ tức/chia tách sau ngày mua.
+
+    `quantity`/`avg_price` trả về là bản ĐÃ ĐIỀU CHỈNH (cổ tức tiền mặt làm giảm giá vốn,
+    cổ tức/thưởng bằng cổ phiếu làm tăng số lượng) để lãi/lỗ không sai sau ngày chốt quyền.
+    Số liệu gốc người dùng nhập nằm ở `raw_quantity`/`raw_avg_price` (dùng khi sửa/bán).
+    `adj` có thể được tính sẵn (song song) — xem _enriched_holdings.
+    """
     parts = quote or _quote_parts(row.symbol)
-    quantity = float(row.quantity or 0)
-    avg_price = float(row.avg_price or 0)
+    raw_quantity = float(row.quantity or 0)
+    raw_avg_price = float(row.avg_price or 0)
+    if adj is None:
+        # Mốc so sánh = lần cập nhật CUỐI của vị thế: nếu người dùng đã tự ghi nhận cổ tức
+        # (sửa số lượng/giá vốn) thì các đợt trước đó KHÔNG bị trừ lại lần nữa.
+        adj = dividend_adjust.adjust_position(row.symbol, raw_quantity, raw_avg_price, row.updated_at or row.created_at)
+    quantity = float(adj.get("quantity") or 0)
+    avg_price = float(adj.get("avg_price") or 0)
     price = float(parts.get("price") or 0)
     market_value = round(quantity * price, 2)
     cost = round(quantity * avg_price, 2)
@@ -57,6 +77,9 @@ def _enrich(row: PortfolioHolding, quote: dict[str, Any] | None) -> PortfolioHol
         exchange=parts.get("exchange") or "",
         quantity=quantity,
         avg_price=avg_price,
+        raw_quantity=raw_quantity,
+        raw_avg_price=raw_avg_price,
+        adjustment=dividend_adjust.adjustment_out(adj),
         price=price,
         change=float(parts.get("change") or 0),
         percent_change=float(parts.get("percent_change") or 0),
@@ -88,11 +111,37 @@ def _enriched_holdings(db: Session, user: User) -> list[PortfolioHoldingOut]:
                     quotes[futures[fut]] = fut.result()
                 except Exception:
                     pass
-    return [_enrich(r, quotes.get(r.symbol)) for r in rows]
+    # Điều chỉnh cổ tức cũng SONG SONG: mỗi mã phải tra lịch cổ tức (nguồn ngoài, cache 24h)
+    # → chạy tuần tự sẽ rất chậm ở lần đầu (cache lạnh) với danh mục nhiều mã.
+    adjustments: dict[int, dict[str, Any]] = {}
+    if rows:
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            adj_futures = {
+                pool.submit(
+                    dividend_adjust.adjust_position,
+                    r.symbol,
+                    float(r.quantity or 0),
+                    float(r.avg_price or 0),
+                    r.updated_at or r.created_at,
+                ): r.id
+                for r in rows
+            }
+            for fut in adj_futures:
+                try:
+                    adjustments[adj_futures[fut]] = fut.result()
+                except Exception:
+                    pass
+    return [_enrich(r, quotes.get(r.symbol), adjustments.get(r.id)) for r in rows]
 
 
 @router.get("", response_model=list[PortfolioHoldingOut])
 def list_portfolio(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    # Đến NGÀY CHIA cổ tức tiền → tự cộng vào quỹ Tiền mặt VND (idempotent, chống cộng trùng
+    # bằng cash_transactions.ref_key). Lỗi nguồn ngoài KHÔNG được làm hỏng trang danh mục.
+    try:
+        dividend_adjust.credit_dividend_cash(db, user.id)
+    except Exception:  # noqa: BLE001
+        logger.debug("credit_dividend_cash failed", exc_info=True)
     return _enriched_holdings(db, user)
 
 
@@ -107,6 +156,52 @@ def portfolio_performance(db: Session = Depends(get_db), user: User = Depends(ge
         quotes_ok=ok,
         total_quotes=total,
     )
+
+
+@router.get("/position/{symbol}")
+def position_for_symbol(
+    symbol: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Vị thế của user ở MỘT mã (đã điều chỉnh cổ tức/chia tách) — dùng để vẽ "vạch vị thế"
+    (đường giá vốn) trên biểu đồ ở trang chi tiết cổ phiếu + chế độ toàn màn hình.
+
+    Không có vị thế → trả `has_position: false` (KHÔNG 404) để trang biểu đồ xử lý đơn giản.
+    Endpoint cố tình KHÔNG lấy quote realtime (biểu đồ đã có giá) và KHÔNG lấy toàn bộ danh mục
+    ⇒ nhanh, không phụ thuộc nguồn giá ngoài.
+    """
+    sym = (symbol or "").strip().upper()
+    if not sym or len(sym) > 20:
+        raise HTTPException(status_code=400, detail="Mã cổ phiếu không hợp lệ.")
+    row = (
+        db.query(PortfolioHolding)
+        .filter(PortfolioHolding.user_id == user.id, PortfolioHolding.symbol == sym)
+        .first()
+    )
+    if not row:
+        return {"symbol": sym, "has_position": False}
+    raw_qty = float(row.quantity or 0)
+    raw_avg = float(row.avg_price or 0)
+    try:
+        adj = dividend_adjust.adjust_position(sym, raw_qty, raw_avg, row.updated_at or row.created_at)
+    except Exception:  # noqa: BLE001 — lỗi nguồn ngoài không được làm hỏng biểu đồ
+        logger.debug("adjust_position failed for %s", sym, exc_info=True)
+        adj = {}
+    qty = float(adj.get("quantity") or raw_qty)
+    avg = float(adj.get("avg_price") or raw_avg)
+    return {
+        "symbol": sym,
+        "has_position": bool(qty > 0 and avg > 0),
+        "quantity": qty,
+        "avg_price": avg,
+        "raw_quantity": raw_qty,
+        "raw_avg_price": raw_avg,
+        "cost": round(qty * avg, 2),
+        # Cổ tức đã chốt quyền nhưng chưa tới ngày chia (hiển thị thêm trong badge nếu có).
+        "pending_shares": float(adj.get("pending_shares") or 0),
+        "pending_cash": float(adj.get("pending_cash") or 0),
+    }
 
 
 @router.post("", response_model=PortfolioHoldingOut)

@@ -1871,31 +1871,32 @@ def _get_watchlist_sparklines() -> dict[str, list[dict[str, Any]]]:
 def get_watchlist() -> list[dict[str, Any]]:
     """Danh sách cổ phiếu trong VN30: 30 mã VN30 với dữ liệu thực tế từ Simplize.
 
-    Giá/khối lượng lấy realtime, P/E, P/B, thay đổi 7D lấy từ screener dataset,
-    sparkline 30D lấy từ lịch sử giá thực tế.
+    DÙNG CHUNG MỘT NGUỒN với các block khác của trang "Thị trường": snapshot screener
+    Simplize (bản đồ thị trường / độ rộng / radar / top tăng-giảm đều lấy từ đây) —
+    `priceCloseIntraDay` (giá), `pricePctChgIntraDay` (%HN), `priceReferrance` (tham chiếu),
+    `peRatio` / `pbRatio` (định giá), `pricePctChg7d`, `volume`.
+    KHÔNG trộn thêm quote realtime `/prices/last` nữa: nguồn đó có TTL 30s nên cùng một mã
+    sẽ lệch giá/% so với các block dùng screener (TTL 30 phút) trong cùng một phiên.
+    Sparkline 30D vẫn lấy từ lịch sử giá thực tế.
     """
     dataset = _get_screener_dataset()
     screener = {str(row.get("ticker") or "").upper(): row for row in dataset}
-
-    cache_key = "watchlist-quotes"
-    live = cache.get(cache_key)
-    if live is None:
-        try:
-            live = _simplize_last("stock", _VN30_TICKERS)
-        except Exception:
-            live = {}
-        cache.set(cache_key, live, ttl_seconds=30)
 
     sparklines = _get_watchlist_sparklines()
 
     rows: list[dict[str, Any]] = []
     for ticker in _VN30_TICKERS:
         row = screener.get(ticker, {})
-        quote = live.get(ticker, {})
-        price = _to_float(quote.get("price")) or _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
-        change = _to_float(quote.get("netChange"))
-        pct = _to_float(quote.get("pctChange")) or _to_float(row.get("pricePctChgIntraDay"))
-        volume = _to_float(quote.get("volume")) or _to_float(row.get("volume"))
+        price = _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
+        reference = _to_float(row.get("priceReferrance"))
+        pct = _to_float(row.get("pricePctChgIntraDay"))
+        # Thay đổi tuyệt đối (đồng) — suy từ chính dữ liệu screener để không lệch với %HN.
+        if reference > 0 and price > 0:
+            change = price - reference
+        elif price > 0 and pct > -100:
+            change = price - price / (1 + pct / 100.0)
+        else:
+            change = 0.0
         rows.append(
             {
                 "symbol": ticker,
@@ -1905,11 +1906,11 @@ def get_watchlist() -> list[dict[str, Any]]:
                 "change": round(change, 2),
                 "percent_change": round(pct, 2),
                 "change_7d": round(_to_float(row.get("pricePctChg7d")), 2),
-                "volume": int(volume),
+                "volume": int(_to_float(row.get("volume"))),
                 "pe": round(_to_float(row.get("peRatio")), 2),
                 "pb": round(_to_float(row.get("pbRatio")), 2),
                 "sparkline": sparklines.get(ticker, []),
-                "source": "simplize",
+                "source": "simplize-screener",
             }
         )
     return rows
@@ -2368,6 +2369,34 @@ def get_top_stocks(tab: str = "breakout", period: str = "1w") -> list[dict[str, 
     return result
 
 
+def _symbol_sector_index() -> dict[str, dict[str, str]]:
+    """Bản đồ mã → {sector, sectorName, industry, industryName} (slug ngành) từ dataset
+    screener — cache 30 phút. Dùng để dựng URL đẹp cấp ngành
+    `/co-phieu/nganh/{sector}/{industry}/{MÃ}` NGAY từ kết quả tìm kiếm header."""
+    cached = cache.get("symbol-sector-index")
+    if cached is not None:
+        return cached
+    index: dict[str, dict[str, str]] = {}
+    try:
+        for row in _get_screener_dataset():
+            symbol = str(row.get("ticker") or "").strip().upper()
+            if not symbol or symbol in index:
+                continue
+            sector, sector_name, industry, industry_name = _override_sector_fields(symbol, row)
+            if not (sector and industry):
+                continue
+            index[symbol] = {
+                "sector": sector,
+                "sectorName": sector_name,
+                "industry": industry,
+                "industryName": industry_name,
+            }
+    except Exception:  # noqa: BLE001 — thiếu dữ liệu ngành vẫn phải tìm kiếm được bình thường
+        index = {}
+    cache.set("symbol-sector-index", index, ttl_seconds=1800)
+    return index
+
+
 def search_stocks(query: str) -> list[dict[str, Any]]:
     key = f"search:{query.lower()}"
     cached = cache.get(key)
@@ -2384,7 +2413,16 @@ def search_stocks(query: str) -> list[dict[str, Any]]:
             item["symbol"],
         )
     )
-    result = filtered[:20]
+    # Kèm slug ngành (nếu có) để client dựng được URL đẹp cấp ngành trực tiếp.
+    # LƯU Ý: copy dict — `directory` là cache dùng chung, KHÔNG được sửa item gốc.
+    sector_index = _symbol_sector_index()
+    result: list[dict[str, Any]] = []
+    for item in filtered[:20]:
+        row = dict(item)
+        info = sector_index.get(str(row.get("symbol") or "").upper())
+        if info:
+            row.update(info)
+        result.append(row)
     cache.set(key, result, ttl_seconds=300)
     return result
 
@@ -4707,6 +4745,190 @@ def get_stock_screener_page() -> dict[str, Any]:
     return payload
 
 
+# ---------------------------------------------------------------------------
+# XẾP HẠNG TUNIX (block "Xếp hạng TuniX" — trang "Khám phá")
+# ---------------------------------------------------------------------------
+# 5 bảng × 8 dòng. Thứ hạng + chỉ số cơ bản (tăng trưởng LN, P/E, cổ tức, TuniX
+# Score, EPS growth) lấy từ dataset screener (cập nhật theo phiên). Riêng
+# GIÁ / % THAY ĐỔI được làm mới từ bảng giá realtime (Simplize last-price) ⇒
+# bảng xếp hạng ĐỘNG, tự cập nhật trong phiên giao dịch.
+_RANK_RENDER_ROWS = 8
+# Số mã đầu mỗi bảng được lấy giá realtime rồi xếp lại (đủ rộng để thứ hạng đúng
+# khi giá biến động trong phiên nhưng vẫn nhẹ: ≤ 5 × 30 mã/lần làm mới).
+_RANK_REALTIME_WINDOW = 30
+# TTL bản xếp hạng realtime: ngắn để giá bám sát bảng giá, đủ dài để không spam nguồn.
+_RANK_LIVE_CACHE_TTL_SECONDS = 20
+_RANK_SCREENER_STOCKS_TTL_SECONDS = 120
+# Bảng "Top định giá" xếp theo P/E realtime (giá đổi trong phiên ⇒ P/E đổi).
+_RANK_TAB_META: list[tuple[str, str, str, str]] = [
+    ("growth", "Top tăng trưởng", "Tăng trưởng LN", "net_profit_growth"),
+    ("valuation", "Top định giá", "P/E", "pe_ratio"),
+    ("cash_flow", "Top dòng tiền", "Sức khỏe TC", "dividend_yield"),
+    ("score", "Top Score", "TuniX Score", "score"),
+    ("improve", "Top cải thiện", "Tăng trưởng dự kiến", "eps_growth"),
+]
+
+
+def _rank_candidate_pools(stocks: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    """5 nhóm ứng viên cho 5 bảng xếp hạng (đã sắp xếp theo chỉ số của chính bảng)."""
+    return {
+        "growth": sorted(
+            [s for s in stocks if s["net_profit_growth"] and s["net_profit_growth"] > 0],
+            key=lambda s: s["net_profit_growth"],
+            reverse=True,
+        ),
+        "valuation": sorted(
+            [s for s in stocks if s["pe_ratio"] and s["pe_ratio"] > 0 and s["pb_ratio"] and s["pb_ratio"] > 0],
+            key=lambda s: (s["pe_ratio"] + s["pb_ratio"]) + (s["ev_ebitda"] if s["ev_ebitda"] and s["ev_ebitda"] > 0 else 10),
+        ),
+        "cash_flow": sorted(
+            stocks,
+            key=lambda s: s["points"]["financial_health"] * 2 + s["points"]["dividend"] + (1 if s["dividend_yield"] and s["dividend_yield"] > 0 else 0),
+            reverse=True,
+        ),
+        "score": sorted(stocks, key=lambda s: s["score"], reverse=True),
+        "improve": sorted(
+            [s for s in stocks if s["eps_growth"] and s["eps_growth"] > 0],
+            key=lambda s: s["eps_growth"],
+            reverse=True,
+        ),
+    }
+
+
+# Mốc thời gian (ISO) của lần lấy bảng giá realtime gần nhất — dùng cho as_of.
+_rank_quotes_as_of: str = ""
+
+
+def _rank_live_quotes(symbols: list[str]) -> dict[str, dict[str, Any]]:
+    """Bảng giá realtime (Simplize last-price) cho danh sách mã — chia lô 120 mã/request."""
+    global _rank_quotes_as_of
+    uniq = sorted({str(s).strip().upper() for s in symbols if str(s).strip()})
+    if not uniq:
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    chunks = [uniq[i : i + 120] for i in range(0, len(uniq), 120)]
+    with ThreadPoolExecutor(max_workers=min(3, len(chunks))) as pool:
+        futures = [pool.submit(_simplize_last, "stock", chunk) for chunk in chunks]
+        for future in as_completed(futures):
+            try:
+                out.update(future.result() or {})
+            except Exception:
+                continue
+    if out:
+        latest = max((_to_float(row.get("date"), 0) for row in out.values()), default=0)
+        if latest > 0:
+            _rank_quotes_as_of = _unix_to_iso(latest)
+    return out
+
+
+def _build_tunix_rankings(stocks: list[dict[str, Any]], quote_loader=None) -> list[dict[str, Any]]:
+    """Dựng 5 bảng xếp hạng TuniX từ danh sách cổ phiếu (screener).
+
+    `quote_loader`: hàm nhận list mã → dict bảng giá realtime. Khi truyền vào, giá và
+    % thay đổi của mọi dòng được làm mới theo bảng giá, đồng thời bảng "Top định giá"
+    được xếp lại theo P/E realtime (P/E = giá realtime / EPS, EPS suy từ snapshot
+    screener) ⇒ xếp hạng đổi theo thị trường ngay trong phiên.
+    Không truyền `quote_loader` → hành vi cũ (dùng snapshot screener).
+    """
+    pools = _rank_candidate_pools(stocks)
+
+    quotes: dict[str, dict[str, Any]] = {}
+    if quote_loader is not None:
+        candidates: list[str] = []
+        for arr in pools.values():
+            candidates.extend(s["symbol"] for s in arr[:_RANK_REALTIME_WINDOW])
+        try:
+            quotes = quote_loader(candidates) or {}
+        except Exception:
+            quotes = {}
+
+    def _live_quote(s: dict[str, Any]) -> tuple[float, float, bool]:
+        """(giá, % thay đổi, là dữ liệu realtime?) — fallback về snapshot screener."""
+        q = quotes.get(s["symbol"]) or {}
+        price = _to_float(q.get("price")) if q else 0.0
+        if price > 0:
+            pct_raw = q.get("pctChange")
+            pct = _to_float(pct_raw) if pct_raw is not None else _to_float(s["percent_change"])
+            return price, pct, True
+        return _to_float(s["price"]), _to_float(s["percent_change"]), False
+
+    def _live_pe(s: dict[str, Any]) -> float:
+        """P/E realtime = giá realtime / EPS; EPS suy từ (giá snapshot / P/E snapshot)."""
+        pe_snap = _to_float(s.get("pe_ratio"))
+        price_snap = _to_float(s.get("price"))
+        price_live, _, is_live = _live_quote(s)
+        if is_live and pe_snap > 0 and price_snap > 0 and price_live > 0:
+            eps = price_snap / pe_snap
+            if eps > 0:
+                return round(price_live / eps, 2)
+        return pe_snap
+
+    def _rows(key: str, pool: list[dict[str, Any]], value_key: str) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        for s in pool[:_RANK_RENDER_ROWS]:
+            price, pct, is_live = _live_quote(s)
+            out.append(
+                {
+                    "symbol": s["symbol"],
+                    "name": s["name"],
+                    "price": round(price, 2),
+                    "percent_change": round(pct, 2),
+                    "score": s["score"],
+                    "value": _live_pe(s) if key == "valuation" else s.get(value_key),
+                    "realtime": is_live,
+                }
+            )
+        return out
+
+    rankings: list[dict[str, Any]] = []
+    for key, title, metric, value_key in _RANK_TAB_META:
+        pool = pools[key]
+        if key == "valuation" and quotes:
+            # Giá biến động trong phiên ⇒ P/E biến động ⇒ xếp lại top theo P/E realtime.
+            pool = sorted(pool[:_RANK_REALTIME_WINDOW], key=_live_pe)
+        rankings.append({"key": key, "title": title, "metric": metric, "rows": _rows(key, pool, value_key)})
+    return rankings
+
+
+def _get_rank_screener_stocks() -> list[dict[str, Any]]:
+    """Phần `stocks` của trang screener (đã có TuniX Score) — cache riêng 120s.
+
+    Bảng xếp hạng realtime poll ~20s/lần nên chỉ cần dựng lại phần giá; danh sách
+    mã + chỉ số cơ bản tái sử dụng cache này để không tính lại toàn bộ page.
+    """
+    cached = cache.get("rank-screener-stocks")
+    if cached is not None:
+        return cached
+    stocks = (get_stock_screener_page() or {}).get("stocks") or []
+    cache.set("rank-screener-stocks", stocks, ttl_seconds=_RANK_SCREENER_STOCKS_TTL_SECONDS)
+    return stocks
+
+
+@_singleflight(lambda: "stock-rankings-live", _RANK_LIVE_CACHE_TTL_SECONDS, stale_while_revalidate=False)
+def get_stock_rankings_live() -> dict[str, Any]:
+    """Bảng xếp hạng TuniX cập nhật REALTIME — dùng cho vòng polling block
+    "Xếp hạng TuniX" ở trang "Khám phá" (nhẹ hơn nhiều so với stock-discover:
+    không dựng featured / chiến lược / bản đồ cơ hội)."""
+    stocks = _get_rank_screener_stocks()
+    rankings = _build_tunix_rankings(stocks, quote_loader=_rank_live_quotes)
+    rows = [row for rk in rankings for row in rk["rows"]]
+    live_rows = sum(1 for row in rows if row.get("realtime"))
+    updated_at = datetime.now(_VN_TZ).isoformat()
+    return {
+        # as_of = mốc dữ liệu THỊ TRƯỜNG (nếu nguồn bảng giá trả về); rỗng thì client
+        # hiển thị thời điểm máy chủ lấy dữ liệu (updated_at).
+        "as_of": _rank_quotes_as_of,
+        "updated_at": updated_at,
+        "server_time": updated_at,
+        "source": "simplize-last",
+        "realtime": True,
+        "live_rows": live_rows,
+        "total_rows": len(rows),
+        "universe": len(stocks),
+        "rankings": rankings,
+    }
+
+
 @_singleflight(lambda: "stock-discover-page", ttl_seconds=120, stale_while_revalidate=True)
 def get_stock_discover_page() -> dict[str, Any]:
     """Dữ liệu trang "Khám phá": cơ hội nổi bật hôm nay, chiến lược, bản đồ cơ hội
@@ -4905,37 +5127,9 @@ def get_stock_discover_page() -> dict[str, Any]:
     }
 
     # ---- 4. Xếp hạng TuniX (5 bảng × 8 dòng) ----
-    def _rows(pool, value_key, n=8) -> list[dict[str, Any]]:
-        out = []
-        for s in pool[:n]:
-            out.append(
-                {
-                    "symbol": s["symbol"],
-                    "name": s["name"],
-                    "price": s["price"],
-                    "percent_change": s["percent_change"],
-                    "score": s["score"],
-                    "value": s.get(value_key),
-                }
-            )
-        return out
-
-    rank_growth = sorted([s for s in stocks if s["net_profit_growth"] and s["net_profit_growth"] > 0], key=lambda s: s["net_profit_growth"], reverse=True)
-    rank_value = sorted(
-        [s for s in stocks if s["pe_ratio"] and s["pe_ratio"] > 0 and s["pb_ratio"] and s["pb_ratio"] > 0],
-        key=lambda s: (s["pe_ratio"] + s["pb_ratio"]) + (s["ev_ebitda"] if s["ev_ebitda"] and s["ev_ebitda"] > 0 else 10),
-    )
-    rank_cash = sorted(stocks, key=lambda s: s["points"]["financial_health"] * 2 + s["points"]["dividend"] + (1 if s["dividend_yield"] and s["dividend_yield"] > 0 else 0), reverse=True)
-    rank_score = sorted(stocks, key=lambda s: s["score"], reverse=True)
-    rank_improve = sorted([s for s in stocks if s["eps_growth"] and s["eps_growth"] > 0], key=lambda s: s["eps_growth"], reverse=True)
-
-    rankings: list[dict[str, Any]] = [
-        {"key": "growth", "title": "Top tăng trưởng", "metric": "Tăng trưởng LN", "rows": _rows(rank_growth, "net_profit_growth")},
-        {"key": "valuation", "title": "Top định giá", "metric": "P/E", "rows": _rows(rank_value, "pe_ratio")},
-        {"key": "cash_flow", "title": "Top dòng tiền", "metric": "Sức khỏe TC", "rows": _rows(rank_cash, "dividend_yield")},
-        {"key": "score", "title": "Top Score", "metric": "TuniX Score", "rows": _rows(rank_score, "score")},
-        {"key": "improve", "title": "Top cải thiện", "metric": "Tăng trưởng dự kiến", "rows": _rows(rank_improve, "eps_growth")},
-    ]
+    # Lần load đầu lấy theo snapshot screener (nhanh, đã cache); block này sau đó tự
+    # làm mới REALTIME qua /api/stocks/stock-rankings (giá + % thay đổi theo bảng giá).
+    rankings = _build_tunix_rankings(stocks)
 
     # Thời điểm cập nhật dữ liệu: lấy từ market dashboard (VNINDEX) — screener không có as_of.
     try:

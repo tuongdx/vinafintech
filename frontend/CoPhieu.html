@@ -288,6 +288,10 @@
             function hideTip() { if (tipEl) tipEl.style.display = 'none'; }
             let currentPath = parseIndPath();
             let currentStock = parseStockParam();
+            // View do SHELL chỉ định qua postMessage 'tunix-co-phieu-goto'. Iframe này được dùng CHUNG cho
+            // mọi view (screener / ngành / chi tiết mã), nên khi quay lại/tới một mốc lịch sử thì shell là
+            // bên quyết định phải hiển thị view nào — không thể tin vào ?ind/?stock trên src của iframe.
+            let viewOverride = null;
 
             function esc(s) {
                 return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -552,6 +556,17 @@
                 else if (currentPath.length === 2) renderIndustry(currentPath[1]);
                 else renderSubIndustry(currentPath[1], currentPath[2]);
             }
+            // Áp dụng view shell yêu cầu (chỉ render khi thực sự khác view đang hiển thị).
+            function applyViewOverride() {
+                if (!viewOverride) return;
+                const p = viewOverride.path || [];
+                const st = viewOverride.stock || null;
+                if (p.join('/') === currentPath.join('/') && st === currentStock) return;
+                currentPath = p;
+                currentStock = st;
+                render();
+                notifyParentHeight();
+            }
 
             // ---------- Table (sort trực tiếp trên cột) ----------
             function tableHtml() {
@@ -569,7 +584,7 @@
                 ];
                 const body = rows.length ? rows.map(function(s) {
                     return '<tr data-symbol="' + esc(s.symbol) + '">' +
-                        '<td><div class="td-sym">' + esc(s.symbol) + '<span class="td-name">' + esc(s.name) + '</span></div></td>' +
+                        '<td><div class="td-sym">' + esc(s.symbol) + '<span data-div="' + esc(s.symbol) + '"></span><span class="td-name">' + esc(s.name) + '</span></div></td>' +
                         '<td>' + fmt(s.price, 0) + '</td>' +
                         '<td class="' + cls(s.percent_change) + '">' + pct(s.percent_change) + '</td>' +
                         '<td>' + fmtGtgd(s.volume * s.price) + '</td>' +
@@ -770,6 +785,12 @@
                     window.__cats = d.categories || {};
                     currentPath = parseIndPath();
                     marketAsOf = fmtVnAsOf(d.as_of || '');
+                    // Shell có thể đã yêu cầu view KHÁC ?ind/?stock trên URL trong lúc API đang tải
+                    // (điều hướng back/forward) → ưu tiên yêu cầu của shell.
+                    if (viewOverride) {
+                        currentPath = viewOverride.path || [];
+                        currentStock = viewOverride.stock || null;
+                    }
                     render();
                 } catch (e) {
                     screenerEl.innerHTML = '<div class="cp-empty">Không tải được dữ liệu cổ phiếu. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
@@ -805,6 +826,16 @@
                     const f = document.getElementById('cpStockFrame');
                     if (f && f.contentWindow) f.contentWindow.postMessage({ type: 'tunix-theme', mode: mode }, '*');
                     setTimeout(notifyParentHeight, 50);
+                    return;
+                }
+                // Shell yêu cầu hiển thị ĐÚNG view theo URL hiện tại (back/forward, hoặc mở lại chi tiết
+                // 1 mã trong khi iframe đang ở view khác). Ghi nhớ override để load() không ghi đè lại.
+                if (data.type === 'tunix-co-phieu-goto') {
+                    const p = Array.isArray(data.path) ? data.path.filter(Boolean).map(String) : [];
+                    const st = data.stock ? String(data.stock).trim().toUpperCase() : null;
+                    viewOverride = { path: p, stock: st };
+                    if (!all.length) return; // dữ liệu chưa về → để load() render theo override
+                    applyViewOverride();
                     return;
                 }
                 // Message từ StockDetail nhúng (iframe con)
@@ -866,6 +897,7 @@
             load();
         })();
     </script>
-    <script src="/static/context-menu.js?v=20260827a"></script>
+    <script src="/static/context-menu.js?v=20260928a"></script>
+    <script src="/static/dividend-badge.js?v=20260926c"></script>
 </body>
 </html>

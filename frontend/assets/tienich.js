@@ -70,8 +70,7 @@
             if (panels[k]) panels[k].style.display = k === key ? 'block' : 'none';
         });
         const meta = TOOL_META[key] || TOOL_META.adj;
-        // Toolbar title: chỉ giữ emoji + tên công cụ (bỏ icon FA trước title vì trùng/không cần).
-        $('toolTitle').innerHTML = '<span>' + esc(meta.title) + '</span>';
+        // (Tiêu đề công cụ ở toolbar đã BỎ — tên công cụ chỉ còn hiển thị ở .ti-head h1 phía trên.)
         // Khối xanh đầu trang đổi text theo công cụ (cùng vị trí/màu, chỉ khác tiêu đề).
         const hh = document.querySelector('.ti-head h1');
         if (hh) hh.textContent = meta.head || 'Tiện ích';

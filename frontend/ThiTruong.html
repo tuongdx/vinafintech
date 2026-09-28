@@ -228,6 +228,8 @@
         .tt-ev-days { font-size: 10.5px; font-weight: 800; color: #008080; background: rgba(0,128,128,0.1); border-radius: 5px; padding: 1px 6px; }
         .tt-ev-title { font-size: 12.5px; font-weight: 700; color: #12203a; line-height: 1.4; }
         .tt-ev-desc { font-size: 11.5px; color: #4a5a72; line-height: 1.5; margin-top: 3px; }
+        .tt-ev-scroll { max-height: 470px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; padding-right: 2px; }
+        .tt-ev-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
         .tt-n-tag { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; background: rgba(0,128,128,0.09); color: #008080; border: 1px solid rgba(0,128,128,0.18); cursor: pointer; }
         .tt-n-tag:hover { border-color: #008080; }
         .tt-n-tag.neg { background: #fdeaea; color: #d0314e; border-color: rgba(208,49,78,0.2); }
@@ -315,6 +317,8 @@
         body.dark-mode .tt-ev-item:hover { border-color: rgba(0,128,128,0.5); }
         body.dark-mode .tt-ev-title { color: #e6edf3; }
         body.dark-mode .tt-ev-desc { color: #adbac7; }
+        body.dark-mode .tt-ev-note { color: #9fb0c7; }
+        body.dark-mode .tt-ev-scroll::-webkit-scrollbar-thumb { background: #39414d; }
         body.dark-mode .tt-n-tag { background: rgba(0,128,128,0.15); color: #4db6b6; border-color: rgba(0,128,128,0.3); }
         body.dark-mode .tt-n-tag:hover { border-color: #4db6b6; }
         body.dark-mode .tt-n-tag.neg { background: rgba(208,49,78,0.15); color: #ff8b8b; border-color: rgba(208,49,78,0.3); }
@@ -703,7 +707,7 @@
                         const closes = (s.sparkline || []).map(function(pt) { return Number(pt && pt.close); }).filter(function(v) { return isFinite(v); });
                         const spUp = closes.length >= 2 ? (closes[closes.length - 1] >= closes[0]) : up;
                         return '<tr class="tt-vn30-row" data-symbol="' + esc(s.symbol) + '">' +
-                            '<td class="tt-vn30-sym">' + esc(s.symbol) + '<div class="tt-vn30-name">' + esc(s.name) + '</div></td>' +
+                            '<td class="tt-vn30-sym">' + esc(s.symbol) + '<span data-div="' + esc(s.symbol) + '"></span><div class="tt-vn30-name">' + esc(s.name) + '</div></td>' +
                             '<td class="tt-vn30-price">' + fmt(s.price) + '</td>' +
                             '<td class="' + cls(p) + '">' + pct(p) + '</td>' +
                             '<td class="tt-vn30-spark">' + sparkline(closes, 84, 30, spUp) + '</td>' +
@@ -1016,8 +1020,8 @@
                 }).join('');
             }
             // ---------- Lịch sự kiện thị trường (sự kiện SẮP DIỄN RA) ----------
-            // Nguồn: /api/asset-events/upcoming (server quét nhóm cổ phiếu vốn hoá lớn,
-            // chỉ trả sự kiện có ngày trong TƯƠNG LAI, sắp diễn ra trước).
+            // Nguồn: /api/asset-events/upcoming — TOÀN BỘ cổ phiếu 3 sàn (HOSE/HNX/UPCOM)
+            // từ bảng sự kiện quyền toàn thị trường; snapshot dựng lại 12h trưa giờ VN mỗi ngày.
             const EVENT_TYPE_META = {
                 DIVIDEND:               { icon: 'fa-coins', color: '#00a08a', label: 'Cổ tức' },
                 EX_DIVIDEND_DATE:       { icon: 'fa-calendar-check', color: '#7b61c4', label: 'Chốt quyền' },
@@ -1070,7 +1074,7 @@
                     });
                     html += '</div>';
                 });
-                el.innerHTML = html;
+                el.innerHTML = '<div class="tt-ev-scroll">' + html + '</div>';
                 el.querySelectorAll('.tt-ev-item').forEach(function(it) {
                     it.addEventListener('click', function() {
                         const nid = it.getAttribute('data-news');
@@ -1086,10 +1090,33 @@
                 });
                 notifyParentHeight();
             }
+            // ---------- Lịch sự kiện thị trường: TOÀN BỘ cổ phiếu 3 sàn, làm mới 12h trưa ----------
+            // Backend dựng snapshot toàn thị trường theo mốc 12h trưa (giờ VN). Ở client: nhớ
+            // mốc của lần tải gần nhất, tự tải lại khi qua mốc mới (kể cả khi tab mở nhiều giờ).
+            let ttEventsDay = '';
+            let ttEventsTimer = null;
+            function vnSnapshotKey() {
+                const d = new Date(Date.now() + 7 * 3600 * 1000);   // UTC+7
+                const day = d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
+                return day + (d.getUTCHours() >= 12 ? '|pm' : '|am');   // mốc đổi lúc 12h trưa VN
+            }
+            function ttEventsCheckNewDay() {
+                if (ttEventsDay && vnSnapshotKey() !== ttEventsDay) loadUpcomingEvents();
+            }
             function loadUpcomingEvents() {
                 const el = document.getElementById('ttEvents');
                 if (!el) return;
-                fetch('/api/asset-events/upcoming?limit=5', { cache: 'no-store' })
+                ttEventsDay = vnSnapshotKey();
+                if (!ttEventsTimer) {
+                    ttEventsTimer = setInterval(function() {
+                        if (!document.hidden) ttEventsCheckNewDay();
+                    }, 10 * 60 * 1000);
+                    document.addEventListener('visibilitychange', function() {
+                        if (!document.hidden) ttEventsCheckNewDay();
+                    });
+                }
+                // limit=60: lấy TOÀN BỘ lịch sự kiện sắp tới của cả 3 sàn (backend cap 60).
+                fetch('/api/asset-events/upcoming?limit=60', { cache: 'no-store' })
                     .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
                     .then(function(items) { renderUpcomingEvents(items); })
                     .catch(function() { el.innerHTML = '<div class="tt-radar-empty">Không tải được lịch sự kiện.</div>'; });
@@ -1313,6 +1340,7 @@
         })();
     </script>
     <script src="/static/membership-gate.js?v=20260905f"></script>
-    <script src="/static/context-menu.js?v=20260827a"></script>
+    <script src="/static/context-menu.js?v=20260928a"></script>
+    <script src="/static/dividend-badge.js?v=20260926c"></script>
 </body>
 </html>

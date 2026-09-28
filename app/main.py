@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
@@ -104,6 +104,10 @@ def _stable_api_max_age(path: str) -> int | None:
     # giúp các trang (cổ phiếu/khám phá/danh mục/TuniAI/trang chủ) load lại gần như tức thì.
     if path.startswith("/api/stocks/stock-screener") or path.startswith("/api/stocks/stock-discover"):
         return 60
+    # Bảng xếp hạng realtime (poll định kỳ ở trang Khám phá) — KHÔNG cache trình duyệt
+    # để mỗi vòng poll luôn nhận giá mới nhất từ server.
+    if path.startswith("/api/stocks/stock-rankings"):
+        return 0
     # Lịch sử giá (daily bars) là dữ liệu ổn định → cache trình duyệt 5 phút.
     if path.startswith("/api/stocks/") and "/history" in path:
         return 300
@@ -300,6 +304,14 @@ def on_startup() -> None:
         bank_rate_sync.run_auto_sync()
     except Exception:  # noqa: BLE001
         pass
+    # Lịch sự kiện thị trường (toàn bộ cổ phiếu 3 sàn): dựng lại snapshot vào 12h trưa
+    # giờ VN mỗi ngày, chạy trong thread nền (idempotent, không chặn startup).
+    try:
+        from app.routers import asset_events as asset_events_router
+
+        asset_events_router.start_daily_refresh()
+    except Exception:  # noqa: BLE001
+        pass
     _warm_home_caches()
 
 
@@ -313,6 +325,7 @@ def _warm_home_caches() -> None:
         from concurrent.futures import ThreadPoolExecutor
 
         from app.routers.asset_events import get_upcoming_events as upcoming_events_fn
+        from app.services import dividend_adjust
         from app.services.opportunity_service import get_top_opportunities
 
         jobs = [
@@ -328,7 +341,10 @@ def _warm_home_caches() -> None:
             ("market-map", vs.get_market_map),
             ("exchange-chart", lambda: vs.get_exchange_chart("HOSE")),
             ("top-stocks", lambda: vs.get_top_stocks("breakout", "1w")),
-            ("asset-events-upcoming", upcoming_events_fn),
+            # Snapshot lịch sự kiện toàn thị trường (3 sàn) — 1 nguồn cho mọi mã.
+            ("asset-events-upcoming", lambda: upcoming_events_fn(50)),
+            # Lịch cổ tức SẮP chia toàn thị trường (nhãn "Sắp chia cổ tức" ở mọi bảng).
+            ("dividend-upcoming", dividend_adjust.market_upcoming),
         ]
 
         def run(item):
@@ -472,9 +488,43 @@ def favicon_ico():
     raise HTTPException(status_code=404, detail="Favicon not found")
 
 
+_CO_PHIEU_SYMBOL_RE = re.compile(r"^[A-Za-z0-9.]+$")
+
+
+def _co_phieu_sector_url(symbol: str) -> str:
+    """URL đẹp CẤP NGÀNH của 1 mã: /co-phieu/nganh/{sector}/{industry}/{MÃ}.
+
+    Trả '' nếu mã không hợp lệ hoặc chưa biết ngành (khi đó giữ URL rút gọn như cũ).
+    """
+    sym = str(symbol or "").strip().upper()
+    if not sym or not _CO_PHIEU_SYMBOL_RE.match(sym):
+        return ""
+    try:
+        from app.services.vnstock_service import _symbol_sector_index
+
+        info = _symbol_sector_index().get(sym) or {}
+    except Exception:  # noqa: BLE001 — lỗi tra ngành KHÔNG được làm hỏng trang
+        return ""
+    sector = str(info.get("sector") or "").strip().lower()
+    industry = str(info.get("industry") or "").strip().lower()
+    if not (sector and industry):
+        return ""
+    return f"/co-phieu/nganh/{sector}/{industry}/{sym}"
+
+
 @app.get("/co-phieu/{symbol}")
 def co_phieu_stock(symbol: str):
-    """URL đẹp chi tiết cổ phiếu tại trang cổ phiếu: /co-phieu/ACB (giữ shell)."""
+    """URL đẹp chi tiết cổ phiếu tại trang cổ phiếu: /co-phieu/ACB (giữ shell).
+
+    Canonical hoá: nếu biết ngành của mã → 302 sang
+    /co-phieu/nganh/{sector}/{industry}/{MÃ} để chi tiết cổ phiếu chỉ có MỘT kiểu URL
+    (khớp đúng URL mà trang Cổ phiếu dùng khi duyệt theo ngành).
+    """
+    # '/co-phieu/nganh' là URL danh sách nhóm ngành (route này bắt trước do khai báo trước)
+    if symbol.strip().lower() != "nganh":
+        target = _co_phieu_sector_url(symbol)
+        if target:
+            return RedirectResponse(url=target, status_code=302)
     index_file = frontend_path / "index.html"
     if index_file.exists():
         return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})

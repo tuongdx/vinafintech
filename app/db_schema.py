@@ -48,6 +48,8 @@ _FAQ_COLUMNS: list[tuple[str, str, str]] = [
 
 _CASH_COLUMNS: list[tuple[str, str, str]] = [
     ("cash_transactions", "currency", "VARCHAR(10) DEFAULT 'VND'"),
+    # Khoá chống trùng bút toán tự động (cổ tức: `div:{MÃ}:{ngày GDKHQ}`)
+    ("cash_transactions", "ref_key", "VARCHAR(120) DEFAULT ''"),
 ]
 
 _ADMIN_LOG_COLUMNS: list[tuple[str, str, str]] = [

@@ -823,6 +823,51 @@
         }
         .chart-status .cs-retry:hover { background: rgba(255, 255, 255, 0.35); }
 
+        /* ----- VẠCH VỊ THẾ: badge thông tin vị thế của mã đang xem ----- */
+        /* Hiện ở góc dưới-trái khung vẽ (trên trục thời gian) — không đè legend (trên-trái)
+           hay trạng thái tải (trên-phải); giữ nguyên khi vào toàn màn hình. */
+        .chart-pos-badge {
+            position: absolute;
+            left: 10px;
+            bottom: 30px;
+            z-index: 6;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            max-width: calc(100% - 90px);
+            padding: 3px 9px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid #e5eaf0;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07);
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7a8f;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            pointer-events: none;
+        }
+        body.dark-mode .chart-pos-badge {
+            background: rgba(22, 27, 34, 0.85);
+            border-color: #2a3648;
+            color: #8b949e;
+        }
+        .chart-pos-badge .cpb-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+        .chart-pos-badge .cpb-label { color: #008080; font-weight: 800; }
+        body.dark-mode .chart-pos-badge .cpb-label { color: #4db6b6; }
+        .chart-pos-badge .cpb-qty { color: #12203a; }
+        body.dark-mode .chart-pos-badge .cpb-qty { color: #e6edf3; }
+        .chart-pos-badge .cpb-avg b { color: #12203a; }
+        body.dark-mode .chart-pos-badge .cpb-avg b { color: #e6edf3; }
+        .chart-pos-badge .cpb-sep { color: #c3ccd8; }
+        .chart-pos-badge .cpb-pct { font-weight: 800; }
+        .chart-pos-badge .cpb-pend { color: #b07800; font-weight: 700; }
+        body.dark-mode .chart-pos-badge .cpb-pend { color: #e6c36a; }
+        @media (max-width: 640px) {
+            .chart-pos-badge { font-size: 10px; padding: 2px 7px; max-width: calc(100% - 20px); }
+        }
+
         /* ----- SVG DRAWING OVERLAY (PHASE 2) ----- */
         .chart-overlay { pointer-events: none; }
         .chart-overlay.co-active { pointer-events: all; cursor: crosshair; }
@@ -3573,6 +3618,7 @@
                     <div class="stock-info">
                         <h1>
                             <span id="stockSymbol">TCB</span>
+                            <span id="stockDivBadge" data-div=""></span>
                             <span class="exchange" id="stockExchange">HOSE</span>
                             <button type="button" class="favorite-btn" id="favoriteBtn" title="Thêm vào danh sách theo dõi" aria-label="Theo dõi cổ phiếu">
                                 <i class="far fa-heart" id="favoriteIcon"></i>
@@ -3649,6 +3695,7 @@
                         <div class="chart-canvas-wrap">
                             <div id="lwcChartContainer" style="height:100%;width:100%;"></div>
                             <div class="chart-status" id="chartStatus" style="display:none"></div>
+                            <div class="chart-pos-badge" id="chartPosBadge" style="display:none"></div>
                             <div class="chart-legend" id="chartLegend"></div>
                         </div>
                     </div>
@@ -3885,9 +3932,12 @@
         let currentTimeframe = '1D';   // 1H, 1D, 1W, 1M
         let tunixChart = null;
         let tunixChartModulePromise = null;
+        // Version của khối chart engine — BẮT BUỘC bump khi sửa file trong /static/chart/
+        // (module import không có query sẽ bị HTTP cache 1 giờ; thêm ?v= để lần tải sau lấy bản mới).
+        const CHART_ASSET_VER = '20260927d';
         function getTunixChartModule() {
             if (!tunixChartModulePromise) {
-                tunixChartModulePromise = import('/static/chart/stockDetailChart.js');
+                tunixChartModulePromise = import('/static/chart/stockDetailChart.js?v=' + CHART_ASSET_VER);
             }
             return tunixChartModulePromise;
         }
@@ -4098,6 +4148,7 @@
                         fsEl: document.getElementById('fsEl'),
                         settingsEl: document.getElementById('settingsEl'),
                         legendEl: document.getElementById('chartLegend'),
+                        posBadgeEl: document.getElementById('chartPosBadge'),
                         sidebarEl: document.getElementById('chartSidebar'),
                         bottomEl: document.getElementById('chartBottom'),
                         onSelectSymbol: function (symbol) { switchSymbol(symbol); },
@@ -5260,6 +5311,12 @@
                 const stockChange = document.getElementById('stockChange');
 
                 if (stockSymbol) stockSymbol.textContent = quote.symbol || symbol;
+                // Nhãn "Sắp chia cổ tức" cạnh mã (nguồn: /api/stocks/upcoming-dividends qua dividend-badge.js)
+                const stockDivBadge = document.getElementById('stockDivBadge');
+                if (stockDivBadge) {
+                    stockDivBadge.setAttribute('data-div', String(quote.symbol || symbol || '').toUpperCase());
+                    if (window.TuniXDiv && window.TuniXDiv.sweep) window.TuniXDiv.sweep();
+                }
                 updateFavoriteBtn(quote.symbol || symbol);
                 if (stockExchange) stockExchange.textContent = quote.exchange || '--';
                 if (stockCompanyName) stockCompanyName.textContent = quote.name || quote.symbol || symbol;
@@ -6145,6 +6202,7 @@
         }
     </script>
 
-    <script src="/static/context-menu.js?v=20260827a"></script>
+    <script src="/static/dividend-badge.js?v=20260926c"></script>
+    <script src="/static/context-menu.js?v=20260928a"></script>
 </body>
 </html>

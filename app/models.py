@@ -446,6 +446,8 @@ class CashTransaction(Base):
     change: Mapped[float] = mapped_column(Float, default=0.0)
     balance_after: Mapped[float] = mapped_column(Float, default=0.0)
     label: Mapped[str] = mapped_column(String(255), default="")
+    # Khoá chống trùng cho các bút toán TỰ ĐỘNG (vd cổ tức: `div:{MÃ}:{ngày GDKHQ}`).
+    ref_key: Mapped[str] = mapped_column(String(120), default="", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

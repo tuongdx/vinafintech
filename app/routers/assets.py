@@ -19,6 +19,7 @@ Mô hình:
   `quantity` = tổng số lượng, `amount` = tổng tiền đầu tư.
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
+import logging
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -27,8 +28,10 @@ from app.db import get_db
 from app.models import User, UserAsset, UserAssetClass
 from app.schemas import CashAmount, CashMove, UserAssetCreate, UserAssetOut, UserAssetSell, UserAssetUpdate
 from app.services import cash_service
+from app.services import dividend_adjust
 from app.services.gold_service import _get_usd_vnd
 
+logger = logging.getLogger("tunix.assets")
 router = APIRouter(prefix="/assets", tags=["assets"])
 
 _CLASSES = {"crypto", "deposit", "gold"}
@@ -54,6 +57,17 @@ def _cash_payload(db: Session, user: User) -> dict:
         "fx_as_of": fx.get("as_of"),
         "total_vnd": total_vnd,
     }
+
+
+def _credit_dividend_cash(db: Session, user: User) -> None:
+    """Cổ tức TIỀN đã tới ngày chia → tự cộng vào quỹ Tiền mặt VND (idempotent).
+
+    Gọi khi mở trang Quản lý tài sản / xem Tiền mặt để số dư luôn đúng mà không cần job định kỳ.
+    """
+    try:
+        dividend_adjust.credit_dividend_cash(db, user.id)
+    except Exception:  # noqa: BLE001 — nguồn ngoài lỗi không được làm hỏng trang
+        logger.debug("credit_dividend_cash failed", exc_info=True)
 
 
 def _norm_cur(cur: str) -> str:
@@ -406,6 +420,7 @@ def delete_asset(asset_id: int, db: Session = Depends(get_db), user: User = Depe
 @router.get("/cash")
 def get_cash(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Trạng thái 2 quỹ tiền mặt: VND + USDT/USDC (kèm quy đổi VND)."""
+    _credit_dividend_cash(db, user)
     return _cash_payload(db, user)
 
 
@@ -461,6 +476,7 @@ def cash_history(
     user: User = Depends(get_current_user),
 ):
     """Sổ tiền VÀO / RA (mọi quỹ), mới nhất trước + trạng thái số dư."""
+    _credit_dividend_cash(db, user)
     payload = _cash_payload(db, user)
     payload["items"] = cash_service.list_transactions(db, user.id, limit)
     return payload
