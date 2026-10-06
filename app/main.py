@@ -1,3 +1,4 @@
+import gc
 import logging
 import re
 import time
@@ -323,12 +324,21 @@ def on_startup() -> None:
     _warm_home_caches()
 
 
+# ============================================================
+# Warm cache trang chủ — điều tiết để KHÔNG vượt 512MB của Render free tier.
+# `_WARM_MAX_WORKERS` = số job nặng chạy song song (8 cũ ⇒ đỉnh bộ nhớ quá cao ⇒ OOM-kill
+#   ⇒ instance chết ⇒ mọi API trả 502/503).
+# `_WARM_START_DELAY` = giây chờ sau boot để instance vượt health-check trước khi warm.
+# ============================================================
+_WARM_MAX_WORKERS = 2
+_WARM_START_DELAY = 25
+
+
 def _warm_home_caches() -> None:
     """Warm cache các block trang chủ ở nền (không chặn startup) để người dùng
     không phải chờ lần đầu — kết hợp stale-while-revalidate ở cache service."""
     import threading
     from app.services import vnstock_service as vs
-
     def _warm() -> None:
         from concurrent.futures import ThreadPoolExecutor
 
@@ -364,9 +374,21 @@ def _warm_home_caches() -> None:
                 job()
             except Exception:  # noqa: BLE001
                 _perf_logger.debug("warm %s failed", name)
+            finally:
+                # Trả bộ nhớ tạm (JSON 1MB+, DataFrame nguồn) về hệ thống NGAY sau mỗi job
+                # ⇒ hạ đỉnh bộ nhớ khi chạy nhiều job liên tiếp.
+                gc.collect()
 
-        # Warm song song để cache nóng nhanh hơn (giảm thời gian lần truy cập đầu)
-        with ThreadPoolExecutor(max_workers=max(1, min(8, len(jobs)))) as ex:
+        # Chờ instance ổn định + vượt health-check của Render TRƯỚC khi chạy việc nặng:
+        # warm ngay lúc boot làm đỉnh bộ nhớ trùng lúc khởi động ⇒ dễ bị OOM-kill
+        # (Render free 512MB) ⇒ build/deploy fail hoặc 502/503 cho người dùng.
+        time.sleep(_WARM_START_DELAY)
+
+        # Chạy SONG SONG ÍT luồng (mặc định 2) thay vì 8: vẫn làm nóng cache nhưng hạ
+        # mạnh ĐỈNH bộ nhớ, vì mỗi job lại tự gọi API nguồn song song bên trong
+        # (screener ~1MB, opportunity quét 50 mã...). 8 luồng ⇒ 8 job nặng cùng lúc
+        # ⇒ dễ vượt 512MB của Render free.
+        with ThreadPoolExecutor(max_workers=max(1, min(_WARM_MAX_WORKERS, len(jobs)))) as ex:
             list(ex.map(run, jobs))
 
     threading.Thread(target=_warm, daemon=True).start()
@@ -378,6 +400,16 @@ def root():
     if index_file.exists():
         return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
     return {"message": "TuniX API running"}
+
+
+@app.get("/api/health")
+def health():
+    """Health check SIÊU NHẸ — không chạm DB, không gọi mạng ngoài.
+
+    Dùng để biết instance còn sống hay không (Render trả 502/503 khi process đã chết)
+    và có thể đặt làm Health Check Path trong Render → Settings.
+    """
+    return {"ok": True, "app": settings.app_name, "ts": time.time()}
 
 
 PAGE_MAP: dict[str, str] = {
