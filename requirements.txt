@@ -15,7 +15,15 @@ httpx==0.28.1
 # Xuất file Excel (.xlsx) cho menu Nhật ký ở trang quản trị
 openpyxl==3.1.5
 
-# vnstock + vnai: nguồn dữ liệu VCI cho Sổ lệnh (order-book) & Giao dịch gần nhất (intraday).
-# BẮT BUỘC khai báo ở đây, nếu không Render sẽ không cài -> hai block trên trả rỗng.
-vnstock==4.0.5
-vnai==2.5.6
+# vnstock + vnai: nguồn dự phòng cho Sổ lệnh (order-book) & Giao dịch gần nhất (intraday).
+#
+# ⚠️⚠️ KHÔNG khai báo `vnstock` / `vnai` ở đây nữa: 2 gói này ĐÃ BỊ GỠ KHỎI PyPI
+# (https://pypi.org/pypi/vnstock/json → 404), nên `pip install -r requirements.txt`
+# LUÔN thất bại ⇒ Render "Build failed" ⇒ deploy không lên, prod giữ bản cũ.
+# App KHÔNG cần 2 gói này để chạy: `app/services/vnstock_service.py` import chúng
+# LAZY bên trong try/except (Reference/Trading/Quote) và đã có sẵn các nguồn khác
+# (VCI trading REST, KBS, Simplize). Thiếu gói ⇒ chỉ những tính năng phụ đó rỗng.
+#
+# Nếu sau này cần bật lại: cài từ GitHub, ví dụ
+#   vnstock @ git+https://github.com/thinh-vu/vnstock.git@v3.2.6
+# (nhớ kiểm chứng build trên Render trước khi dựa vào).
