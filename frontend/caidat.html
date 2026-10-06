@@ -230,6 +230,10 @@
                     applyThemeMode(mode);
                 });
 
+                // Đồng bộ công tắc "Giao diện" với theme HIỆN TẠI (kể cả khi user vừa bấm icon
+                // sáng/tối trên header, hoặc theme đến từ iframe khác) — on = sáng, off = tối.
+                syncThemeToggle(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+
                 notifyParentHeight();
             }
 
@@ -246,10 +250,17 @@
                 } catch (e) {}
             }
 
+            // Công tắc "Giao diện" (on = sáng / off = tối) phải luôn khớp theme đang áp dụng.
+            function syncThemeToggle(mode) {
+                const el = document.getElementById('setTheme');
+                if (el) el.checked = (mode !== 'dark');
+            }
+
             function applyThemeMode(mode) {
                 // Áp dụng ngay trên trang này
                 localStorage.setItem('theme', mode);
                 document.body.classList.toggle('dark-mode', mode === 'dark');
+                syncThemeToggle(mode);
                 // Báo trang cha (index.html) cập nhật toàn site
                 if (window.parent && window.parent !== window) {
                     window.parent.postMessage({ type: 'tunix-set-theme', mode }, '*');
@@ -294,6 +305,7 @@
 
             function applyEmbedTheme(mode) {
                 document.body.classList.toggle('dark-mode', mode === 'dark');
+                syncThemeToggle(mode);
             }
             function notifyParentHeight() {
                 try {

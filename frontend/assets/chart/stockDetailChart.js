@@ -35,7 +35,7 @@ import { LastPriceLine } from './core/lastPriceLine.js';
 // `?v=` BẮT BUỘC: /static/* không version bị HTTP cache 1 giờ. Bump khi sửa positionLine.js.
 import { PositionLine } from './core/positionLine.js?v=20260927d';
 import { HistoryLoader } from './core/historyLoader.js';
-import { FullscreenWorkspace } from './ui/fullscreenWorkspace.js';
+import { FullscreenWorkspace } from './ui/fullscreenWorkspace.js?v=20261006a';
 
 export function createStockDetailChart(options) {
     const container = options.container;
@@ -445,7 +445,7 @@ export function createStockDetailChart(options) {
             } });
             fsManager.create();
         }
-        refreshFsBtn(fsManager.isActive());
+        refreshFsBtn(fsManager.isFullscreen());
         if (window && window.__tunixChartDebug) window.__tunixChartDebug.fullscreen = fsManager;
     }
 
@@ -1061,5 +1061,7 @@ export function createStockDetailChart(options) {
         legend.clear();
     }
 
-    return { load, setTimeframe, setTheme, destroy, resetChartHeight: resetChartHeightAfterFullscreen };
+    return { load, setTimeframe, setTheme, destroy, resetChartHeight: resetChartHeightAfterFullscreen,
+             // Đồng bộ nút toàn màn hình khi fullscreen do SHELL bật/thoát (parent-driven).
+             refreshFullscreen: () => { if (fsManager) fsManager.refresh(); } };
 }

@@ -142,6 +142,50 @@ def asset_fx():
     return fx
 
 
+@router.get("/position/crypto/{symbol}")
+def crypto_position(
+    symbol: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Vị thế CRYPTO của user ở MỘT coin — dùng để vẽ "vạch vị thế" (đường giá vốn) trên biểu đồ
+    ở trang chi tiết crypto.
+
+    Nguồn: bảng `user_assets` (asset_class='crypto', `label` = MÃ coin, vd 'BTC'),
+    `unit_price` = giá vốn BÌNH QUÂN (theo stablecoin USDT/USDC — cùng đơn vị với giá trên biểu đồ),
+    `quantity` = tổng số coin, `amount` = tổng stablecoin đã bỏ ra.
+
+    Không có vị thế → trả `has_position: false` (KHÔNG 404) cho trang biểu đồ dễ xử lý.
+    Cố tình KHÔNG gọi nguồn giá và KHÔNG lấy cả danh mục ⇒ nhanh, không phụ thuộc mạng ngoài.
+    """
+    sym = (symbol or "").strip().upper()
+    if not sym or len(sym) > 30:
+        raise HTTPException(status_code=400, detail="Mã crypto không hợp lệ.")
+    row = (
+        db.query(UserAsset)
+        .filter(
+            UserAsset.user_id == user.id,
+            UserAsset.asset_class == UserAssetClass("crypto"),
+            func.upper(UserAsset.label) == sym,
+        )
+        .first()
+    )
+    if not row:
+        return {"symbol": sym, "has_position": False}
+    qty = float(row.quantity or 0)
+    avg = float(row.unit_price or 0)
+    return {
+        "symbol": sym,
+        "has_position": bool(qty > 0 and avg > 0),
+        "quantity": qty,
+        "avg_price": avg,          # cùng tên với /portfolio/position/{symbol} cho frontend dễ dùng chung
+        "unit_price": avg,
+        "amount": float(row.amount or 0),
+        "currency": _currency_of(row),
+        "cost": round(qty * avg, 8),
+    }
+
+
 @router.post("", response_model=UserAssetOut)
 def create_asset(payload: UserAssetCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     if payload.asset_class not in _CLASSES:

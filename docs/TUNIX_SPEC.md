@@ -34,7 +34,7 @@ flowchart LR
     F --> T[TuniAI Chat Widget<br/>SSE streaming]
 ```
 
-- **SPA-like**: điều hướng trong trang bằng `loadContent()`; URL đẹp qua `history.replaceState` (`/cophieu-{MÃ}`, `/tin-tuc`, `/chung-khoan`, `/ngan-hang`, `/bat-dong-san`, `/doanh-nghiep`, `/dong-tien-thong-minh`, `/tai-chinh-quoc-te`, `/cong-nghe`, `/{slug}-{id}.html`).
+- **SPA-like**: điều hướng trong trang bằng `loadContent()`; URL đẹp qua `history.replaceState` (`/cophieu-{MÃ}`, `/tin-tuc`, `/chung-khoan`, `/ngan-hang`, `/bat-dong-san`, `/doanh-nghiep`, `/dong-tien-thong-minh`, `/tai-chinh-quoc-te`, `/cong-nghe`, `/tien-ao` (Crypto), `/{slug}-{id}.html`).
 - **Embedded pages (iframe)**: `Home.html`, `StockDetail.html`, `tin-tuc.html`, `caidat.html`, `taikhoan.html`, `doimatkhau.html`.
 - **Fullscreen chart**: icon nến ở header → parent fullscreen iframe (`requestFullscreen` trong cử chỉ click) → 1 click vào fullscreen trên mọi trình duyệt.
 

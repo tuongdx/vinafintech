@@ -80,6 +80,17 @@ class Settings(BaseSettings):
     asset_event_upcoming_ttl: int = 86400         # cache lịch sự kiện (giây) — snapshot làm mới mỗi ngày
     asset_event_refresh_hour: int = 12            # giờ VN dựng lại lịch sự kiện toàn thị trường (12h trưa)
 
+    # Block "Cơ hội mới" (trang chủ) — snapshot theo dữ liệu thị trường, làm mới 12h trưa mỗi ngày
+    home_opportunity_ttl: int = 86400             # cache snapshot "Cơ hội mới" (giây)
+    home_opportunity_refresh_hour: int = 12       # giờ VN dựng lại snapshot "Cơ hội mới" (12h trưa)
+
+    # Bộ lọc "cổ phiếu giao dịch được" — VỐN HOÁ LỚN + THANH KHOẢN đủ để nhà đầu tư giao dịch
+    # hằng ngày. Áp dụng cho MỌI block lấy mã từ toàn thị trường: Market Radar (trang chủ),
+    # TuniX Market Radar (trang Thị trường), Khám phá theo chiến lược + Xếp hạng TuniX
+    # (trang Khám phá), "Cơ hội mới" (trang chủ) và universe quét của trang Tín hiệu.
+    stock_min_market_cap: float = 1e12            # vốn hoá tối thiểu (VND) — 1.000 tỷ
+    stock_min_liquidity_ty: float = 10.0          # GTGD tối thiểu (tỷ VND/phiên, TB 10 phiên)
+
     # Tỷ giá ngoại tệ (Tiện ích) — nhà cung cấp có thể đổi qua ENV mà không sửa code
     exchange_rate_api_url: str = "https://open.er-api.com/v6/latest/USD"  # {apikey} chèn nếu có
     exchange_rate_api_key: str = ""               # trống = miễn phí không cần key

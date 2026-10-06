@@ -112,6 +112,9 @@ def default_universe(limit: int | None = None, cfg: dict | None = None) -> list[
     try:
         page = vnstock_service.get_stock_screener_page() or {}
         rows = [r for r in (page.get("stocks") or []) if isinstance(r, dict)]
+        # CHỈ quét cổ phiếu VỐN HOÁ LỚN + THANH KHOẢN đủ để giao dịch hằng ngày
+        # (bộ lọc dùng chung với Market Radar / Khám phá theo chiến lược / Xếp hạng TuniX).
+        rows = [r for r in rows if vnstock_service.is_tradable_stock(r)]
         rows.sort(key=lambda r: (r.get("volume") or 0), reverse=True)
         symbols = [str(r.get("symbol") or "").upper() for r in rows if r.get("symbol")]
     except Exception as exc:  # noqa: BLE001

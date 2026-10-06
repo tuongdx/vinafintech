@@ -3,6 +3,7 @@ from fastapi.responses import Response
 import re
 
 from app.services import dividend_adjust
+from app.services.home_opportunity_service import get_home_opportunities
 from app.services.opportunity_service import get_top_opportunities
 from app.services.support_resistance import sr_service
 from app.services.vnstock_service import (
@@ -240,6 +241,14 @@ def stock_discover():
 def opportunities():
     """Cơ hội nổi bật hôm nay: trạng thái thị trường + tối đa 11 mã có Opportunity Score."""
     return get_top_opportunities()
+
+
+@router.get("/new-opportunities")
+def new_opportunities():
+    """Block "Cơ hội mới" (trang chủ): 3 nhóm cổ phiếu (tăng trưởng / định giá / tài chính
+    lành mạnh) tự cập nhật theo dữ liệu thị trường — snapshot dựng lại vào 12h trưa (giờ VN)
+    hằng ngày. Trang Khám phá vẫn dùng `/stock-discover` (dữ liệu tươi)."""
+    return get_home_opportunities()
 
 
 @router.get("/filter")

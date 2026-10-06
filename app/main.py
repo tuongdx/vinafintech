@@ -312,6 +312,14 @@ def on_startup() -> None:
         asset_events_router.start_daily_refresh()
     except Exception:  # noqa: BLE001
         pass
+    # Block "Cơ hội mới" (trang chủ): snapshot cổ phiếu theo dữ liệu thị trường, cũng
+    # dựng lại vào 12h trưa giờ VN mỗi ngày (thread nền riêng, idempotent).
+    try:
+        from app.services import home_opportunity_service
+
+        home_opportunity_service.start_daily_refresh()
+    except Exception:  # noqa: BLE001
+        pass
     _warm_home_caches()
 
 
@@ -326,6 +334,7 @@ def _warm_home_caches() -> None:
 
         from app.routers.asset_events import get_upcoming_events as upcoming_events_fn
         from app.services import dividend_adjust
+        from app.services import home_opportunity_service
         from app.services.opportunity_service import get_top_opportunities
 
         jobs = [
@@ -334,6 +343,8 @@ def _warm_home_caches() -> None:
             ("market-dashboard", vs.get_market_dashboard),
             ("stock-screener", vs.get_stock_screener_page),
             ("stock-discover", vs.get_stock_discover_page),
+            # Snapshot "Cơ hội mới" (trang chủ) theo mốc 12h trưa hằng ngày.
+            ("home-opportunities", home_opportunity_service.refresh_home_opportunities),
             ("opportunities", lambda: get_top_opportunities(force=True)),
             ("index-detail", lambda: vs.get_index_detail("vnindex", "1y")),
             ("market-overview", vs.get_market_overview),
@@ -419,6 +430,8 @@ PAGE_MAP: dict[str, str] = {
     "dong-tien-thong-minh": "tin-tuc.html",
     "tai-chinh-quoc-te": "tin-tuc.html",
     "cong-nghe": "tin-tuc.html",
+    # Chuyên mục Crypto (tiền ảo): slug "tien-ao" để KHÔNG trùng URL /crypto của trang giá Crypto.
+    "tien-ao": "tin-tuc.html",
 }
 
 INDEX_SHELL_PAGES = {
@@ -467,6 +480,7 @@ INDEX_SHELL_PAGES = {
     "dong-tien-thong-minh",
     "tai-chinh-quoc-te",
     "cong-nghe",
+    "tien-ao",
 }
 
 
@@ -588,6 +602,15 @@ def qlts_section_page(section: str):
 @app.get("/tien-ich/{tool}")
 def tien_ich_tool_page(tool: str):
     """URL đẹp công cụ Tiện ích: /tien-ich/gia-dieu-chinh-co-phieu (giữ shell)."""
+    index_file = frontend_path / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
+    raise HTTPException(status_code=404, detail="Index file not found")
+
+
+@app.get("/crypto/{symbol}")
+def crypto_coin_page(symbol: str):
+    """URL đẹp chi tiết coin: /crypto/BTC → giữ shell, nội dung nạp vào iframe (crypto.html?symbol=BTC)."""
     index_file = frontend_path / "index.html"
     if index_file.exists():
         return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})

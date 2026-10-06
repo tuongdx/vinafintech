@@ -115,6 +115,19 @@
         .tt-chart-tip .tip-v { font-size: 14px; font-weight: 800; }
         .tt-chart-tip .tip-r { color: #c9d3e0; font-size: 11.5px; margin-top: 2px; }
         .tt-chart-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: #8a99b1; margin-top: 6px; flex-wrap: wrap; gap: 6px; }
+        /* Thanh công cụ biểu đồ: kỳ hạn + zoom + toàn màn hình */
+        .tt-chart-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .tt-chart-btns { display: flex; gap: 4px; }
+        .tt-chart-btn {
+            width: 30px; height: 30px; border: 1px solid #dbe4ec; background: #fff; color: #4a5a72;
+            border-radius: 9px; cursor: pointer; font-size: 12px; font-family: inherit;
+            display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s;
+        }
+        .tt-chart-btn:hover { border-color: #008080; color: #008080; }
+        .tt-chart-hint { font-size: 11px; color: #a3b0c2; margin-top: 4px; }
+        body.dark-mode .tt-chart-hint { color: #8b949e; }
+        body.dark-mode .tt-chart-btn { background: #21262d; border-color: #3e4c61; color: #d3deeb; }
+        body.dark-mode .tt-chart-btn:hover { border-color: #4db6b6; color: #5fd6cf; }
 
         /* ===== Breadth ===== */
         .tt-breadth-stack { display: flex; height: 26px; border-radius: 8px; overflow: hidden; margin: 10px 0 14px; }
@@ -434,7 +447,7 @@
                 const html = (indices || []).map(function(ix) {
                     const up = Number(ix.percent_change) >= 0;
                     const closes = (ix.history || []).map(function(b) { return Number(b.close); }).filter(function(v) { return isFinite(v); });
-                    return '<div class="tt-idx' + (ix.key === chartKey ? ' active' : '') + '" data-key="' + esc(ix.key) + '" data-symbol="' + esc(ix.key === 'vnindex' ? 'VNINDEX' : ix.key === 'hnx' ? 'HNXINDEX' : ix.key === 'upcom' ? 'UPINDEX' : 'VN30') + '">' +
+                    return '<div class="tt-idx' + (ix.key === chartKey ? ' active' : '') + '" data-key="' + esc(ix.key) + '" data-symbol="' + esc(indexSymbolOf(ix.key)) + '">' +
                         '<div class="ti-name">' + esc(ix.label) + '</div>' +
                         '<div class="ti-val">' + fmt(ix.value) + '</div>' +
                         '<div class="ti-chg ' + cls(ix.percent_change) + '">' + pct(ix.percent_change) + '</div>' +
@@ -462,6 +475,10 @@
             let chartKey = 'vnindex';
             let chartPeriod = '1y';
             let chartQuote = null;
+            let chartView = null;        // cửa sổ đang xem khi ZOOM: {n, from, to} — null = xem toàn bộ
+            let lastChart = null;        // {hist, d} — dữ liệu nến gần nhất để vẽ lại khi đổi kích thước / zoom
+            let chartRenderedW = 0;      // bề rộng khung lúc vẽ nến (px) — tránh vẽ lại vô ích
+            let chartResizeTimer = null;
 
             function mainChartHtml() {
                 return '<section class="tt-card tt-chart">' +
@@ -469,10 +486,16 @@
                         '<div><select id="ttChartSelect" class="tt-chart-select">' + INDEX_KEYS.map(function(k) {
                             return '<option value="' + k.key + '"' + (k.key === chartKey ? ' selected' : '') + '>' + k.label + '</option>';
                         }).join('') + '</select>' +
-                        '<div class="tt-chart-quote" id="ttChartQuote"></div></div>' +
-                        '<div class="tt-periods" id="ttPeriods">' + PERIODS.map(function(x) {
-                            return '<button data-p="' + x.p + '" data-slice="' + x.slice + '" class="' + (x.p === chartPeriod && x.slice === 0 ? 'active' : '') + '">' + x.label + '</button>';
-                        }).join('') + '</div>' +
+                        '<div class="tt-chart-quote" id="ttChartQuote"></div>' +
+                        '<div class="tt-chart-hint">Lăn chuột để zoom · kéo để di chuyển · nhấp đúp để xem toàn bộ</div></div>' +
+                        '<div class="tt-chart-tools">' +
+                            '<div class="tt-periods" id="ttPeriods">' + PERIODS.map(function(x) {
+                                return '<button data-p="' + x.p + '" data-slice="' + x.slice + '" class="' + (x.p === chartPeriod && x.slice === 0 ? 'active' : '') + '">' + x.label + '</button>';
+                            }).join('') + '</div>' +
+                            '<div class="tt-chart-btns">' +
+                                '<button type="button" class="tt-chart-btn" id="ttChartFs" title="Biểu đồ phân tích kỹ thuật (toàn màn hình)"><i class="fas fa-expand"></i></button>' +
+                            '</div>' +
+                        '</div>' +
                     '</div>' +
                     '<div class="tt-chart-svg" id="ttChartWrap">' +
                         '<svg id="ttMainChart" viewBox="0 0 640 300" preserveAspectRatio="none"></svg>' +
@@ -488,9 +511,18 @@
                 try {
                     const r = await fetch('/api/stocks/index-detail?key=' + chartKey + '&period=' + encodeURIComponent(p), { cache: 'no-store' });
                     const d = await r.json();
-                    let hist = (d.history || []).map(function(b) { return { t: b.time, c: Number(b.close), v: Number(b.volume) || 0, m: Number(b.value) || 0 }; }).filter(function(b) { return isFinite(b.c); });
+                    let hist = (d.history || []).map(function(b) {
+                        // Giữ đủ OHLC để vẽ NẾN; nguồn thiếu open/high/low thì suy từ close.
+                        const c = Number(b.close);
+                        const o = Number(b.open) > 0 ? Number(b.open) : c;
+                        const h = Number(b.high) > 0 ? Number(b.high) : Math.max(o, c);
+                        const l = Number(b.low) > 0 ? Number(b.low) : Math.min(o, c);
+                        return { t: b.time, o: o, h: h, l: l, c: c, v: Number(b.volume) || 0, m: Number(b.value) || 0 };
+                    }).filter(function(b) { return isFinite(b.c); });
                     if (slice > 0) hist = hist.slice(-slice);
                     chartQuote = d;
+                    chartView = null;                     // dữ liệu mới (đổi kỳ hạn/chỉ số) → xem toàn bộ
+                    lastChart = { hist: hist, d: d };
                     renderMainChart(hist, d);
                 } catch (e) {
                     const svg = document.getElementById('ttMainChart');
@@ -524,31 +556,58 @@
             }
             function renderMainChart(hist, d) {
                 const svg = document.getElementById('ttMainChart');
+                const wrap = document.getElementById('ttChartWrap');
                 const q = document.getElementById('ttChartQuote');
                 const foot = document.getElementById('ttChartFoot');
+                const tip = document.getElementById('ttChartTip');
                 if (!svg) return;
+
+                // Cửa sổ đang xem (ZOOM): [from..to] là chỉ số trong `hist`; chartView = null → xem toàn bộ.
+                const n = hist.length;
+                if (!chartView || chartView.n !== n) chartView = { n: n, from: 0, to: n - 1 };
+                const from = Math.max(0, Math.min(chartView.from, Math.max(0, n - 2)));
+                const to = Math.min(n - 1, Math.max(chartView.to, from + 1));
+                chartView = { n: n, from: from, to: to };
+                const view = hist.slice(from, to + 1);
+                const m = view.length;
+
                 if (q) {
                     const up = Number(d.percent_change) >= 0;
                     q.innerHTML = '<b>' + fmt(d.value) + '</b> điểm · <span class="' + cls(d.percent_change) + '">' + pct(d.percent_change) + '</span>';
                 }
                 if (foot) {
-                    const first = hist[0], last = hist[hist.length - 1];
-                    foot.innerHTML = '<span>Phiên đầu: ' + fmtDate(first ? first.t : '') + ' · ' + (first ? fmt(first.c) : '--') + '</span>' +
-                        '<span>Phiên cuối: ' + fmtDate(last ? last.t : '') + ' · ' + (last ? fmt(last.c) : '--') + '</span>';
+                    if (m) {
+                        const f0 = view[0], f1 = view[m - 1];
+                        foot.innerHTML = '<span>Phiên đầu: ' + fmtDate(f0.t) + ' · ' + fmt(f0.c) + '</span>' +
+                            '<span>Phiên cuối: ' + fmtDate(f1.t) + ' · ' + fmt(f1.c) + '</span>' +
+                            (m < n ? '<span>Đang xem ' + m + '/' + n + ' phiên — nhấp đúp để xem toàn bộ</span>' : '');
+                    } else {
+                        foot.innerHTML = '';
+                    }
                 }
                 if (hist.length < 2) { svg.innerHTML = ''; return; }
-                const W = 640, H = 300, padL = 52, padR = 12, padT = 12, padB = 26;
-                const closes = hist.map(function(b) { return b.c; });
-                const min = Math.min.apply(null, closes), max = Math.max.apply(null, closes);
-                const range = (max - min) || 1;
-                const n = hist.length;
-                const px = function(i) { return padL + (i / (n - 1)) * (W - padL - padR); };
-                const py = function(v) { return padT + (1 - (v - min) / range) * (H - padT - padB); };
-                const pts = closes.map(function(v, i) { return [px(i), py(v)]; });
-                const line = pts.map(function(p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
-                const area = padL + ',' + (H - padB) + ' ' + line + ' ' + (W - padR) + ',' + (H - padB);
-                const up = closes[closes.length - 1] >= closes[0];
-                const col = up ? '#008080' : '#d0314e';
+
+                // Đo kích thước THẬT của khung rồi set viewBox 1:1 ⇒ NẾN không bị kéo giãn ngang
+                // (khung rộng hơn 640px rất nhiều; viewBox cố định + preserveAspectRatio=none làm nến dẹt).
+                const W = Math.max(320, Math.round((wrap && wrap.clientWidth) || 640));
+                const H = Math.max(180, Math.round((wrap && wrap.clientHeight) || 300));
+                svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+                chartRenderedW = W;
+
+                const padL = 52, padR = 12, padT = 12, padB = 26;
+                const lows = view.map(function(b) { return b.l; });
+                const highs = view.map(function(b) { return b.h; });
+                let min = Math.min.apply(null, lows), max = Math.max.apply(null, highs);
+                if (!(max > min)) max = min + 1;
+                const edge = (max - min) * 0.05;        // chừa mép trên/dưới cho bấc nến
+                min -= edge; max += edge;
+                const range = max - min;
+                const plotW = W - padL - padR, plotH = H - padT - padB;
+                const step = plotW / m;
+                const cx = function(i) { return padL + step * (i + 0.5); };   // tâm nến
+                const py = function(v) { return padT + (1 - (v - min) / range) * plotH; };
+                const bw = Math.max(1, Math.min(step * 0.62, 13));           // bề rộng thân nến
+                const UP = '#008080', DOWN = '#d0314e';
 
                 // horizontal gridlines + Y point labels (HTML để chữ không méo)
                 const ticks = niceTicks(min, max, 6);
@@ -561,45 +620,56 @@
                 });
                 // vertical gridlines
                 for (let i = 0; i <= 6; i++) {
-                    const x = padL + (i / 6) * (W - padL - padR);
+                    const x = padL + (i / 6) * plotW;
                     grid += '<line x1="' + x.toFixed(1) + '" y1="' + padT + '" x2="' + x.toFixed(1) + '" y2="' + (H - padB) + '" stroke="rgba(15,23,42,0.05)" stroke-width="1"/>';
                 }
                 // X date labels (HTML)
-                const idxs = [0, Math.floor((n - 1) / 2), n - 1];
+                const idxs = [0, Math.floor((m - 1) / 2), m - 1];
                 const xlab = idxs.map(function(i) {
-                    const left = px(i) / W * 100;
-                    const tr = i === 0 ? 'translateX(0)' : (i === n - 1 ? 'translateX(-100%)' : 'translateX(-50%)');
-                    return '<div class="xl" style="left:' + left + '%;transform:' + tr + ';top:calc(100% - 24px);">' + fmtDate(hist[i].t) + '</div>';
+                    const left = cx(i) / W * 100;
+                    const tr = i === 0 ? 'translateX(0)' : (i === m - 1 ? 'translateX(-100%)' : 'translateX(-50%)');
+                    return '<div class="xl" style="left:' + left + '%;transform:' + tr + ';top:calc(100% - 24px);">' + fmtDate(view[i].t) + '</div>';
                 }).join('');
 
-                svg.innerHTML = grid +
-                    '<polygon points="' + area + '" fill="' + col + '" opacity="0.12"/>' +
-                    '<polyline points="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
-                    '<circle cx="' + pts[n - 1][0] + '" cy="' + pts[n - 1][1] + '" r="4" fill="' + col + '"/>' +
-                    '<line id="ttChartCross" x1="0" y1="' + padT + '" x2="0" y2="' + (H - padB) + '" stroke="' + col + '" stroke-width="1" stroke-dasharray="4 3" opacity="0.55" visibility="hidden"/>';
+                // NẾN: bấc (high→low) + thân (open→close). Tăng = xanh teal, giảm = đỏ (quy ước up/down toàn site).
+                let candles = '';
+                view.forEach(function(b, i) {
+                    const x = cx(i);
+                    const col = b.c >= b.o ? UP : DOWN;
+                    const yO = py(b.o), yC = py(b.c);
+                    const top = Math.min(yO, yC);
+                    const bodyH = Math.max(1, Math.abs(yC - yO));
+                    candles += '<line x1="' + x.toFixed(1) + '" y1="' + py(b.h).toFixed(1) + '" x2="' + x.toFixed(1) + '" y2="' + py(b.l).toFixed(1) + '" stroke="' + col + '" stroke-width="1"/>' +
+                        '<rect x="' + (x - bw / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bodyH.toFixed(1) + '" fill="' + col + '"/>';
+                });
+                // Đường giá ĐÓNG CỬA phiên cuối (mốc hiện tại) — nét đứt mảnh
+                const lastY = py(view[m - 1].c);
+                const lastLine = '<line x1="' + padL + '" y1="' + lastY.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + lastY.toFixed(1) + '" stroke="#008080" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>';
+
+                svg.innerHTML = grid + candles + lastLine +
+                    '<line id="ttChartCross" x1="0" y1="' + padT + '" x2="0" y2="' + (H - padB) + '" stroke="#4a5a72" stroke-width="1" stroke-dasharray="4 3" opacity="0.55" visibility="hidden"/>';
 
                 const ylabEl = document.getElementById('ttChartYlab');
                 if (ylabEl) ylabEl.innerHTML = ylab;
                 const xlabEl = document.getElementById('ttChartXlab');
                 if (xlabEl) xlabEl.innerHTML = xlab;
 
-                // crosshair + tooltip (điểm, ngày, thanh khoản)
-                const wrap = document.getElementById('ttChartWrap');
-                const tip = document.getElementById('ttChartTip');
+                // crosshair + tooltip (điểm, ngày, OHLC, thanh khoản)
                 const cross = document.getElementById('ttChartCross');
                 if (wrap && tip) {
                     wrap.onmousemove = function(e) {
                         const r = svg.getBoundingClientRect();
                         const mx = (e.clientX - r.left) / r.width * W;
                         const step = (W - padL - padR) / (n - 1);
-                        let i = Math.round((mx - padL) / step);
-                        i = Math.max(0, Math.min(n - 1, i));
-                        const b = hist[i];
-                        const bx = px(i);
+                        let i = Math.round((mx - padL) / step - 0.5);
+                        i = Math.max(0, Math.min(m - 1, i));
+                        const b = view[i];
+                        const bx = cx(i);
                         if (cross) { cross.setAttribute('x1', bx); cross.setAttribute('x2', bx); cross.setAttribute('visibility', 'visible'); }
                         tip.innerHTML =
                             '<div class="tip-v">' + fmtPts(b.c) + ' điểm</div>' +
                             '<div class="tip-r">Ngày: ' + fmtDate(b.t) + '</div>' +
+                            '<div class="tip-r">Mở ' + fmtPts(b.o) + ' · Cao ' + fmtPts(b.h) + ' · Thấp ' + fmtPts(b.l) + '</div>' +
                             '<div class="tip-r">Thanh khoản: ' + fmtVol(b.v) + ' cp' + (b.m ? ' · ' + fmt(b.m / 1e9, 0) + ' tỷ' : '') + '</div>';
                         tip.classList.add('show');
                         let t = e.clientX - r.left + 16;
@@ -615,6 +685,49 @@
                         tip.classList.remove('show');
                         if (cross) cross.setAttribute('visibility', 'hidden');
                     };
+                }
+
+                // ---------- ZOOM: lăn chuột (theo vị trí trỏ) · kéo để di chuyển · nhấp đúp xem toàn bộ ----------
+                if (wrap) {
+                    wrap.style.cursor = m < n ? 'grab' : '';
+                    let dragging = false, dragStartX = 0, dragFrom = 0;
+                    wrap.onwheel = function(e) {
+                        if (n < 4) return;
+                        e.preventDefault();                       // chặn cuộn trang khi zoom biểu đồ
+                        const r = svg.getBoundingClientRect();
+                        const mx = (e.clientX - r.left) / r.width * W;
+                        const anchor = Math.max(from, Math.min(to, from + Math.round((mx - padL) / step - 0.5)));
+                        const span0 = to - from + 1;
+                        const span = e.deltaY < 0
+                            ? Math.max(3, Math.round(span0 * 0.8))
+                            : Math.min(n, Math.round(span0 * 1.25));
+                        if (span === span0) return;
+                        let nf = anchor - Math.round((anchor - from) / span0 * span);
+                        let nt = nf + span - 1;
+                        if (nf < 0) { nf = 0; nt = span - 1; }
+                        if (nt > n - 1) { nt = n - 1; nf = Math.max(0, nt - span + 1); }
+                        chartView = { n: n, from: nf, to: nt };
+                        renderMainChart(hist, d);
+                    };
+                    wrap.onpointerdown = function(e) {
+                        if (e.button !== 0 || m >= n) return;
+                        dragging = true; dragStartX = e.clientX; dragFrom = from;
+                        wrap.style.cursor = 'grabbing';
+                        try { wrap.setPointerCapture(e.pointerId); } catch (err) {}
+                    };
+                    wrap.onpointermove = function(e) {
+                        if (!dragging || m >= n) return;
+                        const r = svg.getBoundingClientRect();
+                        const shift = Math.round(-((e.clientX - dragStartX) / r.width * W) / step);
+                        const nf = Math.max(0, Math.min(n - m, dragFrom + shift));
+                        if (nf !== from) {
+                            chartView = { n: n, from: nf, to: nf + m - 1 };
+                            renderMainChart(hist, d);
+                        }
+                    };
+                    wrap.onpointerup = function() { dragging = false; wrap.style.cursor = m < n ? 'grab' : ''; };
+                    wrap.onpointercancel = function() { dragging = false; };
+                    wrap.ondblclick = function() { chartView = null; renderMainChart(hist, d); };
                 }
             }
 
@@ -1245,6 +1358,10 @@
                     });
                     loadMainChart(chartPeriod, 0);
                 });
+                // Nút toàn màn hình của biểu đồ nến (đã bỏ nút zoom +/− và nút xem toàn bộ: zoom vẫn
+                // dùng được bằng LĂN CHUỘT, kéo để di chuyển, nhấp đúp để xem toàn bộ).
+                const fsBtn = document.getElementById('ttChartFs');
+                if (fsBtn) fsBtn.addEventListener('click', openChartFullscreen);
                 const shotBtn = document.getElementById('ttMapShot');
                 if (shotBtn) shotBtn.addEventListener('click', exportMapPng);
                 const shareBtn = document.getElementById('ttMapShare');
@@ -1330,7 +1447,57 @@
                 setTimeout(notifyParentHeight, 60);
                 setTimeout(notifyParentHeight, 400);
             });
-            window.addEventListener('resize', function() { fitNewsScroll(); notifyParentHeight(); });
+            // ---------- Zoom biểu đồ nến ----------
+            function zoomChart(factor) {
+                if (!lastChart || !lastChart.hist || lastChart.hist.length < 4) return;
+                const n = lastChart.hist.length;
+                const cur = chartView || { n: n, from: 0, to: n - 1 };
+                const span0 = cur.to - cur.from + 1;
+                const span = Math.max(3, Math.min(n, Math.round(span0 / factor)));
+                if (span === span0) return;
+                const center = (cur.from + cur.to) / 2;
+                let nf = Math.round(center - span / 2);
+                let nt = nf + span - 1;
+                if (nf < 0) { nf = 0; nt = span - 1; }
+                if (nt > n - 1) { nt = n - 1; nf = Math.max(0, nt - span + 1); }
+                chartView = { n: n, from: nf, to: nt };
+                renderMainChart(lastChart.hist, lastChart.d);
+            }
+            // Chỉ số đang xem → mã dùng cho màn hình biểu đồ nến TOÀN MÀN HÌNH.
+            function indexSymbolOf(key) {
+                return key === 'vnindex' ? 'VNINDEX' : key === 'hnx' ? 'HNXINDEX' : key === 'upcom' ? 'UPINDEX' : 'VN30';
+            }
+            // Nút fullscreen trong block biểu đồ → dùng ĐÚNG xử lý của icon nến ở header.
+            // Gọi thẳng hàm mà shell dùng cho icon nến (`window.parent.tunixChartFullscreenRequest`) nên
+            // hai chỗ chỉ có MỘT code path: nạp trang chi tiết kèm ?fs=1 + bật fullscreen, thoát thì quay lại
+            // đúng trang Thị trường. Chỉ khi không gọi được trực tiếp (khác origin) mới postMessage dự phòng.
+            function openChartFullscreen() {
+                const sym = indexSymbolOf(chartKey);
+                if (window.parent && window.parent !== window) {
+                    try {
+                        if (typeof window.parent.tunixChartFullscreenRequest === 'function') {
+                            window.parent.tunixChartFullscreenRequest(sym);
+                            return;
+                        }
+                    } catch (e) { /* khác origin → dùng postMessage bên dưới */ }
+                    window.parent.postMessage({ type: 'tunix-open-chart-fullscreen', symbol: sym }, '*');
+                } else {
+                    window.location.href = '/cophieu-' + encodeURIComponent(sym) + '?fs=1';
+                }
+            }
+
+            window.addEventListener('resize', function() {
+                fitNewsScroll();
+                notifyParentHeight();
+                // Nến vẽ theo bề rộng THẬT của khung ⇒ vẽ lại khi bề rộng đổi (debounce, tránh vòng lặp).
+                if (lastChart) {
+                    clearTimeout(chartResizeTimer);
+                    chartResizeTimer = setTimeout(function() {
+                        const w = document.getElementById('ttChartWrap');
+                        if (w && Math.abs(w.clientWidth - chartRenderedW) >= 4) renderMainChart(lastChart.hist, lastChart.d);
+                    }, 180);
+                }
+            });
             if (window.ResizeObserver) {
                 const obs = new ResizeObserver(function() { fitNewsScroll(); notifyParentHeight(); });
                 obs.observe(document.querySelector('.tt-page') || document.body);

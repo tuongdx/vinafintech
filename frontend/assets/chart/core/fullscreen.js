@@ -37,23 +37,42 @@ export class FullscreenManager {
         return !!(document.fullscreenElement || document.webkitFullscreenElement);
     }
 
-    // Được kích hoạt khi PARENT fullscreen chính iframe này (icon nến ở header) —
-    // parent có user activation nên 1 click là vào fullscreen trên MỌI trình duyệt.
+    // Được kích hoạt khi PARENT fullscreen iframe này HOẶC khung chứa iframe này (#frameHost —
+    // shell dùng khung cố định để bấm 1 lần là vào đúng biểu đồ, xem index.html `openChartFullscreen`).
     isParentDriven() {
-        return !!(window.parent && window.parent !== window &&
-            window.parent.document &&
-            ((window.parent.document.fullscreenElement || window.parent.document.webkitFullscreenElement) === window.frameElement));
+        if (!(window.parent && window.parent !== window && window.parent.document)) return false;
+        let pe = null;
+        try {
+            const pd = window.parent.document;
+            pe = pd.fullscreenElement || pd.webkitFullscreenElement;
+        } catch (e) { return false; }
+        if (!pe) return false;
+        if (pe === window.frameElement) return true;
+        try { return !!(pe.contains && window.frameElement && pe.contains(window.frameElement)); } catch (e) { return false; }
     }
 
     isFullscreen() {
         return this.isActive() || this.isParentDriven();
     }
 
+    // Đồng bộ lại trạng thái + icon khi fullscreen do PARENT bật/thoát (document của iframe này
+    // KHÔNG nhận được sự kiện fullscreenchange trong trường hợp đó).
+    refresh() {
+        this._handleChange();
+        return this;
+    }
+
     toggle() {
         if (this.isParentDriven()) {
-            // Đang ở chế độ parent fullscreen iframe này → thoát fullscreen parent (như Esc).
-            const exit = window.parent.document.exitFullscreen || window.parent.document.webkitExitFullscreen;
-            if (exit) { try { exit.call(window.parent.document); } catch (e) {} }
+            // Đang ở chế độ parent fullscreen (iframe này hoặc khung chứa nó) → thoát đúng như
+            // nhấn Esc / nút X của trình duyệt: nhờ shell thoát (shell là bên đã bật fullscreen),
+            // đồng thời gọi trực tiếp (cùng origin) để chắc chắn chạy cả khi message bị chặn.
+            try { window.parent.postMessage({ type: 'tunix-exit-fullscreen' }, '*'); } catch (e) { /* ignore */ }
+            try {
+                const pd = window.parent.document;
+                const exit = pd.exitFullscreen || pd.webkitExitFullscreen;
+                if (exit) exit.call(pd);
+            } catch (e) { /* ignore */ }
             return;
         }
         if (!this.isSupported()) return;

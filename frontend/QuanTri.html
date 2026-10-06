@@ -3598,6 +3598,7 @@
                                         <option value="dong-tien-thong-minh">Kinh doanh</option>
                                         <option value="tai-chinh-quoc-te">Quốc Tế</option>
                                         <option value="cong-nghe">Công Nghệ</option>
+                                        <option value="tien-ao">Crypto</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -3955,6 +3956,7 @@
                                     <option value="dong-tien-thong-minh">Kinh doanh</option>
                                     <option value="tai-chinh-quoc-te">Quốc Tế</option>
                                     <option value="cong-nghe">Công Nghệ</option>
+                                    <option value="tien-ao">Crypto</option>
                                 </select>
                                 <div class="helper-text">Mặc định: Chứng Khoán — bài viết sẽ ở danh mục được chọn.</div>
                             </div>
@@ -4940,7 +4942,7 @@
             if (newsSortField) {
                 const sField = newsSortField;
                 const sDir = newsSortDir;
-                const catMap = { 'chung-khoan': 'Chứng Khoán', 'ngan-hang': 'Ngân Hàng', 'bat-dong-san': 'Bất Động Sản', 'doanh-nghiep': 'Doanh Nghiệp', 'dong-tien-thong-minh': 'Kinh doanh', 'tai-chinh-quoc-te': 'Quốc Tế', 'cong-nghe': 'Công Nghệ', 'tin-tuc': 'Tin tức' };
+                const catMap = { 'chung-khoan': 'Chứng Khoán', 'ngan-hang': 'Ngân Hàng', 'bat-dong-san': 'Bất Động Sản', 'doanh-nghiep': 'Doanh Nghiệp', 'dong-tien-thong-minh': 'Kinh doanh', 'tai-chinh-quoc-te': 'Quốc Tế', 'cong-nghe': 'Công Nghệ', 'tien-ao': 'Crypto', 'tin-tuc': 'Tin tức' };
                 filtered = filtered.slice().sort(function(a, b) {
                     let va, vb;
                     if (sField === 'date') {
@@ -5031,7 +5033,7 @@
 
             const categoryMap = { 'chung-khoan': 'Chứng Khoán', 'ngan-hang': 'Ngân Hàng', 'bat-dong-san': 'Bất Động Sản',
                 'doanh-nghiep': 'Doanh Nghiệp', 'dong-tien-thong-minh': 'Kinh doanh',
-                'tai-chinh-quoc-te': 'Quốc Tế', 'cong-nghe': 'Công Nghệ', 'tin-tuc': 'Tin tức' };
+                'tai-chinh-quoc-te': 'Quốc Tế', 'cong-nghe': 'Công Nghệ', 'tien-ao': 'Crypto', 'tin-tuc': 'Tin tức' };
             const statusMap = {
                 'draft': 'Nháp',
                 'pending-approval': 'Chờ duyệt',
@@ -6098,7 +6100,7 @@
                 if (titleEl) titleEl.textContent = 'Chỉnh sửa bài viết';
                 if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
                 document.getElementById('newsTitle').value = item.title || '';
-                const allowedCat = ['chung-khoan', 'ngan-hang', 'bat-dong-san', 'doanh-nghiep', 'dong-tien-thong-minh', 'tai-chinh-quoc-te', 'cong-nghe'];
+                const allowedCat = ['chung-khoan', 'ngan-hang', 'bat-dong-san', 'doanh-nghiep', 'dong-tien-thong-minh', 'tai-chinh-quoc-te', 'cong-nghe', 'tien-ao'];
                 document.getElementById('newsCategory').value = allowedCat.includes(item.category) ? item.category : 'chung-khoan';
                 document.getElementById('newsSummary').value = item.summary || '';
                 document.getElementById('newsAuthor').value = item.author && item.author !== '—' ? item.author : '';

@@ -519,11 +519,22 @@
                     c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); });
                 });
             }
+            // Số mã HIỂN THỊ của block "Cơ hội nổi bật hôm nay" theo TỔNG số mã engine trả về:
+            //   ≥ 11 mã → tối đa 11 (9 mã lưới 3×3 + 2 mã dưới panel AI)
+            //   7–10 mã → tối đa 7   ·   4–6 mã → tối đa 3   ·   1–3 mã → hiển thị đủ
+            function featuredVisibleCount(total) {
+                const n = Number(total) || 0;
+                if (n >= 11) return 11;
+                if (n >= 7) return 7;
+                if (n >= 4) return 3;
+                return n;   // 1–3 mã: lấy đủ (0 mã thì để phần empty state xử lý)
+            }
             function renderFeatured(list, market) {
                 renderMarket(market || null);
                 const all = Array.isArray(list) ? list : [];
-                const main = all.slice(0, 9);   // 9 mã → lưới 3×3
-                const more = all.slice(9, 11);  // 2 mã còn lại → dưới panel AI
+                const shown = all.slice(0, featuredVisibleCount(all.length));
+                const main = shown.slice(0, 9);      // 9 mã → lưới 3×3
+                const more = shown.slice(9, 11);     // 2 mã còn lại → dưới panel AI
                 if (!all.length) {
                     const msg = market && market.status === 'negative'
                         ? (market.message || 'Thị trường rủi ro cao. Chưa ghi nhận đủ tín hiệu nổi bật.')

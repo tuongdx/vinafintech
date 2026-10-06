@@ -1208,6 +1208,35 @@
             padding-top: 0;
         }
 
+        /* Toàn màn hình biểu đồ — BƯỚC 1: #frameHost là phần tử fullscreen trong lúc iframe trang chi
+           tiết ?fs=1 còn đang tải → cho iframe đang hiện phủ kín màn hình (nếu trình duyệt cho phép
+           chuyển fullscreen sang chính iframe ở bước 2 thì khối này không còn áp dụng). */
+        #frameHost { position: relative; }
+        #frameHost:fullscreen { background: #f4f6f9; overflow: hidden; }
+        body.dark-mode #frameHost:fullscreen { background: #0d1117; }
+        #frameHost:fullscreen > iframe { height: 100% !important; min-height: 0 !important; }
+        /* Lớp báo "đang mở" nằm TRONG khung fullscreen → luôn thấy ngay sau cú bấm đầu tiên
+           (không còn màn hình trắng khiến người dùng tưởng nút chưa ăn rồi bấm lại). */
+        #chartFsPending {
+            display: none;
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: #f4f6f9;
+            color: #008080;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        #chartFsPending i { font-size: 30px; animation: chartFsPulse 1.2s ease-in-out infinite; }
+        #chartFsPending .fs-pending-note { color: #6b7a8d; font-size: 12px; font-weight: 500; }
+        body.dark-mode #chartFsPending .fs-pending-note { color: #8b949e; }
+        @keyframes chartFsPulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+        body.dark-mode #chartFsPending { background: #0d1117; color: #4db6b6; }
+
         /* Thanh tiến trình điều hướng (kiểu SPA): hiện khi trang mới đang tải. */
         #navProgress {
             position: fixed;
@@ -3262,9 +3291,17 @@
         }
 
         function syncEmbeddedContentTheme(mode) {
+            const msg = { type: 'tunix-theme', mode };
             const frame = document.getElementById('contentEmbedFrame');
-            if (!frame || !frame.contentWindow) return;
-            frame.contentWindow.postMessage({ type: 'tunix-theme', mode }, '*');
+            if (frame && frame.contentWindow) frame.contentWindow.postMessage(msg, '*');
+            // Đồng bộ luôn các iframe đang cache (đang ẩn) để khi quay lại không bị lệch theme
+            // (vd bấm icon sáng/tối khi đang ở trang khác, xong mới mở trang Cài đặt).
+            try {
+                frameCache.forEach(function(entry) {
+                    const w = entry && entry.frame && entry.frame.contentWindow;
+                    if (w) w.postMessage(msg, '*');
+                });
+            } catch (e) { /* frameCache chưa khởi tạo ở lần chạy đầu — bỏ qua */ }
         }
 
         // Kiểm tra theme đã lưu
@@ -3358,7 +3395,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20260928e';
+        const CACHE_VERSION = '20261006a';
         // Slug URL đẹp cho các section Quản lý tài sản
         window.__QLTS_SLUGS = {
             overview: 'phan-tich-tai-san',
@@ -3437,6 +3474,74 @@
         }
 
         window.openStockDetailInIndex = openStockDetailInIndex;
+
+        // ---- Toàn màn hình biểu đồ: bật fullscreen ĐÚNG chỗ ngay từ lần bấm ĐẦU TIÊN ----
+        // Lỗi cũ: bấm icon nến ở header / nút mở rộng trong block biểu đồ khi iframe trang chi tiết
+        // `?fs=1` CHƯA có trong cache → shell tạo iframe ẨN mới, rồi `requestFullscreen()` lên
+        // `#contentEmbedFrame` — tức iframe CŨ đang hiện (Thị trường / chi tiết không ?fs=1). Hệ quả:
+        // lần bấm đầu fullscreen nhầm trang cũ → phải thoát ra bấm lại mới vào workspace biểu đồ.
+        // Cách làm nay: fullscreen khung chứa `#frameHost` — phần tử này KHÔNG bao giờ bị thay thế
+        // (mỗi trang là một iframe riêng nằm trong khung này) nên cú bấm nào cũng đúng. Iframe chi tiết
+        // `?fs=1` nằm TRONG khung → CSS `#frameHost:fullscreen > iframe` cho nó phủ kín màn hình, và
+        // trang con nhận diện qua `parentFullscreenOwnsFrame()` (kiểm tra cả tổ tiên, không chỉ chính nó).
+        // Chỉ dùng DUY NHẤT một phần tử fullscreen (khung) — không "chuyển" fullscreen sang iframe —
+        // vì mỗi lần chuyển là một tầng trong stack fullscreen của trình duyệt, thoát ra sẽ còn dư 1 tầng.
+        function requestFsOn(el) {
+            if (!el || typeof el.requestFullscreen !== 'function') return;
+            if (document.fullscreenElement === el) return;
+            try {
+                const p = el.requestFullscreen();
+                if (p && typeof p.catch === 'function') p.catch(function () {});
+            } catch (e) { /* trình duyệt chặn → bỏ qua */ }
+        }
+        function openChartFullscreen(symbol) {
+            const sym = String(symbol || '').trim().toUpperCase();
+            if (!sym) return;
+            openStockDetailInIndex(sym, true);
+            const key = frameKeyOf(lastLoadedPage || '');
+            const entry = key ? frameCache.get(key) : null;
+            if (entry && entry.key === pendingFrameKey) {
+                // Iframe mới đang tải → hiện luôn để thấy ngay trang chi tiết đang nạp (thay vì trang cũ).
+                activateFrame(entry.key, true);
+            }
+            // Lớp báo "đang mở" nằm trong #frameHost (chính là phần tử fullscreen) → thấy ngay lập tức.
+            // Giữ lớp này cho tới khi trang biểu đồ báo ĐÃ SẴN SÀNG (dữ liệu + phân tích TuniAI) → bấm 1
+            // lần là vào thẳng màn hình hoàn chỉnh, không còn cảnh bảng TUNIAI hiện "Đang cập nhật…".
+            showChartFsPending('Đang tải dữ liệu biểu đồ…');
+            requestFsOn(frameHostEl());
+            // Iframe đã tải sẵn (mở lại mã vừa xem) → hỏi trạng thái để lớp chờ tắt ngay lập tức.
+            if (entry && entry.loaded) { try { entry.frame.contentWindow.postMessage({ type: 'tunix-chart-fs-status' }, '*'); } catch (e) { /* ignore */ } }
+        }
+        // Lớp "Đang mở biểu đồ…" — tự tắt khi trang con báo sẵn sàng; có trần thời gian để không bao giờ treo.
+        let chartFsPendingTimer = null;
+        function setChartFsPendingNote(text) {
+            const ov = document.getElementById('chartFsPending');
+            if (!ov) return;
+            const el = ov.querySelector('.fs-pending-note');
+            if (el) el.textContent = text || '';
+        }
+        function showChartFsPending(note) {
+            const host = frameHostEl();
+            let ov = document.getElementById('chartFsPending');
+            if (!ov) {
+                ov = document.createElement('div');
+                ov.id = 'chartFsPending';
+                ov.innerHTML = '<i class="fas fa-chart-line"></i><span>Đang mở biểu đồ phân tích kỹ thuật…</span>' +
+                    '<small class="fs-pending-note"></small>';
+                host.appendChild(ov);
+            }
+            ov.style.display = 'flex';
+            setChartFsPendingNote(note || '');
+            clearTimeout(chartFsPendingTimer);
+            // An toàn: tối đa 12s (TuniAI có thể chậm) rồi cứ hiện ra, không giữ lớp chờ vô hạn.
+            chartFsPendingTimer = setTimeout(hideChartFsPending, 12000);
+        }
+        function hideChartFsPending() {
+            const ov = document.getElementById('chartFsPending');
+            if (ov) ov.style.display = 'none';
+        }
+        window.hideChartFsPending = hideChartFsPending;
+        window.openChartFullscreen = openChartFullscreen;
 
         // Tự động lọc khi thay đổi bất kỳ option nào
         document.querySelectorAll('.filter-group select').forEach(select => {
@@ -3556,15 +3661,68 @@
         }
         window.openLaiNganHangPage = openLaiNganHangPage;
         function openCryptoPage(symbol) {
-            // Mở trang "Crypto" trong shell — URL đẹp /crypto. `symbol` (tuỳ chọn) → mở sẵn chi tiết coin.
+            // Mở trang "Crypto" trong shell — URL đẹp /crypto (hoặc /crypto/{MÃ} khi mở sẵn chi tiết coin).
             if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
             if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
             const sym = String(symbol || '').trim().toUpperCase();
             loadContent('/frontend/crypto.html' + (sym ? '?symbol=' + encodeURIComponent(sym) : ''));
-            window.history.replaceState({}, '', '/crypto');
+            // Iframe Crypto đã nằm trong cache thì KHÔNG nạp lại mà chỉ được hiện lại (activate) — mà iframe
+            // này tự đổi view khi nhấp 1 coin, nên phải gửi tin nhắn điều khiển view: bấm menu "Crypto" lúc
+            // đang xem CHI TIẾT 1 coin → quay về DANH SÁCH (không thì vẫn thấy chi tiết coin cũ).
+            syncCryptoView(sym || null);
+            window.history.replaceState({}, '', sym ? '/crypto/' + encodeURIComponent(sym) : '/crypto');
+            if (typeof lastRoutedPath !== 'undefined') lastRoutedPath = window.location.pathname;
             setHeaderContext(false);
         }
         window.openCryptoPage = openCryptoPage;
+
+        // ---------- View bên trong trang Crypto (danh sách ⇄ chi tiết coin) ----------
+        // Iframe Crypto TỰ đổi view khi nhấp 1 coin nên key iframe KHÔNG đổi (vẫn là /crypto) ⇒ shell không
+        // thể biết iframe đang ở view nào. Phải gửi 'tunix-crypto-goto' để iframe tự chuyển view (giống cơ chế
+        // 'tunix-co-phieu-goto' của trang Cổ phiếu).
+        function cryptoFrameEntry() {
+            const direct = frameCache.get(CRYPTO_KEY);
+            if (direct) return direct;
+            // Dự phòng: iframe Crypto còn key theo kiểu cũ (/crypto?symbol=…).
+            let found = null;
+            frameCache.forEach(function (e, k) { if (!found && /^\/crypto(\?|$)/.test(String(k || ''))) found = e; });
+            return found;
+        }
+        function postCryptoView(entry, symbol) {
+            if (!entry) return;
+            const sym = symbol ? String(symbol).trim().toUpperCase() : null;
+            try { entry.frame.contentWindow.postMessage({ type: 'tunix-crypto-goto', symbol: sym }, '*'); }
+            catch (e) { /* ignore */ }
+        }
+        // Đặt view mong muốn cho iframe Crypto (null = danh sách). Iframe CHƯA tải xong thì lưu lại để gửi bù
+        // khi nó load (gửi sớm sẽ mất vì trang con chưa đăng ký listener 'message').
+        function setCryptoView(entry, symbol) {
+            if (!entry) return;
+            const sym = symbol ? String(symbol).trim().toUpperCase() : null;
+            entry.cryptoSym = sym;
+            if (entry.loaded) postCryptoView(entry, sym);
+            else entry.pendingCrypto = { symbol: sym };
+        }
+        // Trả về true nếu ĐÃ điều khiển được iframe Crypto (đã tải xong, đang có trong cache).
+        function syncCryptoView(symbol) {
+            const entry = cryptoFrameEntry();
+            if (!entry || !entry.loaded) return false;
+            setCryptoView(entry, symbol);
+            return true;
+        }
+        // Lịch sử cho trang Crypto: MỞ coin → push (Back quay về danh sách); về danh sách → replace.
+        function pushCryptoHistory(url, isPush) {
+            if (!url) return;
+            const cur = window.location.pathname + window.location.search;
+            if (url === cur) { lastRoutedPath = window.location.pathname; return; }
+            if (isPush && historyReady && !handlingPop) {
+                try { window.history.pushState(null, '', url); appPushedCount++; }
+                catch (e) { window.history.replaceState({}, '', url); }
+            } else {
+                window.history.replaceState({}, '', url);
+            }
+            lastRoutedPath = window.location.pathname;
+        }
         function openGiaVangBacPage() {
             // Mở trang "Giá Vàng/Bạc" trong shell — URL đẹp /gia-vang-bac.
             if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
@@ -4011,30 +4169,31 @@
             });
         }
 
-        // Button biểu đồ nến ở header → mở BIỂU ĐỒ TOÀN MÀN HÌNH (load in-place, không reload trang).
-        // Đang ở trang chi tiết cổ phiếu → fullscreen ĐÚNG mã đang xem; nơi khác → mặc định VNINDEX.
-        // Nếu mở từ trang KHÔNG phải chi tiết cổ phiếu → khi thoát fullscreen QUAY LẠI trang trước đó.
+        // ---- XỬ LÝ DUY NHẤT cho "mở biểu đồ phân tích kỹ thuật toàn màn hình" ----
+        // Dùng cho CẢ icon nến ở header VÀ nút mở rộng trong block biểu đồ ở trang Thị trường
+        // (Thị trường gọi TRỰC TIẾP window.parent.tunixChartFullscreenRequest) ⇒ chỉ có MỘT code path,
+        // không thể lệch hành vi giữa hai chỗ.
+        //   - Đang ở trang chi tiết cổ phiếu → fullscreen ĐÚNG mã đang xem.
+        //   - Nơi khác → fullscreen mã truyền vào (header: VNINDEX; block: chỉ số đang xem ở block).
+        //   - Mở từ trang KHÔNG phải chi tiết cổ phiếu → thoát fullscreen QUAY LẠI trang trước đó.
+        function requestChartFullscreen(sym) {
+            const fallback = String(sym || '').trim().toUpperCase() || 'VNINDEX';
+            if (isStockDetailEmbedded()) {
+                fsReturnState = null;
+                openChartFullscreen(currentChartSymbol);
+                return;
+            }
+            // Lưu trang hiện tại (nội dung + URL) để thoát fullscreen quay lại đúng trang này.
+            fsReturnState = { page: lastLoadedPage, url: location.href };
+            openChartFullscreen(fallback);
+        }
+        window.tunixChartFullscreenRequest = requestChartFullscreen;
+
         const chartFullscreenLink = document.getElementById('chartFullscreenLink');
         if (chartFullscreenLink) {
             chartFullscreenLink.addEventListener('click', function(e) {
                 e.preventDefault();
-                const fromStockPage = isStockDetailEmbedded();
-                if (fromStockPage) {
-                    fsReturnState = null;
-                    openStockDetailInIndex(currentChartSymbol, true);
-                } else {
-                    // Lưu trang hiện tại (nội dung + URL) để thoát fullscreen quay lại đúng trang này.
-                    fsReturnState = { page: lastLoadedPage, url: location.href };
-                    openStockDetailInIndex('VNINDEX', true);
-                }
-                // Bật fullscreen NGAY TRONG cử chỉ click (parent có user activation) →
-                // đảm bảo 1 click là fullscreen trên MỌI trình duyệt, không phụ thuộc
-                // user-activation của iframe vừa tạo. Iframe nhận ?fs=1 → tự giữ layout toàn màn hình.
-                const frame = document.getElementById('contentEmbedFrame');
-                if (frame && frame.requestFullscreen) {
-                    const p = frame.requestFullscreen();
-                    if (p && typeof p.catch === 'function') p.catch(() => { /* fallback: iframe tự fullscreen qua maybeAutoFullscreen */ });
-                }
+                requestChartFullscreen('VNINDEX');
             });
         }
 
@@ -4055,6 +4214,7 @@
         }
         document.addEventListener('fullscreenchange', function() {
             const pe = document.fullscreenElement || document.webkitFullscreenElement;
+            if (!pe) hideChartFsPending();          // thoát fullscreen → dọn lớp "Đang mở…" nếu còn
             if (!pe && fsReturnState) restorePreviousPage();
         });
 
@@ -4068,6 +4228,7 @@
             { slug: 'dong-tien-thong-minh',   label: 'Kinh doanh',         icon: 'fa-money-bill-wave' },
             { slug: 'tai-chinh-quoc-te',      label: 'Quốc Tế',            icon: 'fa-globe' },
             { slug: 'cong-nghe',              label: 'Công Nghệ',          icon: 'fa-microchip' },
+            { slug: 'tien-ao',                label: 'Crypto',             icon: 'fa-coins' },
         ];
         // Danh sách slug chuyên mục + URL đẹp (/ngan-hang thay vì /tin-tuc?cat=ngan-hang)
         const NEWS_CATEGORY_SLUGS = NEWS_CATEGORIES.filter(function (c) { return c.slug; }).map(function (c) { return c.slug; });
@@ -4243,11 +4404,29 @@
         // còn khớp key của nó. Hệ quả: về trang chủ rồi bấm lại 1 mã → URL đúng nhưng màn hình vẫn là
         // danh sách ngành. Nay view bên trong do SHELL điều khiển qua postMessage 'tunix-co-phieu-goto'.
         const CO_PHIEU_KEY = '/CoPhieu';
+        // Trang Crypto: cũng dùng MỘT iframe duy nhất cho mọi view (danh sách / chi tiết coin) — nếu để key
+        // kèm ?symbol=… thì mỗi lần deep-link rồi Back sẽ sinh thêm 1 iframe Crypto nữa (2 iframe = gọi API
+        // định kỳ 2 lần) và iframe tự đổi view bên trong nên key không còn khớp nội dung đang hiện.
+        const CRYPTO_KEY = '/crypto';
         function frameKeyOf(page) {
             let s = String(page || '').replace(/([?&])v=[^&]*/g, '$1').replace(/[?&]+$/, '');
             s = s.replace('/frontend/', '/').replace(/\.html(?=$|[?#])/, '');
             if (/^\/CoPhieu\b/.test(s) || /^\/co-phieu\b/.test(s)) return CO_PHIEU_KEY;
+            if (/^\/crypto\b/i.test(s)) return CRYPTO_KEY;
             return s;
+        }
+
+        // ---------- View bên trong trang Crypto (danh sách ⇄ chi tiết coin) ----------
+        // Từ CHUỖI TRANG nội bộ (vd /frontend/crypto.html?symbol=BTC) → view mong muốn: 'BTC' | null (danh sách).
+        function cryptoViewOf(page) {
+            const s = String(page || '');
+            if (!/\/crypto\b|^\/crypto\b/i.test(s)) return null;
+            let sym = null;
+            try {
+                const q = new URLSearchParams(s.split('?')[1] || '');
+                sym = (q.get('symbol') || q.get('coin') || '').trim().toUpperCase() || null;
+            } catch (e) { /* ignore */ }
+            return { symbol: sym };
         }
 
         // ---------- View bên trong trang Cổ phiếu (screener ⇄ ngành ⇄ chi tiết mã) ----------
@@ -4492,9 +4671,16 @@
             const entry = frameCache.get(key);
             if (!entry) return;
             entry.loaded = true;
+            // Trang đang hiện đã nạp xong → hỏi xem đã "sẵn sàng" chưa (dữ liệu + TuniAI) để tắt lớp chờ.
+            const ov = document.getElementById('chartFsPending');
+            if (key === activeFrameKey && ov && ov.style.display !== 'none') {
+                try { entry.frame.contentWindow.postMessage({ type: 'tunix-chart-fs-status' }, '*'); } catch (e) { /* ignore */ }
+            }
             // Trang Cổ phiếu: view mong muốn được đặt trong lúc iframe CHƯA load xong → gửi bù ngay bây giờ
             // (gửi trước khi trang con đăng ký listener 'message' sẽ bị mất).
             if (entry.pendingView) { const pv = entry.pendingView; entry.pendingView = null; postCoPhieuView(entry, pv); }
+            // Trang Crypto: view được yêu cầu trong lúc iframe CHƯA load xong → gửi bù ngay bây giờ.
+            if (entry.pendingCrypto) { const pc = entry.pendingCrypto; entry.pendingCrypto = null; postCryptoView(entry, pc.symbol); }
             if (key !== activeFrameKey) {
                 // Trang vừa bấm đã tải xong → mới thay nội dung (không còn màn trắng).
                 if (key === pendingFrameKey) {
@@ -4580,14 +4766,18 @@
                 // ---- Điều hướng kiểu SPA: tái sử dụng iframe đã tải (KHÔNG reload lại trang) ----
                 const key = frameKeyOf(page);
                 const wantView = coPhieuViewOf(page);   // null nếu không phải trang Cổ phiếu
+                const wantCrypto = cryptoViewOf(page);  // null nếu không phải trang Crypto
                 const cached = frameCache.get(key);
                 if (cached) {
-                    // Đổi view bên trong CÙNG một iframe (Cổ phiếu) ⇒ coi như sang trang mới: về đầu trang.
+                    // Đổi view bên trong CÙNG một iframe (Cổ phiếu / Crypto) ⇒ coi như sang trang mới: về đầu trang.
                     // Không reset thì activateFrame() sẽ khôi phục vị trí cuộn của VIEW CŨ.
-                    const viewChanged = !!(wantView && coPhieuViewKey(cached.view) !== coPhieuViewKey(wantView));
+                    const cryptoChanged = !!(wantCrypto && (cached.cryptoSym || null) !== wantCrypto.symbol);
+                    const viewChanged = cryptoChanged || !!(wantView && coPhieuViewKey(cached.view) !== coPhieuViewKey(wantView));
                     if (!cached.loaded) startNavProgress(); else finishNavProgress();
                     activateFrame(key, viewChanged);
                     setCoPhieuView(cached, wantView);
+                    // Crypto: điều khiển view qua postMessage (iframe tự đổi view khi nhấp 1 coin nên key không đổi).
+                    if (wantCrypto) setCryptoView(cached, wantCrypto.symbol);
                     return;
                 }
 
@@ -5118,6 +5308,20 @@
                 if (slugTool) return '/frontend/tienich.html?tool=' + slugTool;
                 return '/frontend/tienich.html';
             }
+            // URL đẹp phân cấp NGÀNH của trang Cổ phiếu (vd /co-phieu/nganh/bat-dong-san hoặc
+            // /co-phieu/nganh/{l1}/{l2}/{SYM}) → nạp CoPhieu.html kèm tham số `ind` (+ `stock`).
+            // Trước đây các URL này rơi vào `MAP` không khớp nên bị nhúng NGUYÊN route shell ⇒ lồng shell.
+            const cpIndMatch = path.match(/^\/co-phieu\/(nganh(?:\/[^/]+)*)$/i);
+            if (cpIndMatch) {
+                const segs = cpIndMatch[1].split('/');            // ['nganh', l1?, l2?, SYM?]
+                if (segs.length >= 4) {
+                    return '/frontend/CoPhieu.html?ind=' + segs.slice(0, 3).join('/') + '&stock=' + encodeURIComponent(segs[3]);
+                }
+                return '/frontend/CoPhieu.html?ind=' + cpIndMatch[1];
+            }
+            // URL đẹp chi tiết coin: /crypto/{MÃ} → nạp crypto.html kèm ?symbol={MÃ}
+            const cryptoSymPath = path.match(/^\/crypto\/([A-Za-z0-9._-]+)$/i);
+            if (cryptoSymPath) return '/frontend/crypto.html?symbol=' + encodeURIComponent(cryptoSymPath[1].toUpperCase());
             const MAP = {
                 '/quan-ly-tai-san': '/frontend/quanlytaisan.html',
                 '/tien-ich': '/frontend/tienich.html',
@@ -5145,7 +5349,8 @@
                 '/doanh-nghiep': '/frontend/tin-tuc.html?cat=doanh-nghiep',
                 '/dong-tien-thong-minh': '/frontend/tin-tuc.html?cat=dong-tien-thong-minh',
                 '/tai-chinh-quoc-te': '/frontend/tin-tuc.html?cat=tai-chinh-quoc-te',
-                '/cong-nghe': '/frontend/tin-tuc.html?cat=cong-nghe'
+                '/cong-nghe': '/frontend/tin-tuc.html?cat=cong-nghe',
+                '/tien-ao': '/frontend/tin-tuc.html?cat=tien-ao'
             };
             const file = MAP[path];
             if (!file) return u;
@@ -5210,9 +5415,46 @@
                 }
                 return;
             }
+            if (data.type === 'tunix-open-chart-fullscreen') {
+                // Nút mở rộng trong block biểu đồ (trang Thị trường) — chỉ là ĐƯỜNG DỰ PHÒNG khi iframe
+                // không gọi được hàm trực tiếp (khác origin). Bình thường Thị trường gọi thẳng
+                // `window.parent.tunixChartFullscreenRequest(sym)` ⇒ dùng CHÍNH xử lý của icon nến ở header.
+                requestChartFullscreen(data.symbol);
+                return;
+            }
+            if (data.type === 'tunix-chart-fs-ready') {
+                // Trang biểu đồ báo đã dựng xong (dữ liệu + phân tích TuniAI) → gỡ lớp "Đang mở…".
+                hideChartFsPending();
+                return;
+            }
+            if (data.type === 'tunix-chart-fs-progress') {
+                setChartFsPendingNote(data.step === 'ai' ? 'Đang tải dữ liệu phân tích TuniAI…' : 'Đang tải dữ liệu biểu đồ…');
+                return;
+            }
+            if (data.type === 'tunix-exit-fullscreen') {
+                // Nút "thoát toàn màn hình" của biểu đồ (trong iframe) → thoát y như nhấn Esc / nút X
+                // của trình duyệt; handler fullscreenchange bên dưới sẽ tự đưa về trang trước đó.
+                const exitFn = document.exitFullscreen || document.webkitExitFullscreen;
+                if (exitFn && (document.fullscreenElement || document.webkitFullscreenElement)) {
+                    try {
+                        const p = exitFn.call(document);
+                        if (p && typeof p.catch === 'function') p.catch(function () {});
+                    } catch (e) { /* ignore */ }
+                }
+                return;
+            }
             if (data.type === 'tunix-open-crypto' && data.symbol) {
                 // Click mã crypto từ trang khác (vd Trung tâm cảnh báo) → mở trang Crypto + chi tiết coin
                 openCryptoPage(data.symbol);
+                return;
+            }
+            if (data.type === 'tunix-crypto-symbol') {
+                // Trang Crypto (iframe) báo coin đang mở → URL đẹp /crypto/{MÃ} (null = về /crypto).
+                const cSym = String(data.symbol || '').trim().toUpperCase();
+                // Ghi nhớ view của iframe Crypto để lần sau biết nó đang ở đâu (tránh khôi phục nhầm view cũ).
+                const cEntry = cryptoFrameEntry();
+                if (cEntry) cEntry.cryptoSym = cSym || null;
+                pushCryptoHistory(cSym ? '/crypto/' + encodeURIComponent(cSym) : '/crypto', !!cSym);
                 return;
             }
             if (data.type === 'tunix-symbol-changed' && data.symbol) {
@@ -5305,9 +5547,14 @@
         const cophieuMatch = window.location.pathname.match(/^\/cophieu-([A-Za-z0-9.]+)$/i);
         const coPhieuIndStockMatch = window.location.pathname.match(/^\/co-phieu\/nganh\/([^/]+)\/([^/]+)\/([A-Za-z0-9.]+)$/i);
         const coPhieuStockMatch = window.location.pathname.match(/^\/co-phieu\/(?!nganh(?:\/|$))([A-Za-z0-9.]+)$/i);
+        const cryptoSymMatch = window.location.pathname.match(/^\/crypto\/([A-Za-z0-9._-]+)$/i);
         const pathPage = window.location.pathname.replace(/^\//, '').replace(/\/+$/, '');
         if (initialSymbol) {
             openStockDetailInIndex(initialSymbol, initialParams.get('fs') === '1');
+        } else if (cryptoSymMatch) {
+            // Deep-link /crypto/{MÃ}: đang ở sẵn trang Crypto → chỉ đổi view (nhanh, không nạp lại);
+            // còn lại → mở trang Crypto kèm ?symbol={MÃ}.
+            if (!syncCryptoView(cryptoSymMatch[1])) openCryptoPage(cryptoSymMatch[1]);
         } else if (coPhieuIndStockMatch) {
             // Chi tiết cổ phiếu theo bối cảnh ngành: /co-phieu/nganh/{l1}/{l2}/{SYM}
             // → nạp CoPhieu với ind + stock (nhúng toàn bộ nội dung chi tiết trong trang)
@@ -5356,8 +5603,10 @@
             loadContent('/frontend/gold.html');
             setHeaderContext(false);
         } else if (pathPage === 'crypto' || initialPage === 'crypto') {
-            // Trang Crypto: /crypto → nạp vào left-col.
+            // Trang Crypto: /crypto → nạp vào left-col. Nếu iframe Crypto đã tải sẵn (quay lại từ
+            // /crypto/{MÃ} hoặc Back của trình duyệt) → đưa iframe về danh sách, không nạp lại trang.
             loadContent('/frontend/crypto.html');
+            syncCryptoView(null);
             setHeaderContext(false);
         } else if (pathPage === 'kham-pha' || initialPage === 'kham-pha') {
             // Trang khám phá: /kham-pha → nạp discovery vào left-col.

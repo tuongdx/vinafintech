@@ -212,26 +212,43 @@ def get_markets() -> dict:
     }
 
 
-def get_klines(symbol: str, interval: str = "1d", limit: int = 90) -> dict:
-    """Nến giá Binance cho biểu đồ."""
+def get_klines(symbol: str, interval: str = "1d", limit: int = 90,
+               start_time: int | None = None, end_time: int | None = None) -> dict:
+    """Nến giá Binance cho biểu đồ.
+
+    ``start_time`` / ``end_time`` (mili-giây, tuỳ chọn) → lấy nến trong khoảng thời gian đó,
+    dùng để TẢI THÊM lịch sử cũ khi người dùng kéo biểu đồ về quá khứ (Binance nhận
+    startTime/endTime; Bybit nhận start/end). Không truyền thì lấy ``limit`` nến mới nhất.
+    """
     pair = str(symbol or "").upper()
     if not pair.endswith(_QUOTE):
         pair = pair + _QUOTE
+    t0 = int(start_time) if start_time else 0
+    t1 = int(end_time) if end_time else 0
 
     def _prod() -> dict:
         out: list[dict] = []
         # 1) Binance; 2) Bybit (khi Binance bị cloud-block như Render/SG trả 418).
+        params: dict[str, object] = {"symbol": pair, "interval": interval, "limit": int(limit)}
+        if t0:
+            params["startTime"] = t0
+        if t1:
+            params["endTime"] = t1
         try:
-            rows = _get("/api/v3/klines", {"symbol": pair, "interval": interval, "limit": int(limit)})
+            rows = _get("/api/v3/klines", params)
         except Exception:  # noqa: BLE001 — Binance cả 2 host lỗi → thử Bybit
             rows = None
         if rows is None:
             try:
                 by_int = _BYBIT_INTERVAL.get(interval, "D")
-                data = _bybit_get(
-                    "/v5/market/kline",
-                    {"category": "spot", "symbol": pair, "interval": by_int, "limit": int(limit)},
-                )
+                by_params: dict[str, object] = {
+                    "category": "spot", "symbol": pair, "interval": by_int, "limit": int(limit),
+                }
+                if t0:
+                    by_params["start"] = t0
+                if t1:
+                    by_params["end"] = t1
+                data = _bybit_get("/v5/market/kline", by_params)
                 raw = ((data or {}).get("result") or {}).get("list") or []
                 # Bybit trả list NGƯỢC (mới → cũ) → đảo để tăng dần theo thời gian.
                 for row in reversed(raw):
@@ -275,4 +292,4 @@ def get_klines(symbol: str, interval: str = "1d", limit: int = 90) -> dict:
                         continue
         return {"symbol": pair, "interval": interval, "items": out}
 
-    return _cached(f"klines:{pair}:{interval}:{int(limit)}", _KLINES_TTL, _prod)
+    return _cached(f"klines:{pair}:{interval}:{int(limit)}:{t0}:{t1}", _KLINES_TTL, _prod)

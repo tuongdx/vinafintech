@@ -113,14 +113,20 @@
 
         /* ===== Market Radar ===== */
         .ov-radar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        .ov-radar-card { background: #f8fafc; border: 1px solid #e9edf2; border-radius: 13px; padding: 13px 15px; }
+        .ov-radar-card { background: linear-gradient(180deg, #fff, #f7fbfa); border: 1px solid #e9edf2; border-radius: 13px; padding: 13px 15px; }
         .ov-radar-card .rc-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; }
         .ov-radar-card .rc-ico { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; }
         .ov-radar-card .rc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-        .ov-radar-card .rc-chip { font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 20px; background: #fff; border: 1px solid #e5eaf0; color: #4a5a72; cursor: pointer; transition: all 0.15s; }
-        .ov-radar-card .rc-chip:hover { border-color: #008080; color: #008080; }
+        /* Chip trong Market Radar: MÀU giống chip block "Cơ hội mới" (.oo-chip) — teal nhạt. */
+        .ov-radar-card .rc-chip { font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 20px; background: rgba(0,128,128,0.08); border: 1px solid rgba(0,128,128,0.18); color: #008080; cursor: pointer; transition: all 0.15s; }
+        .ov-radar-card .rc-chip:hover { border-color: #008080; background: rgba(0,128,128,0.14); color: #008080; }
+        /* Chip MÃ CỔ PHIẾU (không phải chip ngành .sec): khi DI CHUỘT hiện ĐỔ BÓNG cho chính chip đó. */
+        .ov-radar-card .rc-chip:not(.sec):hover { box-shadow: 0 3px 9px rgba(0,128,128,0.25); }
         .ov-radar-card .rc-chip.sec { cursor: default; }
-        .ov-radar-card .rc-chip.sec:hover { border-color: #e5eaf0; color: #4a5a72; }
+        .ov-radar-card .rc-chip.sec:hover { border-color: rgba(0,128,128,0.18); background: rgba(0,128,128,0.08); color: #008080; }
+        /* Chip NGÀNH BẤM ĐƯỢC (có slug) → mở /co-phieu/nganh/{slug}: con trỏ + hover giống chip mã. */
+        .ov-radar-card .rc-chip.sec.link { cursor: pointer; }
+        .ov-radar-card .rc-chip.sec.link:hover { border-color: #008080; background: rgba(0,128,128,0.14); color: #008080; box-shadow: 0 3px 9px rgba(0,128,128,0.25); }
         .ov-radar-card .rc-note { font-size: 11.5px; color: #8a99b1; margin-top: 8px; }
         /* 3 block phụ: lãi suất ngân hàng / vàng SJC / BTC-ETH */
         .ov-radar-card .rc-price { margin-top: 8px; display: flex; flex-direction: column; }
@@ -168,13 +174,17 @@
 
         /* ===== Cơ hội mới ===== */
         .ov-opps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        .ov-opp { background: linear-gradient(180deg, #fff, #f7fbfa); border: 1px solid #e9edf2; border-radius: 14px; padding: 15px; cursor: pointer; transition: all 0.2s; }
-        .ov-opp:hover { transform: translateY(-2px); border-color: rgba(0,128,128,0.4); box-shadow: 0 8px 20px rgba(0,128,128,0.10); }
+        /* Thẻ "Cơ hội mới": ĐỨNG IM khi di chuột — KHÔNG nâng lên, KHÔNG đổi đổ bóng/viền
+           (đã bỏ hẳn rule `.ov-opp:hover`). */
+        .ov-opp { background: linear-gradient(180deg, #fff, #f7fbfa); border: 1px solid #e9edf2; border-radius: 14px; padding: 15px; cursor: default; }
         .ov-opp .oo-ico { font-size: 20px; }
         .ov-opp .oo-title { font-size: 14px; font-weight: 800; margin-top: 8px; }
         .ov-opp .oo-desc { font-size: 12px; color: #8a99b1; margin-top: 3px; }
         .ov-opp .oo-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
-        .ov-opp .oo-chip { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(0,128,128,0.08); color: #008080; border: 1px solid rgba(0,128,128,0.18); }
+        /* Chip mã cổ phiếu là phần DUY NHẤT bấm được trong thẻ ⇒ con trỏ pointer đặt ở chip. */
+        .ov-opp .oo-chip { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(0,128,128,0.08); color: #008080; border: 1px solid rgba(0,128,128,0.18); cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s, background 0.15s; }
+        /* Khi DI CHUỘT vào chip mã: hiện ĐỔ BÓNG cho chính chip đó (thẻ cha vẫn đứng im). */
+        .ov-opp .oo-chip:hover { border-color: #008080; background: rgba(0,128,128,0.14); box-shadow: 0 3px 9px rgba(0,128,128,0.25); }
         .ov-opp .oo-note { font-size: 11.5px; color: #6b7a8f; margin-top: 9px; line-height: 1.4; }
 
         /* ===== AI Market View ===== */
@@ -239,10 +249,12 @@
         body.dark-mode .ov-market.neutral .om-pill { color: #e6c36a; background: #2b2410; }
         body.dark-mode .ov-market.neg .om-pill { color: #ff8fa3; background: #3a151f; }
         body.dark-mode .ov-ai .ai-tagline { color: #2fc0b0; }
-        body.dark-mode .ov-radar-card { background: #10151c; border-color: #21262d; }
-        body.dark-mode .ov-radar-card .rc-chip { background: #161b22; border-color: #30363d; color: #adbac7; }
-        body.dark-mode .ov-radar-card .rc-chip:hover { border-color: #4db6b6; color: #4db6b6; }
-        body.dark-mode .ov-radar-card .rc-chip.sec:hover { border-color: #30363d; color: #adbac7; }
+        body.dark-mode .ov-radar-card { background: #161b22; border-color: #21262d; }
+        body.dark-mode .ov-radar-card .rc-chip { background: rgba(0,128,128,0.15); border-color: rgba(0,128,128,0.3); color: #008080; }
+        body.dark-mode .ov-radar-card .rc-chip:hover { border-color: #4db6b6; background: rgba(0,128,128,0.28); color: #008080; }
+        body.dark-mode .ov-radar-card .rc-chip:not(.sec):hover { box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 0 1px rgba(77,216,196,0.35); }
+        body.dark-mode .ov-radar-card .rc-chip.sec:hover { border-color: rgba(0,128,128,0.3); background: rgba(0,128,128,0.15); color: #008080; }
+        body.dark-mode .ov-radar-card .rc-chip.sec.link:hover { border-color: #4db6b6; background: rgba(0,128,128,0.28); box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 0 1px rgba(77,216,196,0.35); }
         body.dark-mode .ov-radar-card .rc-note { color: #8b949e; }
         body.dark-mode .ov-radar-card .rc-prow { border-bottom-color: #21262d; }
         body.dark-mode .ov-radar-card .rc-pval.pos { color: #3fb950; }
@@ -264,6 +276,7 @@
         body.dark-mode .ov-ai .ai-text { color: #e6edf3; }
         body.dark-mode .ov-opp { background: #161b22; border-color: #21262d; }
         body.dark-mode .ov-opp .oo-chip { background: rgba(0,128,128,0.15); border-color: rgba(0,128,128,0.3); }
+        body.dark-mode .ov-opp .oo-chip:hover { background: rgba(0,128,128,0.28); border-color: #4db6b6; box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 0 1px rgba(77,216,196,0.35); }
         body.dark-mode .ov-port .op-legend .ol-name { color: #8b949e; }
         body.dark-mode .ov-port .op-donut .op-hole { fill: #161b22; }
         body.dark-mode .ov-port .op-donut .op-center .n { color: #e6edf3; }
@@ -370,6 +383,14 @@
             function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*'); }
             function openNews(id, slug) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-tintuc', id: id, slug: slug }, '*'); }
             function sendAi(p) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-ai-open', prompt: p }, '*'); }
+            // Điều hướng trang nội bộ: nhúng trong shell → báo parent (đi qua menu chính), ngoài shell → đổi URL.
+            function openPage(url) {
+                if (!url) return;
+                if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-page', url: url }, '*');
+                else window.location.href = url;
+            }
+            // Chip NGÀNH của Market Radar → mở trang Cổ phiếu theo ngành: /co-phieu/nganh/{sector}
+            function openSector(slug) { if (slug) openPage('/co-phieu/nganh/' + encodeURIComponent(slug)); }
             // Chặn link nội bộ (VD: /quan-ly-tai-san) khi Home được nhúng trong shell → báo parent điều
             // hướng qua menu chính (tránh load shell lồng nhau bên trong iframe).
             document.addEventListener('click', function(e) {
@@ -507,7 +528,16 @@
 
                 const syms = function(arr) { return (arr || []).map(function(x) { return typeof x === 'string' ? x : x.symbol; }).filter(Boolean); };
                 const chip = function(arr) { return (arr || []).map(function(x) { return '<span class="rc-chip" data-symbol="' + esc(x) + '">' + esc(x) + '</span>'; }).join(''); };
-                const secChip = function(arr) { return (arr || []).map(function(x) { return '<span class="rc-chip sec">' + esc(x) + '</span>'; }).join(''); };
+                // Chip NGÀNH: có `slug` → BẤM ĐƯỢC (mở /co-phieu/nganh/{slug}); không có → chip tĩnh như trước.
+                const secChip = function(arr) {
+                    return (arr || []).map(function(s) {
+                        const name = esc((s && s.name) || '');
+                        const slug = String((s && s.slug) || '').trim();
+                        return slug
+                            ? '<span class="rc-chip sec link" data-sector="' + esc(slug) + '" title="Xem cổ phiếu ngành ' + name + '">' + name + '</span>'
+                            : '<span class="rc-chip sec">' + name + '</span>';
+                    }).join('');
+                };
                 const chipsOr = function(html) { return html || '<span class="rc-chip sec">—</span>'; };
                 const card = function(color, icon, title, chipsHtml, noteText) {
                     return '<div class="ov-radar-card"><div class="rc-head"><span class="rc-ico" style="background:' + color + ';"><i class="fas ' + icon + '"></i></span> ' + title + '</div>' +
@@ -521,9 +551,9 @@
                     : 'Nhà đầu tư nước ngoài mua ròng';
 
                 el.innerHTML =
-                    card('#008080', 'fa-arrow-trend-up', 'Ngành tăng mạnh', secChip(strong.map(function(s) { return s.name; })),
+                    card('#008080', 'fa-arrow-trend-up', 'Ngành tăng mạnh', secChip(strong),
                         strong.length ? 'TB ' + pct(strong[0].avg_pct) + ' · ' + strong[0].total + ' mã' : '') +
-                    card('#d0314e', 'fa-arrow-trend-down', 'Ngành suy yếu', weak ? '<span class="rc-chip sec">' + esc(weak.name) + '</span>' : '',
+                    card('#d0314e', 'fa-arrow-trend-down', 'Ngành suy yếu', secChip(weak ? [weak] : []),
                         weak ? 'TB ' + pct(weak.avg_pct) + ' · ' + weak.down_count + '/' + weak.total + ' mã giảm' : '') +
                     card('#f5a623', 'fa-fire', 'Volume bất thường', chip(syms(volSpike)),
                         firstNote(volSpike, '')) +
@@ -534,6 +564,10 @@
                         firstNote(risk, riskSig.length ? '' : 'Top mã giảm mạnh hôm nay')) +
                     radarExtrasHtml();
                 el.querySelectorAll('.rc-chip[data-symbol]').forEach(function(c) { c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); }); });
+                // Chip ngành (Ngành tăng mạnh / Ngành suy yếu) → mở trang Cổ phiếu của ngành đó.
+                el.querySelectorAll('.rc-chip.sec.link[data-sector]').forEach(function(c) {
+                    c.addEventListener('click', function() { openSector(c.getAttribute('data-sector')); });
+                });
                 loadRadarExtras();
             }
 
@@ -677,6 +711,8 @@
             }
 
             // ---------- Cơ hội mới ----------
+            // Dữ liệu: /api/stocks/new-opportunities — snapshot backend dựng lại theo thị trường
+            // vào 12h trưa (giờ VN) hằng ngày (trước 12h dùng bản 12h HÔM QUA).
             // Tên/mô tả/ghi chú bám ĐÚNG tiêu chí thật của backend (get_stock_discover_page):
             //   growth    = top tăng trưởng lợi nhuận ròng (net_profit_growth)
             //   value     = P/E thấp + P/B thấp (+ EV/EBITDA)
@@ -686,6 +722,10 @@
                 const strategies = (d.strategies || []);
                 const pick = function(key) { const s = strategies.find(function(x) { return x.key === key; }); return s || null; };
                 const growth = pick('growth'), value = pick('value'), cash = pick('cash_flow');
+                if (!growth && !value && !cash) {
+                    el.innerHTML = '<div class="ov-empty">' + esc(d.message || 'Chưa có dữ liệu.') + '</div>';
+                    return;
+                }
                 const num = function(x) { const n = Number(x); return isFinite(n) ? n : null; };
                 const stocksOf = function(st) { return (st && st.stocks) || []; };
                 // Chỉ tính trên các mã ĐANG HIỂN THỊ (3 chip) → ghi chú khớp đúng những gì người dùng thấy.
@@ -756,6 +796,61 @@
                     window.location.href = '/Login';
                 }
             }
+            // ---------- Auth cho widget danh mục ----------
+            // Access token hết hạn sau 60 phút. Home là iframe nạp NGAY khi mở shell nên có thể chạy
+            // TRƯỚC khi shell kịp refresh token. Trước đây fetch bị 401 vẫn rơi vào `r.ok ? r.json() : []`
+            // → hiển thị "Danh mục tài sản đang trống" dù thực chất chỉ là HẾT PHIÊN (đúng lỗi user báo:
+            // hôm qua mở thấy đầy đủ, hôm nay mở lại thấy "Danh mục tài sản đang trống" mà vẫn đang đăng nhập).
+            function tokenExpired(t, skewMs) {
+                try {
+                    const b64 = String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+                    const pad = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+                    const p = JSON.parse(atob(pad));
+                    if (!p.exp) return false;
+                    return (p.exp * 1000) <= Date.now() + (skewMs || 30000);
+                } catch (e) { return false; }
+            }
+            async function refreshSession() {
+                // Ưu tiên hàm dùng chung của shell (tránh 2 nơi refresh song song → refresh token bị thu hồi).
+                try {
+                    if (window.parent && window.parent !== window && typeof window.parent.refreshAccessToken === 'function') {
+                        if (await window.parent.refreshAccessToken()) return localStorage.getItem('tunix_access_token');
+                    }
+                } catch (e) { /* ignore */ }
+                const rt = localStorage.getItem('tunix_refresh_token');
+                if (!rt) return null;
+                try {
+                    const res = await fetch('/api/auth/refresh-token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ refresh_token: rt })
+                    });
+                    if (!res.ok) return null;
+                    const d = await res.json();
+                    if (!d.access_token) return null;
+                    localStorage.setItem('tunix_access_token', d.access_token);
+                    if (d.refresh_token) localStorage.setItem('tunix_refresh_token', d.refresh_token);
+                    if (d.user) localStorage.setItem('tunix_user', JSON.stringify(d.user));
+                    return d.access_token;
+                } catch (e) { return null; }
+            }
+            // Gọi /api/portfolio: tự refresh khi token hết hạn hoặc gặp 401/403 rồi thử lại 1 lần.
+            async function fetchPortfolioAuth() {
+                let token = localStorage.getItem('tunix_access_token') || '';
+                if (token && tokenExpired(token) && localStorage.getItem('tunix_refresh_token')) {
+                    const fresh = await refreshSession();
+                    if (fresh) token = fresh;
+                }
+                let res = await fetch('/api/portfolio', { headers: { Authorization: 'Bearer ' + token } });
+                if (res.status === 401 || res.status === 403) {
+                    const fresh = await refreshSession();
+                    if (!fresh) return { authFailed: true };
+                    res = await fetch('/api/portfolio', { headers: { Authorization: 'Bearer ' + fresh } });
+                    if (res.status === 401 || res.status === 403) return { authFailed: true };
+                }
+                if (!res.ok) return { error: true };
+                return { list: await res.json() };
+            }
             function renderPortfolio() {
                 const el = document.getElementById('ovPortBody');
                 const token = localStorage.getItem('tunix_access_token');
@@ -800,10 +895,29 @@
                     if (loginBtn) loginBtn.addEventListener('click', goLogin);
                     return;
                 }
-                fetch('/api/portfolio', { headers: { 'Authorization': 'Bearer ' + token } })
-                    .then(function(r) { return r.ok ? r.json() : []; })
-                    .then(load)
-                    .catch(function() { el.innerHTML = '<div class="op-empty">Không tải được danh mục.</div>'; });
+                fetchPortfolioAuth().then(function(r) {
+                    if (r && r.authFailed) {
+                        // Hết phiên đăng nhập (token hỏng/refresh token bị thu hồi) → KHÔNG được hiển thị
+                        // "danh mục trống" vì như vậy là sai sự thật và người dùng tưởng mất dữ liệu.
+                        el.innerHTML = '<div class="op-empty op-empty-login">' +
+                            '<div class="opel-ico"><i class="fas fa-lock"></i></div>' +
+                            '<div class="opel-title">Phiên đăng nhập đã hết hạn</div>' +
+                            '<div class="opel-desc">Vui lòng đăng nhập lại để xem danh mục tài sản của bạn.</div>' +
+                            '<button type="button" class="op-login">Đăng nhập lại</button>' +
+                        '</div>';
+                        const b = el.querySelector('.op-login');
+                        if (b) b.addEventListener('click', goLogin);
+                        return;
+                    }
+                    if (r && r.error) {
+                        el.innerHTML = '<div class="op-empty">Không tải được danh mục.' +
+                            ' <button type="button" class="op-login">Thử lại</button></div>';
+                        const b = el.querySelector('.op-login');
+                        if (b) b.addEventListener('click', function() { el.innerHTML = '<div class="ov-empty">Đang tải…</div>'; renderPortfolio(); });
+                        return;
+                    }
+                    load(r && r.list);
+                }).catch(function() { el.innerHTML = '<div class="op-empty">Không tải được danh mục.</div>'; });
             }
             function donutSvg(list, w, h) {
                 const cx = w / 2, cy = h / 2, r = w / 2 - 5, ir = r * 0.6;
@@ -962,7 +1076,8 @@
                 const dashP = fetchJson('/api/stocks/market-dashboard');
                 const screenerP = fetchJson('/api/stocks/stock-screener');
                 const oppP = fetchJson('/api/stocks/opportunities');
-                const discP = fetchJson('/api/stocks/stock-discover');
+                // "Cơ hội mới": snapshot backend tự cập nhật theo thị trường vào 12h trưa hằng ngày
+                const discP = fetchJson('/api/stocks/new-opportunities');
                 // Tin tức quan trọng: mỗi chuyên mục (Chứng khoán/Ngân hàng) lấy tin mới nhất của nó rồi trộn.
                 const newsP = Promise.all(HOME_NEWS_CATEGORIES.map(function(c) {
                     return fetchJson('/api/news?category=' + c + '&limit=' + NEWS_PER_CATEGORY)
@@ -1010,7 +1125,7 @@
                     });
                 });
 
-                // 4) Cơ hội mới (từ stock-discover)
+                // 4) Cơ hội mới (snapshot 12h trưa hằng ngày — /api/stocks/new-opportunities)
                 discP.then(function(d) { if (d) renderOpps(d); });
 
                 // 5) Tin tức quan trọng

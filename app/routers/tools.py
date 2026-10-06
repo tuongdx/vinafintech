@@ -45,6 +45,7 @@ _ALLOWED_CATEGORIES = {
     "dong-tien-thong-minh",
     "tai-chinh-quoc-te",
     "cong-nghe",
+    "tien-ao",
 }
 
 # Block quảng cáo / banner cần XÓA bỏ hoàn toàn

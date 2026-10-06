@@ -15,6 +15,8 @@ from urllib.parse import quote, urlencode
 
 import httpx
 
+from app.core.config import settings
+
 
 _SIMPLIZE_BASE_URL = "https://api2.simplize.vn"
 _SIMPLIZE_WEB_BASE_URL = "https://simplize.vn"
@@ -1252,6 +1254,91 @@ _SCREENER_FILE_MAX_AGE_SECONDS = 1 * 3600  # file cache 1 giờ (cập nhật th
 
 _screener_file_cache: list[dict[str, Any]] | None = None
 _screener_file_cache_mtime: float = 0.0
+
+
+# ---------------------------------------------------------------------------
+# Bộ lọc "cổ phiếu giao dịch được": VỐN HOÁ LỚN + THANH KHOẢN đủ để nhà đầu tư giao
+# dịch hằng ngày. Dùng CHUNG cho mọi block lấy mã từ toàn thị trường để không nơi nào
+# lọt các mã siêu nhỏ/thanh khoản ảo (thường là UPCOM):
+#   - Market Radar (trang chủ) · TuniX Market Radar (trang Thị trường)
+#   - Khám phá theo chiến lược · Xếp hạng TuniX (trang Khám phá)
+#   - "Cơ hội mới" (trang chủ) · universe quét của trang Tín hiệu
+# Ngưỡng cấu hình trong settings: `stock_min_market_cap`, `stock_min_liquidity_ty`.
+# ---------------------------------------------------------------------------
+_TRADABLE_SYMBOLS_CACHE_KEY = "tradable-symbols"
+
+
+def stock_liquidity_ty(item: dict[str, Any]) -> float:
+    """Thanh khoản của mã (tỷ VND/phiên).
+
+    Ưu tiên GTGD TRUNG BÌNH 10 phiên — vì `volume` là khối lượng phiên hiện tại (có thể
+    mới chạy nửa phiên) nên suy ngược TB 10 phiên từ `volume_ratio` (sai số ~0.5% do
+    `volume_ratio` được làm tròn 2 chữ số); mã quá ít giao dịch/thiếu dữ liệu thì dùng
+    GTGD phiên hiện tại.
+    """
+    price = _to_float(item.get("price"))
+    volume = _to_float(item.get("volume"))
+    if price <= 0 or volume <= 0:
+        return 0.0
+    ratio = _to_float(item.get("volume_ratio"))
+    avg_volume = volume / ratio if ratio > 0.01 else volume
+    return avg_volume * price / 1e9
+
+
+def is_tradable_stock(item: dict[str, Any]) -> bool:
+    """Cổ phiếu VỐN HOÁ LỚN + THANH KHOẢN đủ để giao dịch hằng ngày?
+
+    `item` là 1 dòng trong `get_stock_screener_page()["stocks"]`.
+    """
+    if _to_float(item.get("market_cap")) < settings.stock_min_market_cap:
+        return False
+    return stock_liquidity_ty(item) >= settings.stock_min_liquidity_ty
+
+
+def _is_tradable_raw_row(row: dict[str, Any]) -> bool:
+    """Như `is_tradable_stock` nhưng cho DÒNG THÔ của screener (`_get_screener_dataset`).
+
+    Dòng thô dùng tên field khác (`marketCapVnd`, `priceClose*`, `volume10dAvg`) nên
+    không dùng lại được `is_tradable_stock`.
+    """
+    if _to_float(row.get("marketCapVnd")) < settings.stock_min_market_cap:
+        return False
+    price = _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
+    volume = _to_float(row.get("volume"))
+    if price <= 0 or volume <= 0:
+        return False
+    volume10 = _to_float(row.get("volume10dAvg"))
+    avg_volume = volume10 if volume10 > 0 else volume
+    return avg_volume * price / 1e9 >= settings.stock_min_liquidity_ty
+
+
+def tradable_symbols() -> set[str]:
+    """Tập mã "giao dịch được" (từ screener, cache 120s) — cho nguồn dữ liệu chỉ có MÃ.
+
+    Dùng cho bản đồ thị trường / các list radar (chỉ có symbol), tránh phải tính lại
+    điều kiện vốn hoá + thanh khoản ở từng nơi.
+
+    ⚠️ CHỈ được tính từ `_get_screener_dataset()` (dòng THÔ), TUYỆT ĐỐI không gọi
+    `get_stock_screener_page()`: hàm đó gọi `get_market_dashboard()` cho `as_of`, mà
+    `get_market_dashboard()` lại gọi hàm này ⇒ cùng 1 luồng xin lại lock
+    "market-dashboard" ⇒ TREO TOÀN BỘ SERVER (lock thường, không re-entrant; đã gặp thật).
+    """
+    cached = cache.get(_TRADABLE_SYMBOLS_CACHE_KEY)
+    if cached is not None:
+        return cached
+    try:
+        rows = _get_screener_dataset() or []
+        symbols = {
+            str(row.get("ticker") or "").upper()
+            for row in rows
+            if str(row.get("ticker") or "").strip()
+            and str(row.get("stockExchange") or "").upper() in ("HOSE", "HNX", "UPCOM")
+            and _is_tradable_raw_row(row)
+        }
+    except Exception:  # noqa: BLE001 — nguồn lỗi ⇒ không lọc được thì trả rỗng
+        symbols = set()
+    cache.set(_TRADABLE_SYMBOLS_CACHE_KEY, symbols, ttl_seconds=120)
+    return symbols
 
 
 def _screener_request(page: int, size: int) -> list[dict[str, Any]]:
@@ -4352,11 +4439,15 @@ def get_market_dashboard() -> dict[str, Any]:
             breadth["flat"] += 1
     breadth["total"] = len(cells)
 
-    gainers = [c for c in cells if c.get("percent_change", 0) > 0]
-    losers = [c for c in cells if c.get("percent_change", 0) < 0]
+    # Block "Market Radar" (trang chủ) & "TuniX Market Radar" (trang Thị trường) CHỈ lấy mã
+    # VỐN HOÁ LỚN + THANH KHOẢN đủ để giao dịch hằng ngày (bộ lọc dùng chung).
+    tradable = tradable_symbols()
+    radar_cells = [c for c in cells if str(c.get("symbol") or "").upper() in tradable]
+    gainers = [c for c in radar_cells if c.get("percent_change", 0) > 0]
+    losers = [c for c in radar_cells if c.get("percent_change", 0) < 0]
     breakout = sorted(gainers, key=lambda c: c["percent_change"], reverse=True)[:8]
     weak = sorted(losers, key=lambda c: c["percent_change"])[:8]
-    volume_spike = sorted(cells, key=lambda c: c.get("volume", 0), reverse=True)[:8]
+    volume_spike = sorted(radar_cells, key=lambda c: c.get("volume", 0), reverse=True)[:8]
 
     # 3) Dòng tiền
     flow: dict[str, Any] = {
@@ -4384,8 +4475,14 @@ def get_market_dashboard() -> dict[str, Any]:
     try:
         ft = get_foreign_trading("foreign", "1D")
         flow["foreign_net"] = (ft.get("totals") or {}).get("net")
-        flow["foreign_buy_top"] = (ft.get("buy_list") or [])[:5]
-        flow["foreign_sell_top"] = (ft.get("sell_list") or [])[:5]
+        # Danh sách mã hiển thị trong block Market Radar: CHỈ giữ mã VỐN HOÁ LỚN +
+        # THANH KHOẢN đủ để giao dịch hằng ngày (bộ lọc dùng chung).
+        flow["foreign_buy_top"] = [
+            it for it in (ft.get("buy_list") or []) if str(it.get("symbol") or "").upper() in tradable
+        ][:5]
+        flow["foreign_sell_top"] = [
+            it for it in (ft.get("sell_list") or []) if str(it.get("symbol") or "").upper() in tradable
+        ][:5]
     except Exception:
         pass
     try:
@@ -4431,7 +4528,8 @@ def get_market_dashboard() -> dict[str, Any]:
             cap = float(s.get("market_cap") or 0)
             sec = sec_map.setdefault(
                 slug,
-                {"slug": slug, "name": s.get("sectorName") or "Khác", "sum": 0.0, "n": 0, "up": 0, "down": 0, "top_gainer": None, "top_pct": -999.0},
+                {"slug": slug, "name": s.get("sectorName") or "Khác", "sum": 0.0, "n": 0, "up": 0, "down": 0, "top_gainer": None, "top_pct": -999.0,
+                 "top_tradable": None, "top_tradable_pct": -999.0},
             )
             sec["sum"] += pct
             sec["n"] += 1
@@ -4442,6 +4540,11 @@ def get_market_dashboard() -> dict[str, Any]:
             if pct > sec["top_pct"]:
                 sec["top_pct"] = pct
                 sec["top_gainer"] = s.get("symbol")
+            # Mã "đại diện" của ngành hiển thị trong block Market Radar: ưu tiên mã VỐN HOÁ
+            # LỚN + THANH KHOẢN đủ (vẫn giữ mã dẫn dắt nếu ngành không có mã nào đủ điều kiện).
+            if str(s.get("symbol") or "").upper() in tradable and pct > sec["top_tradable_pct"]:
+                sec["top_tradable_pct"] = pct
+                sec["top_tradable"] = s.get("symbol")
             impact.append(
                 {"symbol": s.get("symbol"), "name": s.get("name"), "percent_change": pct, "market_cap": cap, "impact": abs(pct * cap)}
             )
@@ -4454,7 +4557,7 @@ def get_market_dashboard() -> dict[str, Any]:
                     "up_count": sec["up"],
                     "down_count": sec["down"],
                     "total": sec["n"],
-                    "top_gainer": sec["top_gainer"],
+                    "top_gainer": sec["top_tradable"] or sec["top_gainer"],
                 }
             )
         sectors.sort(key=lambda x: x["avg_pct"], reverse=True)
@@ -4469,28 +4572,29 @@ def get_market_dashboard() -> dict[str, Any]:
     #     - breakout_tech     : giá sát đỉnh 4 tuần (>=97%) + đang tăng + volume >= 1.2x TB 10 phiên
     #     - risk_signal       : giá dưới đỉnh 4 tuần >=10% + xu hướng ngắn hạn âm
     #     - volume_spike_ratio: volume >= 1.5x TB 10 phiên ("bất thường" thật, không phải KL tuyệt đối)
-    #     Lọc sàn HOSE/HNX/UPCOM + vốn hóa >= 100 tỷ để loại mã quá nhỏ/thanh khoản ảo.
+    #     Lọc sàn HOSE/HNX/UPCOM + mã VỐN HOÁ LỚN/THANH KHOẢN đủ để giao dịch hằng ngày.
     #     Dữ liệu lấy từ screener Simplize đã cache (không thêm request mạng).
     breakout_tech: list[dict[str, Any]] = []
     risk_signal: list[dict[str, Any]] = []
     volume_spike_ratio: list[dict[str, Any]] = []
     try:
-        _min_cap = 100e9      # 100 tỷ
         _min_volume = 100_000  # 100.000 cp/phiên
         tech: list[dict[str, Any]] = []
         for row in _get_screener_dataset():
+            symbol = str(row.get("ticker") or "").upper()
             if str(row.get("stockExchange") or "").upper() not in ("HOSE", "HNX", "UPCOM"):
+                continue
+            if symbol not in tradable:
                 continue
             price = _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
             peak4w = _to_float(row.get("peak4week"))
-            cap = _to_float(row.get("marketCapVnd"))
             volume = _to_float(row.get("volume"))
             volume10 = _to_float(row.get("volume10dAvg"))
-            if price <= 0 or peak4w <= 0 or cap < _min_cap:
+            if price <= 0 or peak4w <= 0:
                 continue
             tech.append(
                 {
-                    "symbol": str(row.get("ticker") or "").upper(),
+                    "symbol": symbol,
                     "name": str(row.get("companyNameVi") or ""),
                     "price": round(price, 2),
                     "percent_change": round(_to_float(row.get("pricePctChgIntraDay")), 2),
@@ -4830,6 +4934,9 @@ def _build_tunix_rankings(stocks: list[dict[str, Any]], quote_loader=None) -> li
     screener) ⇒ xếp hạng đổi theo thị trường ngay trong phiên.
     Không truyền `quote_loader` → hành vi cũ (dùng snapshot screener).
     """
+    # "Xếp hạng TuniX" CHỈ lấy mã VỐN HOÁ LỚN + THANH KHOẢN đủ để giao dịch hằng ngày
+    # (bộ lọc dùng chung với Market Radar / Khám phá theo chiến lược).
+    stocks = [s for s in stocks if is_tradable_stock(s)]
     pools = _rank_candidate_pools(stocks)
 
     quotes: dict[str, dict[str, Any]] = {}
@@ -4929,6 +5036,66 @@ def get_stock_rankings_live() -> dict[str, Any]:
     }
 
 
+def build_discover_strategies(stocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """6 nhóm "Khám phá theo chiến lược" (trang Khám phá) × 5 mã/nhóm.
+
+    Dùng chung cho `/api/stocks/stock-discover` (trang Khám phá) và block "Cơ hội mới" ở
+    trang chủ (xem `app/services/home_opportunity_service.py`) ⇒ tiêu chí chọn mã KHÔNG
+    bị lệch giữa 2 nơi.
+
+    Tiêu chí (KHÔNG đổi so với bản trước đây):
+      value     = P/E>0 & P/B>0, sort (P/E + P/B + EV/EBITDA) tăng dần
+      growth    = top `net_profit_growth` giảm dần, chỉ mã > 0
+      cash_flow = điểm sức khỏe tài chính ×2 + cổ tức (+1 nếu có cổ tức) — KHÔNG dùng volume
+      breakout / defensive / hidden: giữ nguyên.
+    """
+
+    def _pick(sort_key: str, reverse: bool = True, n: int = 5, cond=None) -> list[dict[str, Any]]:
+        arr = stocks if cond is None else [s for s in stocks if cond(s)]
+        return sorted(
+            arr,
+            key=lambda s: s.get(sort_key) if isinstance(s.get(sort_key), (int, float)) else -999999.0,
+            reverse=reverse,
+        )[:n]
+
+    value = sorted(
+        [s for s in stocks if s["pe_ratio"] and s["pe_ratio"] > 0 and s["pb_ratio"] and s["pb_ratio"] > 0],
+        key=lambda s: (s["pe_ratio"] + s["pb_ratio"]) + (s["ev_ebitda"] if s["ev_ebitda"] and s["ev_ebitda"] > 0 else 10),
+    )[:5]
+    growth = _pick("net_profit_growth", cond=lambda s: s["net_profit_growth"] and s["net_profit_growth"] > 0)
+    cash_flow = sorted(
+        stocks,
+        key=lambda s: s["points"]["financial_health"] * 2 + s["points"]["dividend"] + (1 if s["dividend_yield"] and s["dividend_yield"] > 0 else 0),
+        reverse=True,
+    )[:5]
+    breakout = _pick("percent_change", cond=lambda s: s["percent_change"] > 0)
+    defensive = sorted(
+        [s for s in stocks if s["dividend_yield"] and s["dividend_yield"] > 0],
+        key=lambda s: s["dividend_yield"] + s["points"]["financial_health"] * 0.5,
+        reverse=True,
+    )[:5]
+    hidden = sorted(
+        [s for s in stocks if s["market_cap"] and s["market_cap"] < 3e12 and s["score"] >= 40],
+        key=lambda s: s["score"],
+        reverse=True,
+    )[:5]
+    if len(hidden) < 5:
+        hidden = sorted(
+            [s for s in stocks if s["market_cap"] and s["market_cap"] < 5e12],
+            key=lambda s: s["score"],
+            reverse=True,
+        )[:5]
+
+    return [
+        {"key": "value", "icon": "💎", "title": "Cổ phiếu giá trị", "desc": "P/E thấp, ROE cao", "stocks": value},
+        {"key": "growth", "icon": "🚀", "title": "Tăng trưởng", "desc": "Lợi nhuận tăng trưởng mạnh", "stocks": growth},
+        {"key": "cash_flow", "icon": "🔥", "title": "Dòng tiền mạnh", "desc": "Thanh khoản và volume tăng", "stocks": cash_flow},
+        {"key": "breakout", "icon": "📈", "title": "Breakout", "desc": "Vượt vùng kháng cự", "stocks": breakout},
+        {"key": "defensive", "icon": "🛡️", "title": "Phòng thủ", "desc": "Ổn định, cổ tức cao", "stocks": defensive},
+        {"key": "hidden", "icon": "⭐", "title": "Hidden Gems", "desc": "Doanh nghiệp chưa được thị trường chú ý", "stocks": hidden},
+    ]
+
+
 @_singleflight(lambda: "stock-discover-page", ttl_seconds=120, stale_while_revalidate=True)
 def get_stock_discover_page() -> dict[str, Any]:
     """Dữ liệu trang "Khám phá": cơ hội nổi bật hôm nay, chiến lược, bản đồ cơ hội
@@ -4938,14 +5105,6 @@ def get_stock_discover_page() -> dict[str, Any]:
     screener = get_stock_screener_page()
     stocks = screener["stocks"]
     by_sym = {s["symbol"]: s for s in stocks}
-
-    def _pick(sort_key: str, reverse: bool = True, n: int = 5, cond=None) -> list[dict[str, Any]]:
-        arr = stocks if cond is None else [s for s in stocks if cond(s)]
-        return sorted(
-            arr,
-            key=lambda s: s.get(sort_key) if isinstance(s.get(sort_key), (int, float)) else -999999.0,
-            reverse=reverse,
-        )[:n]
 
     # ---- 1. Cơ hội nổi bật hôm nay (4 mã) ----
     featured_syms = ["VCI", "ACB", "HPG", "MBB"]
@@ -4983,42 +5142,10 @@ def get_stock_discover_page() -> dict[str, Any]:
         )
 
     # ---- 2. Khám phá theo chiến lược (6 nhóm × 5 mã) ----
-    value = sorted(
-        [s for s in stocks if s["pe_ratio"] and s["pe_ratio"] > 0 and s["pb_ratio"] and s["pb_ratio"] > 0],
-        key=lambda s: (s["pe_ratio"] + s["pb_ratio"]) + (s["ev_ebitda"] if s["ev_ebitda"] and s["ev_ebitda"] > 0 else 10),
-    )[:5]
-    growth = _pick("net_profit_growth", cond=lambda s: s["net_profit_growth"] and s["net_profit_growth"] > 0)
-    cash_flow = sorted(
-        stocks,
-        key=lambda s: s["points"]["financial_health"] * 2 + s["points"]["dividend"] + (1 if s["dividend_yield"] and s["dividend_yield"] > 0 else 0),
-        reverse=True,
-    )[:5]
-    breakout = _pick("percent_change", cond=lambda s: s["percent_change"] > 0)
-    defensive = sorted(
-        [s for s in stocks if s["dividend_yield"] and s["dividend_yield"] > 0],
-        key=lambda s: s["dividend_yield"] + s["points"]["financial_health"] * 0.5,
-        reverse=True,
-    )[:5]
-    hidden = sorted(
-        [s for s in stocks if s["market_cap"] and s["market_cap"] < 3e12 and s["score"] >= 40],
-        key=lambda s: s["score"],
-        reverse=True,
-    )[:5]
-    if len(hidden) < 5:
-        hidden = sorted(
-            [s for s in stocks if s["market_cap"] and s["market_cap"] < 5e12],
-            key=lambda s: s["score"],
-            reverse=True,
-        )[:5]
-
-    strategies: list[dict[str, Any]] = [
-        {"key": "value", "icon": "💎", "title": "Cổ phiếu giá trị", "desc": "P/E thấp, ROE cao", "stocks": value},
-        {"key": "growth", "icon": "🚀", "title": "Tăng trưởng", "desc": "Lợi nhuận tăng trưởng mạnh", "stocks": growth},
-        {"key": "cash_flow", "icon": "🔥", "title": "Dòng tiền mạnh", "desc": "Thanh khoản và volume tăng", "stocks": cash_flow},
-        {"key": "breakout", "icon": "📈", "title": "Breakout", "desc": "Vượt vùng kháng cự", "stocks": breakout},
-        {"key": "defensive", "icon": "🛡️", "title": "Phòng thủ", "desc": "Ổn định, cổ tức cao", "stocks": defensive},
-        {"key": "hidden", "icon": "⭐", "title": "Hidden Gems", "desc": "Doanh nghiệp chưa được thị trường chú ý", "stocks": hidden},
-    ]
+    # Dùng CHUNG hàm với block "Cơ hội mới" ở trang chủ (snapshot 12h trưa hằng ngày) để
+    # tiêu chí chọn mã của 2 nơi luôn khớp nhau; cả 2 chỉ lấy mã VỐN HOÁ LỚN + THANH KHOẢN
+    # đủ để giao dịch hằng ngày (bộ lọc dùng chung — xem `is_tradable_stock`).
+    strategies = build_discover_strategies([s for s in stocks if is_tradable_stock(s)])
 
     # ---- 3. Bản đồ cơ hội thị trường (Quadrant Bubble Chart) ----
     # Lọc cổ phiếu đủ điều kiện → tính Growth/Valuation/Liquidity/Opportunity Score

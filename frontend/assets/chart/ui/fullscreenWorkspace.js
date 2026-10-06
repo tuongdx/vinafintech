@@ -16,7 +16,7 @@
 import { detectSR } from '../analysis/analysis.js';
 import { computeConfluence } from '../analysis/confluence.js';
 import { INDICATOR_DEFS } from '../indicators/indicatorConfig.js';
-import { AccumulationPanel, isIndexSymbol } from './accumulationPanel.js';
+import { AccumulationPanel, isIndexSymbol } from './accumulationPanel.js?v=20261006a';
 
 const LAYOUT_KEY = 'tunix.fsLayout.v1';
 
@@ -706,12 +706,35 @@ export class FullscreenWorkspace {
         this._loadAI();
     }
 
+    // Cache phân tích TuniAI theo MÃ + NGÀY (sessionStorage — dùng chung mọi iframe cùng tab):
+    // mở lại biểu đồ toàn màn hình hiển thị NGAY và không tốn thêm lượt hỏi AI.
+    _aiCacheKey(sym) {
+        const day = new Date().toISOString().slice(0, 10);
+        return 'tunix_ai_tech_' + String(sym || '').toUpperCase() + '_' + day;
+    }
+
+    // Báo cho trang chi tiết biết phân tích TuniAI đã xong (mọi nhánh: ok / lỗi / chưa đăng nhập)
+    // → StockDetail chuyển tiếp thành `tunix-chart-fs-ready` cho shell để gỡ lớp "Đang mở…".
+    _signalAiDone() {
+        try { document.dispatchEvent(new CustomEvent('tunix-chart-ai-done', { detail: { symbol: this.symbol } })); } catch (e) { /* ignore */ }
+    }
+
     async _loadAI() {
         const sym = this.symbol;
+        // 1) Đã phân tích trong ngày (sessionStorage) → hiển thị ngay, không gọi lại AI.
+        let cached = '';
+        try { cached = sessionStorage.getItem(this._aiCacheKey(sym)) || ''; } catch (e) { cached = ''; }
+        if (cached) {
+            this._ai = { status: 'ok', reply: cached };
+            this._renderAI();
+            this._signalAiDone();
+            return;
+        }
         const token = localStorage.getItem('tunix_access_token');
         if (!token) {
             this._ai = { status: 'login' };
             this._renderAI();
+            this._signalAiDone();
             return;
         }
         this._aiLoading = true;
@@ -741,15 +764,19 @@ export class FullscreenWorkspace {
                 if (res.status === 401) detail = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
                 this._ai = { status: 'error', detail };
                 this._renderAI();
+                this._signalAiDone();
                 return;
             }
             const data = await res.json();
-            this._ai = { status: 'ok', reply: (data && data.reply) || '' };
+            const reply = (data && data.reply) || '';
+            this._ai = { status: 'ok', reply };
+            if (reply) { try { sessionStorage.setItem(this._aiCacheKey(sym), reply); } catch (e) { /* ignore quota */ } }
         } catch (e) {
             this._ai = { status: 'error', detail: 'Lỗi kết nối. Vui lòng thử lại.' };
         }
         this._aiLoading = false;
         this._renderAI();
+        this._signalAiDone();
     }
 
     _openAi() {

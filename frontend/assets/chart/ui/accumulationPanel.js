@@ -1,13 +1,18 @@
 /**
- * AccumulationPanel — "Giả định tích sản" cho Bottom Dashboard fullscreen (2026-08-18).
+ * AccumulationPanel — "Giả định tích sản" cho Bottom Dashboard fullscreen (màn hình
+ * "Biểu đồ phân tích kỹ thuật" toàn màn hình).
  *
- * Tính toán GIỐNG feature "Giả định tích sản 5 năm" của StockDetail (cùng API + thuật toán):
- *   - GET /api/stocks/{symbol}/history?period=5y  → giá đóng cửa cuối mỗi tháng
- *   - GET /api/stocks/{symbol}/dividends          → cổ tức (tiền mặt / cổ phiếu thưởng)
- * 3 đường: Vốn góp (không lãi) / Gửi ngân hàng 7%/năm / Đầu tư cổ phiếu + cổ tức.
+ * ⚠️ THUẬT TOÁN KHÔNG NẰM Ở ĐÂY. Panel dùng CHUNG đúng một nguồn với block
+ * "Giả định tích sản <MÃ> 5 năm" của trang chi tiết cổ phiếu:
+ *     window.TuniXAccum  ←  /static/accumulationCalc.js
+ *       - buildMonthlyPrices(history)                 (dữ liệu: GET /api/stocks/{sym}/history?period=5y)
+ *       - computeSeries(months, dividends, monthly)   (dữ liệu: GET /api/stocks/{sym}/dividends)
+ * Nhờ vậy 2 màn hình luôn ra CÙNG kết quả (trước đây panel tự parse cổ tức bản rút gọn
+ * nên tính sai: cộng cả đợt quyền mua/ESOP và đếm trùng đợt cổ tức).
+ *
+ * File này CHỈ lo phần HIỂN THỊ trong panel (chart SVG nhỏ + summary 3 dòng).
  */
-const ACCUM_MONTHS = 60;      // 5 năm = 60 tháng
-const ACCUM_BANK_RATE = 0.07; // Lãi suất ngân hàng giả định 7%/năm
+const ACC = (typeof window !== 'undefined') ? window.TuniXAccum : null;
 
 const LINES = [
     { key: 'capital', label: 'Vốn góp', color: '#94a3b8' },
@@ -51,171 +56,6 @@ export function isIndexSymbol(sym) {
     if (!s) return false;
     if (INDEX_SYMBOLS.has(s)) return true;
     return /INDEX/.test(s);
-}
-
-function accumMonthKey(date) {
-    if (date == null) return '';
-    let d;
-    if (typeof date === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(date.trim())) {
-        const parts = date.trim().split('/').map(Number);
-        d = new Date(parts[2], parts[1] - 1, parts[0]);
-    } else {
-        d = new Date(date);
-    }
-    if (Number.isNaN(d.getTime())) return '';
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-}
-
-function accumMonthKeyFrom(y, m0) {
-    return y + '-' + String(m0 + 1).padStart(2, '0');
-}
-
-// Chuỗi số từ nguồn dữ liệu: dấu PHẨY phân cách nghìn + dấu CHẤM là phần thập phân
-// ("5,035.18 đồng/CP" ⇒ 5035.18, KHÔNG phải 503518). Dữ liệu kiểu Việt Nam
-// ("5.035,18") cũng phải đúng ⇒ quy tắc: dấu xuất hiện SAU CÙNG là dấu thập phân.
-// Chỉ có 1 loại dấu mà khối cuối đúng 3 chữ số ⇒ phân cách nghìn ("1,000" ⇒ 1000);
-// còn lại là thập phân ("10.5" ⇒ 10.5).
-function parseVnNumber(s) {
-    if (s == null) return NaN;
-    let t = String(s).trim().replace(/\s/g, '');
-    if (!t) return NaN;
-    const iComma = t.lastIndexOf(',');
-    const iDot = t.lastIndexOf('.');
-    let dec = '';
-    if (iComma >= 0 && iDot >= 0) {
-        dec = iComma > iDot ? ',' : '.';
-    } else {
-        const sep = iComma >= 0 ? ',' : (iDot >= 0 ? '.' : '');
-        if (sep && t.length - t.lastIndexOf(sep) - 1 !== 3) dec = sep;
-    }
-    if (dec) {
-        const other = dec === ',' ? '.' : ',';
-        const i = t.lastIndexOf(dec);
-        t = t.slice(0, i).split(other).join('').split(dec).join('') + '.' + t.slice(i + 1);
-    } else {
-        t = t.split(',').join('').split('.').join('');
-    }
-    const n = Number(t);
-    return Number.isFinite(n) ? n : NaN;
-}
-
-function parseDividend(content) {
-    const text = String(content || '').toLowerCase().replace(/\s+/g, ' ');
-    const out = { cash: 0, stockPct: 0 };
-    const isStock = /(cổ phiếu|co phieu|thưởng phiếu|thuong phieu|thưởng cp|thuong cp|cp thưởng)/.test(text);
-    const isCash = /(tiền mặt|tien mat|bằng tiền|bang tien)/.test(text) || /[đd]\/\s*(cp|cổ phiếu|co phieu)/.test(text) || /đồng\/(cp|cổ phiếu|co phieu)/.test(text);
-
-    let m = text.match(/(\d[\d.,]*)\s*(?:đ|vnd|vnđ|đồng|dong)\s*\/\s*(?:cp|cổ phiếu|co phieu)/);
-    if (m) out.cash = parseVnNumber(m[1]);
-
-    if (!out.cash && isCash) {
-        m = text.match(/(\d+(?:[.,]\d+)?)\s*%/);
-        if (m) out.cash = (parseFloat(m[1].replace(',', '.')) / 100) * 10000;
-    }
-
-    if (isStock) {
-        m = text.match(/(\d+(?:[.,]\d+)?)\s*%\s*(?:bằng cổ phiếu|cổ phiếu thưởng|cổ tức bằng cổ phiếu|thưởng phiếu)/) ||
-            text.match(/(?:bằng cổ phiếu|cổ phiếu thưởng|cổ tức bằng cổ phiếu|thưởng phiếu)[^%]*?(\d+(?:[.,]\d+)?)\s*%/);
-        if (m) out.stockPct = parseFloat(m[m.length - 1].replace(',', '.'));
-    }
-
-    if (isStock || /tỷ lệ\s*\d+\s*:\s*\d+/.test(text)) {
-        m = text.match(/tỷ lệ\s*(\d+)\s*[:/]\s*(\d+)/) || text.match(/(\d+)\s*cp\s*[:/]\s*(\d+)\s*cp/);
-        if (m) {
-            const a = parseInt(m[1], 10);
-            const b = parseInt(m[2], 10);
-            if (a > 0) out.stockPct = (b / a) * 100;
-        }
-    }
-
-    if (!Number.isFinite(out.cash) || out.cash < 0) out.cash = 0;
-    if (!Number.isFinite(out.stockPct) || out.stockPct < 0 || out.stockPct > 1000) out.stockPct = 0;
-    return out;
-}
-
-function buildAccumMonthlyPrices(history) {
-    const byMonth = {};
-    (Array.isArray(history) ? history : []).forEach((bar) => {
-        const k = accumMonthKey(bar.time);
-        const c = Number(bar.close);
-        if (!k || !Number.isFinite(c) || c <= 0) return;
-        byMonth[k] = c;
-    });
-    const keys = Object.keys(byMonth).sort();
-    if (!keys.length) return [];
-
-    const now = new Date();
-    const fullStart = new Date(now.getFullYear(), now.getMonth() - (ACCUM_MONTHS - 1), 1);
-    const fullStartKey = accumMonthKey(fullStart);
-    const earliest = keys[0];
-    const startKey = earliest <= fullStartKey ? fullStartKey : earliest;
-
-    const [sy, sm] = startKey.split('-').map(Number);
-    const months = [];
-    const curY = now.getFullYear();
-    const curM = now.getMonth() + 1;
-    let y = sy;
-    let m = sm;
-    while (y < curY || (y === curY && m <= curM)) {
-        months.push({ year: y, month: m, price: null });
-        m += 1;
-        if (m > 12) { m = 1; y += 1; }
-    }
-    const firstPrice = byMonth[earliest];
-    let lastPrice = null;
-    for (let idx = 0; idx < months.length; idx++) {
-        const k = accumMonthKeyFrom(months[idx].year, months[idx].month - 1);
-        const price = byMonth[k];
-        if (price !== undefined && price !== null) {
-            months[idx].price = price;
-            lastPrice = price;
-        } else {
-            months[idx].price = lastPrice !== null ? lastPrice : (firstPrice !== undefined ? firstPrice : null);
-        }
-    }
-    return months;
-}
-
-function computeAccumSeries(months, dividends, monthly) {
-    const capital = [];
-    const bank = [];
-    const stock = [];
-
-    const monthlyRate = ACCUM_BANK_RATE / 12;
-    let bankBalance = 0;
-    for (let i = 0; i < months.length; i++) {
-        capital.push(monthly * (i + 1));
-        bankBalance = (bankBalance + monthly) * (1 + monthlyRate);
-        bank.push(bankBalance);
-    }
-
-    const divByMonth = {};
-    (Array.isArray(dividends) ? dividends : []).forEach((d) => {
-        const k = accumMonthKey(d.date);
-        if (!k) return;
-        const parsed = parseDividend(d.content);
-        if (parsed.cash > 0 || parsed.stockPct > 0) {
-            if (!divByMonth[k]) divByMonth[k] = [];
-            divByMonth[k].push(parsed);
-        }
-    });
-
-    const hasPrice = months.some((m) => m.price !== null && m.price > 0);
-    let shares = 0;
-    let cash = 0;
-    for (let i = 0; i < months.length; i++) {
-        const m = months[i];
-        const price = m.price;
-        if (price !== null && price > 0) shares += monthly / price;
-        const k = accumMonthKeyFrom(m.year, m.month - 1);
-        const divs = divByMonth[k] || [];
-        divs.forEach((div) => {
-            if (div.cash > 0) cash += div.cash * shares;
-            if (div.stockPct > 0) shares *= (1 + div.stockPct / 100);
-        });
-        stock.push(hasPrice && price !== null && price > 0 ? shares * price + cash : capital[i]);
-    }
-    return { capital, bank, stock, months };
 }
 
 export class AccumulationPanel {
@@ -336,8 +176,14 @@ export class AccumulationPanel {
     _render() {
         if (!this._els || this._destroyed) return;
         const { history, dividends } = this._data;
-        const months = buildAccumMonthlyPrices(history);
-        const series = computeAccumSeries(months, dividends, this.monthly);
+        // Dùng CHUNG thuật toán với block ở trang chi tiết cổ phiếu (1 nguồn duy nhất).
+        if (!ACC) {
+            this._els.chart.innerHTML = '<div class="fss-muted">Không nạp được công cụ tính tích sản</div>';
+            this._els.summary.innerHTML = '';
+            return;
+        }
+        const months = ACC.buildMonthlyPrices(history);
+        const series = ACC.computeSeries(months, dividends, this.monthly);
         this._renderChart(months, series);
         this._renderSummary(series);
     }

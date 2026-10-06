@@ -109,6 +109,16 @@ body.dark-mode .cr-table tbody tr:hover td { background: #14211e; }
 body.dark-mode .cr-btn.ghost { background: #21262d; color: #4dd8c4; border-color: #2aa79a; }
 .cr-btn.ghost:hover { background: #f0fbf9; }
 body.dark-mode .cr-btn.ghost:hover { background: #14211e; color: #7fe9d8; border-color: #4dd8c4; }
+/* Breadcrumb trang chi tiết coin: Crypto › BTC (thay cho nút "Quay lại danh sách") */
+.cr-breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 13px; margin-bottom: 12px; color: #8a99b1; }
+.cr-breadcrumb .cb-item { color: #6b7a8f; cursor: pointer; font-weight: 600; text-decoration: none; }
+.cr-breadcrumb .cb-item:hover { color: #008080; }
+.cr-breadcrumb .cb-item.cb-current { color: #12203a; cursor: default; font-weight: 700; }
+.cr-breadcrumb .cb-sep { color: #c3ccd8; margin: 0 2px; }
+body.dark-mode .cr-breadcrumb .cb-item { color: #adbac7; }
+body.dark-mode .cr-breadcrumb .cb-item:hover { color: #4db6b6; }
+body.dark-mode .cr-breadcrumb .cb-item.cb-current { color: #e6edf3; }
+body.dark-mode .cr-breadcrumb .cb-sep { color: #30363d; }
 .cr-btn.primary { background: linear-gradient(135deg, #008080, #00a08a); color: #fff; box-shadow: 0 6px 16px rgba(0,128,128,0.22); }
 .cr-btn.primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
 .cr-more { display: flex; justify-content: center; padding: 14px 0 2px; }
@@ -138,11 +148,32 @@ body.dark-mode .cr-period { background: #21262d; border-color: #3e4c61; color: #
 .cr-period.on { background: #008080; color: #fff; border-color: #008080; }
 body.dark-mode .cr-period:hover { border-color: #4dd8c4; color: #4dd8c4; }
 body.dark-mode .cr-period.on { background: linear-gradient(135deg,#008080,#00a08a); border-color: #4dd8c4; color: #fff; }
-.cr-chart { border: 1px solid #e9edf2; border-radius: 12px; background: #fff; padding: 6px; }
+.cr-chart { border: 1px solid #e9edf2; border-radius: 12px; background: #fff; padding: 6px; height: 340px; }
 body.dark-mode .cr-chart { background: #0d1117; border-color: #30363d; }
-.cr-chart svg { width: 100%; height: auto; display: block; }
-.cr-hint { font-size: 12px; color: #8a99b1; margin-top: 8px; }
-body.dark-mode .cr-hint { color: #8b949e; }
+/* Dòng legend OHLC+KL (theo crosshair) trên biểu đồ Lightweight Charts */
+.cr-ohlcv { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #6b7a8f; min-height: 18px; margin: 2px 0 6px; }
+.cr-ohlcv b { color: #12203a; font-weight: 700; }
+.cr-ohlcv b.up, .cr-ohlcv i.up { color: #00a08a; }
+.cr-ohlcv b.down, .cr-ohlcv i.down { color: #d0314e; }
+.cr-ohlcv i { font-style: normal; font-weight: 700; font-size: 11.5px; }
+.cr-ohlcv .cr-oh-time { color: #8a99b1; font-weight: 600; }
+body.dark-mode .cr-ohlcv { color: #8b949e; }
+body.dark-mode .cr-ohlcv b { color: #e6edf3; }
+body.dark-mode .cr-ohlcv b.up, body.dark-mode .cr-ohlcv i.up { color: #4dd8c4; }
+body.dark-mode .cr-ohlcv b.down, body.dark-mode .cr-ohlcv i.down { color: #ff7b8a; }
+body.dark-mode .cr-ohlcv .cr-oh-time { color: #6b7a8f; }
+/* Badge thông tin VỊ THẾ (chỉ hiện khi user có vị thế coin đang xem, nằm cạnh tiêu đề biểu đồ) */
+.cr-pos-badge { display: none; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: #12203a;
+    background: #f2f7ff; border: 1px solid #dbe7f7; border-radius: 999px; padding: 4px 10px; white-space: nowrap; cursor: default; }
+.cr-pos-badge .crp-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.cr-pos-badge .crp-label { font-weight: 700; color: #6b7a8f; text-transform: uppercase; font-size: 10.5px; letter-spacing: .4px; }
+.cr-pos-badge .crp-qty { font-weight: 700; }
+.cr-pos-badge .crp-sep { color: #c2ccd9; }
+.cr-pos-badge b { font-weight: 700; }
+.cr-pos-badge .crp-pct { font-weight: 700; }
+body.dark-mode .cr-pos-badge { background: #161b22; border-color: #30363d; color: #e6edf3; }
+body.dark-mode .cr-pos-badge .crp-label { color: #8b949e; }
+body.dark-mode .cr-pos-badge .crp-sep { color: #484f58; }
 
 /* Note */
 .cr-note { background: #f0fbf9; border: 1px solid rgba(0,128,128,.25); border-left: 4px solid #008080; border-radius: 10px; padding: 11px 14px; font-size: 12.5px; color: #0b5a55; line-height: 1.6; }
@@ -158,6 +189,99 @@ body.dark-mode .cr-note { background: #0f2420; color: #9fbfb8; border-color: rgb
 /* Detail: icon cạnh tên */
 .cr-detail-name { align-items: center; }
 .cr-dname-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
+/* ===== Tin tức Crypto (trang chi tiết coin) ===== */
+.crn-sym { font-size: 12px; font-weight: 700; color: #8a99b1; margin-left: 2px; }
+body.dark-mode .crn-sym { color: #8b949e; }
+.cr-news-all { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #dbe4ec; background: #fff; color: #008080;
+    border-radius: 9px; padding: 5px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
+.cr-news-all:hover { border-color: #008080; background: #f0fbf9; }
+body.dark-mode .cr-news-all { background: #21262d; border-color: #3e4c61; color: #4dd8c4; }
+body.dark-mode .cr-news-all:hover { border-color: #4dd8c4; background: #14211e; }
+.cr-news-list { display: flex; flex-direction: column; gap: 8px; }
+.crn-item { display: flex; gap: 10px; align-items: stretch; width: 100%; text-align: left; background: #f6f8fb;
+    border: 1px solid #e9edf2; border-radius: 12px; padding: 9px 11px; cursor: pointer; font-family: inherit; transition: all .15s; }
+.crn-item:hover { border-color: #008080; background: #f0fbf9; }
+body.dark-mode .crn-item { background: #10151c; border-color: #30363d; }
+body.dark-mode .crn-item:hover { border-color: #4dd8c4; background: #14211e; }
+.crn-thumb { width: 76px; height: 54px; flex: 0 0 auto; border-radius: 9px; object-fit: cover; background: #e6ebf2; }
+body.dark-mode .crn-thumb { background: #21262d; }
+.crn-thumb-fb { display: flex; align-items: center; justify-content: center; color: #008080; font-size: 18px; }
+body.dark-mode .crn-thumb-fb { color: #4dd8c4; }
+.crn-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; justify-content: center; flex: 1 1 auto; }
+.crn-title { font-size: 13.5px; font-weight: 600; color: #16202f; line-height: 1.42;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+body.dark-mode .crn-title { color: #e6edf3; }
+.crn-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 11.5px; color: #8a99b1; font-weight: 600; }
+body.dark-mode .crn-meta { color: #8b949e; }
+.crn-src { padding: 1px 7px; border-radius: 999px; background: #eef2f7; color: #5a6b85; font-size: 10.5px; }
+body.dark-mode .crn-src { background: #21262d; color: #9fb0c7; }
+.crn-hint { font-size: 12px; color: #8a99b1; padding: 2px 2px 0; }
+body.dark-mode .crn-hint { color: #8b949e; }
+
+/* ===== 2 cột cuối trang chi tiết: Giả định đầu tư (trái) · Tin tức Crypto (phải) ===== */
+.cr-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+.cr-duo > .cr-card { margin-bottom: 0; min-width: 0; }
+/* Nửa bề rộng: bảng DCA bỏ 2 cột phụ (Vốn · Giá trị hiện tại) để VỪA khung, không phải cuộn ngang.
+   Khi xếp 1 cột (màn hẹp) thì hiện lại đủ 6 cột vì card đã rộng bằng cả trang. */
+@media (min-width: 901px) {
+    .cr-duo .cr-dca-tbl { min-width: 0; font-size: 12px; }
+    .cr-duo .cr-dca-tbl th, .cr-duo .cr-dca-tbl td { padding: 6px 9px; }
+    .cr-duo .cr-dca-tbl th:nth-child(4), .cr-duo .cr-dca-tbl td:nth-child(4),
+    .cr-duo .cr-dca-tbl th:nth-child(5), .cr-duo .cr-dca-tbl td:nth-child(5) { display: none; }
+}
+@media (max-width: 900px) {
+    .cr-duo { grid-template-columns: 1fr; }
+}
+
+/* ===== Giả định đầu tư định kỳ (DCA) ===== */
+.cr-dca-badge { display: inline-flex; align-items: center; border: 1px solid #dbe4ec; background: #f6f8fb; color: #5a6b85;
+    border-radius: 999px; padding: 4px 11px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+body.dark-mode .cr-dca-badge { background: #21262d; border-color: #3e4c61; color: #9fb0c7; }
+.cr-dca-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-bottom: 12px;
+    container-type: inline-size; }
+/* 5 ô KPI LUÔN nằm 1 hàng: chữ tự co theo BỀ RỘNG khối KPI (container query).
+   Cỡ chữ chọn sao cho số dài nhất ("67.300.485") VẪN VỪA 1 DÒNG ở nửa bề rộng (~438px) —
+   không được để trình duyệt ngắt giữa chữ số. Khối rộng hơn (xếp 1 cột) → chữ to dần, tối đa 13px. */
+.cr-dca-kpis .cr-kpi { padding: 7px 4px; border-radius: 10px; min-width: 0; }
+.cr-dca-kpis .k-label { font-size: 9px; font-size: clamp(7px, 2cqw, 11px);
+    line-height: 1.2; letter-spacing: 0; min-height: 2.4em; }
+.cr-dca-kpis .k-val { font-size: 10px; font-size: clamp(7.5px, 2.3cqw, 13px);
+    margin-top: 2px; line-height: 1.3; letter-spacing: -0.1px; overflow-wrap: anywhere; }
+.cr-dca-kpis .k-val small { display: block; font-size: .85em; font-weight: 800; letter-spacing: 0; }
+@media (max-width: 560px) {
+    .cr-dca-kpis { gap: 4px; }
+    .cr-dca-kpis .cr-kpi { padding: 6px 4px; }
+}
+/* KPI lãi/lỗ cần rule riêng cho dark (rule dark .cr-kpi .k-val đè mất màu up/down) */
+.cr-kpi .k-val.up { color: #00a08a; }
+.cr-kpi .k-val.down { color: #d0314e; }
+body.dark-mode .cr-kpi .k-val.up { color: #4dd8c4; }
+body.dark-mode .cr-kpi .k-val.down { color: #ff7b8a; }
+.cr-kpi .k-val small { font-size: 11px; font-weight: 700; opacity: .75; }
+.cr-dca-chart { position: relative; height: 220px; border: 1px solid #e9edf2; border-radius: 12px; background: #fff; }
+body.dark-mode .cr-dca-chart { background: #0d1117; border-color: #30363d; }
+.cr-dca-chart svg { display: block; }
+.cr-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 11.5px; color: #5a6b85; font-weight: 600; }
+body.dark-mode .cr-legend { color: #9fb0c7; }
+.cr-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.cr-legend .lg i { display: inline-block; width: 16px; height: 0; border-top: 2px solid #008080; }
+.cr-legend .lg.cost i { border-top-style: dashed; border-top-color: #8a99b1; }
+.cr-dca-tblwrap { margin-top: 12px; overflow-x: auto; border: 1px solid #e9edf2; border-radius: 12px; }
+body.dark-mode .cr-dca-tblwrap { border-color: #30363d; }
+.cr-dca-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 620px; }
+.cr-dca-tbl th, .cr-dca-tbl td { padding: 7px 11px; border-bottom: 1px solid #eef2f7; text-align: left; white-space: nowrap; }
+body.dark-mode .cr-dca-tbl th, body.dark-mode .cr-dca-tbl td { border-bottom-color: #242b34; color: #c9d1d9; }
+.cr-dca-tbl thead th { background: #f6f8fb; color: #5a6b85; font-weight: 700; font-size: 11.5px; text-transform: none; }
+body.dark-mode .cr-dca-tbl thead th { background: #10151c; color: #9fb0c7; }
+.cr-dca-tbl td.num, .cr-dca-tbl th.num { text-align: right; }
+.cr-dca-tbl tbody tr:last-child td { border-bottom: none; }
+.cr-dca-tbl td.up { color: #00a08a; font-weight: 700; }
+.cr-dca-tbl td.down { color: #d0314e; font-weight: 700; }
+body.dark-mode .cr-dca-tbl td.up { color: #4dd8c4; }
+body.dark-mode .cr-dca-tbl td.down { color: #ff7b8a; }
+.cr-dca-hint { font-size: 11.5px; color: #8a99b1; margin-top: 9px; line-height: 1.6; }
+body.dark-mode .cr-dca-hint { color: #8b949e; }
 
 /* Ẩn thanh cuộn nhưng vẫn cuộn được (toàn trang + mọi vùng cuộn nội bộ) */
 html, body { scrollbar-width: none; -ms-overflow-style: none; }

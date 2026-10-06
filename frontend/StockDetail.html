@@ -3925,6 +3925,7 @@
         </div>
     </div>
 
+    <script src="/static/accumulationCalc.js?v=20261006a"></script>
     <script>
         let lastSentHeight = 0;
         let currentQuote = null;
@@ -3934,7 +3935,7 @@
         let tunixChartModulePromise = null;
         // Version của khối chart engine — BẮT BUỘC bump khi sửa file trong /static/chart/
         // (module import không có query sẽ bị HTTP cache 1 giờ; thêm ?v= để lần tải sau lấy bản mới).
-        const CHART_ASSET_VER = '20260927d';
+        const CHART_ASSET_VER = '20261006a';
         function getTunixChartModule() {
             if (!tunixChartModulePromise) {
                 tunixChartModulePromise = import('/static/chart/stockDetailChart.js?v=' + CHART_ASSET_VER);
@@ -3996,14 +3997,113 @@
         if (getFsFromQuery()) {
             document.body.classList.add('chart-fullscreen');
         }
+        // Parent (shell index.html) khi mở "toàn màn hình biểu đồ" có thể fullscreen CHÍNH iframe này
+        // (bước 2) HOẶC khung chứa iframe `#frameHost` (bước 1, lúc iframe ?fs=1 còn đang tải) →
+        // coi cả hai là "đang toàn màn hình" để bật layout workspace biểu đồ.
+        function parentFullscreenOwnsFrame() {
+            if (!window.parent || window.parent === window) return false;
+            let pe = null;
+            try {
+                const pd = window.parent.document;
+                pe = pd.fullscreenElement || pd.webkitFullscreenElement;
+            } catch (e) { return false; }
+            if (!pe) return false;
+            if (pe === window.frameElement) return true;
+            try { return !!(pe.contains && window.frameElement && pe.contains(window.frameElement)); } catch (e) { return false; }
+        }
+
+        // Nút toàn màn hình TRONG BIỂU ĐỒ (.fs-btn do chart engine render vào #fsEl) khi fullscreen do SHELL
+        // bật (icon nến ở header / nút mở rộng ở block biểu đồ):
+        //   • đổi icon expand → compress (thu nhỏ) để báo "đang toàn màn hình";
+        //   • click vào = THOÁT toàn màn hình y như nhấn Esc / nút X của trình duyệt.
+        // Làm ngay ở StockDetail (không phụ thuộc module chart) để luôn đúng kể cả khi file JS chart
+        // còn bản cũ trong cache trình duyệt.
+        function syncChartFsBtn(isFs) {
+            const btn = document.querySelector('.fs-btn');
+            if (!btn) return;
+            const ic = btn.querySelector('i');
+            if (ic) ic.className = isFs ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+            btn.classList.toggle('fs-active', !!isFs);
+            btn.title = isFs ? 'Thoát toàn màn hình (Esc)' : 'Toàn màn hình biểu đồ';
+        }
+        function exitParentFullscreen() {
+            // Nhờ shell thoát (shell là bên đã bật fullscreen)…
+            try { window.parent.postMessage({ type: 'tunix-exit-fullscreen' }, '*'); } catch (e) { /* ignore */ }
+            // …đồng thời gọi trực tiếp (cùng origin) để chắc chắn chạy cả khi message bị chặn.
+            try {
+                const pd = window.parent.document;
+                const exit = pd.exitFullscreen || pd.webkitExitFullscreen;
+                if (exit && (pd.fullscreenElement || pd.webkitFullscreenElement)) exit.call(pd);
+            } catch (e) { /* ignore */ }
+        }
+
+        // ---- Báo cho SHELL biết workspace biểu đồ đã dựng xong (dữ liệu + phân tích TuniAI) ----
+        // Shell giữ lớp "Đang mở biểu đồ phân tích kỹ thuật…" cho tới khi nhận `tunix-chart-fs-ready` ⇒
+        // bấm MỘT lần là vào thẳng màn hình hoàn chỉnh. Trước đây shell gỡ lớp chờ ngay khi iframe load,
+        // nên bảng TUNIAI còn "Đang cập nhật…" (TuniAI mất ~7s) → người dùng phải thoát ra bấm lại.
+        let chartFsDataReady = false, chartFsAiDone = false, chartFsReadyPosted = false;
+        function postToParent(msg) {
+            if (!window.parent || window.parent === window) return;
+            try { window.parent.postMessage(msg, '*'); } catch (e) { /* ignore */ }
+        }
+        function postChartFsProgress(step) { postToParent({ type: 'tunix-chart-fs-progress', step: step }); }
+        function tryPostChartFsReady() {
+            if (!chartFsDataReady || !chartFsAiDone || chartFsReadyPosted) return;
+            chartFsReadyPosted = true;
+            postToParent({ type: 'tunix-chart-fs-ready' });
+        }
+        function markChartFsDataReady() {
+            if (chartFsDataReady) return;
+            chartFsDataReady = true;
+            postChartFsProgress('ai');     // dữ liệu xong → còn chờ TuniAI
+            tryPostChartFsReady();
+        }
+        document.addEventListener('tunix-chart-ai-done', function () {
+            chartFsAiDone = true;
+            tryPostChartFsReady();
+        });
+        // DỰ PHÒNG: nếu module chart còn bản cũ trong cache trình duyệt (chưa bắn sự kiện
+        // `tunix-chart-ai-done`) thì theo dõi DOM bảng TUNIAI — hết "Đang cập nhật…" là coi như xong.
+        if (getFsFromQuery()) {
+            let aiWatchTries = 0;
+            const aiWatch = setInterval(function () {
+                aiWatchTries++;
+                const el = document.querySelector('.fsb-ai .fsb-panel-body');
+                const txt = el ? (el.innerText || '').trim() : '';
+                if (txt && !/Đang cập nhật/.test(txt)) {
+                    clearInterval(aiWatch);
+                    document.dispatchEvent(new CustomEvent('tunix-chart-ai-done'));
+                    return;
+                }
+                if (aiWatchTries > 150) clearInterval(aiWatch);   // tối đa ~60s
+            }, 400);
+        }
+        // Shell hỏi trạng thái (mở lại biểu đồ đã xem) → trả lời ngay để lớp chờ tắt tức thì.
+        window.addEventListener('message', function (e) {
+            const d = e.data;
+            if (!d || d.type !== 'tunix-chart-fs-status') return;
+            if (chartFsDataReady && chartFsAiDone) postToParent({ type: 'tunix-chart-fs-ready' });
+            else postChartFsProgress(chartFsDataReady ? 'ai' : 'load');
+        });
+        // Bắt ở pha capture → chặn handler của chart engine (tránh nó tự request fullscreen lồng nhau).
+        document.addEventListener('click', function (e) {
+            const btn = e.target && e.target.closest ? e.target.closest('.fs-btn') : null;
+            if (!btn) return;
+            if (!parentFullscreenOwnsFrame()) return;   // không phải fullscreen do shell → để chart engine tự xử lý
+            e.preventDefault();
+            e.stopPropagation();
+            exitParentFullscreen();
+        }, true);
+
         // ?fs=1 từ icon header: parent sẽ fullscreen chính iframe này (có user activation)
         // → đồng bộ class chart-fullscreen theo trạng thái fullscreen của parent (tự bật/xoá khi thoát).
         if (getFsFromQuery() && window.parent && window.parent !== window) {
             const syncParentFs = () => {
-                const pd = window.parent.document;
-                const pe = pd.fullscreenElement || pd.webkitFullscreenElement;
-                const isFs = pe === window.frameElement;
+                const isFs = parentFullscreenOwnsFrame();
                 document.body.classList.toggle('chart-fullscreen', isFs);
+                syncChartFsBtn(isFs);
+                // Nút toàn màn hình trong chart phải đổi thành icon THOÁT toàn màn hình (và ngược lại).
+                if (tunixChart && typeof tunixChart.refreshFullscreen === 'function') tunixChart.refreshFullscreen();
                 // Thoát fullscreen (parent-driven, icon nến ở header) → trả chart về chiều cao bình
                 // thường. Không làm thì placeholder giữ nguyên chiều cao lúc fullscreen
                 // (baseChartHeight ghi nhận sai) → biểu đồ "to hơn bình thường" sau khi thoát.
@@ -4024,10 +4124,8 @@
             let tries = 0;
             const t = setInterval(() => {
                 tries++;
-                // Parent đã fullscreen iframe này (icon header) → không tự request nữa, chỉ giữ class.
-                const parentFsEl = (window.parent && window.parent.document) ?
-                    (window.parent.document.fullscreenElement || window.parent.document.webkitFullscreenElement) : null;
-                if (parentFsEl === window.frameElement) {
+                // Parent đã fullscreen iframe này (hoặc khung chứa nó) → không tự request nữa, chỉ giữ class.
+                if (parentFullscreenOwnsFrame()) {
                     document.body.classList.add('chart-fullscreen');
                     autoFullscreenDone = true;
                     clearInterval(t);
@@ -4160,6 +4258,8 @@
                     });
                 }
                 await tunixChart.load(symbol);
+                // Chart (và nút .fs-btn) vừa được tạo → đồng bộ icon theo trạng thái fullscreen hiện tại.
+                syncChartFsBtn(parentFullscreenOwnsFrame());
             } catch (e) {
                 const dark = document.body.classList.contains('dark-mode');
                 container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:24px;text-align:center;font-size:13px;color:' + (dark ? '#9fb0c7' : '#8a99b1') + ';">Không tải được dữ liệu biểu đồ. Vui lòng thử lại.</div>';
@@ -4351,10 +4451,7 @@
             // nên phải kiểm tra thêm class chart-fullscreen + fullscreenElement của parent.
             if (document.fullscreenElement || document.webkitFullscreenElement) return true;
             if (document.body && document.body.classList.contains('chart-fullscreen')) return true;
-            try {
-                const pd = window.parent && window.parent.document;
-                if (pd && (pd.fullscreenElement || pd.webkitFullscreenElement) === window.frameElement) return true;
-            } catch (e) { /* ignore */ }
+            if (parentFullscreenOwnsFrame()) return true;
             return false;
         }
         function goToStock(sym) {
@@ -4721,6 +4818,7 @@
             'dong-tien-thong-minh': 'Kinh doanh',
             'tai-chinh-quoc-te': 'Quốc tế',
             'cong-nghe': 'Công nghệ',
+            'tien-ao': 'Crypto',
             'tin-tuc': 'Tin tức',
         };
 
@@ -5346,6 +5444,8 @@
                 }
                 // ?fs=1 → bật toàn màn hình sau khi chart nạp (mặc định VNINDEX).
                 maybeAutoFullscreen();
+                // Dữ liệu trang chi tiết đã xong → báo tiến độ cho lớp chờ của shell.
+                markChartFsDataReady();
                 notifyParentHeight();
             } catch (error) {
                 console.error('Failed to load stock detail:', error);
@@ -5470,8 +5570,6 @@
 
         // ===== 6.5 GIẢ ĐỊNH TÍCH SẢN 5 NĂM =====
         const ACCUM_MONTHLY = 5000000;      // 5 triệu VND mỗi tháng (mặc định)
-        const ACCUM_MONTHS = 60;            // 5 năm = 60 tháng
-        const ACCUM_BANK_RATE = 0.07;       // Lãi suất ngân hàng giả định 7%/năm
 
         let accumHistoryData = null;
         let accumDividendData = null;
@@ -5489,270 +5587,11 @@
             { key: 'stock', label: 'Đầu tư cổ phiếu + cổ tức', color: '#008080' },
         ];
 
-        function accumMonthKey(date) {
-            if (date == null) return '';
-            let d;
-            if (typeof date === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(date.trim())) {
-                // Dạng dd/mm/yyyy (ngày trả cổ tức)
-                const parts = date.trim().split('/').map(Number);
-                d = new Date(parts[2], parts[1] - 1, parts[0]);
-            } else {
-                d = new Date(date);
-            }
-            if (Number.isNaN(d.getTime())) return '';
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        }
-
-        function accumMonthKeyFrom(y, m0) {
-            return `${y}-${String(m0 + 1).padStart(2, '0')}`;
-        }
-
-        // Chuỗi số từ nguồn dữ liệu: dấu PHẨY phân cách nghìn + dấu CHẤM là phần thập phân
-        // ("5,035.18 đồng/CP" ⇒ 5035.18, KHÔNG phải 503518). Dữ liệu kiểu Việt Nam
-        // ("5.035,18") cũng phải đúng ⇒ quy tắc: dấu xuất hiện SAU CÙNG là dấu thập phân.
-        // Chỉ có 1 loại dấu mà khối cuối đúng 3 chữ số ⇒ phân cách nghìn ("1,000" ⇒ 1000);
-        // còn lại là thập phân ("10.5" ⇒ 10.5).
-        function parseVnNumber(s) {
-            if (s == null) return NaN;
-            let t = String(s).trim().replace(/\s/g, '');
-            if (!t) return NaN;
-            const iComma = t.lastIndexOf(',');
-            const iDot = t.lastIndexOf('.');
-            let dec = '';
-            if (iComma >= 0 && iDot >= 0) {
-                dec = iComma > iDot ? ',' : '.';
-            } else {
-                const sep = iComma >= 0 ? ',' : (iDot >= 0 ? '.' : '');
-                if (sep && t.length - t.lastIndexOf(sep) - 1 !== 3) dec = sep;
-            }
-            if (dec) {
-                const other = dec === ',' ? '.' : ',';
-                const i = t.lastIndexOf(dec);
-                t = t.slice(0, i).split(other).join('').split(dec).join('') + '.' + t.slice(i + 1);
-            } else {
-                t = t.split(',').join('').split('.').join('');
-            }
-            const n = Number(t);
-            return Number.isFinite(n) ? n : NaN;
-        }
-
-        // Từ khoá chỉ các đợt KHÔNG phải cổ tức/thưởng cho cổ đông → KHÔNG tính vào lợi nhuận:
-        // quyền mua, bán ưu đãi, phát hành riêng (ESOP/CBCNV), trái phiếu chuyển đổi, tăng vốn…
-        const DIV_EXCLUDE_RE = /(quyền mua|mua cổ phiếu|bán ưu đãi|ưu đãi|chào bán|phát hành riêng|esop|cbc nv|cán bộ công nhân|chuyển đổi|trái phiếu|tăng vốn|đấu giá)/;
-
-        // Phân tích MỘT phần của đợt (một đợt có thể gồm nhiều phần ngăn bởi <br>)
-        function parseDividendPart(partText) {
-            const text = ' ' + String(partText || '').toLowerCase().replace(/\s+/g, ' ').trim() + ' ';
-            const out = { cash: 0, stockPct: 0 };
-
-            // CHỈ nhận đợt cổ tức / thưởng cho cổ đông
-            if (!/(cổ tức|thưởng)/.test(text)) return out;
-            // Loại quyền mua / bán ưu đãi / phát hành riêng / ESOP / trái phiếu chuyển đổi…
-            if (DIV_EXCLUDE_RE.test(text)) return out;
-            // Có GIÁ phát hành ("giá 20.000 đ/cp") ⇒ đợt mua ưu đãi (phải bỏ tiền ra mua), không phải cổ tức
-            if (/giá\s*[\d.,]+\s*(?:đ|vnd|vnđ|đồng|dong)/.test(text)) return out;
-
-            const isStock = /(cổ phiếu|co phieu|thưởng phiếu|thuong phieu|thưởng cp|thuong cp|cp thưởng)/.test(text);
-            const isCash = /(tiền mặt|tien mat|bằng tiền|bang tien)/.test(text) || /[đd]\/\s*(cp|cổ phiếu|co phieu)/.test(text) || /đồng\/(cp|cổ phiếu|co phieu)/.test(text);
-
-            // 1) Tiền mặt theo mệnh giá: "500đ/cp", "1,000 Đồng/CP"
-            let m = text.match(/(\d[\d.,]*)\s*(?:đ|vnd|vnđ|đồng|dong)\s*\/\s*(?:cp|cổ phiếu|co phieu)/);
-            if (m) {
-                out.cash = parseVnNumber(m[1]);
-            }
-
-            // 2) Tiền mặt theo % mệnh giá (10.000đ): "bằng tiền mặt 5%", "Cổ tức bằng Tiền, tỷ lệ 10%"
-            if (!out.cash && isCash) {
-                m = text.match(/(\d+(?:[.,]\d+)?)\s*%/);
-                if (m) {
-                    out.cash = (parseFloat(m[1].replace(',', '.')) / 100) * 10000;
-                }
-            }
-
-            // 3) Cổ phiếu thưởng theo %: "bằng cổ phiếu 10%", "thưởng phiếu 10%"
-            if (isStock) {
-                m = text.match(/(\d+(?:[.,]\d+)?)\s*%\s*(?:bằng cổ phiếu|cổ phiếu thưởng|cổ tức bằng cổ phiếu|thưởng phiếu)/) ||
-                    text.match(/(?:bằng cổ phiếu|cổ phiếu thưởng|cổ tức bằng cổ phiếu|thưởng phiếu)[^%]*?(\d+(?:[.,]\d+)?)\s*%/);
-                if (m) {
-                    out.stockPct = parseFloat(m[m.length - 1].replace(',', '.'));
-                }
-            }
-
-            // 4) Tỷ lệ chia cổ phiếu "A:B" (vd "20:3" => 15%, "100:15" => 15%, "1:1" => 100%,
-            //    "100:10.5" => 10,5%) — chấp nhận cả dấu chấm/phẩy thập phân
-            if (isStock || /tỷ lệ\s*\d+\s*[:/]\s*\d+/.test(text)) {
-                m = text.match(/tỷ lệ\s*(\d+(?:[.,]\d+)?)\s*[:/]\s*(\d+(?:[.,]\d+)?)/) ||
-                    text.match(/(\d+(?:[.,]\d+)?)\s*cp\s*[:/]\s*(\d+(?:[.,]\d+)?)\s*cp/);
-                if (m) {
-                    const a = parseFloat(m[1].replace(',', '.'));
-                    const b = parseFloat(m[2].replace(',', '.'));
-                    if (a > 0) out.stockPct = (b / a) * 100;
-                }
-            }
-
-            if (!Number.isFinite(out.cash) || out.cash < 0) out.cash = 0;
-            if (!Number.isFinite(out.stockPct) || out.stockPct < 0 || out.stockPct > 1000) out.stockPct = 0;
-            return out;
-        }
-
-        // Một đợt có thể gồm nhiều phần (vừa cổ tức cổ phiếu vừa cổ tức tiền mặt) →
-        // bỏ phần không phải cổ tức/thưởng rồi gộp: tiền mặt lấy phần lớn nhất,
-        // tỷ lệ cổ phiếu NHÂN DỒN (tránh cộng trùng khi cùng đợt được mô tả 2 lần).
-        function parseDividend(content) {
-            const parts = String(content || '').split(/<br\s*\/?>|\n|;|\+/i);
-            let cash = 0;
-            let stockFactor = 1;
-            parts.forEach(part => {
-                const r = parseDividendPart(part);
-                if (r.cash > cash) cash = r.cash;
-                if (r.stockPct > 0) stockFactor *= (1 + r.stockPct / 100);
-            });
-            const stockPct = stockFactor > 1 ? (stockFactor - 1) * 100 : 0;
-            return { cash: cash, stockPct: stockPct };
-        }
-
-        function buildAccumMonthlyPrices(history) {
-            // Gom giá đóng cửa cuối mỗi tháng từ chuỗi lịch sử hằng ngày/tuần
-            const byMonth = {};
-            (Array.isArray(history) ? history : []).forEach(bar => {
-                const k = accumMonthKey(bar.time);
-                const c = Number(bar.close);
-                if (!k || !Number.isFinite(c) || c <= 0) return;
-                byMonth[k] = c;
-            });
-
-            const keys = Object.keys(byMonth).sort();
-            if (keys.length === 0) return [];
-
-            // Điểm bắt đầu: mốc 5 năm trước nếu có đủ dữ liệu;
-            // ngược lại (cổ phiếu mới IPO) bắt đầu từ tháng có dữ liệu sớm nhất.
-            const now = new Date();
-            const fullStart = new Date(now.getFullYear(), now.getMonth() - (ACCUM_MONTHS - 1), 1);
-            const fullStartKey = accumMonthKey(fullStart);
-            const earliest = keys[0];
-            const startKey = earliest <= fullStartKey ? fullStartKey : earliest;
-
-            // Tạo timeline từ startKey đến tháng hiện tại
-            const [sy, sm] = startKey.split('-').map(Number);
-            const months = [];
-            const curY = now.getFullYear();
-            const curM = now.getMonth() + 1;
-            let y = sy;
-            let m = sm;
-            while (y < curY || (y === curY && m <= curM)) {
-                months.push({ year: y, month: m, price: null });
-                m += 1;
-                if (m > 12) { m = 1; y += 1; }
-            }
-
-            // Điền giá: tháng thiếu dữ liệu thì lấy giá tháng gần nhất phía trước (forward fill);
-            // ở đầu chuỗi chưa có giá nào thì dùng giá sớm nhất (mốc IPO).
-            const firstPrice = byMonth[earliest];
-            let lastPrice = null;
-            for (let idx = 0; idx < months.length; idx++) {
-                const k = accumMonthKeyFrom(months[idx].year, months[idx].month - 1);
-                const price = byMonth[k];
-                if (price !== undefined && price !== null) {
-                    months[idx].price = price;
-                    lastPrice = price;
-                } else {
-                    months[idx].price = lastPrice !== null ? lastPrice : (firstPrice !== undefined ? firstPrice : null);
-                }
-            }
-            return months;
-        }
-
-        function computeAccumSeries(months, dividends, monthly) {
-            const capital = [];
-            const bank = [];
-            const stock = [];
-            const contributions = [];   // lịch sử góp vốn từng tháng (hiển thị nửa phải)
-            const dividendEvents = [];  // lịch sử chia cổ tức đã áp vào danh mục
-
-            // Đường 1: vốn góp thuần (không lãi). Đường 2: gửi ngân hàng lãi kép 7%/năm
-            const monthlyRate = ACCUM_BANK_RATE / 12;
-            let bankBalance = 0;
-            for (let i = 0; i < months.length; i++) {
-                capital.push(monthly * (i + 1));
-                bankBalance = (bankBalance + monthly) * (1 + monthlyRate);
-                bank.push(bankBalance);
-            }
-
-            // Gom cổ tức (5 năm) theo tháng — CHỈ những đợt cổ tức/thưởng (xem parseDividend):
-            // quyền mua / bán ưu đãi / phát hành riêng… đã bị loại ở bước parse.
-            const divByMonth = {};
-            const seenDiv = {};   // chống trùng: nguồn dữ liệu đôi khi trả 2 dòng cho CÙNG một đợt
-            (Array.isArray(dividends) ? dividends : []).forEach(d => {
-                const k = accumMonthKey(d.date);
-                if (!k) return;
-                const parsed = parseDividend(d.content);
-                if (parsed.cash <= 0 && parsed.stockPct <= 0) return;
-                // Cùng ngày + cùng giá trị ⇒ coi là cùng một đợt, chỉ tính 1 lần
-                const dedupKey = d.date + '|' + parsed.cash.toFixed(2) + '|' + parsed.stockPct.toFixed(4);
-                if (seenDiv[dedupKey]) return;
-                seenDiv[dedupKey] = true;
-                if (!divByMonth[k]) divByMonth[k] = [];
-                divByMonth[k].push({ cash: parsed.cash, stockPct: parsed.stockPct, date: d.date, content: d.content });
-            });
-
-            // Đường 3: DCA mua cổ phiếu theo giá thị trường + cổ tức
-            const hasPrice = months.some(m => m.price !== null && m.price > 0);
-            let shares = 0;
-            let cash = 0;
-            for (let i = 0; i < months.length; i++) {
-                const m = months[i];
-                const price = m.price;
-                let boughtShares = 0;
-                if (price !== null && price > 0) {
-                    boughtShares = monthly / price;
-                    shares += boughtShares;
-                }
-                const k = accumMonthKeyFrom(m.year, m.month - 1);
-                const divs = divByMonth[k] || [];
-                let cashThisMonth = 0;
-                let sharesFromDividend = 0;
-                divs.forEach(div => {
-                    const sharesBefore = shares;
-                    let cashReceived = 0;
-                    let stockShares = 0;
-                    if (div.cash > 0) {
-                        cashReceived = div.cash * shares;
-                        cash += cashReceived;
-                        cashThisMonth += cashReceived;
-                    }
-                    if (div.stockPct > 0) {
-                        stockShares = shares * (div.stockPct / 100);
-                        shares += stockShares;
-                        sharesFromDividend += stockShares;
-                    }
-                    dividendEvents.push({
-                        date: div.date,
-                        content: div.content,
-                        cashPerShare: div.cash,
-                        stockPct: div.stockPct,
-                        sharesBefore: sharesBefore,
-                        cashReceived: cashReceived,
-                        stockShares: stockShares,
-                        cashTotalAfter: cash,
-                        sharesAfter: shares
-                    });
-                });
-                contributions.push({
-                    year: m.year,
-                    month: m.month,
-                    price: price,
-                    boughtShares: boughtShares,
-                    shares: shares,
-                    sharesFromDividend: sharesFromDividend,
-                    cashThisMonth: cashThisMonth,
-                    cashTotal: cash,
-                    invested: monthly * (i + 1)
-                });
-                stock.push(hasPrice && price !== null && price > 0 ? shares * price + cash : capital[i]);
-            }
-
-            return { capital, bank, stock, contributions, dividendEvents };
-        }
+        // Thuật toán tích sản DÙNG CHUNG với panel fullscreen — 1 nguồn duy nhất:
+        // /static/accumulationCalc.js (window.TuniXAccum). Sửa thuật toán ở ĐÚNG 1 CHỖ ĐÓ.
+        const ACCUM_MONTHS = TuniXAccum.MONTHS;
+        const buildAccumMonthlyPrices = TuniXAccum.buildMonthlyPrices;
+        const computeAccumSeries = TuniXAccum.computeSeries;
 
         // Chiều cao biểu đồ khớp với nửa phải: nhiều/ít/không có đợt cổ tức → nửa phải cao thấp
         // khác nhau nên tính lại mỗi lần render:

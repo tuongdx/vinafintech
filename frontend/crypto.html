@@ -14,13 +14,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" /></noscript>
-    <link rel="stylesheet" href="/static/crypto.css?v=20260914f" />
+    <link rel="stylesheet" href="/static/crypto.css?v=20261005i" />
     <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
 </head>
 <body>
     <div class="cr-page">
-        <!-- HERO -->
-        <header class="cr-hero">
+        <!-- HERO (chỉ hiện ở DANH SÁCH — xem showList/showDetail trong crypto.js) -->
+        <header class="cr-hero" id="crHero">
             <h1>Crypto</h1>
             <p class="cr-sub">Theo dõi tài sản tiền mã hóa hàng đầu đang giao dịch trên Binance.</p>
             <span class="cr-pill" id="crUpdated"><i class="far fa-clock"></i> Cập nhật: <b>…</b></span>
@@ -76,24 +76,50 @@
 
         <!-- ============ CHI TIẾT ============ -->
         <section id="crDetailView" style="display:none;">
-            <button type="button" class="cr-btn ghost" id="crBack"><i class="fas fa-arrow-left"></i> Quay lại danh sách</button>
+            <nav class="cr-breadcrumb" id="crBreadcrumb" aria-label="breadcrumb">
+                <a class="cb-item" href="#" id="crCrumbHome">Crypto</a>
+                <span class="cb-sep">›</span>
+                <span class="cb-item cb-current" id="crCrumbSym">--</span>
+            </nav>
 
             <div class="cr-card" id="crDetailInfo"></div>
 
             <div class="cr-card">
                 <div class="cr-chart-head">
-                    <h3>Biểu đồ giá <span id="crChartSym"></span></h3>
-                    <div class="cr-periods" id="crPeriods"></div>
+                    <h3>Biểu đồ nến <span id="crChartSym"></span></h3>
+                    <span class="cr-pos-badge" id="crPosBadge"></span>
                 </div>
                 <div id="crChartMsg"></div>
+                <div class="cr-ohlcv" id="crOhlcv"></div>
                 <div class="cr-chart" id="crChart"></div>
-                <div class="cr-hint" id="crChartHint"></div>
+            </div>
+
+            <!-- 2 cột: TRÁI = Giả định đầu tư định kỳ (DCA) · PHẢI = Tin tức Crypto -->
+            <div class="cr-duo">
+                <!-- Giả định đầu tư định kỳ: mỗi tháng 5 triệu VNĐ trong 1 năm (DCA) -->
+                <div class="cr-card" id="crDcaCard">
+                    <div class="cr-chart-head">
+                        <h3>Giả định đầu tư <span class="crn-sym" id="crDcaSym"></span></h3>
+                        <span class="cr-dca-badge">5 triệu đ/tháng · 12 tháng</span>
+                    </div>
+                    <div id="crDcaBody"><div class="cr-msg load"><i class="fas fa-spinner fa-spin"></i> Đang tính toán…</div></div>
+                </div>
+
+                <!-- Tin tức Crypto: ưu tiên bài liên quan coin đang xem, không có thì lấy tin Crypto mới nhất -->
+                <div class="cr-card" id="crNewsCard">
+                    <div class="cr-chart-head">
+                        <h3>Tin tức Crypto</h3>
+                        <button type="button" class="cr-news-all" id="crNewsAll">Xem tất cả <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="cr-news-list" id="crNewsList"><div class="cr-msg load"><i class="fas fa-spinner fa-spin"></i> Đang tải tin tức…</div></div>
+                </div>
             </div>
         </section>
 
     </div>
 
-    <script src="/static/crypto.js?v=20260911a"></script>
+    <script src="/static/vendor/lightweight-charts.standalone.production.js?v=5.2.1"></script>
+    <script src="/static/crypto.js?v=20261005q"></script>
     <script src="/static/context-menu.js?v=20260928a"></script>
 </body>
 </html>
