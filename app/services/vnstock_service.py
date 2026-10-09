@@ -94,6 +94,14 @@ class SimpleTTLCache:
         for key in [k for k in self._store if k.startswith(prefix)]:
             self._store.pop(key, None)
 
+    def keys(self, prefix: str = "") -> list[str]:
+        """Danh sách key đang giữ trong cache (kể cả entry đã hết hạn nhưng chưa bị xoá).
+
+        Dùng để liệt kê những gì đã từng được nạp (VD scheduler 12h trưa chỉ dựng lại
+        các cặp mã/danh mục báo cáo đã từng được xem).
+        """
+        return [k for k in list(self._store) if k.startswith(prefix)]
+
     def _lock_for(self, key: str) -> threading.Lock:
         """Lock riêng theo key — dùng cho single-flight (chống cache stampede)."""
         with self._locks_guard:
@@ -2649,21 +2657,54 @@ def render_candlestick_svg(symbol: str, period: str = "3m", limit: int = 72) -> 
     )
 
 
+_screener_row_index: dict[str, dict[str, Any]] | None = None
+_screener_row_index_src: list[dict[str, Any]] | None = None
+
+
+def _screener_row(symbol: str) -> dict[str, Any]:
+    """Tra 1 dòng trong snapshot screener theo mã cổ phiếu.
+
+    Index (ticker → row) được dựng 1 LẦN cho mỗi dataset đang cache để tra nhanh,
+    không phải quét 1.600+ dòng cho mỗi lần gọi quote.
+    """
+    global _screener_row_index, _screener_row_index_src
+    symbol_upper = symbol.upper().strip()
+    if not symbol_upper:
+        return {}
+    dataset = _get_screener_dataset()
+    if _screener_row_index is None or _screener_row_index_src is not dataset:
+        index: dict[str, dict[str, Any]] = {}
+        for r in dataset:
+            ticker = str(r.get("ticker") or "").upper().strip()
+            if ticker:
+                index[ticker] = r
+        _screener_row_index = index
+        _screener_row_index_src = dataset
+    return _screener_row_index.get(symbol_upper) or {}
+
+
 def _get_quote_fundamentals(symbol: str) -> dict[str, Any]:
     """Chỉ số cơ bản của cổ phiếu: Vốn hoá, Giá trị sổ sách, P/E, P/B, EPS, ROE, ROA,
     KLGD TB 10 phiên, %1W, %1M, %YTD.
 
-    Ưu tiên symbol summary Simplize (có đầy đủ các chỉ số); nếu chưa có thì fallback
-    sang screener dataset (thiếu bookValue / EPS / ROE / ROA).
+    Nguồn:
+    - Vốn hoá / Giá trị sổ sách / EPS / ROE / ROA / KLGD TB 10 phiên / %1W-%1M-%YTD:
+      ưu tiên symbol summary Simplize (đầy đủ nhất); chưa có thì fallback screener
+      dataset (thiếu bookValue / EPS / ROE / ROA).
+    - **P/E & P/B: LẤY TỪ SNAPSHOT SCREENER** (fallback summary nếu screener thiếu) —
+      vì đây cũng chính là nguồn của khối "Định giá" ở màn hình biểu đồ phân tích kỹ
+      thuật (full screen) và bảng VN30 ở trang Thị trường. Trước đây P/E lấy từ summary
+      (theo EPS LTM) nên block đầu trang chi tiết lệch với màn hình full screen
+      (VD FPT: 12.34 vs 10.92).
     """
     symbol_upper = symbol.upper().strip()
     out: dict[str, Any] = {}
     summary = _get_symbol_summary(symbol_upper)
+    row = _screener_row(symbol_upper)
+
     if summary:
         out["market_cap"] = _to_float(summary.get("marketCap"))
         out["book_value"] = _to_float(summary.get("bookValue"))
-        out["pe"] = _to_float(summary.get("peRatio"))
-        out["pb"] = _to_float(summary.get("pbRatio"))
         out["eps"] = _to_float(summary.get("epsRatio"))
         out["roe"] = _to_float(summary.get("roe"))
         out["roa"] = _to_float(summary.get("roa"))
@@ -2671,21 +2712,22 @@ def _get_quote_fundamentals(symbol: str) -> dict[str, Any]:
         out["pct_1w"] = _to_float(summary.get("pricePctChg7d"))
         out["pct_1m"] = _to_float(summary.get("pricePctChg30d"))
         out["pct_ytd"] = _to_float(summary.get("pricePctChgYtd"))
-        return out
-
-    row = None
-    for r in _get_screener_dataset():
-        if str(r.get("ticker") or "").upper() == symbol_upper:
-            row = r
-            break
-    if row:
+    elif row:
         out["market_cap"] = _to_float(row.get("marketCapVnd"))
-        out["pe"] = _to_float(row.get("peRatio"))
-        out["pb"] = _to_float(row.get("pbRatio"))
         out["avg_volume_10d"] = _to_float(row.get("volume10dAvg"))
         out["pct_1w"] = _to_float(row.get("pricePctChg7d"))
         out["pct_1m"] = _to_float(row.get("pricePctChg30d"))
         out["pct_ytd"] = _to_float(row.get("pricePctChgYtd"))
+
+    if summary or row:
+        pe = _to_float(row.get("peRatio")) if row else 0.0
+        pb = _to_float(row.get("pbRatio")) if row else 0.0
+        if pe <= 0:
+            pe = _to_float(summary.get("peRatio")) if summary else 0.0
+        if pb <= 0:
+            pb = _to_float(summary.get("pbRatio")) if summary else 0.0
+        out["pe"] = pe
+        out["pb"] = pb
     return out
 
 
@@ -3916,6 +3958,89 @@ def get_company_reports(symbol: str, category: str = "financial") -> dict[str, A
     result = {"symbol": symbol_upper, "category": cat, "source": "cafef", "items": items}
     cache.set(cache_key, result, ttl_seconds=3600)
     return result
+
+
+# ---------------------------------------------------------------------------
+# LÀM MỚI BLOCK "BÁO CÁO" VÀO 12H TRƯA (giờ VN) HẰNG NGÀY
+# ---------------------------------------------------------------------------
+# Báo cáo/tài liệu (cafef) được nạp theo yêu cầu (lazy, cache 1 giờ) nên tự làm mới khi
+# hết hạn. Scheduler dưới đây (cùng pattern với "Lịch sự kiện thị trường" — asset_events
+# và snapshot "Cơ hội mới" — home_opportunity_service) XOÁ toàn bộ cache báo cáo rồi
+# DỰNG LẠI các cặp (mã, danh mục) đã từng được xem, đúng mốc 12h trưa giờ VN mỗi ngày.
+_REPORTS_REFRESH_LOCK = threading.Lock()
+_REPORTS_REFRESH_STARTED = False
+_REPORTS_WARM_LIMIT = 40       # số cặp (mã, danh mục) dựng lại mỗi lần chạy
+_REPORTS_WARM_SLEEP = 0.25     # giãn nhịp giữa các request tới cafef khi dựng lại
+
+
+def _reports_cached_pairs() -> list[tuple[str, str]]:
+    """[(mã, danh mục)] đang giữ trong cache báo cáo (tức đã từng được xem)."""
+    pairs: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for key in cache.keys("company-reports:"):
+        rest = key[len("company-reports:") :]
+        if ":" not in rest:
+            continue
+        symbol, category = rest.split(":", 1)
+        pair = (symbol.strip().upper(), category.strip().lower())
+        if pair[0] and pair[1] and pair not in seen:
+            seen.add(pair)
+            pairs.append(pair)
+    return pairs
+
+
+def refresh_company_reports() -> int:
+    """Làm mới block "Báo cáo": xoá cache cũ + dựng lại cho các mã đã từng được xem.
+
+    Trả số cặp dựng lại thành công. Gọi bởi scheduler 12h trưa (giờ VN).
+    """
+    pairs = _reports_cached_pairs()
+    # Xoá TRƯỚC để chắc chắn không phục vụ bản cũ hơn mốc 12h cho BẤT KỲ mã nào
+    # (mã không nằm trong danh sách dựng lại sẽ tự nạp mới ở lần xem kế tiếp).
+    cache.delete_prefix("company-reports:")
+    warmed = 0
+    for symbol, category in pairs[:_REPORTS_WARM_LIMIT]:
+        cache_key = f"company-reports:{symbol}:{category}"
+        try:
+            fresh = get_company_reports(symbol, category)
+            if fresh.get("items"):
+                warmed += 1
+            else:
+                # Nguồn lỗi/rỗng → KHÔNG giữ cache rỗng, để lần xem sau thử lại.
+                cache.delete(cache_key)
+        except Exception:  # noqa: BLE001 — 1 mã lỗi không làm hỏng cả lượt làm mới
+            cache.delete(cache_key)
+        time.sleep(_REPORTS_WARM_SLEEP)
+    return warmed
+
+
+def _seconds_until_reports_refresh() -> float:
+    """Số giây tới mốc làm mới báo cáo kế tiếp (12h trưa giờ VN)."""
+    now = _get_vn_now()
+    target = now.replace(hour=settings.report_refresh_hour, minute=0, second=0, microsecond=0)
+    if target <= now:
+        target += timedelta(days=1)
+    return max(1.0, (target - now).total_seconds())
+
+
+def _reports_refresh_loop() -> None:
+    """Thread nền: ngủ tới 12h trưa rồi làm mới cache báo cáo, lặp lại mỗi ngày."""
+    while True:
+        try:
+            time.sleep(_seconds_until_reports_refresh())
+            refresh_company_reports()
+        except Exception:  # noqa: BLE001 — không để thread chết vì lỗi nguồn
+            time.sleep(300)
+
+
+def start_daily_reports_refresh() -> None:
+    """Bật làm mới block "Báo cáo" vào 12h trưa (giờ VN) mỗi ngày (idempotent)."""
+    global _REPORTS_REFRESH_STARTED
+    with _REPORTS_REFRESH_LOCK:
+        if _REPORTS_REFRESH_STARTED:
+            return
+        _REPORTS_REFRESH_STARTED = True
+    threading.Thread(target=_reports_refresh_loop, daemon=True, name="company-reports-daily").start()
 
 
 def _format_vci_time(raw: Any) -> str:

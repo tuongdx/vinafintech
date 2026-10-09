@@ -189,6 +189,42 @@ body.dark-mode .cr-note { background: #0f2420; color: #9fbfb8; border-color: rgb
 /* Detail: icon cạnh tên */
 .cr-detail-name { align-items: center; }
 .cr-dname-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.cr-dname { min-width: 0; }
+
+/* Detail: dòng meta của block "Thông tin cơ bản" (sàn · đơn vị giá · cập nhật lúc) */
+.cr-dmeta { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-top: 6px; }
+.cr-meta-i { font-size: 12.5px; color: #6b7a8f; display: inline-flex; align-items: center; gap: 6px; }
+.cr-meta-i i { color: #008080; font-size: 12px; }
+.cr-meta-i b { color: #12203a; font-weight: 800; }
+body.dark-mode .cr-meta-i { color: #8b949e; }
+body.dark-mode .cr-meta-i i { color: #4db6b6; }
+body.dark-mode .cr-meta-i b { color: #e6edf3; }
+
+/* Detail: khối "Giới thiệu về {coin}" (nguồn phụ CoinGecko) */
+.cr-intro { margin-top: 14px; border-top: 1px dashed #e6ebf1; padding-top: 12px; }
+.cr-intro-title { font-size: 14px; font-weight: 800; color: #12203a; margin: 0 0 7px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cr-intro-tag { font-size: 10.5px; font-weight: 800; color: #008080; background: rgba(0,128,128,.10);
+    border: 1px solid rgba(0,128,128,.25); border-radius: 20px; padding: 2px 9px; letter-spacing: .2px; }
+.cr-intro-tag i { font-size: 10px; }
+.cr-intro-tag.warn { color: #92570d; background: rgba(197,124,25,.12); border-color: rgba(197,124,25,.30); }
+.cr-intro-text { font-size: 13.5px; line-height: 1.62; color: #46566e; margin: 0; }
+.cr-intro-text.clamp { max-height: 86px; overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg, #000 66%, transparent);
+    mask-image: linear-gradient(180deg, #000 66%, transparent); }
+.cr-intro-toggle { margin-top: 7px; border: 1px solid #dbe4ec; background: #fff; color: #008080; border-radius: 9px;
+    padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
+.cr-intro-toggle:hover { border-color: #008080; background: #f0fbf9; }
+.cr-intro-load { font-size: 12.5px; color: #8a99b1; }
+.cr-intro-load .fa-spinner { margin-right: 6px; }
+.cr-intro-empty { font-size: 12.5px; color: #8a99b1; font-style: italic; }
+body.dark-mode .cr-intro { border-top-color: #2b323d; }
+body.dark-mode .cr-intro-title { color: #e6edf3; }
+body.dark-mode .cr-intro-tag { color: #4dd8c4; background: rgba(77,216,196,.12); border-color: rgba(77,216,196,.30); }
+body.dark-mode .cr-intro-tag.warn { color: #e3b341; background: rgba(227,179,65,.12); border-color: rgba(227,179,65,.30); }
+body.dark-mode .cr-intro-text { color: #adbac7; }
+body.dark-mode .cr-intro-toggle { background: #21262d; border-color: #3e4c61; color: #4dd8c4; }
+body.dark-mode .cr-intro-toggle:hover { border-color: #4dd8c4; background: #14211e; }
+body.dark-mode .cr-intro-load, body.dark-mode .cr-intro-empty { color: #8b949e; }
 
 /* ===== Tin tức Crypto (trang chi tiết coin) ===== */
 .crn-sym { font-size: 12px; font-weight: 700; color: #8a99b1; margin-left: 2px; }

@@ -867,8 +867,6 @@ export class FullscreenWorkspace {
         const volume = v(q && q.volume);
         const value = v(q && q.value);
         const marketCap = v(q && q.market_cap);
-        const pe = v(q && q.pe);
-        const pb = v(q && q.pb);
 
         const row = (label, valHtml, cls) =>
             '<div class="fss-row"><span class="fss-row-label">' + label + '</span>' +
@@ -884,8 +882,6 @@ export class FullscreenWorkspace {
             row('Khối lượng', volume != null ? fmtNum(volume) : '--'),
             row('Giá trị', value != null ? fmtBig(value) : '--'),
             row('Vốn hóa', marketCap != null ? fmtBig(marketCap) : '--'),
-            row('P/E', pe != null ? fmtNum(pe, 2) : '--'),
-            row('P/B', pb != null ? fmtNum(pb, 2) : '--'),
         ];
         this._els.ovw.innerHTML = rows.join('');
     }

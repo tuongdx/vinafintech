@@ -321,6 +321,14 @@ def on_startup() -> None:
         home_opportunity_service.start_daily_refresh()
     except Exception:  # noqa: BLE001
         pass
+    # Block "Báo cáo" (trang chi tiết cổ phiếu, nguồn cafef.vn): xoá + dựng lại cache
+    # vào 12h trưa giờ VN mỗi ngày (thread nền riêng, idempotent).
+    try:
+        from app.services import vnstock_service
+
+        vnstock_service.start_daily_reports_refresh()
+    except Exception:  # noqa: BLE001
+        pass
     _warm_home_caches()
 
 

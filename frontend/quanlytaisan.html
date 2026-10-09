@@ -223,6 +223,9 @@
         .cash-cur-btn.active { background: #008080; color: #fff; }
         .btn-warn { background: #fff; color: #d0314e; border: 1px solid #e8aab4; }
         .btn-warn:hover { background: #fdeef0; }
+        /* Kết quả/thông báo lỗi Nạp–Rút hiện NGAY dưới form (không phụ thuộc toast). */
+        .pf-cash-msg { margin-top: 8px; font-size: 12.5px; font-weight: 600; line-height: 1.45; color: #0f7b3a; word-break: break-word; }
+        .pf-cash-msg.err { color: #d0314e; }
         .cash-table th.center, .cash-table td.center { text-align: center; }
         body.dark-mode .cash-bal { background: #161b22; border-color: #2b333e; }
         body.dark-mode .cash-bal b { color: #e6edf3; }
@@ -231,6 +234,8 @@
         body.dark-mode .cash-cur-btn.active { background: #00a08a; }
         body.dark-mode .btn-warn { background: #201317; border-color: #4a2430; color: #ff8fa3; }
         body.dark-mode .btn-warn:hover { background: #2b1920; }
+        body.dark-mode .pf-cash-msg { color: #4dd8c4; }
+        body.dark-mode .pf-cash-msg.err { color: #ff8fa3; }
         .cash-tblwrap { margin-top: 10px; max-height: 280px; overflow: auto; border: 1px solid #e8edf3; border-radius: 10px; }
         .cash-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         .cash-table th, .cash-table td { padding: 7px 10px; border-bottom: 1px solid #eef1f5; text-align: right; white-space: nowrap; }
@@ -706,11 +711,48 @@
                 else window.location.href = '/frontend/crypto.html?symbol=' + encodeURIComponent(sym);
             }
 
+            // Toast của trang. LƯU Ý QUAN TRỌNG: khi trang được NHÚNG trong iframe của shell,
+            // chiều cao iframe = chiều cao nội dung (auto-height ~2400px) ⇒ "position:fixed"
+            // bị neo ở ĐÁY IFRAME, tức nằm ngoài màn hình người dùng đang nhìn ⇒ mọi thông báo
+            // (kể cả lỗi "quỹ không đủ để rút") trông như KHÔNG có phản hồi. Vì vậy khi nhúng,
+            // toast được đặt theo VÙNG ĐANG NHÌN THẤY của trang cha.
             function toast(msg, isErr) {
                 let t = document.getElementById('pfToast');
-                if (!t) { t = document.createElement('div'); t.id = 'pfToast'; t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e2b41;color:#fff;padding:9px 16px;border-radius:30px;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.2);opacity:0;transition:opacity 0.25s;pointer-events:none;'; document.body.appendChild(t); }
+                if (!t) {
+                    t = document.createElement('div');
+                    t.id = 'pfToast';
+                    t.style.cssText = 'background:#1e2b41;color:#fff;padding:9px 16px;border-radius:30px;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.2);opacity:0;transition:opacity 0.25s;pointer-events:none;max-width:min(88vw,620px);text-align:center;line-height:1.45;';
+                    document.body.appendChild(t);
+                }
+                let placed = false;
+                if (window.self !== window.top) {
+                    try {
+                        const fr = window.frameElement;
+                        if (fr && window.parent && window.parent.innerHeight) {
+                            // Toạ độ trong document iframe sao cho toast nằm ở ~88% chiều cao viewport trang cha.
+                            const topInView = fr.getBoundingClientRect().top;   // so với viewport trang cha
+                            const docH = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+                            let y = (window.parent.innerHeight - 88) - topInView;
+                            y = Math.max(10, Math.min(y, Math.max(10, docH - 56)));
+                            t.style.position = 'absolute';
+                            t.style.top = Math.round(y) + 'px';
+                            t.style.bottom = 'auto';
+                            t.style.left = '50%';
+                            t.style.transform = 'translateX(-50%)';
+                            placed = true;
+                        }
+                    } catch (e) { placed = false; }
+                }
+                if (!placed) {
+                    t.style.position = 'fixed';
+                    t.style.top = 'auto';
+                    t.style.bottom = '24px';
+                    t.style.left = '50%';
+                    t.style.transform = 'translateX(-50%)';
+                }
                 t.textContent = msg; t.style.background = isErr ? '#8a2333' : '#1e2b41'; t.style.opacity = '1';
-                clearTimeout(t._t); t._t = setTimeout(function() { t.style.opacity = '0'; }, 2200);
+                // Thông báo lỗi giữ lâu hơn để đọc kịp.
+                clearTimeout(t._t); t._t = setTimeout(function() { t.style.opacity = '0'; }, isErr ? 4500 : 2200);
             }
 
             // ---------- Hướng dẫn Nạp tiền khi quỹ không đủ để Mua ----------
@@ -1212,9 +1254,11 @@
             }
             function setCashCur(cur) {
                 cashCur = cur === 'USDT' ? 'USDT' : 'VND';
+                cashMsg('');
                 document.querySelectorAll('.cash-cur-btn').forEach(function(b) {
                     b.classList.toggle('active', b.getAttribute('data-ccur') === cashCur);
                 });
+                notifyParentHeight();
                 const inp = document.getElementById('paCash');
                 if (inp) {
                     inp.step = cashCur === 'USDT' ? 'any' : '10000';
@@ -1225,10 +1269,26 @@
                     ? 'Quỹ USDT/USDC đang có: ' + fmtDec(cashUsdt) + ' USDT' + (fmtUsdtVnd(cashUsdt) ? ' (' + fmtUsdtVnd(cashUsdt) + ')' : '')
                     : 'Quỹ VND đang có: ' + fmtMoney(cashVnd) + ' đ';
             }
+            // Thông báo kết quả Nạp/Rút NGAY DƯỚI form — để chắc chắn người dùng thấy lý do
+            // khi thao tác bị từ chối (VD rút quá số dư) dù toast có bị bỏ lỡ.
+            function cashMsg(text, isErr) {
+                const el = document.getElementById('paCashMsg');
+                if (!el) return;
+                if (!text) { el.className = 'pf-cash-msg'; el.textContent = ''; el.style.display = 'none'; return; }
+                el.className = 'pf-cash-msg' + (isErr ? ' err' : '');
+                el.textContent = text;
+                el.style.display = '';
+            }
             function cashMove(op) {
                 const amtEl = document.getElementById('paCash');
                 const amt = moneyNum(amtEl);
-                if (!isFinite(amt) || amt <= 0) { toast('Nhập số tiền hợp lệ.', true); return; }
+                cashMsg('');
+                if (!isFinite(amt) || amt <= 0) {
+                    cashMsg('Vui lòng nhập số tiền lớn hơn 0 rồi bấm ' + (op === 'out' ? 'Rút' : 'Nạp') + '.', true);
+                    toast('Nhập số tiền hợp lệ.', true);
+                    notifyParentHeight();
+                    return;
+                }
                 const url = op === 'out' ? '/api/assets/cash/withdraw' : '/api/assets/cash/deposit';
                 const isUsdt = cashCur === 'USDT';
                 const amtTxt = isUsdt ? fmtDec(amt) + ' USDT' : fmtMoney(amt) + ' đ';
@@ -1237,12 +1297,19 @@
                     .then(function(d) {
                         applyCashState(d);
                         toast('✅ ' + (op === 'out' ? 'Đã rút ' : 'Đã nạp ') + amtTxt);
-                        applyCashUI(); notifyParentHeight();
+                        applyCashUI();
+                        cashMsg((op === 'out' ? 'Đã rút ' : 'Đã nạp ') + amtTxt + ' · Số dư ' + (isUsdt ? 'USDT/USDC' : 'VND') + ' còn ' + (isUsdt ? fmtDec(cashUsdt) + ' USDT' : fmtMoney(cashVnd) + ' đ') + '.', false);
+                        notifyParentHeight();
                         // Sau khi nạp tiền xong thì đóng cảnh báo "thiếu quỹ" (nếu đang hiện).
                         const nc = document.getElementById('pfNeedCash');
                         if (nc) nc.style.display = 'none';
                     })
-                    .catch(function(e) { toast('❌ ' + ((e && e.message) || 'Không thực hiện được'), true); });
+                    .catch(function(e) {
+                        const m = (e && e.message) || 'Không thực hiện được';
+                        cashMsg(m, true);
+                        toast('❌ ' + m, true);
+                        notifyParentHeight();
+                    });
             }
             function matureDeposit(id) {
                 const row = (userAssets.deposit || []).find(function(x) { return x.id === id; });
@@ -1284,6 +1351,7 @@
                         '<div class="pf-price-hint" id="paCashBalHint">' + (cashCur === 'USDT'
                             ? 'Quỹ USDT/USDC đang có: ' + fmtDec(cashUsdt) + ' USDT' + (fmtUsdtVnd(cashUsdt) ? ' (' + fmtUsdtVnd(cashUsdt) + ')' : '')
                             : 'Quỹ VND đang có: ' + fmtMoney(cashVnd) + ' đ') + '</div>' +
+                        '<div class="pf-cash-msg" id="paCashMsg" style="display:none;"></div>' +
                         (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                     '</div>' +
                     '<div id="cashHistory" class="cash-history" style="display:none;"></div>' +

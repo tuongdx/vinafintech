@@ -84,6 +84,10 @@ class Settings(BaseSettings):
     home_opportunity_ttl: int = 86400             # cache snapshot "Cơ hội mới" (giây)
     home_opportunity_refresh_hour: int = 12       # giờ VN dựng lại snapshot "Cơ hội mới" (12h trưa)
 
+    # Block "Báo cáo" (trang chi tiết cổ phiếu, nguồn cafef.vn) — cache 1 giờ, tự nạp lại
+    # theo yêu cầu; NGOÀI RA dựng lại toàn bộ vào 12h trưa (giờ VN) hằng ngày.
+    report_refresh_hour: int = 12                 # giờ VN dựng lại cache báo cáo (12h trưa)
+
     # Bộ lọc "cổ phiếu giao dịch được" — VỐN HOÁ LỚN + THANH KHOẢN đủ để nhà đầu tư giao dịch
     # hằng ngày. Áp dụng cho MỌI block lấy mã từ toàn thị trường: Market Radar (trang chủ),
     # TuniX Market Radar (trang Thị trường), Khám phá theo chiến lược + Xếp hạng TuniX

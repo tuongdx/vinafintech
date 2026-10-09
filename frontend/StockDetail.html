@@ -3935,7 +3935,7 @@
         let tunixChartModulePromise = null;
         // Version của khối chart engine — BẮT BUỘC bump khi sửa file trong /static/chart/
         // (module import không có query sẽ bị HTTP cache 1 giờ; thêm ?v= để lần tải sau lấy bản mới).
-        const CHART_ASSET_VER = '20261006a';
+        const CHART_ASSET_VER = '20261009a';
         function getTunixChartModule() {
             if (!tunixChartModulePromise) {
                 tunixChartModulePromise = import('/static/chart/stockDetailChart.js?v=' + CHART_ASSET_VER);
@@ -4197,8 +4197,8 @@
             const group2 = [
                 ['Vốn hoá', formatMarketCap(quote.market_cap)],
                 ['Giá trị sổ sách', formatNumber(quote.book_value || 0, 0)],
-                ['P/E', formatNumber(quote.pe || 0, 1)],
-                ['P/B', formatNumber(quote.pb || 0, 1)],
+                ['P/E', formatNumber(quote.pe || 0, 2)],
+                ['P/B', formatNumber(quote.pb || 0, 2)],
                 ['EPS', formatNumber(quote.eps || 0, 0)],
                 ['ROE', `${formatNumber(quote.roe || 0, 1)}%`],
                 ['ROA', `${formatNumber(quote.roa || 0, 1)}%`],
@@ -4725,7 +4725,48 @@
             syncStockNewsHeight();
         }
 
-        async function loadReports(symbol, category) {
+        // Block "Báo cáo" được BACKEND dựng lại vào 12h trưa (giờ VN) hằng ngày (nguồn cafef
+        // công bố tài liệu mới). Nếu trang đang mở QUA mốc 12h — hoặc tab bị ẩn rồi quay lại
+        // sau 12h — thì tự nạp lại bản mới, người dùng không phải F5.
+        let reportsLoadedAt = 0;          // thời điểm nạp báo cáo gần nhất (ms)
+        let reportsRefreshTimer = null;
+        const REPORTS_MARK_HOUR_VN = 12;  // giờ VN backend dựng lại cache báo cáo
+
+        function reportsActiveCategory() {
+            const act = document.querySelector('.report-tabs span.active');
+            return (act && act.dataset.category) || 'financial';
+        }
+        // Mốc 12h trưa GẦN NHẤT theo giờ VN (UTC+7) — không phụ thuộc múi giờ của máy người dùng.
+        function lastReportsMark(nowMs) {
+            const vn = nowMs + 7 * 3600000;                      // "giờ VN" biểu diễn trên trục UTC
+            const dayStartVn = Math.floor(vn / 86400000) * 86400000;
+            const mark = dayStartVn + REPORTS_MARK_HOUR_VN * 3600000 - 7 * 3600000;
+            return mark > nowMs ? mark - 86400000 : mark;
+        }
+        function reportsMaybeRefresh() {
+            const sym = getSymbolFromQuery();
+            if (!sym || !reportsLoadedAt) return;
+            if (reportsLoadedAt >= lastReportsMark(Date.now())) return;   // đã là bản mới nhất
+            loadReports(sym, reportsActiveCategory(), true);
+        }
+        function scheduleReportsAutoRefresh() {
+            if (reportsRefreshTimer) clearTimeout(reportsRefreshTimer);
+            const now = Date.now();
+            // Mốc 12h trưa KẾ TIẾP + 30s (chờ backend dựng lại xong); chờ tối đa 3h rồi tính lại
+            // (an toàn khi máy ngủ / đổi múi giờ / lệch đồng hồ).
+            const wait = Math.max(5000, Math.min(lastReportsMark(now) + 86400000 + 30000 - now, 3 * 3600000));
+            reportsRefreshTimer = setTimeout(function () {
+                reportsMaybeRefresh();
+                scheduleReportsAutoRefresh();
+            }, wait);
+        }
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) return;
+            reportsMaybeRefresh();
+            scheduleReportsAutoRefresh();
+        });
+
+        async function loadReports(symbol, category, force) {
             const list = document.getElementById('reportList');
             if (list) {
                 list.innerHTML = '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
@@ -4733,8 +4774,10 @@
                 syncStockNewsHeight();
             }
             try {
-                const data = await api(`/stocks/${encodeURIComponent(symbol)}/reports?category=${encodeURIComponent(category)}`);
+                // force=true → bỏ qua cache 5 phút phía client (dùng khi qua mốc 12h trưa).
+                const data = await api(`/stocks/${encodeURIComponent(symbol)}/reports?category=${encodeURIComponent(category)}`, force ? { force: true } : undefined);
                 reportsData[category] = Array.isArray(data.items) ? data.items : [];
+                reportsLoadedAt = Date.now();
                 renderReports(category, reportsData[category]);
             } catch (error) {
                 console.error('Failed to load reports:', error);
@@ -5382,6 +5425,7 @@
                 loadProfitAnalysis(symbol);
                 loadShareholderStructure(symbol);
                 loadReports(symbol, 'financial');
+                scheduleReportsAutoRefresh();   // tự nạp lại block Báo cáo khi qua mốc 12h trưa (giờ VN)
                 loadStockNews(symbol);   // nửa phải khối Báo cáo (chưa có tên công ty → chỉ khớp theo MÃ)
                 loadAccumulation(symbol);
                 loadTuniAnalysis(symbol);

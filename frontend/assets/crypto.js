@@ -8,6 +8,11 @@
     // khi lăn chuột để zoom rồi kéo về trái (đã bỏ dãy nút chọn kỳ hạn 1H/4H/1D/1W/1M/3M/1Y).
     var CHART_CFG = { interval: '1d', limit: 365 };
     var POLL_MS = 15000;
+    // Danh sách crypto: hiện PAGE_FIRST mã trước, cuộn tới đáy thì nạp thêm PAGE_STEP mã/lần tới hết.
+    var PAGE_FIRST = 20;
+    var PAGE_STEP = 10;
+    var PRELOAD_PX = 220;     // cách đáy ≤ 220px là nạp thêm
+    var AUTO_MAX_STEPS = 20;  // chặn vòng lặp khi khung nhìn quá cao (mỗi bước +10 mã)
 
     var state = {
         items: [],
@@ -19,7 +24,12 @@
         sym: null,
         pendingSym: symbolFromUrl(),   // mã cần mở sẵn chi tiết (điều hướng từ trang khác)
         loading: false,
-        visible: 50
+        visible: PAGE_FIRST,   // số dòng đang vẽ (cuộn tới đáy → +PAGE_STEP)
+        rowsTotal: 0,          // tổng số dòng sau khi lọc
+        shownCount: 0,         // số dòng vừa vẽ (do renderList ghi lại)
+        rowList: [],           // danh sách đã lọc (để chèn thêm phần mới)
+        source: 'binance',     // 'binance' | 'bybit' — sàn đang cung cấp dữ liệu giá
+        asOf: null             // mốc cập nhật dữ liệu thị trường (ISO)
     };
 
     /* Trang khác (vd Trung tâm cảnh báo) điều hướng tới `crypto.html?symbol=BTC`
@@ -139,7 +149,23 @@
             '</span>';
     }
 
-    function renderList() {
+    /* 1 dòng của bảng danh sách */
+    function rowHtml(x) {
+        var c = pctCls(x.change_pct);
+        return '<tr data-symbol="' + esc(x.symbol) + '" data-pair="' + esc(x.pair) + '">' +
+            '<td class="rank">' + x.rank + '</td>' +
+            '<td class="left"><div class="cr-symcell">' + coinIconHtml(x.symbol) +
+            '<div class="cr-symtxt"><span class="sym">' + esc(x.name) + '</span>' +
+            '<span class="nm">' + esc(x.symbol) + ' · ' + esc(x.pair) + '</span></div></div></td>' +
+            '<td class="right num">' + fmtPrice(x.price) + '</td>' +
+            '<td class="right num ' + c + '"><span class="cr-badge ' + c + '">' + pctTxt(x.change_pct) + '</span></td>' +
+            '<td class="right num">' + fmtPrice(x.high) + '</td>' +
+            '<td class="right num">' + fmtPrice(x.low) + '</td>' +
+            '<td class="right num">' + fmtBig(x.volume) + '</td>' +
+            '</tr>';
+    }
+
+    function renderList(noAuto) {
         var rows = filteredList();
         var msg = $('crMsg');
         if (state.loading && !rows.length) {
@@ -153,26 +179,100 @@
         }
         var allRows = rows;
         var showRows = rows.slice(0, state.visible);
-        var body = showRows.map(function (x) {
-            var c = pctCls(x.change_pct);
-            return '<tr data-symbol="' + esc(x.symbol) + '" data-pair="' + esc(x.pair) + '">' +
-                '<td class="rank">' + x.rank + '</td>' +
-                '<td class="left"><div class="cr-symcell">' + coinIconHtml(x.symbol) +
-                '<div class="cr-symtxt"><span class="sym">' + esc(x.name) + '</span>' +
-                '<span class="nm">' + esc(x.symbol) + ' · ' + esc(x.pair) + '</span></div></div></td>' +
-                '<td class="right num">' + fmtPrice(x.price) + '</td>' +
-                '<td class="right num ' + c + '"><span class="cr-badge ' + c + '">' + pctTxt(x.change_pct) + '</span></td>' +
-                '<td class="right num">' + fmtPrice(x.high) + '</td>' +
-                '<td class="right num">' + fmtPrice(x.low) + '</td>' +
-                '<td class="right num">' + fmtBig(x.volume) + '</td>' +
-                '</tr>';
-        }).join('');
-        $('crBody').innerHTML = body;
+        $('crBody').innerHTML = showRows.map(rowHtml).join('');
+        state.rowList = allRows;          // giữ danh sách đã lọc để NẠP THÊM chỉ chèn phần mới
+        state.rowsTotal = allRows.length;
+        state.shownCount = showRows.length;
         var wrap = $('crMoreWrap');
         if (wrap) {
             // Nhãn nút cố định "Xem thêm" (KHÔNG kèm số mã còn lại) — markup ở crypto.html #crMoreBtn.
             wrap.style.display = (allRows.length - showRows.length) > 0 ? '' : 'none';
         }
+        paintShown();
+        if (!noAuto) requestAnimationFrame(function () { autoFill(0); });
+    }
+
+    function paintShown() {
+        var shown = $('crShown');
+        if (shown) shown.innerHTML = 'hiển thị <b>' + (state.shownCount || 0) + '</b>/' + (state.rowList || []).length + ' mã';
+    }
+
+    /* Nạp thêm: CHỈ CHÈN các dòng mới vào cuối tbody (không dựng lại cả bảng) —
+       nạp tới 698 dòng mà mỗi bước lại innerHTML toàn bộ thì rất nặng.
+       Trả về true nếu có chèn thêm dòng. */
+    function appendMore() {
+        var list = state.rowList || [];
+        var start = state.shownCount || 0;
+        var end = Math.min(state.visible, list.length);
+        if (start >= end) return false;
+        $('crBody').insertAdjacentHTML('beforeend', list.slice(start, end).map(rowHtml).join(''));
+        state.shownCount = end;
+        var wrap = $('crMoreWrap');
+        if (wrap) wrap.style.display = (list.length - end) > 0 ? '' : 'none';
+        paintShown();
+        return true;
+    }
+
+    /* ===== Nạp thêm khi cuộn (infinite scroll) =====
+       Trang này được nhúng trong iframe mà shell kéo CAO BẰNG NỘI DUNG
+       (index.html: 'tunix-embed-height') ⇒ iframe KHÔNG tự cuộn, thanh cuộn nằm ở TRANG CHA.
+       Vì vậy KHÔNG thể dùng window.innerHeight bên trong iframe (lúc đó nó = toàn bộ
+       chiều cao nội dung ⇒ mọi thứ luôn “trong tầm nhìn” và sẽ nạp hết ngay lập tức),
+       phải quy đổi vị trí sang khung nhìn của trang cha qua window.frameElement. */
+    function viewportRange() {
+        var fe = null;
+        try { fe = (window.self !== window.top) ? window.frameElement : null; } catch (e) { fe = null; }
+        if (fe) {
+            try {
+                var fr = fe.getBoundingClientRect();
+                var vh = window.parent.innerHeight || 0;
+                // gốc toạ độ = đầu tài liệu của CHÍNH iframe
+                if (vh) return { top: -fr.top, bottom: vh - fr.top };
+            } catch (e) { /* khác origin → dùng khung nhìn của chính mình */ }
+        }
+        return { top: 0, bottom: window.innerHeight || 0 };
+    }
+    /* iframe đang bị ẩn (frame cache/prewarm của shell) → không tự nạp thêm */
+    function pageHidden() {
+        try {
+            if (document.hidden) return true;
+            var fe = (window.self !== window.top) ? window.frameElement : null;
+            if (!fe) return false;
+            var fr = fe.getBoundingClientRect();
+            if (fr.width <= 0 || fr.height <= 0) return true;                       // display:none
+            var vh = (window.parent && window.parent.innerHeight) || 0;
+            if (vh && (fr.bottom <= 0 || fr.top >= vh)) return true;                // ngoài khung nhìn cha
+        } catch (e) { /* ignore */ }
+        return false;
+    }
+    function sentinelReached() {
+        var el = $('crMoreWrap');
+        if (!el) return false;
+        var v = viewportRange();
+        return (el.getBoundingClientRect().top - v.top) <= PRELOAD_PX;
+    }
+    function autoFill(step) {
+        step = step || 0;
+        if (state.view !== 'list' || state.loading) return;
+        if (state.visible >= state.rowsTotal) return;
+        if (step >= AUTO_MAX_STEPS || pageHidden() || !sentinelReached()) return;
+        state.visible = Math.min(state.visible + PAGE_STEP, state.rowsTotal);
+        appendMore();   // chèn thêm 10 dòng rồi ĐO LẠI ở frame sau (DOM cao lên thì đáy mới dịch xuống)
+        requestAnimationFrame(function () { autoFill(step + 1); });
+    }
+    function bindInfiniteScroll() {
+        var onScroll = function () {
+            if (state.view !== 'list') return;
+            requestAnimationFrame(function () { autoFill(0); });
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        document.addEventListener('scroll', onScroll, { passive: true, capture: true });
+        try {
+            if (window.self !== window.top && window.parent) {
+                // thanh cuộn thật nằm ở trang cha (shell)
+                window.parent.addEventListener('scroll', onScroll, { passive: true });
+            }
+        } catch (e) { /* khác origin → chỉ còn nút "Xem thêm" */ }
     }
 
     function syncSortSelect() {
@@ -229,6 +329,8 @@
         api('/markets').then(function (d) {
             state.items = (d.items || []);
             state.quote = d.quote || 'USDT';
+            state.source = d.source || 'binance';
+            state.asOf = d.as_of || null;
             var upd = $('crUpdated');
             if (upd) upd.innerHTML = '<i class="far fa-clock"></i> Cập nhật: <b>' + fmtVnTime(d.as_of) + '</b>';
             state.loading = false;
@@ -266,6 +368,93 @@
         return null;
     }
 
+    // ================= Thông tin cơ bản + giới thiệu coin =================
+    // TÊN đầy đủ + đoạn giới thiệu lấy từ backend (/api/crypto/coin/{MÃ}, nguồn phụ CoinGecko,
+    // Binance chỉ có mã). Cache ở client 6h cho mỗi mã để không gọi lại khi mở lại / polling.
+    var INTRO_TTL_MS = 6 * 3600 * 1000;
+    var INTRO_CLAMP = 420;                                  // dài hơn ngưỡng này → có nút "Xem thêm"
+    var INTRO_TRIES = 12;                                    // AI dịch ở luồng nền → hỏi lại tối đa 12 lần
+    var INTRO_RETRY_MS = 5000;                               // mỗi 5s (tổng ~60s)
+    var introCache = {};                                     // MÃ → {name, description, original, source, translating, tries, at}
+    var introFetching = {};
+    var introTimer = null;
+
+    function introTitleHtml(it, sym, note) {
+        // Chỉ còn nhãn CẢNH BÁO (khi phải hiển thị bản gốc) — đã bỏ nhãn "Dịch bởi AI".
+        var badge = note ? '<span class="cr-intro-tag warn"><i class="fas fa-info-circle"></i> ' + note + '</span>' : '';
+        return '<h3 class="cr-intro-title">Giới thiệu về ' + esc(it.name || sym) + badge + '</h3>';
+    }
+
+    function introHtml(sym) {
+        var it = introCache[sym];
+        if (!it) return '<div class="cr-intro-load"><i class="fas fa-spinner fa-spin"></i> Đang tải giới thiệu…</div>';
+        if (it.description) {
+            var long = it.description.length > INTRO_CLAMP;
+            return introTitleHtml(it, sym) +
+                '<p class="cr-intro-text' + (long ? ' clamp' : '') + '" id="crIntroText">' + esc(it.description) + '</p>' +
+                (long ? '<button type="button" class="cr-intro-toggle" id="crIntroToggle">Xem thêm</button>' : '');
+        }
+        if (it.translating && (it.tries || 0) < INTRO_TRIES) {
+            return '<div class="cr-intro-load"><i class="fas fa-spinner fa-spin"></i> Đang dịch giới thiệu sang tiếng Việt bằng AI…</div>';
+        }
+        if (it.original) {   // AI không dịch được (thiếu key/lỗi) → hiển thị bản gốc
+            return introTitleHtml(it, sym, 'Bản gốc — chưa dịch được') +
+                '<p class="cr-intro-text clamp" id="crIntroText">' + esc(it.original) + '</p>' +
+                '<button type="button" class="cr-intro-toggle" id="crIntroToggle">Xem thêm</button>';
+        }
+        return '<div class="cr-intro-empty">Chưa có nội dung giới thiệu cho mã này.</div>';
+    }
+
+    function loadCoinIntro(sym, force) {
+        sym = String(sym || '').toUpperCase();
+        if (!sym) return;
+        if (introTimer) { clearTimeout(introTimer); introTimer = null; }
+        var c = introCache[sym];
+        if (!force && c && !c.translating && (Date.now() - c.at) < INTRO_TTL_MS) {
+            paintIntroBox(sym);   // đã có (kể cả bản rỗng) → chỉ vẽ lại khung của mã đang xem
+            return;
+        }
+        if (introFetching[sym]) return;
+        introFetching[sym] = true;
+        api('/coin/' + encodeURIComponent(sym)).then(function (d) {
+            d = d || {};
+            var tries = ((c && c.tries) || 0) + 1;
+            introCache[sym] = {
+                name: d.name || sym,
+                description: d.description || '',
+                original: d.original || (c && c.original) || '',
+                source: d.source || '',
+                translating: !!d.translating,
+                tries: tries,
+                at: Date.now()
+            };
+            var it = findItem(sym);
+            if (it && d.name && it.name !== d.name) {
+                it.name = d.name;                     // danh sách dùng luôn tên đầy đủ ở lần vẽ sau
+                var h2 = document.querySelector('#crDetailInfo .cr-dname-row h2');
+                if (h2 && state.sym && String(state.sym).toUpperCase() === sym) h2.textContent = d.name;
+            }
+            paintIntroBox(sym);
+            // AI đang dịch ở backend → hỏi lại sau vài giây cho tới khi có bản tiếng Việt.
+            if (d.translating && tries < INTRO_TRIES && state.sym && String(state.sym).toUpperCase() === sym) {
+                introTimer = setTimeout(function () { loadCoinIntro(sym, true); }, INTRO_RETRY_MS);
+            }
+        }).catch(function () {
+            introCache[sym] = { name: sym, description: '', original: (c && c.original) || '',
+                                source: '', translating: false, tries: (c && c.tries) || 0, at: Date.now() };
+            paintIntroBox(sym);
+        }).then(function () { introFetching[sym] = false; });
+    }
+
+    /* Vẽ lại CHỈ khung #crIntro (không dựng lại cả block để không mất trạng thái polling). */
+    function paintIntroBox(sym) {
+        if (!state.sym || String(state.sym).toUpperCase() !== sym) return;
+        var box = $('crIntro');
+        if (!box) return;
+        box.innerHTML = introHtml(sym);
+        notifyParentHeight();
+    }
+
     function renderDetailInfo(item) {
         var el = $('crDetailInfo');
         if (!item) {
@@ -282,17 +471,27 @@
         var dcShow = $('crDcaCard');
         if (dcShow) dcShow.style.display = '';
         var c = pctCls(item.change_pct);
+        var quote = state.quote || 'USDT';
+        var srcName = state.source === 'bybit' ? 'Bybit' : 'Binance';
         el.innerHTML =
             '<div class="cr-detail-name">' + coinIconHtml(item.symbol, true) +
-            '<div><div class="cr-dname-row"><h2>' + esc(item.name) + '</h2>' +
+            '<div class="cr-dname"><div class="cr-dname-row"><h2>' + esc(item.name) + '</h2>' +
             '<span class="code">' + esc(item.symbol) + ' / ' + esc(item.pair) + '</span>' +
-            '<span class="rank-tag">#' + item.rank + ' · Top thanh khoản</span></div></div></div>' +
-            '<div class="cr-price-big ' + c + '">' + fmtPrice(item.price) + ' <small>USDT</small></div>' +            '<div class="cr-kpis">' +
+            '<span class="rank-tag">#' + item.rank + ' · Theo thanh khoản 24h</span></div>' +
+            '<div class="cr-dmeta">' +
+            '<span class="cr-meta-i"><i class="fas fa-server"></i> Sàn: <b>' + esc(srcName) + '</b></span>' +
+            '<span class="cr-meta-i"><i class="fas fa-coins"></i> Đơn vị giá: <b>' + esc(quote) + '</b></span>' +
+            '<span class="cr-meta-i"><i class="far fa-clock"></i> Cập nhật: <b>' + fmtVnTime(state.asOf) + '</b></span>' +
+            '</div></div></div>' +
+            '<div class="cr-price-big ' + c + '">' + fmtPrice(item.price) + ' <small>' + esc(quote) + '</small></div>' +
+            '<div class="cr-kpis">' +
+            '<div class="cr-kpi"><div class="k-label">Giá hiện tại (' + esc(quote) + ')</div><div class="k-val">' + fmtPrice(item.price) + '</div></div>' +
             '<div class="cr-kpi"><div class="k-label">Thay đổi 24h</div><div class="k-val ' + c + '">' + pctTxt(item.change_pct) + '</div></div>' +
             '<div class="cr-kpi"><div class="k-label">Cao 24h</div><div class="k-val">' + fmtPrice(item.high) + '</div></div>' +
             '<div class="cr-kpi"><div class="k-label">Thấp 24h</div><div class="k-val">' + fmtPrice(item.low) + '</div></div>' +
             '<div class="cr-kpi"><div class="k-label">Volume 24h (USDT)</div><div class="k-val">' + fmtBig(item.volume) + '</div></div>' +
-            '</div>';
+            '</div>' +
+            '<div class="cr-intro" id="crIntro">' + introHtml(item.symbol) + '</div>';
         // Polling cập nhật giá → cập nhật lại khối "Giả định đầu tư" nếu đang xem cùng coin.
         if (crDca.sym === String(item.symbol || '').toUpperCase() && crDca.cache &&
             Number(item.price) > 0 && Number(item.price) !== crDca.lastPrice) {
@@ -774,6 +973,7 @@
         // KHÔNG xoá #crChart ở đây: đây là khung của Lightweight Charts, xoá innerHTML sẽ phá chart
         // (canvas mất, instance vẫn tưởng còn) → chỉ đổi MÃ qua setData bên dưới.
         renderDetailInfo(item);
+        loadCoinIntro(item.symbol);               // tên đầy đủ + giới thiệu (AI dịch sang tiếng Việt)
         loadDca(item.symbol);                     // giả định đầu tư định kỳ 5tr/tháng
         loadCryptoNews(item.symbol, item.name);   // tin tức liên quan coin này
         // Đổi coin → xoá vạch vị thế của coin TRƯỚC rồi nạp vị thế của coin này (nếu user đang nắm giữ).
@@ -1141,22 +1341,37 @@
 
     // ================= Bind =================
     function bind() {
-        $('crSearch').addEventListener('input', function () { state.q = $('crSearch').value; state.visible = 50; renderList(); });
+        $('crSearch').addEventListener('input', function () { state.q = $('crSearch').value; state.visible = PAGE_FIRST; renderList(); });
         Array.prototype.forEach.call(document.querySelectorAll('#crChips .cr-chip'), function (b) {
             b.addEventListener('click', function () {
                 state.filter = b.getAttribute('data-filter');
                 Array.prototype.forEach.call(document.querySelectorAll('#crChips .cr-chip'), function (x) { x.classList.toggle('on', x === b); });
-                state.visible = 50;
+                state.visible = PAGE_FIRST;
                 syncSortSelect();
                 renderList();
             });
         });
-        $('crSort').addEventListener('change', function () { state.sort = $('crSort').value; state.visible = 50; renderList(); });
+        $('crSort').addEventListener('change', function () { state.sort = $('crSort').value; state.visible = PAGE_FIRST; renderList(); });
         var moreBtn = $('crMoreBtn');
-        if (moreBtn) moreBtn.addEventListener('click', function () { state.visible += 50; renderList(); });
+        if (moreBtn) moreBtn.addEventListener('click', function () {
+            state.visible = Math.min(state.visible + PAGE_STEP, state.rowsTotal);
+            if (!appendMore()) renderList();   // chỉ chèn 10 dòng; nếu DOM lệch thì dựng lại
+        });
+        bindInfiniteScroll();
         $('crBody').addEventListener('click', function (e) {
             var tr = e.target.closest('tr[data-symbol]');
             if (tr) openDetail(tr.getAttribute('data-symbol'));
+        });
+        // Nút "Xem thêm / Thu gọn" của khối Giới thiệu (nội dung được vẽ lại sau mỗi lần polling)
+        var di = $('crDetailInfo');
+        if (di) di.addEventListener('click', function (e) {
+            var btn = e.target.closest('#crIntroToggle');
+            if (!btn) return;
+            var p = $('crIntroText');
+            if (!p) return;
+            var clamped = p.classList.toggle('clamp');
+            btn.textContent = clamped ? 'Xem thêm' : 'Thu gọn';
+            notifyParentHeight();
         });
         var crumbHome = $('crCrumbHome');
         if (crumbHome) crumbHome.addEventListener('click', function (e) {
