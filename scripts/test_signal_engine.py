@@ -670,6 +670,132 @@ def test_cache_persist_regression() -> None:
         vnstock_service.get_history = original
 
 
+def test_tplus_lifecycle() -> None:
+    """Vòng đời T+ (REGRESSION bug "tín hiệu lâu rồi vẫn hiện Đang hiệu lực"):
+
+    - Tín hiệu ĐANG HIỆU LỰC quá hạn nắm giữ (``signal.expiry.max_holding_sessions``) phải tự
+      ĐÓNG (EXIT) kèm lý do + số phiên.
+    - Tín hiệu ĐANG MỞ nhưng dữ liệu đã CŨ (nến mới nhất đã có phiên mới) phải được PHÂN TÍCH LẠI.
+
+    Dùng DB in-memory riêng ⇒ KHÔNG đụng dữ liệu thật của người dùng.
+    """
+    section("10. Vòng đời T+ — đóng tín hiệu quá hạn & cập nhật lại tín hiệu đang mở")
+    from datetime import datetime as _dt, timedelta as _td
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+
+    from app.db import Base
+    from app.models import Signal, SignalHistory
+    from app.services.signal_engine import engine as engine_module, lifecycle, repository  # noqa: F401
+
+    # (a) Hàm thuần: đếm phiên & quyết định quá hạn
+    bench = make_bars([1000] * 20, start="2026-01-01")
+    check("lifecycle: đếm đúng số phiên kể từ mốc",
+          lifecycle.sessions_since(bench[-11]["time"], bench) == 10,
+          f"got {lifecycle.sessions_since(bench[-11]['time'], bench)}")
+    check("lifecycle: đủ 10 phiên ⇒ QUÁ HẠN T+10",
+          lifecycle.expiry_decision(bench[-11]["time"], 10, bench)["expired"] is True)
+    check("lifecycle: 9 phiên ⇒ còn hiệu lực",
+          lifecycle.expiry_decision(bench[-10]["time"], 10, bench)["expired"] is False)
+    check("lifecycle: ngưỡng mặc định T+10 lấy từ config",
+          lifecycle.expiry_config({})["max_holding_sessions"] == 10,
+          f"got {lifecycle.expiry_config({})}")
+    old_day = (_dt.utcnow() - _td(days=14)).isoformat()
+    young_day = (_dt.utcnow() - _td(days=13)).isoformat()
+    check("lifecycle: không có nến benchmark ⇒ quy đổi 10 phiên ≈ 14 ngày",
+          lifecycle.expiry_decision(old_day, 10, None)["expired"] is True
+          and lifecycle.expiry_decision(young_day, 10, None)["expired"] is False)
+    check("lifecycle: phát hiện tín hiệu CŨ so với phiên mới nhất",
+          lifecycle.is_stale(bench[-2]["time"], bench[-1]["time"]) is True
+          and lifecycle.is_stale(bench[-1]["time"], bench[-1]["time"]) is False)
+
+    # (b) Hành vi thật trên DB tách riêng (in-memory)
+    tmp_engine = create_engine("sqlite://", connect_args={"check_same_thread": False},
+                               poolclass=StaticPool)
+    Base.metadata.create_all(tmp_engine)
+    db = sessionmaker(bind=tmp_engine)()
+    today = _dt.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    bench20 = [{"time": (today - _td(days=19 - i)).isoformat() + "+00:00"} for i in range(20)]
+
+    old_created = _dt.utcnow() - _td(days=40)      # 40 ngày > 10 phiên ⇒ quá hạn
+    db.add(Signal(symbol="ZZEXPIRED", strategy="UPTREND", as_of=bench20[0]["time"],
+                  state="ACTIVE", signal="BUY", is_active=True, entry=100.0, price=110.0,
+                  score=70.0, created_at=old_created, updated_at=old_created))
+    db.add(Signal(symbol="ZZSTALE", strategy="UPTREND", as_of="2020-01-02T00:00:00+00:00",
+                  state="ACTIVE", signal="BUY", is_active=True, entry=100.0, price=101.0,
+                  score=60.0, created_at=_dt.utcnow() - _td(days=1), updated_at=_dt(2020, 1, 2)))
+    # Mã đã bị đóng do hết hạn ở LẦN GỌI TRƯỚC (GET /signals đóng trước khi POST /refresh)
+    db.add(Signal(symbol="ZZCLOSED", strategy="UPTREND", as_of="2026-09-20T00:00:00+00:00",
+                  state="EXIT", signal="SELL", is_active=False, entry=100.0, price=95.0,
+                  score=50.0, created_at=_dt.utcnow() - _td(days=30), updated_at=_dt.utcnow(),
+                  closed_at=_dt.utcnow(), exit_reason="Hết thời hạn nắm giữ T+10 (15 phiên) "
+                                                      "— tín hiệu hết hiệu lực"))
+    db.commit()
+
+    calls: list[str] = []
+    original_market = engine_module.market_snapshot
+    original_analyze = engine_module.analyze_symbol
+    engine_module.market_snapshot = lambda *a, **k: {
+        "benchmark_bars": bench20, "as_of": bench20[-1]["time"], "regime": {"regime": "UPTREND"}}
+
+    def _fake_analyze(symbol, cfg=None, market=None, previous_states=None, use_cache=True, db=None):  # noqa: ANN001
+        calls.append(symbol)
+        return {"symbol": symbol, "strategies": {}}
+
+    engine_module.analyze_symbol = _fake_analyze
+    try:
+        result = engine_module.refresh_open_signals(db=db, max_symbols=3)
+        row = db.query(Signal).filter(Signal.symbol == "ZZEXPIRED").first()
+        check("T+ quá hạn: tự ĐÓNG tín hiệu (is_active=False, state=EXIT, signal=SELL)",
+              bool(row) and row.is_active is False and row.state == "EXIT" and row.signal == "SELL",
+              f"state={row.state if row else None} active={row.is_active if row else None}")
+        check("T+ quá hạn: ghi lý do + số phiên nắm giữ",
+              bool(row) and "T+10" in (row.exit_reason or "") and row.holding_days == 20,
+              f"reason={row.exit_reason if row else None} holding={row.holding_days if row else None}")
+        check("T+ quá hạn: tính kết quả WIN + return_pct",
+              bool(row) and row.result == "WIN" and row.return_pct == 10.0,
+              f"result={row.result if row else None} ret={row.return_pct if row else None}")
+        hist = db.query(SignalHistory).filter(SignalHistory.symbol == "ZZEXPIRED").all()
+        check("T+ quá hạn: có dòng lịch sử trạng thái (audit)",
+              len(hist) == 1 and hist[0].to_state == "EXIT", f"hist={len(hist)}")
+        check("T+ quá hạn: số tín hiệu đã đóng trả về đúng", result.get("expired") == 1,
+              f"expired={result.get('expired')}")
+        check("Cập nhật lại: tín hiệu đang mở nhưng CŨ được PHÂN TÍCH LẠI",
+              "ZZSTALE" in calls, f"calls={calls}")
+        check("Cập nhật lại: mã VỪA HẾT HẠN cũng được phân tích lại (tạo tín hiệu mới nếu còn setup)",
+              calls[:2] == ["ZZEXPIRED", "ZZCLOSED"],
+              f"calls={calls}")
+        check("Cập nhật lại: tôn trọng trần max_symbols", len(calls) <= 3, f"len={len(calls)}")
+        fresh = db.query(Signal).filter(Signal.symbol == "ZZSTALE").first()
+        check("Cập nhật lại: tín hiệu còn hạn KHÔNG bị đóng",
+              bool(fresh) and fresh.is_active is True,
+              f"active={fresh.is_active if fresh else None}")
+
+        # (c) Thứ tự bảng tín hiệu: ĐỘ TIN CẬY cao nhất ở trên, "—" (None) ở dưới
+        now = _dt.utcnow()
+        for sym, conf, score in (("ZZCONF_HIGH", 88.0, 40.0), ("ZZCONF_MID", 42.0, 95.0),
+                                 ("ZZCONF_NONE", None, 99.0)):
+            db.add(Signal(symbol=sym, strategy="SWING", as_of="2026-01-0" + str(len(sym) % 9 + 1) + "T00:00:00+00:00",
+                          state="WATCH", is_active=True, confidence=conf, score=score,
+                          created_at=now, updated_at=now))
+        db.commit()
+        items = repository.list_signals(db, limit=20)["items"]
+        values = [row["confidence"] for row in items]
+        first_none = values.index(None) if None in values else len(values)
+        check("Bảng tín hiệu: ĐỘ TIN CẬY cao nhất ở TRÊN cùng", values[:1] == [88.0], f"values={values}")
+        check("Bảng tín hiệu: độ tin cậy GIẢM DẦN",
+              values[:first_none] == sorted(values[:first_none], reverse=True), f"values={values}")
+        check("Bảng tín hiệu: tín hiệu không có độ tin cậy (—) nằm CUỐI",
+              all(v is None for v in values[first_none:]), f"values={values}")
+    finally:
+        engine_module.market_snapshot = original_market
+        engine_module.analyze_symbol = original_analyze
+        db.close()
+        tmp_engine.dispose()
+
+
 def test_backtest() -> None:
     """Backtest (spec §22-§23): chống look-ahead + không tạo số liệu giả."""
     section("9. Backtest — chống look-ahead & không bịa số liệu")
@@ -745,7 +871,7 @@ def main() -> int:
     print("=" * 78)
     for fn in (test_indicators, test_wavelet, test_strategies, test_scoring_and_state,
                test_serializers, test_cache_gate_regression, test_cache_persist_regression,
-               test_backtest, test_http):
+               test_backtest, test_tplus_lifecycle, test_http):
         try:
             fn()
         except Exception:  # noqa: BLE001

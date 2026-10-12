@@ -28,6 +28,7 @@
             <div class="th-meta">
                 <span class="th-pill"><i class="far fa-clock"></i> Quét gần nhất: <b id="thUpdated">…</b></span>
                 <span class="th-pill"><i class="fas fa-shield-halved"></i> Trạng thái dữ liệu: <b id="thDataState">…</b></span>
+                <span class="th-pill"><i class="fas fa-hourglass-half"></i> Tín hiệu T+ tự hết hiệu lực sau <b id="thExpiry">10</b> phiên</span>
             </div>
         </div>
 
@@ -62,6 +63,9 @@
                 <div class="th-actions">
                     <button type="button" class="th-btn" id="sigScanBtn" onclick="sigScan()">
                         <i class="fas fa-satellite-dish"></i> Quét thị trường
+                    </button>
+                    <button type="button" class="th-btn ghost" id="sigRefreshBtn" onclick="sigAutoRefresh(true)">
+                        <i class="fas fa-sync"></i> Cập nhật tín hiệu
                     </button>
                     <button type="button" class="th-btn ghost" onclick="sigReload()">
                         <i class="fas fa-rotate"></i> Tải lại
@@ -104,7 +108,7 @@
                                 <th>Chiến thuật</th>
                                 <th>Tín hiệu</th>
                                 <th>Score</th>
-                                <th>Độ tin cậy</th>
+                                <th title="Sắp xếp theo độ tin cậy: cao nhất ở trên, thấp nhất ở dưới">Độ tin cậy ↓</th>
                                 <th>Entry</th>
                                 <th>Stop Loss</th>
                                 <th>Trailing</th>
@@ -120,7 +124,11 @@
                 <div class="sig-pager" id="sigPager"></div>
                 <div class="th-helper">
                     <i class="fas fa-circle-info"></i> Bấm vào một dòng để xem <b>chi tiết &amp; lý do hình thành tín hiệu</b>
-                    (các điều kiện đã hội tụ, chỉ số, mức giao dịch tham chiếu). Nội dung mang tính tham khảo nội bộ, không phải khuyến nghị đầu tư.
+                    (các điều kiện đã hội tụ, chỉ số, mức giao dịch tham chiếu). Danh sách sắp theo
+                    <b>độ tin cậy giảm dần</b> — tín hiệu chưa đánh giá được độ tin cậy ("—") nằm cuối.
+                    Nội dung mang tính tham khảo nội bộ, không phải khuyến nghị đầu tư.
+                    <br /><i class="fas fa-hourglass-half"></i> Đây là <b>tín hiệu T+ (ngắn hạn)</b>: mỗi lần mở trang hệ thống tự
+                    <b>đóng tín hiệu đã quá hạn nắm giữ</b> và <b>phân tích lại</b> các mã còn tín hiệu đang mở bằng nến mới nhất.
                 </div>
             </div>
         </div>
@@ -138,7 +146,7 @@
         </div>
     </div>
 
-    <script src="/static/tin-hieu.js?v=20260926a"></script>
+    <script src="/static/tin-hieu.js?v=20261012a"></script>
     <script src="/static/context-menu.js?v=20260928a"></script>
     <script src="/static/dividend-badge.js?v=20260926c"></script>
 </body>

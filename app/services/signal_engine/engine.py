@@ -18,7 +18,7 @@ from __future__ import annotations
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.services import vnstock_service
@@ -99,6 +99,18 @@ def market_snapshot(cfg: dict | None = None, force: bool = False) -> dict[str, A
 # ---------------------------------------------------------------------------
 # Universe
 # ---------------------------------------------------------------------------
+def cached_benchmark_bars() -> list[dict[str, Any]]:
+    """Nến benchmark (VNINDEX) lấy từ CACHE — KHÔNG gọi mạng.
+
+    Dùng cho kiểm tra hết hạn T+ ở các endpoint GET (``/signals``, ``/signals/overview``):
+    chỉ đóng tín hiệu quá hạn theo số phiên khi cache thị trường đã có sẵn, tránh để một
+    request đọc dữ liệu phải chờ gọi nguồn ngoài.
+    """
+    snapshot = vnstock_service.cache.get(_MARKET_CACHE_KEY)
+    bars = (snapshot or {}).get("benchmark_bars") or []
+    return list(bars)
+
+
 def default_universe(limit: int | None = None, cfg: dict | None = None) -> list[str]:
     """Danh sách mã để scan: ưu tiên thanh khoản (screener), fallback symbol directory."""
     cfg = cfg or cfg_module.get_config()
@@ -446,3 +458,137 @@ def rotation_plan(results: list[dict[str, Any]], cfg: dict | None = None) -> dic
         "replaceable": lagging[: max(0, size)],
         "note": "Mã trong 'replaceable' có thứ hạng thấp hơn TOP — ứng viên thay thế nếu đang nắm giữ.",
     }
+
+
+# ---------------------------------------------------------------------------
+# Vòng đời T+ — cập nhật lại tín hiệu ĐANG MỞ (spec §16/§24 mở rộng)
+# ---------------------------------------------------------------------------
+def _signal_stamp(row: dict[str, Any]) -> Any:
+    """Mốc mới nhất của 1 tín hiệu = max(as_of nến, updated_at lần phân tích cuối)."""
+    from app.services.signal_engine import lifecycle
+
+    stamps = [lifecycle.parse_time(row.get("as_of")), lifecycle.parse_time(row.get("updated_at"))]
+    valid = [s for s in stamps if s is not None]
+    return max(valid) if valid else None
+
+
+def refresh_open_signals(db=None, cfg: dict | None = None, max_symbols: int | None = None,
+                         use_cache: bool = True) -> dict[str, Any]:
+    """Cập nhật lại tín hiệu ĐANG MỞ của TuniX Signal Engine (tín hiệu T+).
+
+    Gồm 3 bước:
+    1. **Đóng tín hiệu QUÁ HẠN**: tín hiệu đang hiệu lực (CONFIRMED/ACTIVE/WEAKENING) đã quá
+       ``signal.expiry.max_holding_sessions`` phiên kể từ khi mở → đóng (EXIT) kèm lý do.
+    2. **Phân tích lại tín hiệu CŨ**: các mã còn tín hiệu đang mở (WATCH/SETUP_FORMING/…)
+       nhưng dữ liệu đã cũ hơn phiên mới nhất → chạy lại engine với nến mới + trạng thái cũ
+       (state machine tự chuyển sang WEAKENING/EXIT/INVALIDATED nếu setup đã hỏng).
+    3. **Tạo lại tín hiệu cho mã vừa hết hạn**: nếu setup vẫn còn tốt với nến hôm nay thì
+       engine tạo tín hiệu MỚI (created_at mới ⇒ lại có đủ hạn nắm giữ T+ tiếp theo) thay vì
+       giữ mãi dòng cũ đã đóng.
+
+    Chạy KHÔNG chặn UI (trang Tín hiệu gọi sau khi đã vẽ danh sách). Giới hạn
+    ``refresh_max_symbols`` mã mỗi lần, ưu tiên tín hiệu đang hiệu lực + cũ nhất trước.
+    """
+    from app.services.signal_engine import lifecycle, repository
+
+    cfg = cfg or cfg_module.get_config()
+    conf = lifecycle.expiry_config(cfg)
+    market = market_snapshot(cfg)
+    bars = list(market.get("benchmark_bars") or [])
+    latest = bars[-1].get("time") if bars else None
+
+    result: dict[str, Any] = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "as_of": market.get("as_of"),
+        "market": market.get("regime"),
+        "enabled": conf["enabled"],
+        "max_holding_sessions": conf["max_holding_sessions"],
+        "open_signals": 0,
+        "expired": 0,
+        "expired_symbols": [],
+        "refreshed": 0,
+        "refreshed_symbols": [],
+        "candidates": 0,
+        "pending": 0,
+        "up_to_date": 0,
+    }
+    if db is None:
+        return result
+
+    closed = repository.expire_overdue(db, benchmark_bars=bars, cfg=cfg)
+    result["expired"] = int(closed.get("expired") or 0)
+    result["expired_symbols"] = closed.get("symbols") or []
+
+    # Gom theo mã: ưu tiên (1) tín hiệu đang hiệu lực, (2) cũ nhất trước.
+    # - Mã vừa bị ĐÓNG do quá hạn trong lần này VÀ mã hết hạn trong phiên hiện tại (do GET
+    #   ``/signals`` đóng trước đó) đều phải phân tích lại: nếu setup vẫn còn tốt với nến hôm nay
+    #   thì engine tạo tín hiệu MỚI (created_at mới ⇒ lại đủ hạn nắm giữ T+ tiếp theo).
+    # - Bỏ qua mã đã có tín hiệu đang mở (nếu không sẽ phân tích lại vô ích mỗi lần mở trang).
+    rows = repository.open_signals(db)
+    result["open_signals"] = len(rows)
+    open_symbols = {row["symbol"] for row in rows}
+
+    candidates: dict[str, tuple[int, Any]] = {}
+    since = lifecycle.parse_time(latest) or (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1))
+    try:
+        recently_expired = repository.expired_symbols_since(db, since)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("không đọc được mã vừa hết hạn T+: %s", exc)
+        recently_expired = []
+    for symbol in list(closed.get("symbols") or []) + recently_expired:
+        symbol = str(symbol or "").upper()
+        if symbol and symbol not in open_symbols:
+            candidates.setdefault(symbol, (0, datetime(1970, 1, 1)))
+
+    for row in rows:
+        if row["state"] not in lifecycle.TRACKED_STATES:
+            continue
+        stamp = _signal_stamp(row)
+        if not lifecycle.is_stale(stamp, latest):
+            result["up_to_date"] += 1
+            continue
+        actionable = row["state"] in lifecycle.ACTIVE_STATES
+        order = (0 if actionable else 1, stamp or datetime(1970, 1, 1))
+        current = candidates.get(row["symbol"])
+        if current is None or order < current:
+            candidates[row["symbol"]] = order
+
+    ordered = [sym for sym, _ in sorted(candidates.items(), key=lambda kv: kv[1])]
+    limit = int(max_symbols or conf["refresh_max_symbols"])
+    symbols = ordered[:limit]
+    result["candidates"] = len(ordered)
+    result["pending"] = max(0, len(ordered) - len(symbols))
+    if not symbols:
+        return result
+
+    previous = repository.previous_states_bulk(db, symbols)
+    workers = max(1, int((cfg.get("engine") or {}).get("scan_workers", 8)))
+
+    def _one(symbol: str) -> dict[str, Any]:
+        try:
+            return analyze_symbol(symbol, cfg, market, previous.get(symbol),
+                                  use_cache=use_cache, db=None)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("refresh tín hiệu lỗi %s: %s", symbol, exc)
+            return {"symbol": symbol, "strategies": {}, "status": "FEATURE_CALCULATION_ERROR"}
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        snapshots = list(pool.map(_one, symbols))
+
+    # Persist TUẦN TỰ (Session của SQLAlchemy không an toàn khi dùng đa luồng).
+    refreshed: list[str] = []
+    for snapshot in snapshots:
+        if not (snapshot.get("strategies") or {}):
+            continue
+        try:
+            repository.save_snapshot(db, snapshot)
+            refreshed.append(str(snapshot.get("symbol") or ""))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("refresh persist lỗi %s: %s", snapshot.get("symbol"), exc)
+            try:
+                db.rollback()
+            except Exception:  # noqa: BLE001
+                pass
+    result["refreshed"] = len(refreshed)
+    result["refreshed_symbols"] = refreshed
+    return result

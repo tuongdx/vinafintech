@@ -95,6 +95,15 @@ DEFAULTS: dict[str, Any] = {
             "strong": {"score": 70, "confirmations": 6, "technical_agreement": 0.7},
             "moderate": {"score": 55, "confirmations": 4, "technical_agreement": 0.5},
         },
+        # Vòng đời T+: tín hiệu của TuniX là tín hiệu NGẮN HẠN (T+), chỉ có ý nghĩa trong
+        # một số phiên nắm giữ. Quá hạn ⇒ KHÔNG còn hiệu lực (tự đóng EXIT) và phải phân
+        # tích lại bằng nến mới nhất khi mở trang Tín hiệu.
+        "expiry": {
+            "enabled": True,
+            "max_holding_sessions": 10,     # T+10: quá 10 phiên kể từ khi tín hiệu mở ⇒ hết hạn
+            "auto_refresh_on_load": True,   # mở trang Tín hiệu → tự cập nhật lại tín hiệu đang mở
+            "refresh_max_symbols": 80,      # trần số mã phân tích lại mỗi lần (chạy nền, không chặn UI)
+        },
     },
     "risk": {
         "atr_stop_multiple": 2.0,        # stop loss = entry - 2*ATR

@@ -29,6 +29,9 @@ logger = logging.getLogger("tunix.signal.repository")
 
 _ACTIVE_STATES = ("CONFIRMED", "ACTIVE", "WEAKENING")
 _CLOSED_STATES = ("EXIT", "INVALIDATED")
+# Chỉ các trạng thái "đang hiệu lực" (_ACTIVE_STATES) bị ĐÓNG khi quá hạn nắm giữ T+ —
+# WATCH/SETUP_FORMING/NO_SETUP là trạng thái theo dõi (không phải lệnh đang mở) nên chỉ
+# cần phân tích lại (xem engine.refresh_open_signals).
 
 _STRATEGY_META = {
     "UPTREND": ("Uptrend", "Theo dòng tiền mạnh: MA xếp tầng, momentum dương, volume xác nhận, breakout."),
@@ -306,10 +309,27 @@ def previous_states(db: Session, symbol: str) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Truy vấn cho menu Admin
 # ---------------------------------------------------------------------------
+def _list_order(sort: str) -> list[Any]:
+    """Thứ tự bảng tín hiệu (spec §17).
+
+    MẶC ĐỊNH ``confidence``: **ĐỘ TIN CẬY cao nhất ở trên, thấp nhất ở dưới** — tín hiệu chưa
+    đánh giá được độ tin cậy (hiển thị "—") luôn nằm CUỐI. Dùng `is_(None)` (thay vì
+    `nullslast`) để chạy được trên cả SQLite lẫn Postgres.
+    """
+    key = (sort or "confidence").strip().lower()
+    if key in ("score", "diem", "điểm"):
+        return [Signal.score.is_(None), Signal.score.desc(), Signal.confidence.is_(None),
+                Signal.confidence.desc(), Signal.id.desc()]
+    if key in ("updated", "updated_at", "moi", "mới"):
+        return [Signal.updated_at.desc(), Signal.id.desc()]
+    return [Signal.confidence.is_(None), Signal.confidence.desc(),
+            Signal.score.is_(None), Signal.score.desc(), Signal.id.desc()]
+
+
 def list_signals(db: Session, *, strategy: str = "", signal: str = "", state: str = "",
                  symbol: str = "", min_score: float | None = None, min_confidence: float | None = None,
                  date_from: str = "", date_to: str = "", active_only: bool = False,
-                 limit: int = 50, offset: int = 0) -> dict[str, Any]:
+                 sort: str = "confidence", limit: int = 50, offset: int = 0) -> dict[str, Any]:
     query = db.query(Signal)
     if strategy:
         query = query.filter(Signal.strategy == strategy.upper())
@@ -331,7 +351,12 @@ def list_signals(db: Session, *, strategy: str = "", signal: str = "", state: st
         query = query.filter(Signal.is_active == True)  # noqa: E712
 
     total = query.count()
-    rows = query.order_by(Signal.updated_at.desc(), Signal.id.desc()).offset(max(0, offset)).limit(max(1, min(limit, 200))).all()
+    rows = (
+        query.order_by(*_list_order(sort))
+        .offset(max(0, offset))
+        .limit(max(1, min(limit, 200)))
+        .all()
+    )
     return {"total": total, "items": [_row_out(r) for r in rows]}
 
 
@@ -415,6 +440,124 @@ def _load_json(text: str | None) -> Any:
         return json.loads(text) if text else None
     except Exception:  # noqa: BLE001
         return None
+
+
+# ---------------------------------------------------------------------------
+# Vòng đời T+ — đóng tín hiệu QUÁ HẠN & liệt kê tín hiệu ĐANG MỞ (spec §16/§24 mở rộng)
+# ---------------------------------------------------------------------------
+def open_signals(db: Session) -> list[dict[str, Any]]:
+    """Danh sách tín hiệu ĐANG MỞ (``is_active``) — dữ liệu tối thiểu cho vòng đời T+."""
+    rows = (
+        db.query(Signal.id, Signal.symbol, Signal.strategy, Signal.state,
+                 Signal.as_of, Signal.created_at, Signal.updated_at)
+        .filter(Signal.is_active == True)  # noqa: E712
+        .all()
+    )
+    return [
+        {
+            "id": row[0],
+            "symbol": str(row[1] or "").upper(),
+            "strategy": str(row[2] or ""),
+            "state": str(row[3] or ""),
+            "as_of": row[4],
+            "created_at": row[5],
+            "updated_at": row[6],
+        }
+        for row in rows
+    ]
+
+
+def expire_overdue(db: Session, *, max_holding_sessions: int | None = None,
+                   benchmark_bars: list[dict] | None = None,
+                   cfg: dict | None = None) -> dict[str, Any]:
+    """Đóng các tín hiệu ĐANG HIỆU LỰC đã QUÁ HẠN nắm giữ T+ (mặc định 10 phiên).
+
+    Vì sao: tín hiệu TuniX là tín hiệu T+ (ngắn hạn) — quá hạn nắm giữ thì KHÔNG còn hiệu lực.
+    Trước đây không có bước này nên tín hiệu từ nhiều tuần trước vẫn hiển thị "Đang hiệu lực"
+    trên trang Tín hiệu (bug thật đã gặp).
+
+    Số phiên đếm từ ``created_at`` (thời điểm tín hiệu mở) theo nến benchmark; nếu không có
+    nến benchmark thì quy đổi sang ngày lịch (10 phiên ≈ 14 ngày).
+    """
+    from app.services.signal_engine import lifecycle
+
+    conf = lifecycle.expiry_config(cfg)
+    max_sessions = int(max_holding_sessions or conf["max_holding_sessions"])
+    if not conf["enabled"]:
+        return {"enabled": False, "expired": 0, "symbols": [], "checked": 0,
+                "max_holding_sessions": max_sessions}
+
+    rows = (
+        db.query(Signal)
+        .filter(Signal.is_active == True, Signal.state.in_(_ACTIVE_STATES))  # noqa: E712
+        .all()
+    )
+    now = _now()
+    expired: list[str] = []
+    for row in rows:
+        decision = lifecycle.expiry_decision(row.created_at, max_sessions, benchmark_bars, now=now)
+        if not decision["expired"]:
+            continue
+        _close_expired(db, row, decision, max_sessions, now)
+        expired.append(str(row.symbol or ""))
+    if expired:
+        db.commit()
+    return {
+        "enabled": True,
+        "expired": len(expired),
+        "symbols": sorted({s for s in expired if s}),
+        "checked": len(rows),
+        "max_holding_sessions": max_sessions,
+    }
+
+
+def _close_expired(db: Session, row: Signal, decision: dict, max_sessions: int,
+                   now: datetime) -> None:
+    """Đóng 1 tín hiệu quá hạn T+ (kèm lịch sử trạng thái để audit được)."""
+    from_state = str(row.state or "")
+    row.state = "EXIT"
+    row.signal = "SELL"
+    row.is_active = False
+    row.closed_at = now
+    row.exit_price = row.price
+    row.exit_reason = (f"Hết thời hạn nắm giữ T+{max_sessions} ({decision.get('metric')}) "
+                       f"— tín hiệu hết hiệu lực")[:120]
+    if row.entry and row.exit_price:
+        row.return_pct = round((row.exit_price / row.entry - 1) * 100, 3)
+        row.result = "WIN" if row.return_pct > 0 else "LOSS" if row.return_pct < 0 else "FLAT"
+    else:
+        row.result = "UNKNOWN"
+    holding = decision.get("sessions")
+    row.holding_days = holding if holding is not None else decision.get("days")
+    row.updated_at = now
+    db.add(SignalHistory(
+        signal_id=row.id, symbol=row.symbol, strategy=row.strategy,
+        from_state=from_state, to_state="EXIT", signal="SELL",
+        reason=row.exit_reason, price=row.price, score=row.score,
+        exit_price=row.exit_price, return_pct=row.return_pct,
+        holding_days=row.holding_days, result=row.result,
+        detail_json=_dump({
+            "expired": True, "max_holding_sessions": max_sessions,
+            "sessions": decision.get("sessions"), "days": decision.get("days"),
+            "basis": decision.get("basis"),
+        }),
+    ))
+
+
+def expired_symbols_since(db: Session, since: datetime | None = None) -> list[str]:
+    """Mã có tín hiệu bị ĐÓNG do HẾT HẠN T+ kể từ mốc ``since`` (thường là phiên hiện tại).
+
+    Dùng cho ``engine.refresh_open_signals``: mã vừa hết hạn cần được phân tích lại theo nến
+    mới nhất để tạo tín hiệu MỚI (nếu setup vẫn còn tốt) — nếu không, mã đó sẽ không bao giờ
+    được cập nhật lại cho tới lần "Quét thị trường" tiếp theo (vì không còn tín hiệu đang mở).
+    """
+    query = db.query(Signal.symbol).filter(
+        Signal.is_active == False,  # noqa: E712
+        Signal.exit_reason.like("Hết thời hạn nắm giữ T+%"),
+    )
+    if since is not None:
+        query = query.filter(Signal.closed_at >= since)
+    return sorted({str(symbol or "").upper() for (symbol,) in query.all() if symbol})
 
 
 def signal_history(db: Session, *, symbol: str = "", strategy: str = "", limit: int = 100,

@@ -19,6 +19,7 @@ from app.core.dependencies import require_signal_access
 from app.db import get_db
 from app.models import User
 from app.services.signal_engine import config as cfg_module
+from app.services.signal_engine import lifecycle
 from app.services.signal_engine import repository, serializers
 from app.services.signal_engine import engine as engine_module
 from app.services.signal_engine import model_performance
@@ -32,12 +33,25 @@ router = APIRouter(prefix="/signals", tags=["signals"])
 _ACCESS = require_signal_access
 
 
+def _expire_overdue(db: Session) -> None:
+    """Đóng tín hiệu QUÁ HẠN nắm giữ T+ trước khi trả dữ liệu (best-effort).
+
+    Chỉ dùng nến benchmark trong CACHE (KHÔNG gọi mạng) để không làm chậm request GET; khi
+    chưa có cache thì tự quy đổi sang ngày lịch (10 phiên ≈ 14 ngày).
+    """
+    try:
+        repository.expire_overdue(db, benchmark_bars=engine_module.cached_benchmark_bars())
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("đóng tín hiệu quá hạn T+ lỗi: %s", exc)
+
+
 # ---------------------------------------------------------------------------
 # Siêu dữ liệu
 # ---------------------------------------------------------------------------
 @router.get("/overview")
 def overview(db: Session = Depends(get_db), _user: User = Depends(_ACCESS)) -> dict[str, Any]:
     """Tổng quan dashboard tín hiệu (spec §17)."""
+    _expire_overdue(db)
     stats = repository.overview_stats(db)
     stats["strategies"] = [
         {"name": name, "display_name": meta[0], "description": meta[1]}
@@ -45,6 +59,9 @@ def overview(db: Session = Depends(get_db), _user: User = Depends(_ACCESS)) -> d
     ]
     stats["model_status"] = model_performance.stats(db).get("status")
     stats["config_version"] = cfg_module.config_version()
+    # Ngưỡng vòng đời T+ đang chạy (trang Tín hiệu hiển thị để người dùng biết tín hiệu hết
+    # hiệu lực sau bao nhiêu phiên).
+    stats["expiry"] = lifecycle.expiry_config(cfg_module.get_config())
     return stats
 
 
@@ -118,6 +135,9 @@ def scan(payload: dict = Body(default={}), db: Session = Depends(get_db),
         persist=True,
         use_cache=bool(payload.get("use_cache", True)),
     )
+    # Quét lại cũng là "cập nhật lại": đóng tín hiệu đã quá hạn nắm giữ T+ (nến benchmark vừa
+    # được nạp trong lúc quét nên có thể đếm phiên chính xác).
+    _expire_overdue(db)
     rows = [serializers.admin_list_row(item) for item in result.get("items") or []]
     rows.sort(key=lambda r: (r.get("signal") is not None, r.get("score") or 0), reverse=True)
     return {
@@ -143,6 +163,24 @@ def analyze(symbol: str, db: Session = Depends(get_db), _user: User = Depends(_A
     return serializers.admin_view(snapshot)
 
 
+@router.post("/refresh")
+def refresh(payload: dict = Body(default={}), db: Session = Depends(get_db),
+            _user: User = Depends(_ACCESS)) -> dict[str, Any]:
+    """Cập nhật lại tín hiệu ĐANG MỞ theo phiên mới nhất (vòng đời T+).
+
+    Trang Tín hiệu gọi endpoint này khi mở trang (chạy nền, không chặn UI):
+    1. Đóng tín hiệu đã QUÁ HẠN nắm giữ T+ (``signal.expiry.max_holding_sessions``).
+    2. Phân tích lại các mã còn tín hiệu đang mở nhưng dữ liệu đã CŨ → trạng thái trong bảng
+       luôn phản ánh nến mới nhất (setup hỏng ⇒ WEAKENING/EXIT/INVALIDATED, không "sống" mãi).
+    """
+    limit = payload.get("max_symbols") if isinstance(payload, dict) else None
+    try:
+        return engine_module.refresh_open_signals(db=db, max_symbols=int(limit) if limit else None)
+    except Exception as exc:  # noqa: BLE001 — trả lỗi rõ ràng để UI hiển thị
+        logger.warning("refresh tín hiệu lỗi: %s", exc)
+        raise HTTPException(status_code=503, detail=str(exc) or "Cập nhật tín hiệu thất bại.") from exc
+
+
 # ---------------------------------------------------------------------------
 # Danh sách + chi tiết (KHAI BÁO SAU các path tĩnh để không bị nuốt route)
 # ---------------------------------------------------------------------------
@@ -150,14 +188,20 @@ def analyze(symbol: str, db: Session = Depends(get_db), _user: User = Depends(_A
 def list_signals(strategy: str = "", signal: str = "", state: str = "", symbol: str = "",
                  min_score: float | None = None, min_confidence: float | None = None,
                  date_from: str = "", date_to: str = "", active_only: bool = False,
+                 sort: str = "confidence",
                  limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
                  db: Session = Depends(get_db), _user: User = Depends(_ACCESS)) -> dict[str, Any]:
-    """Bảng tín hiệu + filter (spec §17)."""
+    """Bảng tín hiệu + filter (spec §17).
+
+    Mặc định sắp theo **ĐỘ TIN CẬY giảm dần** (``sort=confidence``); ``sort=score`` hoặc
+    ``sort=updated`` để đổi tiêu chí.
+    """
+    _expire_overdue(db)
     return repository.list_signals(
         db, strategy=strategy, signal=signal, state=state, symbol=symbol,
         min_score=min_score, min_confidence=min_confidence,
         date_from=date_from, date_to=date_to, active_only=active_only,
-        limit=limit, offset=offset,
+        sort=sort, limit=limit, offset=offset,
     )
 
 

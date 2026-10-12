@@ -131,6 +131,11 @@
             var perf = d.performance || {};
             var byStrategy = d.by_strategy || {};
             var byState = d.by_state || {};
+            var exp = d.expiry || {};
+            if (exp.max_holding_sessions) {
+                var exEl = $('thExpiry');
+                if (exEl) exEl.textContent = exp.max_holding_sessions;
+            }
             $('sigOverview').innerHTML = [
                 stat('Tổng tín hiệu', d.total_signals, d.active_signals + ' đang mở'),
                 stat('Uptrend', byStrategy.UPTREND || 0),
@@ -155,11 +160,16 @@
         });
     }
 
-    function setUpdated(iso) {
+    function setUpdated(iso, state) {
         var el = $('thUpdated');
         if (el) el.textContent = iso ? dt(iso) : '—';
         var st = $('thDataState');
-        if (st) st.textContent = iso ? 'đã có dữ liệu quét' : 'chưa quét trong phiên này';
+        if (st) st.textContent = state || (iso ? 'đã có dữ liệu quét' : 'chưa quét trong phiên này');
+    }
+
+    function setDataState(text) {
+        var st = $('thDataState');
+        if (st) st.textContent = text || '—';
     }
 
     // ---------------- Danh sách ----------------
@@ -223,6 +233,47 @@
     function sigReload() {
         setUpdated(null);
         return Promise.all([loadOverview(), sigLoad(0)]);
+    }
+
+    // ---------------- Cập nhật TÍN HIỆU T+ ----------------
+    // Tín hiệu của TuniX là tín hiệu T+ (ngắn hạn): quá hạn nắm giữ thì KHÔNG còn hiệu lực.
+    // Mỗi lần mở trang, server sẽ (1) đóng tín hiệu đã quá hạn và (2) phân tích lại các mã còn
+    // tín hiệu đang mở bằng nến mới nhất. Chạy NỀN: danh sách hiện trước, cập nhật xong mới vẽ lại.
+    var refreshing = false;
+
+    function sigAutoRefresh(manual) {
+        if (refreshing) return Promise.resolve();
+        refreshing = true;
+        var btn = $('sigRefreshBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Đang cập nhật…'; }
+        setDataState('đang cập nhật tín hiệu theo phiên mới nhất…');
+        return api(API + '/refresh', { method: 'POST', body: JSON.stringify({}) }).then(function (d) {
+            var expired = (d && d.expired) || 0;
+            var refreshed = (d && d.refreshed) || 0;
+            var pending = (d && d.pending) || 0;
+            if (d && d.max_holding_sessions) {
+                var exEl = $('thExpiry');
+                if (exEl) exEl.textContent = d.max_holding_sessions;
+            }
+            var notes = [];
+            if (expired) notes.push(expired + ' tín hiệu hết hạn T+ đã đóng');
+            if (refreshed) notes.push(refreshed + ' mã phân tích lại');
+            if (pending) notes.push(pending + ' mã còn lại sẽ cập nhật ở lần mở sau');
+            setUpdated((d && d.generated_at) || null,
+                notes.length ? ('đã cập nhật: ' + notes.join(' · ')) : 'tín hiệu đang còn hiệu lực');
+            if (expired || refreshed) return Promise.all([loadOverview(), sigLoad(0)]);
+        }).catch(function (err) {
+            setDataState(manual ? ('không cập nhật được: ' + (err.message || 'lỗi không xác định'))
+                                : 'vẫn dùng dữ liệu lần quét trước');
+        }).then(function () {
+            refreshing = false;
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync"></i> Cập nhật tín hiệu'; }
+        });
+    }
+
+    function sigBoot() {
+        // Hiện dữ liệu hiện có NGAY, sau đó cập nhật lại tín hiệu T+ ở luồng nền (không chặn UI).
+        return sigReload().then(function () { return sigAutoRefresh(false); });
     }
 
     // ---------------- Quét ----------------
@@ -371,7 +422,7 @@
                     showLocked('Tài khoản của bạn chưa được cấp quyền dùng tính năng Tín hiệu.');
                     return;
                 }
-                sigReload();
+                sigBoot();
             })
             .catch(function () {
                 // Không gọi được /me (mạng) → vẫn thử tải danh sách; server sẽ trả 401/403 nếu không đủ quyền.
@@ -423,6 +474,7 @@
     window.sigLoad = sigLoad;
     window.sigScan = sigScan;
     window.sigReload = sigReload;
+    window.sigAutoRefresh = sigAutoRefresh;
     window.sigOpenDetail = sigOpenDetail;
     window.sigCloseDetail = sigCloseDetail;
 })();
