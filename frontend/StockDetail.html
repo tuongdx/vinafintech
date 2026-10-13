@@ -547,6 +547,8 @@
             align-items: center;
             gap: 8px;
         }
+        /* Block TuniAI Analysis CHỈ hiển thị khi đã đăng nhập → ẩn chắc chắn với khách */
+        .ta-block[hidden] { display: none !important; }
         .ta-engine {
             font-size: 10px;
             font-weight: 600;
@@ -3648,8 +3650,9 @@
             </div>
 
             <!-- 1.5 TUNIX ANALYSIS — TuniX Signal Engine (dành cho NGƯỜI DÙNG: chỉ phân tích,
-                 KHÔNG có BUY/SELL/Entry/Stop Loss — API public cũng không trả các field đó) -->
-            <div class="ta-block" id="tuniAnalysisBlock">
+                 KHÔNG có BUY/SELL/Entry/Stop Loss — API public cũng không trả các field đó).
+                 Block này CHỈ hiển thị với tài khoản ĐÃ ĐĂNG NHẬP (mặc định `hidden`, JS mở khi có phiên). -->
+            <div class="ta-block" id="tuniAnalysisBlock" hidden>
                 <h3><i class="fas fa-brain"></i> TuniAI Analysis <span class="ta-engine" id="taEngine"></span></h3>
                 <div class="ta-meta" id="taMeta">Đang tải phân tích…</div>
                 <div class="ta-grid" id="taGrid"></div>
@@ -4967,6 +4970,30 @@
             return !!localStorage.getItem('tunix_access_token');
         }
 
+        // Phiên còn hiệu lực? (có token VÀ token chưa hết hạn — tránh hiện block riêng tư
+        // cho token cũ còn sót trong localStorage).
+        function hasValidSession() {
+            const token = localStorage.getItem('tunix_access_token');
+            if (!token) return false;
+            try {
+                const payload = JSON.parse(atob(String(token).split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+                if (payload && payload.exp && payload.exp * 1000 <= Date.now()) return false;
+            } catch (e) { /* không phải JWT → chỉ cần có token là coi như có phiên */ }
+            return true;
+        }
+
+        // Block "TuniAI Analysis" CHỈ hiển thị khi đã đăng nhập; khách (chưa login) ẩn hẳn.
+        function applyTuniAnalysisVisibility() {
+            const block = document.getElementById('tuniAnalysisBlock');
+            const on = hasValidSession();
+            if (block) {
+                const changed = block.hidden === on;   // hidden=true & on=true ⇒ có đổi trạng thái
+                block.hidden = !on;
+                if (changed) notifyParentHeight();
+            }
+            return on;
+        }
+
         function getFavorites() {
             try {
                 const raw = localStorage.getItem(FAVORITES_KEY);
@@ -5428,7 +5455,8 @@
                 scheduleReportsAutoRefresh();   // tự nạp lại block Báo cáo khi qua mốc 12h trưa (giờ VN)
                 loadStockNews(symbol);   // nửa phải khối Báo cáo (chưa có tên công ty → chỉ khớp theo MÃ)
                 loadAccumulation(symbol);
-                loadTuniAnalysis(symbol);
+                // Block TuniAI Analysis: chỉ hiển thị + chỉ gọi API khi đã đăng nhập
+                if (applyTuniAnalysisVisibility()) loadTuniAnalysis(symbol);
                 loadOrderBook(symbol);
                 loadRecentTrades(symbol);
                 loadPeerComparison(symbol);
@@ -6068,6 +6096,8 @@
             }, 200);
         });
 
+        // Block TuniAI Analysis: áp trạng thái hiển thị theo phiên đăng nhập TRƯỚC khi load dữ liệu
+        applyTuniAnalysisVisibility();
         loadStockDetail();
         window.addEventListener('load', () => {
             notifyParentHeight();

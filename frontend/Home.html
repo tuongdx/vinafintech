@@ -40,27 +40,45 @@
         .vi-card .vi-chg.pos { color: #7be0c0; }
         .vi-card .vi-chg.neg { color: #ff9d9d; }
         .vi-card.vi-none .vi-value, .vi-card.vi-none .vi-chg { opacity: 0.55; }
+        /* Nút "Tùy chọn": NHỎ, nằm ở GÓC trên-phải của block xanh (không chiếm slot trong dãy thẻ chỉ số) */
         .ov-opt-card {
-            display: flex; align-items: center; gap: 8px;
-            background: rgba(255,255,255,0.10); border: 1px dashed rgba(255,255,255,0.4);
-            border-radius: 14px; padding: 0 18px; color: #fff; font-weight: 700; font-size: 13px;
-            cursor: pointer; font-family: inherit; transition: background 0.2s; min-height: 66px;
+            position: absolute; top: 16px; right: 18px; z-index: 3;
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28);
+            border-radius: 20px; padding: 6px 13px; color: #fff;
+            font-weight: 700; font-size: 12px; line-height: 1;
+            cursor: pointer; font-family: inherit; transition: background 0.2s, border-color 0.2s;
         }
-        .ov-opt-card:hover { background: rgba(255,255,255,0.20); }
-        .ov-opt-panel {
-            margin-top: 12px; background: rgba(255,255,255,0.97); color: #12203a;
-            border-radius: 14px; padding: 14px 16px; max-width: 360px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); position: relative; z-index: 5;
+        .ov-opt-card i { font-size: 11.5px; }
+        .ov-opt-card:hover { background: rgba(255,255,255,0.24); border-color: rgba(255,255,255,0.5); }
+        .ov-opt-card:focus-visible { outline: 2px solid rgba(255,255,255,0.7); outline-offset: 2px; }
+        /* Popup "Tùy chọn" chỉ số — nổi TRÊN trang, KHÔNG nằm trong block xanh */
+        .ov-pop {
+            position: absolute; z-index: 60; width: min(332px, calc(100vw - 24px));
+            display: flex; flex-direction: column;
+            background: #fff; color: #12203a; border: 1px solid #e5eaf0;
+            border-radius: 14px; padding: 13px 15px 12px; box-shadow: 0 18px 46px rgba(6,32,38,0.30);
         }
-        .ov-opt-panel .op-title { font-size: 13px; font-weight: 800; margin-bottom: 6px; }
-        .ov-opt-panel label { display: flex; align-items: center; gap: 9px; padding: 6px 4px; font-size: 13px; cursor: pointer; font-weight: 600; }
-        .ov-opt-panel label:hover { color: #008080; }
-        .ov-opt-panel input[type="checkbox"] { accent-color: #008080; width: 15px; height: 15px; }
-        .ov-opt-panel .op-actions { display: flex; gap: 8px; margin-top: 8px; }
-        .ov-opt-panel .op-actions button { border: 1px solid #e5eaf0; background: #fff; color: #4a5a72; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 9px; cursor: pointer; font-family: inherit; }
-        .ov-opt-panel .op-actions button:hover { border-color: #008080; color: #008080; }
-        body.dark-mode .ov-opt-panel { background: #161b22; color: #e6edf3; }
-        body.dark-mode .ov-opt-panel label:hover { color: #4db6b6; }
-        body.dark-mode .ov-opt-panel .op-actions button { background: #161b22; border-color: #30363d; color: #adbac7; }
+        .ov-pop[hidden] { display: none; }
+        .ov-pop .op-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+        .ov-pop .op-title { font-size: 13px; font-weight: 800; }
+        .ov-pop .op-x { border: 0; background: transparent; color: #8a99b1; font-size: 14px; line-height: 1; cursor: pointer; padding: 5px 7px; border-radius: 8px; }
+        .ov-pop .op-x:hover { background: #f1f4f8; color: #12203a; }
+        .ov-pop .op-list { flex: 1 1 auto; min-height: 0; max-height: 316px; overflow-y: auto; }
+        /* Ẩn thanh cuộn của popup (VẪN cuộn được) — theo quy ước toàn site */
+        .ov-pop, .ov-pop * { scrollbar-width: none; -ms-overflow-style: none; }
+        .ov-pop::-webkit-scrollbar, .ov-pop *::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        .ov-pop label { display: flex; align-items: center; gap: 9px; padding: 7px 5px; font-size: 13px; cursor: pointer; font-weight: 600; border-radius: 8px; }
+        .ov-pop label:hover { color: #008080; background: #f6fbfa; }
+        .ov-pop input[type="checkbox"] { accent-color: #008080; width: 15px; height: 15px; }
+        .ov-pop .op-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .ov-pop .op-actions button { border: 1px solid #e5eaf0; background: #fff; color: #4a5a72; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 9px; cursor: pointer; font-family: inherit; }
+        .ov-pop .op-actions button:hover { border-color: #008080; color: #008080; }
+        body.dark-mode .ov-pop { background: #161b22; border-color: #30363d; color: #e6edf3; box-shadow: 0 18px 46px rgba(0,0,0,0.55); }
+        body.dark-mode .ov-pop .op-x:hover { background: #21262d; color: #e6edf3; }
+        body.dark-mode .ov-pop label:hover { color: #4db6b6; background: #1b2229; }
+        body.dark-mode .ov-pop .op-actions button { background: #161b22; border-color: #30363d; color: #adbac7; }
+        body.dark-mode .ov-pop .op-actions button:hover { border-color: #4db6b6; color: #4db6b6; }
 
         /* ===== Grid ===== */
         .ov-body { display: grid; grid-template-columns: 1fr 340px; gap: 18px; margin-top: 18px; align-items: stretch; }
@@ -291,7 +309,7 @@
         @media (max-width: 1180px) { .ov-body { grid-template-columns: 1fr; } .ov-side { position: static; } .ov-hot { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 1020px) { .ov-radar { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 820px) { .ov-radar, .ov-opps, .ov-news { grid-template-columns: 1fr; } }
-        @media (max-width: 560px) { .ov-hot { grid-template-columns: 1fr; } .ov-hero { padding: 20px; } }
+        @media (max-width: 560px) { .ov-hot { grid-template-columns: 1fr; } .ov-hero { padding: 20px; } .ov-hero .ov-greet { padding-right: 112px; } }
     </style>
     <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
 </head>
@@ -299,10 +317,10 @@
     <div class="dashboard">
         <!-- HERO -->
         <header class="ov-hero">
+            <button type="button" class="ov-opt-card" id="ovOptCard" title="Chọn chỉ số hiển thị"><i class="fas fa-sliders-h"></i> Tùy chọn</button>
             <div class="ov-greet" id="ovGreet">Chào buổi sáng 👋</div>
             <div class="ov-ask">Thị trường hôm nay có gì đáng chú ý?</div>
             <div class="ov-indices" id="ovIndices"></div>
-            <div class="ov-opt-panel" id="ovOptPanel" hidden></div>
         </header>
 
         <div class="ov-body">
@@ -992,24 +1010,87 @@
                         '<div class="vi-value">' + fmt(i.value, 2) + '</div>' +
                         '<div class="vi-chg ' + chgCls + '">' + chgSign + fmtNum(Math.abs(chg), 2) + ' (' + pct(i.percent_change) + ')</div></div>';
                 }).join('');
-                el.innerHTML = cards + '<button class="ov-opt-card" id="ovOptCard"><i class="fas fa-sliders-h"></i> Tùy chọn</button>';
+                el.innerHTML = cards;
+                // Nút "Tùy chọn" là markup TĨNH ở góc block xanh (xem <header class="ov-hero">)
+                // → chỉ bind 1 lần, không dựng lại theo mỗi lần render thẻ chỉ số.
                 const oc = document.getElementById('ovOptCard');
-                if (oc) oc.addEventListener('click', function() {
-                    const panel = document.getElementById('ovOptPanel');
-                    panel.hidden = !panel.hidden;
-                    if (!panel.hidden) renderOptPanel();
-                });
+                if (oc && !oc.dataset.bound) {
+                    oc.dataset.bound = '1';
+                    oc.addEventListener('click', function() { toggleOptPopup(); });
+                }
                 notifyParentHeight();
             }
+
+            // ---------- POPUP "Tùy chọn" chỉ số ----------
+            // Trước đây bảng chọn chỉ số nằm NGAY TRONG block xanh (đẩy nội dung + bị overflow:hidden cắt).
+            // Nay là POPUP nổi: phần tử đặt ngoài block xanh (cuối body), định vị TUYỆT ĐỐI theo card
+            // "Tùy chọn" — đúng cả khi nhúng iframe (iframe KHÔNG tự cuộn nên rect = toạ độ tài liệu).
+            function optPopupEl() { return document.getElementById('ovOptPanel'); }
+
+            function positionOptPopup() {
+                const panel = optPopupEl();
+                const anchor = document.getElementById('ovOptCard');
+                if (!panel || !anchor || panel.hidden) return;
+                const rect = anchor.getBoundingClientRect();
+                const scrollX = window.scrollX || window.pageXOffset || 0;
+                const scrollY = window.scrollY || window.pageYOffset || 0;
+                const viewW = document.documentElement.clientWidth || window.innerWidth || 0;
+                const w = panel.offsetWidth || 332;
+                let left = rect.left + scrollX + (rect.width - w) / 2;
+                left = Math.max(scrollX + 12, Math.min(left, scrollX + Math.max(12, viewW - w - 12)));
+                panel.style.left = Math.round(left) + 'px';
+                panel.style.top = Math.round(rect.bottom + scrollY + 10) + 'px';
+                // Chiều cao tối đa theo VÙNG ĐANG NHÌN của trang cha: Home được nhúng iframe cao
+                // bằng nội dung nên `window.innerHeight` = cả tài liệu ⇒ không dùng được.
+                panel.style.maxHeight = '';
+                const pvH = popupViewportHeight();
+                if (pvH) {
+                    const used = (window.self !== window.top ? popupParentTop() + rect.bottom : rect.bottom - scrollY) + 10;
+                    const avail = pvH - used - 12;
+                    panel.style.maxHeight = Math.round(Math.max(200, avail)) + 'px';
+                }
+            }
+
+            // Chiều cao vùng nhìn thật (trang cha khi nhúng iframe, cửa sổ khi mở riêng).
+            function popupViewportHeight() {
+                if (window.self === window.top) return window.innerHeight || 0;
+                try { return window.parent.innerHeight || 0; } catch (e) { return 0; }
+            }
+            // Vị trí đỉnh iframe so với viewport trang cha (0 nếu khác origin / không đọc được).
+            function popupParentTop() {
+                try {
+                    const fe = window.frameElement;
+                    return fe ? fe.getBoundingClientRect().top : 0;
+                } catch (e) { return 0; }
+            }
+
+            function closeOptPopup() {
+                const panel = optPopupEl();
+                if (panel) panel.hidden = true;
+            }
+
+            function toggleOptPopup() {
+                const panel = optPopupEl();
+                if (!panel) return;
+                if (!panel.hidden) { panel.hidden = true; return; }
+                renderOptPanel();
+                panel.hidden = false;
+                positionOptPopup();
+            }
+
             function renderOptPanel() {
-                const panel = document.getElementById('ovOptPanel');
+                const panel = optPopupEl();
+                if (!panel) return;
                 const sel = getSelection();
-                panel.innerHTML = '<div class="op-title">Chọn chỉ số hiển thị</div>' +
-                    INDEX_OPTS.map(function(o) {
-                        const on = sel.indexOf(o.key) >= 0;
-                        return '<label><input type="checkbox" data-key="' + o.key + '" ' + (on ? 'checked' : '') + '/> ' + o.label + '</label>';
-                    }).join('') +
-                    '<div class="op-actions"><button id="opDone">Xong</button><button id="opReset">Mặc định</button></div>';
+                panel.innerHTML = '<div class="op-head"><div class="op-title">Chọn chỉ số hiển thị</div>' +
+                        '<button type="button" class="op-x" id="opClose" title="Đóng"><i class="fas fa-times"></i></button></div>' +
+                    '<div class="op-list">' +
+                        INDEX_OPTS.map(function(o) {
+                            const on = sel.indexOf(o.key) >= 0;
+                            return '<label><input type="checkbox" data-key="' + o.key + '" ' + (on ? 'checked' : '') + '/> ' + o.label + '</label>';
+                        }).join('') +
+                    '</div>' +
+                    '<div class="op-actions"><button type="button" id="opDone">Xong</button><button type="button" id="opReset">Mặc định</button></div>';
                 panel.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
                     cb.addEventListener('change', function() {
                         const key = cb.getAttribute('data-key');
@@ -1021,11 +1102,26 @@
                         renderOptPanel();
                     });
                 });
+                const close = document.getElementById('opClose');
+                if (close) close.addEventListener('click', closeOptPopup);
                 const done = document.getElementById('opDone');
-                if (done) done.addEventListener('click', function() { document.getElementById('ovOptPanel').hidden = true; });
+                if (done) done.addEventListener('click', closeOptPopup);
                 const reset = document.getElementById('opReset');
                 if (reset) reset.addEventListener('click', function() { saveSelection(INDEX_DEFAULT.slice()); renderIndices(); renderOptPanel(); });
+                positionOptPopup();
             }
+
+            // Đóng popup khi bấm ra ngoài / nhấn Esc; giữ đúng vị trí khi đổi kích thước khung.
+            document.addEventListener('click', function(e) {
+                const panel = optPopupEl();
+                if (!panel || panel.hidden) return;
+                const t = e.target;
+                if (panel.contains(t)) return;
+                if (t && t.closest && t.closest('#ovOptCard')) return;
+                panel.hidden = true;
+            });
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeOptPopup(); });
+            window.addEventListener('resize', positionOptPopup);
             function loadExtraIndices() {
                 const keys = INDEX_OPTS.map(function(o) { return o.key; }).filter(function(k) { return !INDEX_MAIN[k]; });
                 Promise.all(keys.map(function(key) {
@@ -1184,6 +1280,9 @@
             load();
         })();
     </script>
+
+    <!-- Popup "Tùy chọn" chỉ số: nằm NGOÀI block xanh — định vị nổi theo card "Tùy chọn" -->
+    <div class="ov-pop" id="ovOptPanel" hidden></div>
     <script src="/static/context-menu.js?v=20260928a"></script>
 </body>
 </html>
