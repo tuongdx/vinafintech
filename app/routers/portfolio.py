@@ -282,11 +282,13 @@ def update_holding(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Sửa vị thế (giá vốn / số lượng) và ĐIỀU CHỈNH TIỀN MẶT VND theo chênh lệch TỔNG VỐN.
+    """Sửa vị thế (giá vốn / số lượng / phí) và ĐIỀU CHỈNH TIỀN MẶT VND theo chênh lệch TỔNG VỐN.
 
+    - Tính lại ĐÚNG NHƯ KHI MUA: `giá vốn mới = giá × (1 + phí%/100)` (phí mặc định 0 nếu không gửi).
     - Chênh lệch = (số lượng mới × giá vốn mới) − (số lượng cũ × giá vốn cũ).
-    - Tăng vốn ⇒ **trừ** Tiền mặt VND; không đủ số dư ⇒ 400 yêu cầu Nạp tiền (KHÔNG lưu thay đổi).
-    - Giảm vốn (hạ giá vốn / giảm số lượng) ⇒ **hoàn lại** vào Tiền mặt VND.
+    - Tăng vốn (tăng số lượng / tăng giá / thêm phí) ⇒ **trừ** Tiền mặt VND; không đủ số dư ⇒ 400
+      yêu cầu Nạp tiền (KHÔNG lưu thay đổi).
+    - Giảm vốn (giảm số lượng / hạ giá) ⇒ **hoàn lại** vào Tiền mặt VND.
     - Mọi lần điều chỉnh đều ghi 1 dòng vào sổ tiền vào/ra (`cash_transactions`, kind `edit_stock`).
 
     Trả về vị thế sau cập nhật + `cash_delta` / `cash_vnd` / `message` cho UI hiện thông báo.
@@ -310,10 +312,17 @@ def update_holding(
         if float(payload.avg_price) < 0:
             raise HTTPException(status_code=400, detail="Giá vốn không hợp lệ.")
         new_avg = float(payload.avg_price)
+    fee_pct = 0.0
+    if payload.fee is not None:
+        if float(payload.fee) < 0:
+            raise HTTPException(status_code=400, detail="Phí giao dịch không hợp lệ.")
+        fee_pct = float(payload.fee) / 100.0
+    # Tính lại ĐÚNG NHƯ KHI MUA: giá vốn đã bao gồm phí giao dịch.
+    effective_avg = new_avg * (1 + fee_pct) if new_avg > 0 else 0.0
 
-    # Tiền mặt đi theo TỔNG VỐN ĐẦU TƯ (số lượng × giá vốn) — sửa giá vốn HOẶC số lượng đều
-    # làm thay đổi số tiền đã bỏ ra, nên quỹ VND phải được cập nhật tương ứng.
-    delta = round(new_qty * new_avg, 0) - round(old_qty * old_avg, 0)
+    # Tiền mặt đi theo TỔNG VỐN ĐẦU TƯ (số lượng × giá vốn) — sửa giá vốn, số lượng hoặc phí
+    # đều làm thay đổi số tiền đã bỏ ra, nên quỹ VND phải được cập nhật tương ứng.
+    delta = round(new_qty * effective_avg, 0) - round(old_qty * old_avg, 0)
     cash_delta = 0.0
     if delta > 0:
         have = cash_service.get_balance(db, user.id, cash_service.CUR_VND)
@@ -338,7 +347,7 @@ def update_holding(
         cash_delta = -delta
 
     row.quantity = new_qty
-    row.avg_price = new_avg
+    row.avg_price = effective_avg
     db.commit()
     db.refresh(row)
     out = _enrich(row, None).model_dump()

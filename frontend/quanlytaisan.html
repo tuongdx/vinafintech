@@ -1162,7 +1162,8 @@
                     '</div>';
                 const fields = editing
                     ? '<div class="pf-field"><label>Giá vốn (đ)</label><input type="text" inputmode="numeric" autocomplete="off" id="pfAvg" min="0" max="1000000" step="100" placeholder="VD: 26.500" value="' + esc(avg) + '" ' + disabled + ' /></div>' +
-                      '<div class="pf-field"><label>Số lượng</label><input type="text" inputmode="numeric" autocomplete="off" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1.000" value="' + esc(qty) + '" ' + disabled + ' /></div>'
+                      '<div class="pf-field"><label>Số lượng</label><input type="text" inputmode="numeric" autocomplete="off" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1.000" value="' + esc(qty) + '" ' + disabled + ' /></div>' +
+                      '<div class="pf-field"><label>Phí giao dịch (%)</label><input type="number" id="pfFee" min="0" max="10" step="0.01" placeholder="VD: 0.15" value="0" ' + disabled + ' /></div>'
                     : '<div class="pf-field"><label>Giá mua/bán (đ)</label><input type="text" inputmode="numeric" autocomplete="off" id="pfAvg" min="0" max="1000000" step="100" placeholder="VD: 26.500" ' + disabled + ' /></div>' +
                       '<div class="pf-field"><label>Số lượng mua/bán</label><input type="text" inputmode="numeric" autocomplete="off" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1.000" ' + disabled + ' /></div>' +
                       '<div class="pf-field"><label>Phí giao dịch (%)</label><input type="number" id="pfFee" min="0" max="10" step="0.01" placeholder="VD: 0.15" value="0.15" ' + disabled + ' /></div>';
@@ -3636,12 +3637,15 @@
                     if (!(avg_price >= 0)) { toast('Giá vốn không hợp lệ.', true); return; }
                     // Sửa vị thế ⇒ Tiền mặt VND đi theo chênh lệch TỔNG VỐN (SL × giá vốn).
                     // Tăng vốn mà quỹ không đủ ⇒ nhắc Nạp tiền trước (giống khi Mua).
+                    // Sửa vị thế ⇒ tính lại như khi MUA: giá vốn sau phí = giá × (1 + phí%),
+                    // tiền mặt VND đi theo chênh lệch TỔNG VỐN (SL × giá vốn sau phí).
+                    // Tăng vốn mà quỹ không đủ ⇒ nhắc Nạp tiền trước (giống khi Mua).
                     const cur = holdings.find(function(x) { return x.id === editId; });
                     if (cur) {
-                        const delta = Math.round(quantity * avg_price) - Math.round(rawQty(cur) * rawAvg(cur));
+                        const delta = Math.round(quantity * avg_price * (1 + fee / 100)) - Math.round(rawQty(cur) * rawAvg(cur));
                         if (delta > cashVnd) return needTopUp('VND', fmtMoney(delta) + ' đ');
                     }
-                    send('/api/portfolio/' + editId, 'PUT', { quantity: quantity, avg_price: avg_price });
+                    send('/api/portfolio/' + editId, 'PUT', { quantity: quantity, avg_price: avg_price, fee: fee });
                     return;
                 }
                 const quantity = moneyNum('pfQty');

@@ -125,6 +125,8 @@ class PortfolioHoldingCreate(BaseModel):
 class PortfolioHoldingUpdate(BaseModel):
     quantity: float | None = None
     avg_price: float | None = None
+    # Phí giao dịch (%) khi sửa vị thế — tính lại y như khi MUA: giá vốn = giá × (1 + phí/100).
+    fee: float | None = None
 
 
 class PortfolioSell(BaseModel):
