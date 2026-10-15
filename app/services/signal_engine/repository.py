@@ -12,7 +12,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import func
+from sqlalchemy import case, distinct, func
 from sqlalchemy.orm import Session
 
 from app.models import (
@@ -21,6 +21,7 @@ from app.models import (
     SignalCondition,
     SignalFeatureSnapshot,
     SignalHistory,
+    SignalPosition,
     SignalPrediction,
     SignalStrategy,
 )
@@ -309,34 +310,96 @@ def previous_states(db: Session, symbol: str) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Truy vấn cho menu Admin
 # ---------------------------------------------------------------------------
-def _list_order(sort: str) -> list[Any]:
-    """Thứ tự bảng tín hiệu (spec §17).
+# Cột cho phép SẮP XẾP trên bảng tín hiệu (khoá URL → (cột DB, hướng mặc định)).
+# Phải khớp nút sort ở header bảng — xem `frontend/assets/tin-hieu.js`.
+# LƯU Ý: cột "Giá hiện tại" KHÔNG có ở đây vì là giá realtime (client tự sắp trong trang).
+_SORT_COLUMNS: dict[str, tuple[Any, str]] = {
+    "confidence": (Signal.confidence, "desc"),
+    "score": (Signal.score, "desc"),
+    "updated": (Signal.updated_at, "desc"),
+    "created": (Signal.created_at, "desc"),
+    "symbol": (Signal.symbol, "asc"),
+    "strategy": (Signal.strategy, "asc"),
+    "signal": (Signal.signal, "desc"),
+    "state": (Signal.state, "asc"),
+    "entry": (Signal.entry, "desc"),
+    "stop_loss": (Signal.stop_loss, "desc"),
+    "trailing_stop": (Signal.trailing_stop, "desc"),
+    "take_profit": (Signal.take_profit, "desc"),
+}
+_SORT_ALIASES = {
+    "diem": "score", "điểm": "score", "score_desc": "score",
+    "moi": "updated", "mới": "updated", "updated_at": "updated",
+    "created_at": "created", "ngay": "created", "ngày": "created",
+    "trailing": "trailing_stop", "sl": "stop_loss", "tp": "take_profit",
+}
+# Trạng thái sắp theo VÒNG ĐỜI tín hiệu (không theo alphabet).
+_STATE_SORT_ORDER = ["NO_SETUP", "WATCH", "SETUP_FORMING", "CONFIRMED", "ACTIVE",
+                     "WEAKENING", "EXIT", "INVALIDATED"]
+
+
+def sort_config(sort: str, direction: str = "") -> tuple[str, str]:
+    """Chuẩn hoá ``(khoá cột, hướng)`` cho bảng tín hiệu — dùng chung repository + router."""
+    key = (sort or "confidence").strip().lower()
+    key = _SORT_ALIASES.get(key, key)
+    if key not in _SORT_COLUMNS:
+        key = "confidence"
+    dir_ = (direction or "").strip().lower()
+    if dir_ not in ("asc", "desc"):
+        dir_ = _SORT_COLUMNS[key][1]
+    return key, dir_
+
+
+def _list_order(sort: str, direction: str = "") -> list[Any]:
+    """Thứ tự bảng tín hiệu (spec §17) — phục vụ NÚT SORT ở đầu mọi cột (tin-hieu.js).
 
     MẶC ĐỊNH ``confidence``: **ĐỘ TIN CẬY cao nhất ở trên, thấp nhất ở dưới** — tín hiệu chưa
     đánh giá được độ tin cậy (hiển thị "—") luôn nằm CUỐI. Dùng `is_(None)` (thay vì
     `nullslast`) để chạy được trên cả SQLite lẫn Postgres.
+
+    ``sort`` là KHOÁ cột trong ``_SORT_COLUMNS`` (khoá lạ → về ``confidence`` để không vỡ
+    truy vấn); ``direction`` = ``asc``/``desc`` (rỗng → hướng mặc định của cột).
     """
-    key = (sort or "confidence").strip().lower()
-    if key in ("score", "diem", "điểm"):
-        return [Signal.score.is_(None), Signal.score.desc(), Signal.confidence.is_(None),
-                Signal.confidence.desc(), Signal.id.desc()]
-    if key in ("updated", "updated_at", "moi", "mới"):
-        return [Signal.updated_at.desc(), Signal.id.desc()]
-    return [Signal.confidence.is_(None), Signal.confidence.desc(),
-            Signal.score.is_(None), Signal.score.desc(), Signal.id.desc()]
+    key, dir_ = sort_config(sort, direction)
+    descending = dir_ == "desc"
+
+    if key == "state":
+        # Trạng thái sắp theo VÒNG ĐỜI (NO_SETUP → … → INVALIDATED), KHÔNG theo alphabet.
+        expr: Any = case({name: idx for idx, name in enumerate(_STATE_SORT_ORDER)},
+                         value=Signal.state, else_=len(_STATE_SORT_ORDER))
+    else:
+        expr = _SORT_COLUMNS[key][0]
+
+    order: list[Any] = [expr.is_(None)]
+    order.append(expr.desc() if descending else expr.asc())
+    # Tiêu chí phụ: ĐỘ TIN CẬY giảm dần để phân trang ổn định (giữ đúng hành vi cũ).
+    if key == "confidence":
+        order.extend([Signal.score.is_(None), Signal.score.desc()])
+    else:
+        order.extend([Signal.confidence.is_(None), Signal.confidence.desc()])
+    order.append(Signal.id.desc())
+    return order
 
 
 def list_signals(db: Session, *, strategy: str = "", signal: str = "", state: str = "",
                  symbol: str = "", min_score: float | None = None, min_confidence: float | None = None,
                  date_from: str = "", date_to: str = "", active_only: bool = False,
-                 sort: str = "confidence", limit: int = 50, offset: int = 0) -> dict[str, Any]:
+                 sort: str = "confidence", direction: str = "",
+                 symbols: set[str] | None = None, one_per_symbol: bool = False,
+                 limit: int = 50, offset: int = 0) -> dict[str, Any]:
     query = db.query(Signal)
+    if symbols:
+        # Giới hạn theo TẬP MÃ (bộ lọc thanh khoản của trang Tín hiệu) — rỗng/None = KHÔNG lọc.
+        query = query.filter(Signal.symbol.in_(sorted(symbols)))
     if strategy:
         query = query.filter(Signal.strategy == strategy.upper())
     if signal:
         query = query.filter(Signal.signal == signal.upper())
     if state:
-        query = query.filter(Signal.state == state.upper())
+        # Hỗ trợ NHIỀU trạng thái: "CONFIRMED,ACTIVE" (trang Tín hiệu chỉ hiện setup đã vào được lệnh).
+        states = [s.strip().upper() for s in str(state).split(",") if s.strip()]
+        if states:
+            query = query.filter(Signal.state.in_(states))
     if symbol:
         query = query.filter(Signal.symbol == symbol.upper())
     if min_score is not None:
@@ -350,14 +413,184 @@ def list_signals(db: Session, *, strategy: str = "", signal: str = "", state: st
     if active_only:
         query = query.filter(Signal.is_active == True)  # noqa: E712
 
+    order = _list_order(sort, direction)
+
+    if one_per_symbol:
+        # MỘT DÒNG CHO MỖI MÃ (yêu cầu trang Tín hiệu): một cổ phiếu có thể được 2–3 chiến thuật
+        # (UPTREND/BOTTOM_FISHING/SWING) cùng phát tín hiệu ⇒ chỉ hiển thị 1 dòng, giữ dòng ĐẦU TIÊN
+        # theo đúng thứ tự đang sắp xếp (đổi cột sắp xếp = đổi chiến thuật được chọn cho mã đó).
+        # `total` đếm theo SỐ MÃ (distinct) để phân trang khớp đúng số dòng thực tế.
+        # Dùng window function `ROW_NUMBER()` — chạy được trên cả SQLite (≥3.25) lẫn Postgres.
+        rank = func.row_number().over(partition_by=Signal.symbol, order_by=order).label("rn")
+        ranked = query.with_entities(Signal.id.label("signal_id"), rank).subquery()
+        total = int(query.with_entities(func.count(distinct(Signal.symbol))).scalar() or 0)
+        rows = (
+            db.query(Signal)
+            .join(ranked, Signal.id == ranked.c.signal_id)
+            .filter(ranked.c.rn == 1)
+            .order_by(*order)
+            .offset(max(0, offset))
+            .limit(max(1, min(limit, 200)))
+            .all()
+        )
+        return {"total": total, "items": [_row_out(r) for r in rows]}
+
     total = query.count()
     rows = (
-        query.order_by(*_list_order(sort))
+        query.order_by(*order)
         .offset(max(0, offset))
         .limit(max(1, min(limit, 200)))
         .all()
     )
     return {"total": total, "items": [_row_out(r) for r in rows]}
+
+
+def last_scan_at(db: Session) -> str | None:
+    """Thời điểm dữ liệu tín hiệu được ghi/cập nhật gần nhất (ISO) — hiển thị "Quét gần nhất".
+
+    Dùng `MAX(signals.updated_at)` (mọi lần quét — kể cả quét tự động theo lịch — đều set field này).
+    """
+    try:
+        value = db.query(func.max(Signal.updated_at)).scalar()
+    except Exception as exc:  # noqa: BLE001 — thiếu bảng/cột ⇒ không chặn trang
+        logger.warning("không đọc được thời điểm quét gần nhất: %s", exc)
+        return None
+    return value.isoformat() if value else None
+
+
+# ---------------------------------------------------------------------------
+# VỊ THẾ NGƯỜI DÙNG tự mở (nút ON/OFF ở cột "Vị thế" trang Tín hiệu)
+# ---------------------------------------------------------------------------
+POSITION_OPEN = "OPEN"
+POSITION_CLOSED = "CLOSED"
+
+
+def open_position_of(db: Session, user_id: int, symbol: str) -> SignalPosition | None:
+    """Vị thế ĐANG MỞ của (user, mã) — mỗi mã chỉ có tối đa 1 vị thế mở."""
+    return (
+        db.query(SignalPosition)
+        .filter(SignalPosition.user_id == user_id,
+                SignalPosition.symbol == str(symbol or "").upper(),
+                SignalPosition.status == POSITION_OPEN)
+        .order_by(SignalPosition.id.desc())
+        .first()
+    )
+
+
+def position_out(row: SignalPosition, live_price: float | None = None) -> dict[str, Any]:
+    """Dòng vị thế trả cho UI. Vị thế ĐANG MỞ: `return_pct` = lãi/lỗ TẠM TÍNH theo giá hiện tại."""
+    current = float(live_price) if live_price and float(live_price) > 0 else None
+    entry = float(row.entry_price) if row.entry_price else None
+    pnl_pct = round((current / entry - 1) * 100, 3) if (current and entry) else None
+    is_open = row.status == POSITION_OPEN
+    return {
+        "id": row.id,
+        "symbol": row.symbol,
+        "strategy": row.strategy,
+        "signal_id": row.signal_id,
+        "status": row.status,
+        "entry_price": row.entry_price,
+        "entry_at": row.entry_at.isoformat() if row.entry_at else None,
+        "exit_price": row.exit_price,
+        "exit_at": row.exit_at.isoformat() if row.exit_at else None,
+        "exit_reason": row.exit_reason,
+        "current_price": current,
+        "return_pct": pnl_pct if is_open else row.return_pct,
+        "result": "" if is_open else row.result,
+        "note": row.note,
+    }
+
+
+def list_positions(db: Session, user_id: int, *, limit: int = 300) -> list[SignalPosition]:
+    """Vị thế của 1 user — ĐANG MỞ trước, rồi tới các vị thế đã đóng (mới nhất trước)."""
+    return (
+        db.query(SignalPosition)
+        .filter(SignalPosition.user_id == user_id)
+        .order_by(SignalPosition.status.desc(), SignalPosition.id.desc())
+        .limit(max(1, min(limit, 500)))
+        .all()
+    )
+
+
+def open_position(db: Session, user_id: int, symbol: str, *, price: float, strategy: str = "",
+                  signal_id: int | None = None, note: str = "") -> tuple[SignalPosition, bool]:
+    """Mở vị thế tại ``price`` (giá hiện tại lúc người dùng bật ON).
+
+    Nếu mã đang có vị thế MỞ ⇒ trả lại vị thế cũ (created=False) để nút bật ON là idempotent.
+    """
+    symbol = str(symbol or "").upper()
+    existing = open_position_of(db, user_id, symbol)
+    if existing is not None:
+        return existing, False
+    row = SignalPosition(
+        user_id=user_id, symbol=symbol, strategy=str(strategy or "").upper(), signal_id=signal_id,
+        status=POSITION_OPEN, entry_price=round(float(price), 2), entry_at=_now(), note=str(note or "")[:255],
+        created_at=_now(), updated_at=_now(),
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row, True
+
+
+def close_position(db: Session, row: SignalPosition, *, price: float, reason: str = "") -> SignalPosition:
+    """Đóng vị thế tại ``price`` (giá hiện tại lúc người dùng tắt OFF) ⇒ chốt lãi/lỗ."""
+    entry = float(row.entry_price) if row.entry_price else 0.0
+    exit_price = round(float(price), 2)
+    row.status = POSITION_CLOSED
+    row.exit_price = exit_price
+    row.exit_at = _now()
+    row.exit_reason = str(reason or "Đóng vị thế trên trang Tín hiệu")[:160]
+    if entry > 0:
+        row.return_pct = round((exit_price / entry - 1) * 100, 3)
+        row.result = "WIN" if row.return_pct > 0 else "LOSS" if row.return_pct < 0 else "FLAT"
+    else:
+        row.return_pct = None
+        row.result = "UNKNOWN"
+    row.updated_at = _now()
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+def position_stats(db: Session, user_id: int) -> dict[str, Any]:
+    """Thống kê VỊ THẾ của 1 user.
+
+    ⚠️ Tỷ lệ thắng / profit factor / lãi-lỗ TB / drawdown CHỈ tính trên vị thế **ĐÃ ĐÓNG**
+    (người dùng đã tắt OFF ⇒ đã chốt) — vị thế đang mở chỉ đếm số lượng, không tính vào tỷ lệ thắng.
+    """
+    rows = db.query(SignalPosition).filter(SignalPosition.user_id == user_id).all()
+    open_rows = [r for r in rows if r.status == POSITION_OPEN]
+    closed = [r for r in rows if r.status == POSITION_CLOSED and r.return_pct is not None]
+    closed.sort(key=lambda r: r.exit_at or r.created_at)
+
+    returns = [float(r.return_pct) for r in closed]
+    wins = [v for v in returns if v > 0]
+    losses = [v for v in returns if v < 0]
+    gross_profit = sum(wins)
+    gross_loss = abs(sum(losses))
+    equity = peak = max_dd = 0.0
+    for value in returns:
+        equity += value
+        peak = max(peak, equity)
+        max_dd = max(max_dd, peak - equity)
+    holding = [(r.exit_at - r.entry_at).days for r in closed
+               if r.exit_at is not None and r.entry_at is not None]
+
+    return {
+        "open": len(open_rows),
+        "closed": len(closed),
+        "total": len(rows),
+        "win_rate": round(len(wins) / len(returns) * 100, 2) if returns else None,
+        "average_gain_pct": round(gross_profit / len(wins), 3) if wins else None,
+        "average_loss_pct": round(sum(losses) / len(losses), 3) if losses else None,
+        "profit_factor": round(gross_profit / gross_loss, 3) if gross_loss > 0 else None,
+        "total_return_pct": round(sum(returns), 3) if returns else None,
+        "max_drawdown_pct": round(max_dd, 3) if returns else None,
+        "average_holding_days": round(sum(holding) / len(holding), 1) if holding else None,
+        "note": ("Vị thế ĐANG MỞ không tính vào tỷ lệ thắng; bật ON để mở vị thế tại giá hiện tại, "
+                 "tắt OFF để chốt và ghi vào thống kê."),
+    }
 
 
 def _parse_date(value: str, end_of_day: bool = False) -> datetime:
@@ -588,15 +821,22 @@ def signal_history(db: Session, *, symbol: str = "", strategy: str = "", limit: 
 # ---------------------------------------------------------------------------
 # Thống kê tổng quan (spec §17) — chỉ tính từ dữ liệu CÓ THẬT
 # ---------------------------------------------------------------------------
-def overview_stats(db: Session) -> dict[str, Any]:
-    total = db.query(func.count(Signal.id)).scalar() or 0
+def overview_stats(db: Session, symbols: set[str] | None = None) -> dict[str, Any]:
+    """Thống kê tổng quan. ``symbols`` = tập mã được phép tính (bộ lọc thanh khoản);
+    ``None``/rỗng = tính trên TOÀN BỘ tín hiệu."""
+    scope = [Signal.symbol.in_(sorted(symbols))] if symbols else []
+    total = db.query(func.count(Signal.id)).filter(*scope).scalar() or 0
     by_strategy = dict(
-        db.query(Signal.strategy, func.count(Signal.id)).group_by(Signal.strategy).all()
+        db.query(Signal.strategy, func.count(Signal.id)).filter(*scope).group_by(Signal.strategy).all()
     )
-    by_state = dict(db.query(Signal.state, func.count(Signal.id)).group_by(Signal.state).all())
-    by_signal = dict(db.query(Signal.signal, func.count(Signal.id)).group_by(Signal.signal).all())
-    active = db.query(func.count(Signal.id)).filter(Signal.is_active == True).scalar() or 0  # noqa: E712
-    closed = db.query(Signal).filter(Signal.is_active == False).all()  # noqa: E712
+    by_state = dict(
+        db.query(Signal.state, func.count(Signal.id)).filter(*scope).group_by(Signal.state).all()
+    )
+    by_signal = dict(
+        db.query(Signal.signal, func.count(Signal.id)).filter(*scope).group_by(Signal.signal).all()
+    )
+    active = db.query(func.count(Signal.id)).filter(*scope).filter(Signal.is_active == True).scalar() or 0  # noqa: E712
+    closed = db.query(Signal).filter(*scope).filter(Signal.is_active == False).all()  # noqa: E712
 
     returns = [float(r.return_pct) for r in closed if r.return_pct is not None]
     wins = [r for r in returns if r > 0]

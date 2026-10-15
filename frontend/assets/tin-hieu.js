@@ -13,7 +13,90 @@
     var PAGE_SIZE = 30;
     var offset = 0;
     var total = 0;
-    var scanning = false;
+    // Ngưỡng thanh khoản server đang áp cho TRANG NÀY (chỉ hiển thị mã có GTGD TB20 ≥ ngưỡng).
+    var liqFilter = null;
+
+    // ---------------- Sắp xếp (nút sort ở đầu mỗi cột) ----------------
+    // `sortKey` = khoá cột gửi lên server (`symbol|strategy|signal|score|confidence|entry|`
+    // `stop_loss|trailing_stop|state|created|updated`). Riêng "price" là giá REALTIME lấy theo
+    // từng trang nên KHÔNG có ở server — client tự sắp các dòng đang hiển thị.
+    var sortKey = 'confidence';
+    var sortDir = 'desc';
+    var DEFAULT_SORT_DIR = {
+        confidence: 'desc', score: 'desc', updated: 'desc', created: 'desc', signal: 'desc',
+        entry: 'desc', stop_loss: 'desc', trailing_stop: 'desc', price: 'desc',
+        symbol: 'asc', strategy: 'asc', state: 'asc'
+    };
+
+    function sortIcon(dir) {
+        return dir === 'asc' ? 'fa-sort-up' : (dir === 'desc' ? 'fa-sort-down' : 'fa-sort');
+    }
+
+    function updateSortIndicators() {
+        var btns = document.querySelectorAll('#sigPanelRec .sig-table thead .sig-sort');
+        for (var i = 0; i < btns.length; i++) {
+            var key = btns[i].getAttribute('data-sort') || '';
+            var active = key === sortKey;
+            var icon = btns[i].querySelector('i');
+            if (icon) icon.className = 'fas ' + (active ? sortIcon(sortDir) : 'fa-sort');
+            btns[i].className = 'sig-sort' + (active ? ' on' : '');
+            btns[i].setAttribute('aria-sort', active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none');
+            var label = btns[i].textContent.replace(/\s+/g, ' ').trim();
+            if (!btns[i].getAttribute('data-title')) {
+                btns[i].setAttribute('data-title', btns[i].getAttribute('title') || label);
+            }
+            btns[i].title = btns[i].getAttribute('data-title') +
+                ' — bấm để sắp xếp' + (active ? (sortDir === 'asc' ? ' (đang tăng dần, bấm để giảm dần)' : ' (đang giảm dần, bấm để tăng dần)') : '');
+        }
+    }
+
+    function priceValueOf(tr) {
+        var cell = tr.querySelector('td.sig-price');
+        var raw = cell ? cell.getAttribute('data-price') : '';
+        var v = Number(raw);
+        return (raw !== '' && isFinite(v) && v > 0) ? v : null;
+    }
+
+    // Cột giá hiện tại: dữ liệu realtime chỉ có cho các dòng đang hiển thị ⇒ sắp trong trang.
+    function sortRowsByPrice() {
+        var body = $('sigTableBody');
+        if (!body || sortKey !== 'price') return;
+        var rows = Array.prototype.slice.call(body.querySelectorAll('tr'));
+        if (rows.length < 2) return;
+        var dir = sortDir === 'asc' ? 1 : -1;
+        rows.sort(function (a, b) {
+            var va = priceValueOf(a), vb = priceValueOf(b);
+            if (va === null && vb === null) return 0;
+            if (va === null) return 1;   // chưa có giá → xuống cuối
+            if (vb === null) return -1;
+            return (va - vb) * dir;
+        });
+        rows.forEach(function (tr) { body.appendChild(tr); });
+        notifyParentHeight();
+    }
+
+    function bindSortHeaders() {
+        // Chỉ bảng ở TAB KHUYẾN NGHỊ có nút sắp xếp (2 tab vị thế không cần).
+        var head = document.querySelector('#sigPanelRec .sig-table thead');
+        if (!head || head.getAttribute('data-sort-bound')) return;
+        head.setAttribute('data-sort-bound', '1');
+        head.addEventListener('click', function (e) {
+            var btn = e.target && e.target.closest ? e.target.closest('.sig-sort') : null;
+            if (!btn) return;
+            var key = btn.getAttribute('data-sort') || 'confidence';
+            if (key === sortKey) {
+                sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortKey = key;
+                sortDir = btn.getAttribute('data-dir') || DEFAULT_SORT_DIR[key] || 'desc';
+            }
+            updateSortIndicators();
+            if (sortKey === 'price') { sortRowsByPrice(); return; }  // không cần gọi lại server
+            offset = 0;
+            sigLoad(0);
+        });
+        updateSortIndicators();
+    }
 
     var STATE_LABEL = {
         NO_SETUP: 'Chưa có setup', WATCH: 'Đang theo dõi', SETUP_FORMING: 'Đang hình thành',
@@ -53,6 +136,65 @@
         if (signal === 'BUY') return '<span class="sig-signal buy">BUY</span>';
         if (signal === 'SELL') return '<span class="sig-signal sell">SELL</span>';
         return '<span style="color:#8a99b1;">—</span>';
+    }
+
+    // ---------------- Giá hiện tại (realtime) ----------------
+    // Bảng có thể tới 30 dòng/lần ⇒ KHÔNG gọi `/api/stocks/{mã}/quote` từng mã mà gọi 1 request
+    // `/api/signals/quotes?symbols=…` (server gom lô + cache 15s). Lỗi mạng/nguồn giá KHÔNG làm hỏng bảng.
+    var liveQuotes = {};
+
+    function quoteCellHtml(q) {
+        if (!q || !q.price) return '<span style="color:#8a99b1;">—</span>';
+        var pct = q.percent_change;
+        var cls = pct > 0 ? 'up' : (pct < 0 ? 'down' : 'flat');
+        var sign = pct > 0 ? '+' : '';
+        var sub = (pct === null || pct === undefined)
+            ? '' : '<small class="pc ' + cls + '">' + sign + num(pct, 2) + '%</small>';
+        return '<b>' + vnd(q.price) + '</b>' + sub;
+    }
+
+    function fillPriceCells() {
+        // Ô giá realtime có ở CẢ 3 tab (Khuyến nghị + Đang mở) ⇒ quét toàn trang.
+        var cells = document.querySelectorAll('td.sig-price');
+        var changed = false;
+        for (var i = 0; i < cells.length; i++) {
+            var sym = (cells[i].getAttribute('data-sym') || '').toUpperCase();
+            var q = liveQuotes[sym];
+            if (!q || !q.price) continue;
+            var html = quoteCellHtml(q);
+            if (cells[i].getAttribute('data-px') === html) continue;
+            cells[i].setAttribute('data-px', html);
+            cells[i].setAttribute('data-price', q.price);
+            cells[i].innerHTML = html;
+            cells[i].title = 'Giá hiện tại' + (q.as_of ? ' · ' + dt(q.as_of) : '') +
+                (q.percent_change == null ? '' : ' (' + (q.percent_change > 0 ? '+' : '') + num(q.percent_change, 2) + '%)');
+            changed = true;
+        }
+        if (changed) {
+            refreshPositionCells();   // lãi/lỗ tạm tính của vị thế đang mở bám theo giá mới
+            notifyParentHeight();
+        }
+    }
+
+    function loadLivePrices() {
+        var cells = document.querySelectorAll('td.sig-price');
+        if (!cells.length) return Promise.resolve();
+        var seen = {}, syms = [];
+        for (var i = 0; i < cells.length; i++) {
+            var s = (cells[i].getAttribute('data-sym') || '').toUpperCase();
+            if (s && !seen[s]) { seen[s] = true; syms.push(s); }
+        }
+        if (!syms.length) return Promise.resolve();
+        // Dùng fetch RIÊNG (không qua `api()`) để lỗi quyền/phiên của luồng giá KHÔNG kích hoạt
+        // màn hình "bị khóa" — giá hiện tại chỉ là thông tin phụ, lỗi thì để "—".
+        return fetch(API + '/quotes?symbols=' + encodeURIComponent(syms.join(',')), {
+            headers: { 'Authorization': 'Bearer ' + token() },
+            cache: 'no-store'
+        }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+            var items = (d && d.items) || {};
+            Object.keys(items).forEach(function (k) { liveQuotes[k.toUpperCase()] = items[k]; });
+            fillPriceCells();
+        }).catch(function () { /* nguồn giá lỗi → giữ "—", không phá bảng */ });
     }
 
     // ---------------- Xác thực ----------------
@@ -128,36 +270,76 @@
 
     function loadOverview() {
         return api(API + '/overview').then(function (d) {
-            var perf = d.performance || {};
-            var byStrategy = d.by_strategy || {};
-            var byState = d.by_state || {};
+            var pos = d.positions || {};
             var exp = d.expiry || {};
             if (exp.max_holding_sessions) {
                 var exEl = $('thExpiry');
                 if (exEl) exEl.textContent = exp.max_holding_sessions;
             }
+            liqFilter = d.liquidity_filter || null;
+            renderLiquidityPill();
+            renderScanSchedule(d.scan_schedule || null);
+            // Khối Tổng quan CHỈ còn 3 chỉ số về VỊ THẾ (theo yêu cầu):
+            // tỷ lệ thắng · lãi/lỗ trung bình · số vị thế. Số liệu lấy từ vị thế người dùng
+            // tự mở (nút ON/OFF); tỷ lệ thắng & lãi/lỗ chỉ tính trên vị thế ĐÃ ĐÓNG (đã chốt).
+            var open = pos.open === undefined ? null : pos.open;
+            var closed = pos.closed === undefined ? null : pos.closed;
+            var totalPos = (open === null || closed === null) ? null : (open + closed);
             $('sigOverview').innerHTML = [
-                stat('Tổng tín hiệu', d.total_signals, d.active_signals + ' đang mở'),
-                stat('Uptrend', byStrategy.UPTREND || 0),
-                stat('Bottom Fishing', byStrategy.BOTTOM_FISHING || 0),
-                stat('Swing', byStrategy.SWING || 0),
-                stat('Đã thoát', byState.EXIT || 0),
-                stat('Tỷ lệ thắng', perf.win_rate === null || perf.win_rate === undefined ? '—' : perf.win_rate + '%',
-                    perf.closed_with_result ? perf.closed_with_result + ' lệnh đã đóng' : 'chưa có lệnh đóng'),
-                stat('Profit factor', perf.profit_factor === null || perf.profit_factor === undefined ? '—' : perf.profit_factor),
-                stat('Lãi/lỗ TB', (perf.average_gain_pct == null ? '—' : perf.average_gain_pct + '%') + ' / ' +
-                    (perf.average_loss_pct == null ? '—' : perf.average_loss_pct + '%')),
-                stat('Drawdown tối đa', perf.max_drawdown_pct === null || perf.max_drawdown_pct === undefined ? '—' : perf.max_drawdown_pct + '%'),
-                stat('Nắm giữ TB', perf.average_holding_days == null ? '—' : perf.average_holding_days + ' phiên'),
-                stat('Model AI', d.model_status === 'MODEL_NOT_TRAINED' ? 'Chưa train' : (d.model_status || '—'), 'engine ' + (d.config_version || ''))
+                stat('Tỷ lệ thắng', pos.win_rate === null || pos.win_rate === undefined ? '—' : pos.win_rate + '%',
+                    closed ? closed + ' vị thế đã đóng' : 'chưa có vị thế đóng'),
+                stat('Lãi/lỗ trung bình',
+                    (pos.average_gain_pct == null ? '—' : pos.average_gain_pct + '%') + ' / ' +
+                    (pos.average_loss_pct == null ? '—' : pos.average_loss_pct + '%'),
+                    'lãi TB / lỗ TB (mỗi vị thế đã đóng)'),
+                stat('Số vị thế', totalPos === null ? '—' : totalPos,
+                    (open === null ? '—' : open) + ' đang mở · ' + (closed === null ? '—' : closed) + ' đã đóng')
             ].join('');
-            setUpdated(null);
+            // "Quét gần nhất": ưu tiên giờ của lần QUÉT TỰ ĐỘNG gần nhất, sau đó tới thời điểm
+            // dữ liệu tín hiệu được ghi/cập nhật gần nhất trong DB (server trả ở `last_scan`).
+            var sched = d.scan_schedule || {};
+            setUpdated(sched.last_run_at || d.last_scan || null);
             notifyParentHeight();
         }).catch(function (err) {
             if (String(err.message || '').indexOf('quyền') === -1) {
                 $('sigOverview').innerHTML = stat('Lỗi', '—', err.message || 'Không tải được tổng quan');
             }
         });
+    }
+
+    // Pill "Tự động quét": cho biết bảng được hệ thống cập nhật theo lịch (không cần mở lại trang).
+    function renderScanSchedule(sched) {
+        var el = $('thSchedule');
+        if (!el) return;
+        if (!sched || !sched.enabled || !(sched.times || []).length) {
+            el.style.display = 'none';
+            return;
+        }
+        var times = sched.times.join(' · ');
+        el.style.display = '';
+        el.innerHTML = '<i class="fas fa-rotate"></i> Tự động quét: <b>' + esc(times) + '</b> (giờ VN)' +
+            (sched.worker_alive === false ? ' <b style="color:#d29922;">(chưa bật)</b>' : '');
+        el.title = 'Hệ thống tự quét toàn thị trường (mã đủ điều kiện) vào ' + times +
+            ' giờ VN' + (sched.weekdays_only ? ' các ngày Thứ 2 – Thứ 6' : ' hằng ngày') + '.' +
+            (sched.next_run_at ? '\nLần quét tới: ' + dt(sched.next_run_at) : '') +
+            (sched.last_run_at ? '\nLần quét gần nhất: ' + dt(sched.last_run_at) : '');
+    }
+
+    // Pill mô tả BỘ LỌC THANH KHOẢN đang áp (server trả trong /overview) — ngưỡng đổi được
+    // qua config engine nên KHÔNG hard-code trong HTML.
+    function renderLiquidityPill() {
+        var el = $('thLiquidity');
+        if (!el) return;
+        var liq = liqFilter;
+        if (!liq || !liq.enabled) { el.style.display = 'none'; return; }
+        var sessions = liq.sessions || 20;
+        var minTy = liq.min_avg_20d_ty;
+        el.style.display = '';
+        el.innerHTML = '<i class="fas fa-filter"></i> Thanh khoản: TB' + num(sessions, 0) +
+            ' ≥ <b>' + num(minTy, 0) + ' tỷ</b>/phiên' +
+            (liq.symbols ? ' · ' + num(liq.symbols, 0) + ' mã đạt chuẩn' : '');
+        el.title = 'Danh sách chỉ gồm cổ phiếu có giá trị giao dịch trung bình ' + sessions +
+            ' phiên gần nhất từ ' + minTy + ' tỷ đồng/phiên trở lên.';
     }
 
     function setUpdated(iso, state) {
@@ -172,36 +354,300 @@
         if (st) st.textContent = text || '—';
     }
 
+    // Thông báo khi bảng TRỐNG.
+    function emptyRowHint() {
+        var hint = 'Hiện chưa có cổ phiếu nào có tín hiệu MUA đủ điều kiện.';
+        if (liqFilter && liqFilter.enabled) {
+            hint += ' Danh sách chỉ xét cổ phiếu có thanh khoản TB' +
+                num(liqFilter.sessions || 20, 0) + ' ≥ ' + num(liqFilter.min_avg_20d_ty, 0) + ' tỷ/phiên.';
+        }
+        return hint + ' Hệ thống tự phân tích lại khi bạn mở trang.';
+    }
+
     // ---------------- Danh sách ----------------
+    // Trang Tín hiệu LUÔN chỉ hiển thị tín hiệu MUA đã đủ điều kiện xác nhận.
     function filterQuery(withPaging) {
         var params = new URLSearchParams();
-        var symbol = ($('sigSymbol') || {}).value || '';
-        var strategy = ($('sigStrategy') || {}).value || '';
-        var signal = ($('sigSignal') || {}).value || '';
-        var state = ($('sigState') || {}).value || '';
-        var minScore = ($('sigMinScore') || {}).value || '';
-        var activeOnly = ($('sigActiveOnly') || {}).checked;
-        if (symbol.trim()) params.set('symbol', symbol.trim().toUpperCase());
-        if (strategy) params.set('strategy', strategy);
-        if (signal) params.set('signal', signal);
-        if (state) params.set('state', state);
-        if (minScore !== '') params.set('min_score', minScore);
-        if (activeOnly) params.set('active_only', 'true');
+        params.set('signal', 'BUY');
+        params.set('state', 'CONFIRMED,ACTIVE');
+        // Cột "Giá hiện tại" không có ở server (giá realtime) → giữ sắp xếp mặc định của server.
+        if (sortKey && sortKey !== 'price') { params.set('sort', sortKey); params.set('direction', sortDir); }
         if (withPaging) { params.set('limit', PAGE_SIZE); params.set('offset', offset); }
         return params;
     }
 
+    // ---------------- VỊ THẾ (nút ON/OFF) ----------------
+    var positionsBySym = {};   // {MÃ: vị thế mới nhất (ưu tiên vị thế ĐANG MỞ)}
+    var positionsItems = [];   // TOÀN BỘ vị thế (đang mở + đã đóng) — nguồn dữ liệu cho tab Đang mở/Đã đóng
+    var posSummary = null;     // thống kê vị thế server trả về (open/closed/win_rate/lãi-lỗ TB…)
+    var signalBySym = {};      // {MÃ: {id, strategy}} của trang tín hiệu đang hiển thị (để ghi vào vị thế khi bật ON)
+    var posBusy = {};
+    var activeTab = 'rec';     // 'rec' (khuyến nghị) | 'open' (đang mở) | 'closed' (đã đóng)
+
+    function posOf(sym) { return positionsBySym[String(sym || '').toUpperCase()] || null; }
+
+    function openPositions() {
+        return positionsItems.filter(function (p) { return p.status === 'OPEN'; });
+    }
+
+    function closedPositions() {
+        return positionsItems.filter(function (p) { return p.status === 'CLOSED'; });
+    }
+
+    function indexPositions(items, summary) {
+        positionsItems = items || [];
+        if (summary) posSummary = summary;
+        positionsBySym = {};
+        positionsItems.forEach(function (p) {
+            var sym = String(p.symbol || '').toUpperCase();
+            var cur = positionsBySym[sym];
+            if (!cur || (cur.status !== 'OPEN' && p.status === 'OPEN')) positionsBySym[sym] = p;
+        });
+        updateTabCounts();
+    }
+
+    // Số lượng hiển thị trên nhãn từng tab (đang mở = vị thế ON chưa chốt; đã đóng = đã tắt OFF).
+    function updateTabCounts() {
+        var open = (posSummary && posSummary.open != null) ? posSummary.open : openPositions().length;
+        var closed = (posSummary && posSummary.closed != null) ? posSummary.closed : closedPositions().length;
+        var e = $('sigCntOpen');
+        if (e) e.textContent = num(open, 0);
+        e = $('sigCntClosed');
+        if (e) e.textContent = num(closed, 0);
+    }
+
+    function loadPositions() {
+        // fetch riêng (không qua api()) để lỗi phiên ở luồng vị thế không đá người dùng ra màn hình khóa.
+        return fetch(API + '/positions', { headers: { 'Authorization': 'Bearer ' + token() }, cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { if (d) indexPositions(d.items, d.summary); return d; })
+            .catch(function () { return null; });
+    }
+
+    function posEntryHtml(pos) {
+        if (!pos || pos.status !== 'OPEN' || !pos.entry_price) return '<span class="muted-dash">—</span>';
+        return '<b>' + vnd(pos.entry_price) + '</b>';
+    }
+
+    // Ô lãi/lỗ (%) dùng chung cho cả 3 tab (xanh = lãi, đỏ = lỗ, xám = không đổi giá).
+    function pctHtml(pct) {
+        if (pct === null || pct === undefined || pct === '' || !isFinite(Number(pct))) {
+            return '<span class="muted-dash">—</span>';
+        }
+        var v = Number(pct);
+        var cls = v > 0 ? 'up' : (v < 0 ? 'down' : 'flat');
+        return '<span class="pos-pnl ' + cls + '">' + (v > 0 ? '+' : '') + num(v, 2) + '%</span>';
+    }
+
+    // Lãi/lỗ TẠM TÍNH của vị thế ĐANG MỞ: ưu tiên giá realtime vừa nạp để bám sát giá hiện tại.
+    function posPnlHtml(pos, quote) {
+        if (!pos || pos.status !== 'OPEN') return '<span class="muted-dash">—</span>';
+        var pct = null;
+        if (quote && quote.price && pos.entry_price) pct = (quote.price / pos.entry_price - 1) * 100;
+        if (pct === null) pct = pos.return_pct;
+        return pctHtml(pct);
+    }
+
+    function toggleHtml(sym, pos) {
+        var on = !!(pos && pos.status === 'OPEN');
+        return '<button type="button" class="sig-switch' + (on ? ' on' : '') + '" role="switch"' +
+            ' aria-checked="' + on + '" data-sym="' + esc(sym) + '"' +            ' onclick="sigTogglePosition(\'' + esc(sym) + '\', event)"' +            ' title="' + (on ? 'Đang mở vị thế — tắt để CHỐT lãi/lỗ' : 'Bật để mở vị thế tại giá hiện tại') + '">' +
+            '<span class="knob"></span></button>';
+    }
+
+    // ============ 3 TAB: Khuyến nghị · Đang mở · Đã đóng ============
+    // Tab Khuyến nghị = danh sách tín hiệu MUA (bảng sắp xếp được, có phân trang).
+    // Tab Đang mở / Đã đóng = VỊ THẾ của chính tài khoản (nguồn: /api/signals/positions).
+    function showPanel(id, visible) {
+        var el = $(id);
+        if (el) el.style.display = visible ? '' : 'none';
+    }
+
+    function setTab(name) {
+        activeTab = (name === 'open' || name === 'closed') ? name : 'rec';
+        var btns = document.querySelectorAll('.sig-tab');
+        for (var i = 0; i < btns.length; i++) {
+            var on = btns[i].getAttribute('data-tab') === activeTab;
+            btns[i].classList.toggle('on', on);
+            btns[i].setAttribute('aria-selected', on ? 'true' : 'false');
+        }
+        showPanel('sigPanelRec', activeTab === 'rec');
+        showPanel('sigPanelOpen', activeTab === 'open');
+        showPanel('sigPanelClosed', activeTab === 'closed');
+        renderActiveTab();
+        notifyParentHeight();
+    }
+
+    // Vẽ lại bảng của tab đang mở theo dữ liệu vị thế vừa nạp (positionsItems).
+    function renderActiveTab() {
+        if (activeTab === 'open') { renderOpenTab(); loadLivePrices(); }
+        else if (activeTab === 'closed') renderClosedTab();
+    }
+
+    function renderOpenTab() {
+        var body = $('sigOpenBody');
+        if (!body) return;
+        var rows = openPositions();
+        body.innerHTML = rows.length ? rows.map(openRowHtml).join('')
+            : '<tr><td colspan="7" class="th-empty">Chưa có vị thế nào đang mở. Bật <b>ON</b> ở tab ' +
+              '<b>Khuyến nghị</b> để mở vị thế tại giá hiện tại.</td></tr>';
+        updateTabCounts();
+    }
+
+    function openRowHtml(p) {
+        var sym = String(p.symbol || '').toUpperCase();
+        var price = p.current_price ? '<b>' + vnd(p.current_price) + '</b>' : '<span class="muted-dash">—</span>';
+        return '<tr>' +
+            '<td><b>' + esc(sym) + '</b><span data-div="' + esc(sym) + '"></span></td>' +
+            '<td>' + esc(STRATEGY_LABEL[p.strategy] || p.strategy || '—') + '</td>' +
+            '<td><b>' + vnd(p.entry_price) + '</b></td>' +
+            '<td class="sig-price" data-sym="' + esc(sym) + '" data-price="' + (p.current_price || '') + '">' + price + '</td>' +
+            '<td class="sig-pos-pnl" data-sym="' + esc(sym) + '">' + posPnlHtml(p, liveQuotes[sym]) + '</td>' +
+            '<td style="font-size:11.5px;">' + dt(p.entry_at) + '</td>' +
+            '<td class="sig-pos-cell" data-sym="' + esc(sym) + '">' + toggleHtml(sym, p) + '</td>' +
+            '</tr>';
+    }
+
+    // Dòng tổng kết: số vị thế ĐÃ ĐÓNG + tỷ lệ thắng + lãi/lỗ TB + tổng lãi/lỗ (nguồn: summary của server).
+    function closedSummaryHtml() {
+        var s = posSummary || {};
+        var closed = s.closed != null ? s.closed : closedPositions().length;
+        var totalCls = s.total_return_pct > 0 ? 'up' : (s.total_return_pct < 0 ? 'down' : 'flat');
+        return '<i class="fas fa-flag-checkered" style="color:#008080;"></i> ' +
+            '<b>' + num(closed, 0) + '</b> vị thế đã đóng' +
+            '<span>Tỷ lệ thắng:</span> <b>' + (s.win_rate == null ? '—' : num(s.win_rate, 2) + '%') + '</b>' +
+            '<span>Lãi TB:</span> <b class="pos-pnl up">' +
+                (s.average_gain_pct == null ? '—' : '+' + num(s.average_gain_pct, 2) + '%') + '</b>' +
+            '<span>Lỗ TB:</span> <b class="pos-pnl down">' +
+                (s.average_loss_pct == null ? '—' : num(s.average_loss_pct, 2) + '%') + '</b>' +
+            '<span>Tổng lãi/lỗ:</span> <b class="pos-pnl ' + totalCls + '">' +
+                (s.total_return_pct == null ? '—' : (s.total_return_pct > 0 ? '+' : '') + num(s.total_return_pct, 2) + '%') + '</b>';
+    }
+
+    function renderClosedTab() {
+        var body = $('sigClosedBody');
+        if (!body) return;
+        var rows = closedPositions();
+        var sum = $('sigClosedSum');
+        if (sum) sum.innerHTML = closedSummaryHtml();
+        body.innerHTML = rows.length ? rows.map(closedRowHtml).join('')
+            : '<tr><td colspan="8" class="th-empty">Chưa có vị thế nào đã đóng. Tắt <b>OFF</b> ở tab ' +
+              '<b>Đang mở</b> để chốt lãi/lỗ — kết quả (và tỷ lệ thắng) sẽ hiện ở đây.</td></tr>';
+        updateTabCounts();
+    }
+
+    function closedRowHtml(p) {
+        var sym = String(p.symbol || '').toUpperCase();
+        var res = String(p.result || '').toUpperCase();
+        var label = (res === 'WIN' || res === 'LOSS' || res === 'FLAT') ? res : (res || '—');
+        var cls = res === 'WIN' ? 'active' : (res === 'LOSS' ? 'rejected' : 'draft');
+        return '<tr>' +
+            '<td><b>' + esc(sym) + '</b><span data-div="' + esc(sym) + '"></span></td>' +
+            '<td>' + esc(STRATEGY_LABEL[p.strategy] || p.strategy || '—') + '</td>' +
+            '<td><b>' + vnd(p.entry_price) + '</b></td>' +
+            '<td><b>' + vnd(p.exit_price) + '</b></td>' +
+            '<td>' + pctHtml(p.return_pct) + '</td>' +
+            '<td><span class="sig-badge ' + cls + '">' + esc(label) + '</span></td>' +
+            '<td style="font-size:11.5px;">' + dt(p.entry_at) + '</td>' +
+            '<td style="font-size:11.5px;">' + dt(p.exit_at) + '</td>' +
+            '</tr>';
+    }
+
+    function refreshPositionCells() {
+        var cells = document.querySelectorAll('td.sig-pos-entry');
+        for (var i = 0; i < cells.length; i++) {
+            var sym = (cells[i].getAttribute('data-sym') || '').toUpperCase();
+            cells[i].innerHTML = posEntryHtml(posOf(sym));
+        }
+        cells = document.querySelectorAll('td.sig-pos-pnl');
+        for (i = 0; i < cells.length; i++) {
+            sym = (cells[i].getAttribute('data-sym') || '').toUpperCase();
+            cells[i].innerHTML = posPnlHtml(posOf(sym), liveQuotes[sym]);
+        }
+        cells = document.querySelectorAll('td.sig-pos-cell');
+        for (i = 0; i < cells.length; i++) {
+            sym = (cells[i].getAttribute('data-sym') || '').toUpperCase();
+            cells[i].innerHTML = toggleHtml(sym, posOf(sym));
+        }
+        notifyParentHeight();
+    }
+
+    function toastPos(message, isError) {
+        var el = $('sigToast');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'sigToast';
+            el.className = 'sig-toast';
+            document.body.appendChild(el);
+        }
+        el.className = 'sig-toast show' + (isError ? ' err' : '');
+        el.textContent = message || '';
+        clearTimeout(window.__sigToastTimer);
+        window.__sigToastTimer = setTimeout(function () { el.className = 'sig-toast'; }, 3200);
+    }
+
+    function setToggleBusy(sym, busy) {
+        // Nút ON/OFF xuất hiện ở cả tab Khuyến nghị và tab Đang mở ⇒ cập nhật mọi nút của mã đó.
+        var btns = document.querySelectorAll('.sig-switch[data-sym="' + sym + '"]');
+        for (var i = 0; i < btns.length; i++) {
+            btns[i].disabled = !!busy;
+            btns[i].classList.toggle('busy', !!busy);
+        }
+    }
+
+    // Bật vị thế = mở tại giá hiện tại; tắt vị thế = chốt lãi/lỗ (ghi vào tỷ lệ thắng).
+    function sigTogglePosition(sym, ev) {
+        if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+        sym = String(sym || '').toUpperCase();
+        if (!sym || posBusy[sym]) return;
+        var pos = posOf(sym);
+        var isOpen = !!(pos && pos.status === 'OPEN');
+        if (isOpen && !window.confirm('Chốt vị thế ' + sym + ' tại giá hiện tại?\nKết quả sẽ được ghi vào tỷ lệ thắng / lãi-lỗ.')) {
+            return;
+        }
+        posBusy[sym] = true;
+        setToggleBusy(sym, true);
+        var sig = signalBySym[sym] || {};
+        var req = isOpen
+            ? api(API + '/positions/' + pos.id + '/close', { method: 'POST', body: JSON.stringify({}) })
+            : api(API + '/positions', { method: 'POST', body: JSON.stringify({
+                  symbol: sym,
+                  strategy: sig.strategy || (pos || {}).strategy || '',
+                  signal_id: sig.id || null
+              }) });
+        req.then(function (d) {
+            toastPos((d && d.message) || (isOpen ? ('Đã đóng vị thế ' + sym) : ('Đã mở vị thế ' + sym)));
+            return loadPositions();
+        }).then(function () {
+            // Mở vị thế ⇒ chuyển sang tab "Đang mở"; chốt vị thế ⇒ chuyển sang tab "Đã đóng"
+            // (đồng thời cập nhật số vị thế đã đóng / lãi-lỗ / tỷ lệ thắng ở khối Tổng quan).
+            setTab(isOpen ? 'closed' : 'open');
+            refreshPositionCells();
+            return loadOverview();   // vị thế đổi ⇒ tỷ lệ thắng / lãi-lỗ đổi
+        }).catch(function (err) {
+            toastPos((err && err.message) || 'Không cập nhật được vị thế', true);
+        }).then(function () {
+            posBusy[sym] = false;
+            setToggleBusy(sym, false);
+        });
+    }
+
     function rowHtml(r) {
+        var sym = String(r.symbol || '').toUpperCase();
+        var pos = posOf(sym);
         return '<tr onclick="sigOpenDetail(' + r.id + ')" title="Xem chi tiết &amp; lý do hình thành tín hiệu">' +
-            '<td><b>' + esc(r.symbol) + '</b><span data-div="' + esc(r.symbol) + '"></span></td>' +
+            '<td><b>' + esc(r.symbol) + '</b><span data-div="' + esc(r.symbol) + '"></span>' +
+                '<div><span class="sig-badge st-mini ' + (STATE_BADGE[r.state] || 'draft') + '">' + esc(STATE_LABEL[r.state] || r.state || '—') + '</span></div></td>' +
             '<td>' + esc(STRATEGY_LABEL[r.strategy] || r.strategy || '—') + '</td>' +
-            '<td>' + signalHtml(r.signal) + '</td>' +
             '<td>' + num(r.score, 1) + '</td>' +
             '<td>' + num(r.confidence, 1) + '</td>' +
+            '<td class="sig-price" data-sym="' + esc(r.symbol) + '">' + quoteCellHtml(liveQuotes[sym]) + '</td>' +
+            '<td class="sig-pos-entry" data-sym="' + esc(r.symbol) + '">' + posEntryHtml(pos) + '</td>' +
+            '<td class="sig-pos-pnl" data-sym="' + esc(r.symbol) + '">' + posPnlHtml(pos, liveQuotes[sym]) + '</td>' +
             '<td>' + vnd(r.entry) + '</td>' +
             '<td>' + vnd(r.stop_loss) + '</td>' +
             '<td>' + vnd(r.trailing_stop) + '</td>' +
-            '<td><span class="sig-badge ' + (STATE_BADGE[r.state] || 'draft') + '">' + esc(STATE_LABEL[r.state] || r.state || '—') + '</span></td>' +
+            '<td class="sig-pos-cell" data-sym="' + esc(r.symbol) + '">' + toggleHtml(sym, pos) + '</td>' +
             '<td style="font-size:11.5px;">' + dt(r.created_at) + '</td>' +
             '</tr>';
     }
@@ -210,12 +656,22 @@
         if (newOffset !== undefined && newOffset !== null) offset = Math.max(0, newOffset);
         var body = $('sigTableBody');
         if (!body) return;
-        body.innerHTML = '<tr><td colspan="10" class="th-empty">Đang tải…</td></tr>';
+        body.innerHTML = '<tr><td colspan="12" class="th-empty">Đang tải…</td></tr>';
         return api(API + '?' + filterQuery(true).toString()).then(function (d) {
             total = d.total || 0;
+            var cntRec = $('sigCntRec');
+            if (cntRec) cntRec.textContent = num(total, 0);
             var items = d.items || [];
+            // Nhớ chiến thuật + signal_id của từng mã đang hiển thị ⇒ khi bật ON ghi được vào vị thế.
+            signalBySym = {};
+            items.forEach(function (r) {
+                var s = String(r.symbol || '').toUpperCase();
+                if (s) signalBySym[s] = { id: r.id, strategy: r.strategy };
+            });
             body.innerHTML = items.length ? items.map(rowHtml).join('')
-                : '<tr><td colspan="10" class="th-empty">Chưa có tín hiệu phù hợp bộ lọc — bấm <b>Quét thị trường</b> để tạo.</td></tr>';
+                : '<tr><td colspan="12" class="th-empty">' + emptyRowHint() + '</td></tr>';
+            // Giá hiện tại: nạp 1 request cho cả trang; nếu đang sắp theo giá thì sắp lại sau khi có giá.
+            loadLivePrices().then(sortRowsByPrice);
             var pager = $('sigPager');
             if (pager) {
                 var from = total ? offset + 1 : 0;
@@ -226,13 +682,17 @@
             }
             notifyParentHeight();
         }).catch(function (err) {
-            body.innerHTML = '<tr><td colspan="10" class="th-empty" style="color:#d0314e;">' + esc(err.message || 'Không tải được danh sách') + '</td></tr>';
+            body.innerHTML = '<tr><td colspan="12" class="th-empty" style="color:#d0314e;">' + esc(err.message || 'Không tải được danh sách') + '</td></tr>';
         });
     }
 
     function sigReload() {
         setUpdated(null);
-        return Promise.all([loadOverview(), sigLoad(0)]);
+        // Nạp VỊ THẾ trước để bảng vẽ đúng trạng thái nút ON/OFF ngay từ đầu.
+        return loadPositions().then(function () {
+            setTab(activeTab);   // vẽ lại bảng của tab đang mở (Đang mở / Đã đóng) theo dữ liệu vị thế mới
+            return Promise.all([loadOverview(), sigLoad(0)]);
+        });
     }
 
     // ---------------- Cập nhật TÍN HIỆU T+ ----------------
@@ -244,8 +704,6 @@
     function sigAutoRefresh(manual) {
         if (refreshing) return Promise.resolve();
         refreshing = true;
-        var btn = $('sigRefreshBtn');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Đang cập nhật…'; }
         setDataState('đang cập nhật tín hiệu theo phiên mới nhất…');
         return api(API + '/refresh', { method: 'POST', body: JSON.stringify({}) }).then(function (d) {
             var expired = (d && d.expired) || 0;
@@ -267,40 +725,12 @@
                                 : 'vẫn dùng dữ liệu lần quét trước');
         }).then(function () {
             refreshing = false;
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync"></i> Cập nhật tín hiệu'; }
         });
     }
 
     function sigBoot() {
         // Hiện dữ liệu hiện có NGAY, sau đó cập nhật lại tín hiệu T+ ở luồng nền (không chặn UI).
         return sigReload().then(function () { return sigAutoRefresh(false); });
-    }
-
-    // ---------------- Quét ----------------
-    function sigScan() {
-        if (scanning) return;
-        scanning = true;
-        var btn = $('sigScanBtn');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang quét…'; }
-        api(API + '/scan', { method: 'POST', body: JSON.stringify({}) }).then(function (d) {
-            var rot = $('sigRotation');
-            if (rot) {
-                var leaders = (d.rotation && d.rotation.leaders) || [];
-                rot.innerHTML = '<b>Market Regime:</b> ' + esc((d.market || {}).regime || '—') +
-                    ' · <b>Đã quét:</b> ' + (d.count || 0) + ' mã' +
-                    ' · <b>TOP ' + ((d.rotation && d.rotation.portfolio_size) || 5) + ' (rotation Swing):</b> ' +
-                    (leaders.length ? leaders.map(function (s) { return '<span class="sig-chip">' + esc(s) + '</span>'; }).join(' ')
-                                    : '<span class="sig-chip weak">chưa đủ dữ liệu</span>');
-            }
-            setUpdated(d.generated_at);
-            return Promise.all([loadOverview(), sigLoad(0)]);
-        }).catch(function (err) {
-            var rot = $('sigRotation');
-            if (rot) rot.innerHTML = '<span class="sig-chip weak">Quét thất bại</span> ' + esc(err.message || '');
-        }).then(function () {
-            scanning = false;
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-satellite-dish"></i> Quét thị trường'; }
-        });
     }
 
     // ---------------- Chi tiết ----------------
@@ -403,6 +833,13 @@
             modal.addEventListener('click', function (e) { if (e.target === modal) sigCloseDetail(); });
         }
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') sigCloseDetail(); });
+        bindSortHeaders();
+        // Giá hiện tại tự làm mới mỗi phút (chỉ khi tab đang hiển thị & bảng có dữ liệu).
+        setInterval(function () {
+            if (document.hidden) return;
+            if (!document.querySelector('td.sig-price')) return;
+            loadLivePrices().then(sortRowsByPrice);
+        }, 60000);
 
         if (!token()) {
             showLocked('Bạn cần đăng nhập để dùng tính năng Tín hiệu.');
@@ -472,9 +909,10 @@
 
     // Hàm dùng trong HTML (inline onclick)
     window.sigLoad = sigLoad;
-    window.sigScan = sigScan;
     window.sigReload = sigReload;
     window.sigAutoRefresh = sigAutoRefresh;
     window.sigOpenDetail = sigOpenDetail;
     window.sigCloseDetail = sigCloseDetail;
+    window.sigTogglePosition = sigTogglePosition;
+    window.sigSetTab = setTab;
 })();

@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" /></noscript>
-    <link rel="stylesheet" href="/static/tin-hieu.css?v=20260914g" />
+    <link rel="stylesheet" href="/static/tin-hieu.css?v=20261014i" />
     <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
 </head>
 <body>
@@ -29,6 +29,8 @@
                 <span class="th-pill"><i class="far fa-clock"></i> Quét gần nhất: <b id="thUpdated">…</b></span>
                 <span class="th-pill"><i class="fas fa-shield-halved"></i> Trạng thái dữ liệu: <b id="thDataState">…</b></span>
                 <span class="th-pill"><i class="fas fa-hourglass-half"></i> Tín hiệu T+ tự hết hiệu lực sau <b id="thExpiry">10</b> phiên</span>
+                <span class="th-pill" id="thSchedule" style="display:none;"><i class="fas fa-rotate"></i> Tự động quét: <b>—</b></span>
+                <span class="th-pill" id="thLiquidity" style="display:none;"><i class="fas fa-filter"></i> Thanh khoản: TB20 ≥ <b>5</b> tỷ/phiên</span>
             </div>
         </div>
 
@@ -46,90 +48,150 @@
         </div>
 
         <div id="thMain">
-            <!-- 1. Tổng quan -->
+            <!-- 1. Tổng quan: CHỈ 3 chỉ số về vị thế (tỷ lệ thắng · lãi/lỗ TB · số vị thế) -->
             <div class="th-card">
                 <h3><i class="fas fa-gauge-high"></i> Tổng quan tín hiệu</h3>
                 <div class="sig-stats" id="sigOverview">
                     <div class="sig-stat"><div class="lbl">Đang tải</div><div class="val">…</div></div>
                 </div>
-                <div class="sig-rotation" id="sigRotation">
-                    <span class="sig-chip weak">Chưa quét</span> Bấm <b>Quét thị trường</b> để tạo/cập nhật tín hiệu.
-                </div>
             </div>
 
-            <!-- 2. Danh sách tín hiệu -->
+            <!-- 2. Danh sách: 3 tab (Khuyến nghị · Đang mở · Đã đóng) -->
             <div class="th-card">
                 <h3><i class="fas fa-list-check"></i> Danh sách tín hiệu</h3>
-                <div class="th-actions">
-                    <button type="button" class="th-btn" id="sigScanBtn" onclick="sigScan()">
-                        <i class="fas fa-satellite-dish"></i> Quét thị trường
+
+                <div class="sig-tabs" role="tablist">
+                    <button type="button" class="sig-tab on" data-tab="rec" role="tab" aria-selected="true"
+                            title="Cổ phiếu đang có tín hiệu MUA đủ điều kiện — bật ON để mở vị thế"
+                            onclick="sigSetTab('rec')">
+                        <i class="fas fa-bullseye"></i> Khuyến nghị<span class="cnt" id="sigCntRec">…</span>
                     </button>
-                    <button type="button" class="th-btn ghost" id="sigRefreshBtn" onclick="sigAutoRefresh(true)">
-                        <i class="fas fa-sync"></i> Cập nhật tín hiệu
+                    <button type="button" class="sig-tab" data-tab="open" role="tab" aria-selected="false"
+                            title="Các vị thế đang mở (đã bật ON, chưa chốt) — tắt OFF để chốt lãi/lỗ"
+                            onclick="sigSetTab('open')">
+                        <i class="fas fa-toggle-on"></i> Đang mở<span class="cnt" id="sigCntOpen">0</span>
                     </button>
-                    <button type="button" class="th-btn ghost" onclick="sigReload()">
-                        <i class="fas fa-rotate"></i> Tải lại
+                    <button type="button" class="sig-tab" data-tab="closed" role="tab" aria-selected="false"
+                            title="Các vị thế đã chốt — nguồn số liệu tỷ lệ thắng / lãi-lỗ ở khối Tổng quan"
+                            onclick="sigSetTab('closed')">
+                        <i class="fas fa-flag-checkered"></i> Đã đóng<span class="cnt" id="sigCntClosed">0</span>
                     </button>
                 </div>
 
-                <div class="sig-filters">
-                    <input id="sigSymbol" placeholder="Mã (VD FPT)" maxlength="12" style="text-transform:uppercase;width:130px;" />
-                    <select id="sigStrategy">
-                        <option value="">Tất cả chiến thuật</option>
-                        <option value="UPTREND">Uptrend</option>
-                        <option value="BOTTOM_FISHING">Bottom Fishing</option>
-                        <option value="SWING">Swing</option>
-                    </select>
-                    <select id="sigSignal">
-                        <option value="">Mọi tín hiệu</option>
-                        <option value="BUY">BUY</option>
-                        <option value="SELL">SELL</option>
-                    </select>
-                    <select id="sigState">
-                        <option value="">Mọi trạng thái</option>
-                        <option value="WATCH">Đang theo dõi</option>
-                        <option value="SETUP_FORMING">Đang hình thành</option>
-                        <option value="CONFIRMED">Đã xác nhận</option>
-                        <option value="ACTIVE">Đang hiệu lực</option>
-                        <option value="WEAKENING">Suy yếu</option>
-                        <option value="EXIT">Đã thoát</option>
-                        <option value="INVALIDATED">Vô hiệu</option>
-                    </select>
-                    <input id="sigMinScore" type="number" min="0" max="100" placeholder="Điểm ≥" style="width:92px;" />
-                    <label class="sig-check"><input type="checkbox" id="sigActiveOnly" /> Chỉ đang mở</label>
-                    <button type="button" class="th-btn ghost" onclick="sigLoad(0)"><i class="fas fa-filter"></i> Lọc</button>
-                </div>
-
+                <!-- TAB 1 · KHUYẾN NGHỊ (tín hiệu MUA) -->
+                <div class="sig-panel" id="sigPanelRec">
                 <div class="sig-tablewrap">
                     <table class="sig-table">
                         <thead>
                             <tr>
-                                <th>Mã</th>
-                                <th>Chiến thuật</th>
-                                <th>Tín hiệu</th>
-                                <th>Score</th>
-                                <th title="Sắp xếp theo độ tin cậy: cao nhất ở trên, thấp nhất ở dưới">Độ tin cậy ↓</th>
-                                <th>Entry</th>
-                                <th>Stop Loss</th>
-                                <th>Trailing</th>
-                                <th>Trạng thái</th>
-                                <th>Ngày tạo</th>
+                                <th><button type="button" class="sig-sort" data-sort="symbol" data-dir="asc">Mã<i class="fas fa-sort"></i></button></th>
+                                <th><button type="button" class="sig-sort" data-sort="strategy" data-dir="asc">Chiến thuật<i class="fas fa-sort"></i></button></th>
+                                <th><button type="button" class="sig-sort" data-sort="score" data-dir="desc">Score<i class="fas fa-sort"></i></button></th>
+                                <th title="Sắp xếp theo độ tin cậy: cao nhất ở trên, thấp nhất ở dưới"><button type="button" class="sig-sort" data-sort="confidence" data-dir="desc">Độ tin cậy<i class="fas fa-sort"></i></button></th>
+                                <th><button type="button" class="sig-sort" data-sort="price" data-dir="desc" title="Giá hiện tại lấy realtime theo từng trang — sắp xếp chỉ áp dụng cho các dòng đang hiển thị">Giá hiện tại<i class="fas fa-sort"></i></button></th>
+                                <th title="Giá lúc bật vị thế (ON) — chỉ hiện với mã đang mở vị thế">Giá vào</th>
+                                <th title="Lãi/lỗ TẠM TÍNH theo giá hiện tại của vị thế đang mở">Lãi/Lỗ</th>
+                                <th><button type="button" class="sig-sort" data-sort="entry" data-dir="desc">Entry<i class="fas fa-sort"></i></button></th>
+                                <th><button type="button" class="sig-sort" data-sort="stop_loss" data-dir="desc">Stop Loss<i class="fas fa-sort"></i></button></th>
+                                <th><button type="button" class="sig-sort" data-sort="trailing_stop" data-dir="desc">Trailing<i class="fas fa-sort"></i></button></th>
+                                <th title="Bật (ON) = bắt đầu mở vị thế tại giá hiện tại; tắt (OFF) = chốt vị thế và ghi vào tỷ lệ thắng">Vị thế</th>
+                                <th><button type="button" class="sig-sort" data-sort="created" data-dir="desc">Ngày tạo<i class="fas fa-sort"></i></button></th>
                             </tr>
                         </thead>
                         <tbody id="sigTableBody">
-                            <tr><td colspan="10" class="th-empty">Đang tải…</td></tr>
+                            <tr><td colspan="12" class="th-empty">Đang tải…</td></tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="sig-pager" id="sigPager"></div>
                 <div class="th-helper">
-                    <i class="fas fa-circle-info"></i> Bấm vào một dòng để xem <b>chi tiết &amp; lý do hình thành tín hiệu</b>
-                    (các điều kiện đã hội tụ, chỉ số, mức giao dịch tham chiếu). Danh sách sắp theo
-                    <b>độ tin cậy giảm dần</b> — tín hiệu chưa đánh giá được độ tin cậy ("—") nằm cuối.
-                    Nội dung mang tính tham khảo nội bộ, không phải khuyến nghị đầu tư.
+                    <i class="fas fa-list-check"></i> Danh sách <b>chỉ gồm cổ phiếu đang có tín hiệu MUA</b> và setup đã đủ
+                    điều kiện xác nhận (Đã xác nhận / Đang hiệu lực) — mã không đủ điều kiện không xuất hiện.
+                    Bấm <b>tiêu đề cột</b> để sắp xếp (bấm lần nữa để đổi chiều); mặc định sắp theo <b>độ tin cậy giảm dần</b>.
+                    <br /><i class="fas fa-clone"></i> <b>Mỗi mã chỉ 1 dòng</b>: nếu một cổ phiếu có nhiều chiến thuật
+                    cùng phát tín hiệu, bảng chỉ hiển thị <b>dòng đứng đầu</b> theo cột đang sắp xếp
+                    (đổi cột sắp xếp là đổi chiến thuật được hiển thị cho mã đó).
+                    <br /><i class="fas fa-toggle-on"></i> Cột <b>Vị thế</b>: bật <b>ON</b> = mở vị thế mã đó
+                    <b>tại giá hiện tại</b> và bảng tự chuyển sang tab <b>Đang mở</b>; tắt <b>OFF</b> (ở tab Đang mở)
+                    = <b>chốt vị thế</b> tại giá hiện tại, bảng tự chuyển sang tab <b>Đã đóng</b> và ghi kết quả vào
+                    <b>tỷ lệ thắng / lãi-lỗ</b> ở khối Tổng quan. Vị thế là riêng của từng tài khoản;
+                    <b>vị thế đang mở không tính</b> vào tỷ lệ thắng (chỉ cột Lãi/Lỗ hiển thị lãi/lỗ tạm tính).
+                    <br /><i class="fas fa-circle-info"></i> Bấm vào một dòng để xem <b>chi tiết &amp; lý do hình thành tín hiệu</b>
+                    (các điều kiện đã hội tụ, chỉ số, mức giao dịch tham chiếu). Nội dung mang tính tham khảo nội bộ,
+                    không phải khuyến nghị đầu tư.
                     <br /><i class="fas fa-hourglass-half"></i> Đây là <b>tín hiệu T+ (ngắn hạn)</b>: mỗi lần mở trang hệ thống tự
                     <b>đóng tín hiệu đã quá hạn nắm giữ</b> và <b>phân tích lại</b> các mã còn tín hiệu đang mở bằng nến mới nhất.
+                    <br /><i class="fas fa-rotate"></i> Hệ thống <b>tự quét toàn thị trường</b> vào
+                    <b>11:00 · 13:30 · 15:00</b> (giờ VN) các ngày Thứ 2 – Thứ 6: quét mọi mã <b>đủ điều kiện</b>
+                    và cập nhật tín hiệu vào bảng ngay khi có dữ liệu phiên mới.
+                    <br /><i class="fas fa-filter"></i> Danh sách <b>chỉ gồm cổ phiếu đủ thanh khoản</b> — giá trị giao dịch
+                    trung bình <b>20 phiên</b> gần nhất đạt mức tối thiểu ở pill đầu trang (mặc định 5 tỷ đồng/phiên).
+                    <br /><i class="fas fa-bolt"></i> Cột <b>Giá hiện tại</b> lấy từ bảng giá realtime và tự làm mới mỗi phút
+                    (mã chưa có giá hiển thị "—").
                 </div>
+                </div>
+                <!-- /TAB 1 · KHUYẾN NGHỊ -->
+
+                <!-- TAB 2 · ĐANG MỞ (vị thế đã bật ON, chưa chốt) -->
+                <div class="sig-panel" id="sigPanelOpen" style="display:none;">
+                    <div class="sig-tablewrap">
+                        <table class="sig-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã</th>
+                                    <th>Chiến thuật</th>
+                                    <th>Giá vào</th>
+                                    <th title="Giá realtime, tự làm mới mỗi phút">Giá hiện tại</th>
+                                    <th title="Lãi/lỗ TẠM TÍNH theo giá hiện tại — chỉ được chốt khi bạn tắt OFF">Lãi/Lỗ</th>
+                                    <th>Mở lúc</th>
+                                    <th title="Tắt OFF = chốt vị thế tại giá hiện tại và ghi vào tab Đã đóng">Vị thế</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sigOpenBody">
+                                <tr><td colspan="7" class="th-empty">Đang tải…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="th-helper">
+                        <i class="fas fa-toggle-on"></i> Đây là các vị thế bạn <b>đang mở</b> (đã bật ON ở tab Khuyến nghị).
+                        Cột <b>Lãi/Lỗ</b> là số <b>tạm tính</b> theo giá hiện tại — <b>chưa</b> ghi vào tỷ lệ thắng.
+                        Tắt <b>OFF</b> để <b>chốt</b> vị thế: bảng tự chuyển sang tab <b>Đã đóng</b> và kết quả được tính vào
+                        <b>tỷ lệ thắng / lãi-lỗ</b> ở khối Tổng quan.
+                    </div>
+                </div>
+                <!-- /TAB 2 · ĐANG MỞ -->
+
+                <!-- TAB 3 · ĐÃ ĐÓNG (đã chốt — nguồn số liệu tỷ lệ thắng / lãi-lỗ) -->
+                <div class="sig-panel" id="sigPanelClosed" style="display:none;">
+                    <div class="sig-pos-sum" id="sigClosedSum"></div>
+                    <div class="sig-tablewrap">
+                        <table class="sig-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã</th>
+                                    <th>Chiến thuật</th>
+                                    <th>Giá vào</th>
+                                    <th>Giá chốt</th>
+                                    <th>Lãi/Lỗ</th>
+                                    <th>Kết quả</th>
+                                    <th>Mở lúc</th>
+                                    <th>Chốt lúc</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sigClosedBody">
+                                <tr><td colspan="8" class="th-empty">Đang tải…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="th-helper">
+                        <i class="fas fa-flag-checkered"></i> Mỗi dòng là một vị thế <b>đã chốt</b> (tắt OFF ở tab Đang mở).
+                        <b>Kết quả</b>: <span class="sig-badge active">WIN</span> lãi,
+                        <span class="sig-badge rejected">LOSS</span> lỗ, <span class="sig-badge draft">FLAT</span> không đổi giá.
+                        Chỉ các vị thế ở tab này được tính vào <b>tỷ lệ thắng</b>, <b>lãi/lỗ trung bình</b> và
+                        <b>số vị thế đã đóng</b> ở khối Tổng quan.
+                    </div>
+                </div>
+                <!-- /TAB 3 · ĐÃ ĐÓNG -->
             </div>
         </div>
     </div>
@@ -146,7 +208,7 @@
         </div>
     </div>
 
-    <script src="/static/tin-hieu.js?v=20261012a"></script>
+    <script src="/static/tin-hieu.js?v=20261015b"></script>
     <script src="/static/context-menu.js?v=20260928a"></script>
     <script src="/static/dividend-badge.js?v=20260926c"></script>
 </body>

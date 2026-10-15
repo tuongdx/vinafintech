@@ -36,9 +36,24 @@ DEFAULTS: dict[str, Any] = {
         "benchmark": "VNINDEX",
         "universe_limit": 120,          # số mã mỗi lần scan (hàng trăm mã: chạy batch nhiều lượt)
         "universe_min_volume_ratio": 0.5,
+        # Thanh khoản tối thiểu để 1 mã được QUÉT và được HIỂN THỊ trên trang Tín hiệu:
+        # GTGD TRUNG BÌNH 20 PHIÊN >= mức này (tỷ VND/phiên). Nguồn: screener Simplize
+        # (`volume20dAvg` × giá) — không phát sinh request thêm. 0 = TẮT bộ lọc.
+        "min_avg_liquidity_20d_ty": 5.0,
         "scan_workers": 8,              # ThreadPool: tính song song feature cho nhiều mã
         "cache_ttl_seconds": 900,       # cache snapshot phân tích mỗi mã
         "snapshot_ttl_seconds": 300,    # cache snapshot thị trường (regime)
+    },
+    # Quét TỰ ĐỘNG toàn thị trường theo lịch — thread nền trong app, xem `signal_engine/scheduler.py`.
+    # Giá dùng khi phân tích là dữ liệu MỚI NHẤT (nến ngày + giá intraday) vì bỏ cache snapshot.
+    "schedule": {
+        "enabled": True,
+        "scan_times": ["11:00", "13:30", "15:00"],  # giờ VN (GMT+7) mỗi ngày giao dịch
+        "weekdays_only": True,          # chỉ Thứ 2 – Thứ 6; T7/CN không có dữ liệu mới nên bỏ qua
+        "universe_limit": 0,            # 0 = quét TOÀN BỘ mã đủ điều kiện (thanh khoản TB20)
+        "use_cache": False,             # False = tính lại từ dữ liệu mới nhất (không dùng cache cũ)
+        "scan_workers": 4,              # trần luồng của job NỀN (Render free 512MB: giữ thấp để tránh OOM)
+        "refresh_open_signals": True,   # sau khi quét: đóng tín hiệu quá hạn T+ & cập nhật mã còn lại
     },
     "features": {
         "ma_periods": [10, 20, 50],

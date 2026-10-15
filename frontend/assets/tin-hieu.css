@@ -191,6 +191,160 @@ body.dark-mode .sig-check { color: #adbac7; }
 }
 .sig-table td { padding: 9px 10px; border-bottom: 1px solid #f1f4f8; }
 .sig-table tbody tr:hover { background: #f8fbfb; cursor: pointer; }
+
+/* ---------- NÚT SẮP XẾP Ở HEADER ---------- */
+.sig-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    color: #6b7a8f;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.sig-sort i { font-size: 10px; opacity: .5; }
+.sig-sort:hover { color: #008080; }
+.sig-sort:hover i { opacity: 1; }
+.sig-sort.on { color: #008080; }
+.sig-sort.on i { opacity: 1; }
+body.dark-mode .sig-sort { color: #8b949e; }
+body.dark-mode .sig-sort:hover, body.dark-mode .sig-sort.on { color: #4db6b6; }
+
+/* ---------- VỊ THẾ: NÚT BẬT/TẮT + LÃI/LỖ ---------- */
+.sig-table td.sig-pos-entry, .sig-table td.sig-pos-pnl, .sig-table td.sig-pos-cell { white-space: nowrap; }
+.sig-table td.sig-pos-entry b { font-weight: 700; color: #12203a; }
+.sig-table td .sig-badge { margin-top: 3px; }
+.sig-table td .sig-badge.st-mini { display: inline-block; font-size: 10px; padding: 1px 8px; margin-top: 4px; }
+.muted-dash { color: #8a99b1; }
+.pos-pnl { font-weight: 700; }
+.pos-pnl.up { color: #0f7b3a; }
+.pos-pnl.down { color: #d0314e; }
+.pos-pnl.flat { color: #6b7a8f; }
+
+.sig-switch {
+    position: relative;
+    width: 42px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid #d3dbe6;
+    border-radius: 20px;
+    background: #e8edf3;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background .18s ease, border-color .18s ease;
+}
+.sig-switch .knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .25);
+    transition: transform .18s ease;
+}
+.sig-switch:hover { border-color: #008080; }
+.sig-switch.on { background: linear-gradient(135deg, #008080, #00a08a); border-color: #4dd8c4; }
+.sig-switch.on .knob { transform: translateX(20px); }
+.sig-switch:disabled { opacity: .6; cursor: progress; }
+body.dark-mode .sig-table td.sig-pos-entry b { color: #e6edf3; }
+body.dark-mode .muted-dash { color: #8b949e; }
+body.dark-mode .pos-pnl.up { color: #3fb950; }
+body.dark-mode .pos-pnl.down { color: #f85149; }
+body.dark-mode .pos-pnl.flat { color: #8b949e; }
+body.dark-mode .sig-switch { background: #21262d; border-color: #3e4c61; }
+body.dark-mode .sig-switch .knob { background: #c9d1d9; }
+body.dark-mode .sig-switch:hover { border-color: #4db6b6; }
+body.dark-mode .sig-switch.on { background: linear-gradient(135deg, #008080, #00a08a); border-color: #4dd8c4; }
+body.dark-mode .sig-switch.on .knob { background: #fff; }
+
+/* ---------- 3 TAB của bảng: Khuyến nghị · Đang mở · Đã đóng ---------- */
+.sig-tabs { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid #eef2f6; margin-bottom: 12px; }
+.sig-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    margin-bottom: -1px;
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7a8f;
+    cursor: pointer;
+    transition: color .18s ease, border-color .18s ease, background .18s ease;
+}
+.sig-tab .cnt {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 20px;
+    background: #eef2f6;
+    color: #6b7a8f;
+}
+.sig-tab:hover { color: #008080; }
+/* TAB ĐANG CHỌN — đặt SAU :hover, specificity bằng nhau nên thứ tự quyết định */
+.sig-tab.on { color: #008080; border-color: #eef2f6; border-bottom-color: #008080; background: #fbfdfe; }
+.sig-tab.on .cnt { background: #008080; color: #fff; }
+body.dark-mode .sig-tabs { border-bottom-color: #30363d; }
+body.dark-mode .sig-tab { color: #8b949e; }
+body.dark-mode .sig-tab .cnt { background: #21262d; color: #8b949e; }
+body.dark-mode .sig-tab:hover { color: #4db6b6; }
+body.dark-mode .sig-tab.on { color: #4db6b6; border-color: #30363d; border-bottom-color: #4db6b6; background: #1c2128; }
+body.dark-mode .sig-tab.on .cnt { background: #008080; color: #fff; }
+
+/* Dòng tổng kết trên bảng "Đã đóng" (số vị thế đã chốt · tỷ lệ thắng · lãi/lỗ TB) */
+.sig-pos-sum {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    align-items: center;
+    font-size: 12.5px;
+    color: #4a5a72;
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
+    padding: 9px 13px;
+    background: #fbfdfe;
+    margin-bottom: 12px;
+}
+.sig-pos-sum b { color: #12203a; font-weight: 700; }
+body.dark-mode .sig-pos-sum { background: #1c2128; border-color: #30363d; color: #adbac7; }
+body.dark-mode .sig-pos-sum b { color: #e6edf3; }
+
+/* ---------- TOAST (đối thoại kết quả mở/chốt vị thế) ---------- */
+.sig-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    transform: translate(-50%, 20px);
+    max-width: 90vw;
+    padding: 9px 16px;
+    border-radius: 10px;
+    background: #12203a;
+    color: #fff;
+    font-size: 12.5px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, .28);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 9999;
+}
+.sig-toast.show { opacity: 1; transform: translate(-50%, 0); }
+.sig-toast.err { background: #b3283f; }
+body.dark-mode .sig-toast { background: #21262d; border: 1px solid #3e4c61; }
+body.dark-mode .sig-toast.err { background: #7f1d2c; }
 body.dark-mode .sig-table th { background: #1c2128; color: #8b949e; border-bottom-color: #30363d; }
 body.dark-mode .sig-table td { border-bottom-color: #21262d; }
 body.dark-mode .sig-table tbody tr:hover { background: #1b2229; }
@@ -214,6 +368,18 @@ body.dark-mode .sig-badge.processing { background: #1b2733; color: #58a6ff; }
 .sig-signal.sell { color: #d0314e; }
 body.dark-mode .sig-signal.buy { color: #3fb950; }
 body.dark-mode .sig-signal.sell { color: #f85149; }
+
+/* ---------- CỘT GIÁ HIỆN TẠI (realtime) ---------- */
+.sig-table td.sig-price { white-space: nowrap; }
+.sig-table td.sig-price b { font-weight: 700; color: #12203a; }
+.sig-table td.sig-price .pc { display: block; font-size: 11px; font-weight: 600; margin-top: 1px; }
+.sig-table td.sig-price .pc.up { color: #0f7b3a; }
+.sig-table td.sig-price .pc.down { color: #d0314e; }
+.sig-table td.sig-price .pc.flat { color: #6b7a8f; }
+body.dark-mode .sig-table td.sig-price b { color: #e6edf3; }
+body.dark-mode .sig-table td.sig-price .pc.up { color: #3fb950; }
+body.dark-mode .sig-table td.sig-price .pc.down { color: #f85149; }
+body.dark-mode .sig-table td.sig-price .pc.flat { color: #8b949e; }
 
 /* ---------- EMPTY / LOCKED ---------- */
 .th-empty { text-align: center; padding: 22px 10px; color: #8a99b1; font-size: 13px; }

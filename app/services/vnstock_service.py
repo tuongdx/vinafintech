@@ -311,6 +311,56 @@ def _last_quote(symbol: str) -> dict[str, Any]:
     return row
 
 
+def get_live_quotes(symbols: list[str]) -> dict[str, dict[str, Any]]:
+    """Giá hiện tại (realtime) cho NHIỀU mã cùng lúc — 1 request cho cả lô.
+
+    Dùng cho các BẢNG có nhiều mã (vd trang Tín hiệu): nếu gọi
+    ``/api/stocks/{symbol}/quote`` từng mã thì 50 dòng = 50 request; ở đây gom thành
+    1-2 request (``_rank_live_quotes`` chia lô 120 mã) rồi cache 15s.
+
+    Trả ``{MÃ: {"price", "change", "percent_change", "as_of"}}``; mã chưa có giá bị BỎ QUA
+    (caller tự hiển thị "—"). Dùng CHUNG cache ``last-quote:{MÃ}`` với ``_last_quote`` nên
+    không fetch trùng khi cả hai đường cùng hoạt động.
+    """
+    uniq = sorted({str(s or "").strip().upper() for s in (symbols or []) if str(s or "").strip()})
+    if not uniq:
+        return {}
+
+    rows: dict[str, dict[str, Any]] = {}
+    missing: list[str] = []
+    for sym in uniq:
+        cached_row = cache.get(f"last-quote:{sym}")
+        if cached_row is None:
+            missing.append(sym)
+        elif cached_row:
+            rows[sym] = cached_row
+
+    if missing:
+        try:
+            fetched = _rank_live_quotes(missing)
+        except Exception:
+            fetched = {}
+        for sym in missing:
+            row = fetched.get(sym) or {}
+            cache.set(f"last-quote:{sym}", row, ttl_seconds=15)
+            if row:
+                rows[sym] = row
+
+    out: dict[str, dict[str, Any]] = {}
+    for sym in uniq:
+        row = rows.get(sym) or {}
+        price = _to_float(row.get("price"))
+        if price <= 0:
+            continue
+        out[sym] = {
+            "price": round(price, 2),
+            "change": round(_to_float(row.get("netChange")), 2),
+            "percent_change": round(_to_float(row.get("pctChange")), 2),
+            "as_of": _unix_to_iso(row.get("date", 0)),
+        }
+    return out
+
+
 def lookup_symbol_name(symbol: str) -> str:
     """Tra cứu tên công ty từ Simplize cho mã cổ phiếu (trả về '' nếu không có).
     Ưu tiên tên từ bảng giá; nếu chưa có thì lấy tên từ dữ liệu screener."""
@@ -1301,6 +1351,44 @@ def is_tradable_stock(item: dict[str, Any]) -> bool:
     if _to_float(item.get("market_cap")) < settings.stock_min_market_cap:
         return False
     return stock_liquidity_ty(item) >= settings.stock_min_liquidity_ty
+
+
+def liquid_symbols_20d(min_ty: float = 5.0) -> set[str]:
+    """Tập mã có **GTGD TRUNG BÌNH 20 PHIÊN ≥ ``min_ty`` tỷ VND/phiên** (screener Simplize).
+
+    Dùng cho bộ lọc thanh khoản của trang Tín hiệu (chỉ lấy cổ phiếu đủ thanh khoản để
+    vào/ra lệnh được). Tính từ DÒNG THÔ screener (`volume20dAvg` × giá) — dataset đã được
+    cache sẵn nên KHÔNG phát sinh request mới.
+
+    - Thiếu ``volume20dAvg`` (mã mới niêm yết) → lần lượt dùng ``volume10dAvg`` rồi ``volume``.
+    - ``min_ty`` ≤ 0 → trả ``set()`` (coi như TẮT lọc; caller tự bỏ qua khi tập rỗng).
+    - Nguồn lỗi/rỗng → KHÔNG cache (lần sau thử lại) và trả ``set()`` để bên gọi không
+      vô tình ẨN HẾT tín hiệu vì lỗi dữ liệu.
+    """
+    if min_ty <= 0:
+        return set()
+    key = f"liquid-symbols-20d:{min_ty}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+
+    symbols: set[str] = set()
+    try:
+        for row in _get_screener_dataset() or []:
+            symbol = str(row.get("ticker") or "").upper().strip()
+            if not symbol:
+                continue
+            price = _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
+            volume = (_to_float(row.get("volume20dAvg")) or _to_float(row.get("volume10dAvg"))
+                      or _to_float(row.get("volume")))
+            if price > 0 and volume > 0 and volume * price / 1e9 >= min_ty:
+                symbols.add(symbol)
+    except Exception:  # noqa: BLE001 — nguồn lỗi thì thà KHÔNG lọc còn hơn ẩn hết tín hiệu
+        return set()
+
+    if symbols:
+        cache.set(key, symbols, ttl_seconds=600)
+    return symbols
 
 
 def _is_tradable_raw_row(row: dict[str, Any]) -> bool:

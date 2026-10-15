@@ -329,6 +329,14 @@ def on_startup() -> None:
         vnstock_service.start_daily_reports_refresh()
     except Exception:  # noqa: BLE001
         pass
+    # Tín hiệu TuniX: QUÉT TỰ ĐỘNG toàn thị trường theo lịch (mặc định 11:00 · 13:30 · 15:00
+    # giờ VN mỗi ngày giao dịch) — thread nền riêng, không chặn người dùng.
+    try:
+        from app.services.signal_engine import scheduler as signal_scheduler
+
+        signal_scheduler.start_scheduler()
+    except Exception:  # noqa: BLE001
+        pass
     _warm_home_caches()
 
 

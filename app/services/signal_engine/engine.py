@@ -111,14 +111,48 @@ def cached_benchmark_bars() -> list[dict[str, Any]]:
     return list(bars)
 
 
+def liquidity_min_ty(cfg: dict | None = None) -> float:
+    """Ngưỡng thanh khoản của hệ thống: GTGD TRUNG BÌNH 20 PHIÊN ≥ ? tỷ VND/phiên.
+
+    Đọc từ ``engine.min_avg_liquidity_20d_ty`` (≤ 0 = TẮT bộ lọc). Đây là NGUỒN DUY NHẤT,
+    dùng cho cả vũ trụ quét (`default_universe`) lẫn bộ lọc hiển thị ở trang Tín hiệu
+    (router `signals_admin._liquidity_filter`).
+    """
+    cfg = cfg or cfg_module.get_config()
+    try:
+        return float((cfg.get("engine") or {}).get("min_avg_liquidity_20d_ty") or 0) or 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def liquid_universe_symbols(cfg: dict | None = None) -> set[str]:
+    """Tập mã đạt ngưỡng THANH KHOẢN (`liquidity_min_ty`, tỷ VND/phiên).
+
+    Một nguồn duy nhất cho cả 2 chỗ: (1) vũ trụ quét (`default_universe`) và (2) bộ lọc
+    hiển thị ở trang Tín hiệu ⇒ KHÔNG bao giờ tạo ra tín hiệu mà trang lại không hiển thị.
+    Trả ``set()`` khi tắt lọc hoặc khi nguồn dữ liệu lỗi (bên gọi PHẢI bỏ qua khi rỗng).
+    """
+    min_ty = liquidity_min_ty(cfg)
+    return vnstock_service.liquid_symbols_20d(min_ty) if min_ty > 0 else set()
+
+
 def default_universe(limit: int | None = None, cfg: dict | None = None) -> list[str]:
-    """Danh sách mã để scan: ưu tiên thanh khoản (screener), fallback symbol directory."""
+    """Danh sách mã để scan: ưu tiên thanh khoản (screener), fallback symbol directory.
+
+    ``limit`` = None ⇒ trần mặc định của engine (``engine.universe_limit``);
+    ``limit <= 0`` ⇒ KHÔNG giới hạn (dùng cho quét TỰ ĐỘNG toàn thị trường — xem ``scheduler``).
+    """
     cfg = cfg or cfg_module.get_config()
     engine_cfg = cfg.get("engine") or {}
-    limit = int(limit or engine_cfg.get("universe_limit", 120))
-    cached = vnstock_service.cache.get(_UNIVERSE_CACHE_KEY)
+    cap = int(engine_cfg.get("universe_limit", 120) if limit is None else limit)
+    # Thanh khoản TB20 là 1 phần của QUY TẮC VŨ TRỤ ⇒ đưa ngưỡng vào KEY cache để đổi cấu
+    # hình có hiệu lực NGAY (không phải chờ cache cũ hết hạn 30 phút).
+    min_ty = liquidity_min_ty(cfg)
+    liquid = liquid_universe_symbols(cfg) if min_ty > 0 else set()
+    cache_key = f"{_UNIVERSE_CACHE_KEY}:{min_ty:g}" if liquid else f"{_UNIVERSE_CACHE_KEY}:raw"
+    cached = vnstock_service.cache.get(cache_key)
     if cached:
-        return cached[:limit]
+        return list(cached) if cap <= 0 else list(cached[:cap])
 
     symbols: list[str] = []
     try:
@@ -127,6 +161,10 @@ def default_universe(limit: int | None = None, cfg: dict | None = None) -> list[
         # CHỈ quét cổ phiếu VỐN HOÁ LỚN + THANH KHOẢN đủ để giao dịch hằng ngày
         # (bộ lọc dùng chung với Market Radar / Khám phá theo chiến lược / Xếp hạng TuniX).
         rows = [r for r in rows if vnstock_service.is_tradable_stock(r)]
+        # + Thanh khoản TRUNG BÌNH 20 PHIÊN >= ngưỡng (mặc định 5 tỷ/phiên) — cùng quy tắc
+        # với bộ lọc hiển thị ở trang Tín hiệu (xem `liquid_universe_symbols`).
+        if liquid:
+            rows = [r for r in rows if str(r.get("symbol") or "").upper() in liquid]
         rows.sort(key=lambda r: (r.get("volume") or 0), reverse=True)
         symbols = [str(r.get("symbol") or "").upper() for r in rows if r.get("symbol")]
     except Exception as exc:  # noqa: BLE001
@@ -139,8 +177,8 @@ def default_universe(limit: int | None = None, cfg: dict | None = None) -> list[
             symbols = []
 
     symbols = [s for s in symbols if s]
-    vnstock_service.cache.set(_UNIVERSE_CACHE_KEY, symbols, ttl_seconds=1800)
-    return symbols[:limit]
+    vnstock_service.cache.set(cache_key, symbols, ttl_seconds=1800)
+    return symbols if cap <= 0 else symbols[:cap]
 
 
 # ---------------------------------------------------------------------------

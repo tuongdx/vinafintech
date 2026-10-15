@@ -819,11 +819,39 @@ class SignalHistory(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 
 
+class SignalPosition(Base):
+    """VỊ THẾ do NGƯỜI DÙNG tự mở trên trang Tín hiệu (nút bật/tắt ON-OFF ở cột "Vị thế").
+
+    - Bật ON  ⇒ mở vị thế tại GIÁ HIỆN TẠI (realtime) lúc bấm; từ đây mới tính lãi/lỗ.
+    - Tắt OFF ⇒ ĐÓNG vị thế tại giá hiện tại, lưu `exit_price`/`return_pct`/`result` ⇒ tính vào
+      tỷ lệ thắng + lãi/lỗ của tài khoản đó (vị thế đang mở KHÔNG tính vào tỷ lệ thắng).
+    - Vị thế là RIÊNG TỪNG TÀI KHOẢN (`user_id`). Mỗi mã chỉ có 1 vị thế ĐANG MỞ tại 1 thời điểm.
+    """
+
+    __tablename__ = "signal_positions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    symbol: Mapped[str] = mapped_column(String(20), index=True)
+    strategy: Mapped[str] = mapped_column(String(40), default="")
+    signal_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(10), default="OPEN", index=True)  # OPEN | CLOSED
+    entry_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    entry_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    exit_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    exit_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    exit_reason: Mapped[str] = mapped_column(String(160), default="")
+    return_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    result: Mapped[str] = mapped_column(String(10), default="")   # WIN | LOSS | FLAT
+    note: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class BacktestResult(Base):
     """Kết quả backtest chống look-ahead (spec §22-§23)."""
 
     __tablename__ = "backtest_results"
-
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     symbol: Mapped[str] = mapped_column(String(20), default="", index=True)
     strategy: Mapped[str] = mapped_column(String(40), default="", index=True)
