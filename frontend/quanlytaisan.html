@@ -3621,8 +3621,10 @@
                         .then(function(d) {
                             if (method === 'POST' && url.indexOf('/sell') !== -1) toast('✅ ' + (d.message || 'Đã bán'));
                             else if (method === 'POST') toast('✅ Đã mua thêm vào danh mục');
-                            else toast('✅ Đã cập nhật');
+                            else toast('✅ ' + ((d && d.message) || 'Đã cập nhật'));
                             editId = null;
+                            // Sửa vị thế ⇒ quỹ VND vừa được cộng/trừ → cập nhật số dư hiển thị ngay.
+                            if (d && typeof d.cash_vnd === 'number') { cashVnd = Number(d.cash_vnd) || 0; applyCashUI(); }
                             refreshStockCard();
                         })
                         .catch(function(e) { if (e && e.message) toast('❌ ' + e.message, true); });
@@ -3632,6 +3634,13 @@
                     const avg_price = moneyNum('pfAvg');
                     if (!(quantity > 0)) { toast('Số lượng phải lớn hơn 0.', true); return; }
                     if (!(avg_price >= 0)) { toast('Giá vốn không hợp lệ.', true); return; }
+                    // Sửa vị thế ⇒ Tiền mặt VND đi theo chênh lệch TỔNG VỐN (SL × giá vốn).
+                    // Tăng vốn mà quỹ không đủ ⇒ nhắc Nạp tiền trước (giống khi Mua).
+                    const cur = holdings.find(function(x) { return x.id === editId; });
+                    if (cur) {
+                        const delta = Math.round(quantity * avg_price) - Math.round(rawQty(cur) * rawAvg(cur));
+                        if (delta > cashVnd) return needTopUp('VND', fmtMoney(delta) + ' đ');
+                    }
                     send('/api/portfolio/' + editId, 'PUT', { quantity: quantity, avg_price: avg_price });
                     return;
                 }

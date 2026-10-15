@@ -2,7 +2,7 @@
 
 - GET    /api/portfolio            → danh sách vị thế kèm giá realtime + lãi/lỗ
 - POST   /api/portfolio            → thêm vị thế (symbol, quantity, avg_price)
-- PUT    /api/portfolio/{id}       → cập nhật quantity / avg_price
+- PUT    /api/portfolio/{id}       → cập nhật quantity / avg_price (CỘNG/TRỪ Tiền mặt VND theo chênh lệch vốn)
 - DELETE /api/portfolio/{id}       → xoá vị thế
 Yêu cầu đăng nhập (JWT). Giá/lãi-lỗ lấy realtime từ vnstock_service (get_quote, cache 15s).
 """
@@ -275,13 +275,22 @@ def add_holding(
     return _enrich(row, quote)
 
 
-@router.put("/{holding_id}", response_model=PortfolioHoldingOut)
+@router.put("/{holding_id}")
 def update_holding(
     holding_id: int,
     payload: PortfolioHoldingUpdate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    """Sửa vị thế (giá vốn / số lượng) và ĐIỀU CHỈNH TIỀN MẶT VND theo chênh lệch TỔNG VỐN.
+
+    - Chênh lệch = (số lượng mới × giá vốn mới) − (số lượng cũ × giá vốn cũ).
+    - Tăng vốn ⇒ **trừ** Tiền mặt VND; không đủ số dư ⇒ 400 yêu cầu Nạp tiền (KHÔNG lưu thay đổi).
+    - Giảm vốn (hạ giá vốn / giảm số lượng) ⇒ **hoàn lại** vào Tiền mặt VND.
+    - Mọi lần điều chỉnh đều ghi 1 dòng vào sổ tiền vào/ra (`cash_transactions`, kind `edit_stock`).
+
+    Trả về vị thế sau cập nhật + `cash_delta` / `cash_vnd` / `message` cho UI hiện thông báo.
+    """
     row = (
         db.query(PortfolioHolding)
         .filter(PortfolioHolding.id == holding_id, PortfolioHolding.user_id == user.id)
@@ -289,17 +298,58 @@ def update_holding(
     )
     if not row:
         raise HTTPException(status_code=404, detail="Không tìm thấy vị thế này trong danh mục.")
+    old_qty = float(row.quantity or 0)
+    old_avg = float(row.avg_price or 0)
+    new_qty = old_qty
+    new_avg = old_avg
     if payload.quantity is not None:
         if float(payload.quantity) < 0:
             raise HTTPException(status_code=400, detail="Số lượng không hợp lệ.")
-        row.quantity = float(payload.quantity)
+        new_qty = float(payload.quantity)
     if payload.avg_price is not None:
         if float(payload.avg_price) < 0:
             raise HTTPException(status_code=400, detail="Giá vốn không hợp lệ.")
-        row.avg_price = float(payload.avg_price)
+        new_avg = float(payload.avg_price)
+
+    # Tiền mặt đi theo TỔNG VỐN ĐẦU TƯ (số lượng × giá vốn) — sửa giá vốn HOẶC số lượng đều
+    # làm thay đổi số tiền đã bỏ ra, nên quỹ VND phải được cập nhật tương ứng.
+    delta = round(new_qty * new_avg, 0) - round(old_qty * old_avg, 0)
+    cash_delta = 0.0
+    if delta > 0:
+        have = cash_service.get_balance(db, user.id, cash_service.CUR_VND)
+        after = cash_service.debit(
+            db, user.id, cash_service.CUR_VND, delta, kind="edit_stock",
+            label=f"Điều chỉnh vị thế {row.symbol} (tăng vốn {delta:,.0f} đ)",
+        )
+        if after is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Quỹ VND không đủ {delta:,.0f} đ để tăng vốn cho {row.symbol} "
+                    f"(đang có {have:,.0f} đ). Hãy Nạp tiền mặt trước rồi lưu lại."
+                ),
+            )
+        cash_delta = -delta
+    elif delta < 0:
+        cash_service.credit(
+            db, user.id, cash_service.CUR_VND, -delta, kind="edit_stock",
+            label=f"Điều chỉnh vị thế {row.symbol} (giảm vốn {(-delta):,.0f} đ)",
+        )
+        cash_delta = -delta
+
+    row.quantity = new_qty
+    row.avg_price = new_avg
     db.commit()
     db.refresh(row)
-    return _enrich(row, None)
+    out = _enrich(row, None).model_dump()
+    out["cash_delta"] = cash_delta          # > 0: cộng vào quỹ VND · < 0: trừ khỏi quỹ VND
+    out["cash_vnd"] = cash_service.get_balance(db, user.id, cash_service.CUR_VND)
+    out["message"] = (
+        f"Đã cập nhật {row.symbol} · trừ {abs(cash_delta):,.0f} đ Tiền mặt VND" if cash_delta < 0
+        else f"Đã cập nhật {row.symbol} · hoàn {cash_delta:,.0f} đ vào Tiền mặt VND" if cash_delta > 0
+        else f"Đã cập nhật {row.symbol} (tổng vốn không đổi → Tiền mặt giữ nguyên)"
+    )
+    return out
 
 
 @router.delete("/{holding_id}")
