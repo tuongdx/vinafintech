@@ -196,7 +196,7 @@
            (đã bỏ hẳn rule `.ov-opp:hover`). */
         .ov-opp { background: linear-gradient(180deg, #fff, #f7fbfa); border: 1px solid #e9edf2; border-radius: 14px; padding: 15px; cursor: default; }
         .ov-opp .oo-ico { font-size: 20px; }
-        .ov-opp .oo-title { font-size: 14px; font-weight: 800; margin-top: 8px; }
+        .ov-opp .oo-title { font-size: 14px; font-weight: 800; margin-top: 0; }
         .ov-opp .oo-desc { font-size: 12px; color: #8a99b1; margin-top: 3px; }
         .ov-opp .oo-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
         /* Chip mã cổ phiếu là phần DUY NHẤT bấm được trong thẻ ⇒ con trỏ pointer đặt ở chip. */
@@ -557,8 +557,8 @@
                     }).join('');
                 };
                 const chipsOr = function(html) { return html || '<span class="rc-chip sec">—</span>'; };
-                const card = function(color, icon, title, chipsHtml, noteText) {
-                    return '<div class="ov-radar-card"><div class="rc-head"><span class="rc-ico" style="background:' + color + ';"><i class="fas ' + icon + '"></i></span> ' + title + '</div>' +
+                const card = function(title, chipsHtml, noteText) {
+                    return '<div class="ov-radar-card"><div class="rc-head">' + title + '</div>' +
                         '<div class="rc-chips">' + chipsOr(chipsHtml) + '</div>' +
                         (noteText ? '<div class="rc-note">' + esc(noteText) + '</div>' : '') + '</div>';
                 };
@@ -569,16 +569,16 @@
                     : 'Nhà đầu tư nước ngoài mua ròng';
 
                 el.innerHTML =
-                    card('#008080', 'fa-arrow-trend-up', 'Ngành tăng mạnh', secChip(strong),
+                    card('Ngành tăng mạnh', secChip(strong),
                         strong.length ? 'TB ' + pct(strong[0].avg_pct) + ' · ' + strong[0].total + ' mã' : '') +
-                    card('#d0314e', 'fa-arrow-trend-down', 'Ngành suy yếu', secChip(weak ? [weak] : []),
+                    card('Ngành suy yếu', secChip(weak ? [weak] : []),
                         weak ? 'TB ' + pct(weak.avg_pct) + ' · ' + weak.down_count + '/' + weak.total + ' mã giảm' : '') +
-                    card('#f5a623', 'fa-fire', 'Volume bất thường', chip(syms(volSpike)),
+                    card('Volume bất thường', chip(syms(volSpike)),
                         firstNote(volSpike, '')) +
-                    card('#4a7fc4', 'fa-coins', 'Khối ngoại mua ròng', chip(syms(fbuy)), fbuyNote) +
-                    card('#f0883a', 'fa-arrow-up-right-from-square', 'Breakout kỹ thuật', chip(syms(bo)),
+                    card('Khối ngoại mua ròng', chip(syms(fbuy)), fbuyNote) +
+                    card('Breakout kỹ thuật', chip(syms(bo)),
                         firstNote(bo, boTech.length ? '' : 'Top mã tăng mạnh hôm nay')) +
-                    card('#e5533d', 'fa-triangle-exclamation', 'Tín hiệu rủi ro', chip(syms(risk)),
+                    card('Tín hiệu rủi ro', chip(syms(risk)),
                         firstNote(risk, riskSig.length ? '' : 'Top mã giảm mạnh hôm nay')) +
                     radarExtrasHtml();
                 el.querySelectorAll('.rc-chip[data-symbol]').forEach(function(c) { c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); }); });
@@ -607,12 +607,12 @@
                     '<span class="rc-pval stack"><span>' + fmtMoney(price) + ' đ</span>' + radarGoldDelta(delta) + '</span></div>';
             }
             function radarExtrasHtml() {
-                return '<a class="ov-radar-card" href="/lai-ngan-hang"><div class="rc-head"><span class="rc-ico" style="background:#0f7b3a;"><i class="fas fa-piggy-bank"></i></span> Lãi suất 12 tháng<i class="fas fa-chevron-right rc-go"></i></div>' +
+                return '<a class="ov-radar-card" href="/lai-ngan-hang"><div class="rc-head">Lãi suất 12 tháng<i class="fas fa-chevron-right rc-go"></i></div>' +
                         '<div class="rc-price" id="rcBanksBody"><div class="rc-note">Đang tải…</div></div>' +
                         '<div class="rc-note">Gửi online · lãi cao nhất</div></a>' +
-                    '<a class="ov-radar-card" href="/gia-vang-bac"><div class="rc-head"><span class="rc-ico" style="background:#c9a227;"><i class="fas fa-coins"></i></span> Vàng SJC<i class="fas fa-chevron-right rc-go"></i></div>' +
+                    '<a class="ov-radar-card" href="/gia-vang-bac"><div class="rc-head">Vàng SJC<i class="fas fa-chevron-right rc-go"></i></div>' +
                         '<div class="rc-price" id="rcGoldBody"><div class="rc-note">Đang tải…</div></div></a>' +
-                    '<a class="ov-radar-card" href="/crypto"><div class="rc-head"><span class="rc-ico" style="background:#f7931a;"><i class="fab fa-bitcoin"></i></span> Coin<i class="fas fa-chevron-right rc-go"></i></div>' +
+                    '<a class="ov-radar-card" href="/crypto"><div class="rc-head">Coin<i class="fas fa-chevron-right rc-go"></i></div>' +
                         '<div class="rc-price" id="rcCryptoBody"><div class="rc-note">Đang tải…</div></div></a>';
             }
             function loadRadarExtras() {
@@ -755,9 +755,9 @@
                 };
                 const avg = function(arr, key) { return avgOf(arr, function(s) { return num(s[key]); }); };
                 const signed = function(v, d) { return (v >= 0 ? '+' : '−') + fmt(Math.abs(v), d) + '%'; };
-                const card = function(icon, color, title, desc, st, note) {
+                const card = function(title, desc, st, note) {
                     const chips = stocksOf(st).slice(0, 3).map(function(x) { return '<span class="oo-chip" data-symbol="' + esc(x.symbol) + '">' + esc(x.symbol) + '</span>'; }).join('');
-                    return '<div class="ov-opp"><div class="oo-ico" style="color:' + color + ';"><i class="fas ' + icon + '"></i></div>' +
+                    return '<div class="ov-opp">' +
                         '<div class="oo-title">' + title + '</div><div class="oo-desc">' + desc + '</div>' +
                         '<div class="oo-chips">' + chips + '</div>' + (note ? '<div class="oo-note">' + note + '</div>' : '') + '</div>';
                 };
@@ -774,9 +774,9 @@
                     ? 'Sức khỏe TC TB ' + fmt(cFh, 1) + '/5' + (cTotal ? ' · ' + cDiv + '/' + cTotal + ' mã có cổ tức' : '')
                     : '';
                 el.innerHTML =
-                    card('fa-rocket', '#008080', 'Tăng trưởng cao', 'Lợi nhuận tăng trưởng mạnh', growth, noteGrowth) +
-                    card('fa-tags', '#4a7fc4', 'Định giá hấp dẫn', 'P/E, P/B thấp so với nền tảng', value, noteValue) +
-                    card('fa-shield-alt', '#0f7b3a', 'Tài chính lành mạnh', 'Sức khỏe tài chính cao, cổ tức đều', cash, noteCash);
+                    card('Tăng trưởng cao', 'Lợi nhuận tăng trưởng mạnh', growth, noteGrowth) +
+                    card('Định giá hấp dẫn', 'P/E, P/B thấp so với nền tảng', value, noteValue) +
+                    card('Tài chính lành mạnh', 'Sức khỏe tài chính cao, cổ tức đều', cash, noteCash);
                 el.querySelectorAll('.oo-chip[data-symbol]').forEach(function(c) { c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); }); });
             }
 

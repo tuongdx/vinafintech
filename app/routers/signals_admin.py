@@ -226,6 +226,11 @@ def refresh(payload: dict = Body(default={}), db: Session = Depends(get_db),
     1. Đóng tín hiệu đã QUÁ HẠN nắm giữ T+ (``signal.expiry.max_holding_sessions``).
     2. Phân tích lại các mã còn tín hiệu đang mở nhưng dữ liệu đã CŨ → trạng thái trong bảng
        luôn phản ánh nến mới nhất (setup hỏng ⇒ WEAKENING/EXIT/INVALIDATED, không "sống" mãi).
+
+    LƯU Ý (toàn hệ thống): tín hiệu là dữ liệu DÙNG CHUNG — mọi tài khoản thấy cùng danh sách.
+    Vì endpoint này GHI vào bảng chung nên nó được giới hạn tối đa 1 lần / 5 phút trên TOÀN
+    hệ thống; các lần gọi trong thời gian chờ trả ``"skipped": true`` (không đổi dữ liệu).
+    Lịch quét tự động (scheduler) bỏ qua giới hạn này.
     """
     limit = payload.get("max_symbols") if isinstance(payload, dict) else None
     try:

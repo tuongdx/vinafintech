@@ -15,7 +15,9 @@ ThreadPool (config.engine.scan_workers) + dùng lại cache lịch sử giá c�
 """
 from __future__ import annotations
 
+import json
 import logging
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -34,6 +36,15 @@ logger = logging.getLogger("tunix.signal.engine")
 _SNAPSHOT_CACHE_PREFIX = "signal-snapshot:"
 _MARKET_CACHE_KEY = "signal-market-snapshot"
 _UNIVERSE_CACHE_KEY = "signal-universe"
+
+# --- Chống LỆCH danh sách khuyến nghị giữa các tài khoản ---
+# Mọi tài khoản đọc CÙNG một bảng `signals` (không lọc theo user), nhưng trang Tín hiệu gọi
+# POST /signals/refresh mỗi lần mở trang và refresh lại GHI vào bảng chung. Nếu tài khoản nào
+# mở trang cũng refresh thì danh sách có thể đổi giữa 2 người mở lệch nhau vài giây.
+# ⇒ Chỉ cho phép refresh TOÀN HỆ THỐNG tối đa 1 lần / REFRESH_COOLDOWN_SECONDS (mặc định 5 phút).
+_REFRESH_STATE_KEY = "signal_engine_last_refresh"
+_REFRESH_COOLDOWN_SECONDS = 300
+_refresh_lock = threading.Lock()
 
 # Chiến thuật dùng chế độ chấm điểm nào (bullish: thưởng xu hướng tăng; bottom: thưởng quá bán)
 _SCORE_MODE = {"UPTREND": "bullish", "BOTTOM_FISHING": "bottom", "SWING": "bullish"}
@@ -510,8 +521,39 @@ def _signal_stamp(row: dict[str, Any]) -> Any:
     return max(valid) if valid else None
 
 
+def _last_refresh_at(db) -> datetime | None:
+    """Mốc refresh TOÀN HỆ THỐNG gần nhất (lưu ở bảng `settings` để đúng cả khi nhiều process)."""
+    try:
+        from app.models import Setting
+
+        row = db.query(Setting).filter(Setting.key == _REFRESH_STATE_KEY).first()
+        if not row or not row.value:
+            return None
+        data = json.loads(row.value)
+        raw = data.get("at") if isinstance(data, dict) else None
+        return datetime.fromisoformat(raw) if raw else None
+    except Exception as exc:  # noqa: BLE001 — thiếu bảng/lỗi JSON ⇒ coi như chưa refresh
+        logger.warning("không đọc được mốc refresh tín hiệu: %s", exc)
+        return None
+
+
+def _mark_refresh_at(db, at: datetime) -> None:
+    try:
+        from app.models import Setting
+
+        payload = json.dumps({"at": at.isoformat()})
+        row = db.query(Setting).filter(Setting.key == _REFRESH_STATE_KEY).first()
+        if row:
+            row.value = payload
+        else:
+            db.add(Setting(key=_REFRESH_STATE_KEY, value=payload))
+        db.commit()
+    except Exception as exc:  # noqa: BLE001 — không ghi được mốc thì vẫn cho chạy refresh
+        logger.warning("không ghi được mốc refresh tín hiệu: %s", exc)
+
+
 def refresh_open_signals(db=None, cfg: dict | None = None, max_symbols: int | None = None,
-                         use_cache: bool = True) -> dict[str, Any]:
+                         use_cache: bool = True, force: bool = False) -> dict[str, Any]:
     """Cập nhật lại tín hiệu ĐANG MỞ của TuniX Signal Engine (tín hiệu T+).
 
     Gồm 3 bước:
@@ -531,14 +573,10 @@ def refresh_open_signals(db=None, cfg: dict | None = None, max_symbols: int | No
 
     cfg = cfg or cfg_module.get_config()
     conf = lifecycle.expiry_config(cfg)
-    market = market_snapshot(cfg)
-    bars = list(market.get("benchmark_bars") or [])
-    latest = bars[-1].get("time") if bars else None
-
     result: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "as_of": market.get("as_of"),
-        "market": market.get("regime"),
+        "as_of": None,
+        "market": None,
         "enabled": conf["enabled"],
         "max_holding_sessions": conf["max_holding_sessions"],
         "open_signals": 0,
@@ -552,6 +590,34 @@ def refresh_open_signals(db=None, cfg: dict | None = None, max_symbols: int | No
     }
     if db is None:
         return result
+
+    # Giới hạn refresh toàn hệ thống (xem _REFRESH_COOLDOWN_SECONDS): mọi tài khoản dùng chung
+    # một lịch ⇒ danh sách khuyến nghị KHÔNG đổi liên tục theo người mở trang.
+    # Kiểm tra TRƯỚC khi lấy market snapshot để lần bị bỏ qua không tốn gọi mạng.
+    now = datetime.now(timezone.utc)
+    if not force:
+        with _refresh_lock:
+            last = _last_refresh_at(db)
+            if last is not None:
+                if last.tzinfo is None:
+                    last = last.replace(tzinfo=timezone.utc)
+                elapsed = (now - last).total_seconds()
+                if 0 <= elapsed < _REFRESH_COOLDOWN_SECONDS:
+                    result.update({
+                        "skipped": True,
+                        "cooldown_remaining": int(_REFRESH_COOLDOWN_SECONDS - elapsed),
+                        "last_refresh_at": last.isoformat(),
+                    })
+                    return result
+            _mark_refresh_at(db, now)
+    else:
+        _mark_refresh_at(db, now)
+
+    market = market_snapshot(cfg)
+    bars = list(market.get("benchmark_bars") or [])
+    latest = bars[-1].get("time") if bars else None
+    result["as_of"] = market.get("as_of")
+    result["market"] = market.get("regime")
 
     closed = repository.expire_overdue(db, benchmark_bars=bars, cfg=cfg)
     result["expired"] = int(closed.get("expired") or 0)

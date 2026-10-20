@@ -786,8 +786,7 @@
                     const col = kmColor(s.tuni_score);
                     const q = s.quadrant || kmQuadrant(s);
                     inner += '<g class="km-bubble" data-symbol="' + esc(s.symbol) + '" data-q="' + q + '" style="cursor:pointer;">' +
-                        '<circle cx="' + x + '" cy="' + y + '" r="' + (r + 3) + '" fill="' + col + '" fill-opacity="0.14" stroke="' + col + '" stroke-width="1.4"/>' +
-                        '<circle cx="' + x + '" cy="' + y + '" r="' + (r * 0.68) + '" fill="' + col + '" fill-opacity="0.88"/>' +
+                        '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + col + '" fill-opacity="0.88" stroke="#fff" stroke-width="1"/>' +
                         (r >= 7 ? '<text x="' + x + '" y="' + (y + 3.5) + '" text-anchor="middle" font-size="' + (r >= 12 ? 11 : 9.5) + '" font-weight="800" fill="#fff">' + esc(s.symbol) + '</text>' : '') +
                     '</g>';
                 });
@@ -797,9 +796,7 @@
                     '<span class="lg"><span class="dot" style="background:#008080;"></span> Tuni Score ≥ 70</span>' +
                     '<span class="lg"><span class="dot" style="background:#f5a623;"></span> 50–69</span>' +
                     '<span class="lg"><span class="dot" style="background:#d0314e;"></span> &lt; 50</span>' +
-                    '<span class="lg km-lg-hint">Kích thước bong bóng = vốn hóa</span>' +
-                    '<span class="lg"><span class="bub" style="width:10px;height:10px;"></span> Vốn hóa nhỏ</span>' +
-                    '<span class="lg"><span class="bub" style="width:22px;height:22px;"></span> Vốn hóa lớn</span>';
+                    '<span class="lg"><span class="bub" style="width:16px;height:16px;"></span> Vốn hoá</span>';
                 bindMapEvents();
                 applyMapZoom();
                 setTimeout(notifyParentHeight, 30);

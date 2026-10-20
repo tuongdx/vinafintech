@@ -162,7 +162,8 @@ def run_scan(*, limit: int | None = None, reason: str = "schedule") -> dict[str,
             if conf["refresh_open_signals"]:
                 # Sau khi quét: đóng tín hiệu QUÁ HẠN T+ và cập nhật các mã có tín hiệu nhưng
                 # nằm ngoài vũ trụ vừa quét (những mã khác đã mới nên bước này gần như không tốn gì).
-                refresh = engine_module.refresh_open_signals(db=db, cfg=cfg)
+                # force=True: bỏ qua cooldown 5 phút của /signals/refresh (lịch hệ thống luôn được chạy).
+                refresh = engine_module.refresh_open_signals(db=db, cfg=cfg, force=True)
                 summary["expired"] = int(refresh.get("expired") or 0)
                 summary["refreshed"] = int(refresh.get("refreshed") or 0)
     except Exception as exc:  # noqa: BLE001 — thread nền không được chết

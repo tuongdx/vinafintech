@@ -749,9 +749,9 @@
                         '<div class="bm"><span class="dot" style="background:#FFC107;"></span><div>Đứng <b>' + flat + '</b></div></div>' +
                     '</div>' +
                     '<div class="tt-breadth-chips">' +
-                        '<span class="tt-chip"><i class="fas fa-arrow-trend-up" style="color:#0f7b3a;"></i> Tăng trần <b class="ti-up">' + (b.ceiling || 0) + '</b></span>' +
-                        '<span class="tt-chip"><i class="fas fa-arrow-trend-down" style="color:#d0314e;"></i> Giảm sàn <b class="ti-down">' + (b.floor || 0) + '</b></span>' +
-                        '<span class="tt-chip"><i class="fas fa-chart-simple" style="color:#6b7a8f;"></i> Tổng mã giao dịch <b>' + total + '</b></span>' +
+                        '<span class="tt-chip">Tăng trần <b class="ti-up">' + (b.ceiling || 0) + '</b></span>' +
+                        '<span class="tt-chip">Giảm sàn <b class="ti-down">' + (b.floor || 0) + '</b></span>' +
+                        '<span class="tt-chip">Tổng mã giao dịch <b>' + total + '</b></span>' +
                     '</div>' +
                     '</section>';
             }
@@ -778,7 +778,6 @@
                     '<h2>Dòng tiền thị trường</h2>' +
                     '<div class="tt-flow">' + cards.map(function(c) {
                         return '<div class="tt-flow-card">' +
-                            '<div class="fc-ico"><i class="fas ' + c.ico + '"></i></div>' +
                             '<div class="fc-label">' + c.label + '</div>' +
                             '<div class="fc-val ' + c.cls2 + '">' + c.val + '</div>' +
                             '<div class="fc-sub">' + c.sub + '</div>' +
@@ -857,18 +856,18 @@
                 return '<section class="tt-card tt-radar">' +
                     '<h2>TuniX Market Radar</h2>' +
                     '<div class="tt-radar-grid">' +
-                        '<div class="tt-radar-col"><h3><i class="fas fa-leaf"></i> Ngành hút tiền</h3>' +
+                        '<div class="tt-radar-col"><h3>Ngành hút tiền</h3>' +
                             (hot ? '<div class="tt-radar-hot"><div class="rh-name">' + esc(hot.name) + '</div><div class="rh-pct ' + cls(hot.avg_pct) + '">' + pct(hot.avg_pct) + '</div><div class="rh-sub">Top: ' + (hot.top_gainer ? '<span class="rh-sym" data-symbol="' + esc(hot.top_gainer) + '">' + esc(hot.top_gainer) + '</span>' : '--') + ' · ' + hot.total + ' mã</div></div>'
                                 : '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</div>' +
-                        '<div class="tt-radar-col"><h3><i class="fas fa-rocket"></i> Cổ phiếu breakout</h3>' +
+                        '<div class="tt-radar-col"><h3>Cổ phiếu breakout</h3>' +
                             radarList(r.breakout, 'symbol', 'percent_change', 'Không có mã breakout.') + '</div>' +
-                        '<div class="tt-radar-col"><h3><i class="fas fa-volcano"></i> Volume bất thường</h3>' +
+                        '<div class="tt-radar-col"><h3>Volume bất thường</h3>' +
                             ((r.volume_spike || []).map(function(it) {
                                 return '<div class="tt-radar-item" data-symbol="' + esc(it.symbol) + '"><span class="rr-sym">' + esc(it.symbol) + '</span><span class="rr-pct">' + fmt(it.volume / 1e6, 1) + ' tr</span></div>';
                             }).join('') || '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</div>' +
-                        '<div class="tt-radar-col"><h3><i class="fas fa-triangle-exclamation"></i> Nhóm suy yếu</h3>' +
+                        '<div class="tt-radar-col"><h3>Nhóm suy yếu</h3>' +
                             radarList(r.weak, 'symbol', 'percent_change', 'Không có mã giảm.') + '</div>' +
-                        '<div class="tt-radar-col"><h3><i class="fas fa-hand-holding-dollar"></i> Khối ngoại mua mạnh</h3>' +
+                        '<div class="tt-radar-col"><h3>Khối ngoại mua mạnh</h3>' +
                             (buy.map(function(it) {
                                 return '<div class="tt-radar-item" data-symbol="' + esc(it.symbol) + '"><span class="rr-sym">' + esc(it.symbol) + '</span><span class="rr-pct fc-up">+' + fmt((Number(it.net_value) || 0) / 1e9, 0) + ' tỷ</span></div>';
                             }).join('') || '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</div>' +
@@ -1176,7 +1175,6 @@
                         const dayTxt = dl === 0 ? 'hôm nay' : (dl > 0 ? 'còn ' + dl + ' ngày' : '');
                         html += '<div class="tt-ev-item" data-symbol="' + esc(e.symbol || '') + '"' +
                                 (e.news_id ? ' data-news="' + esc(e.news_id) + '"' : '') + '>' +
-                            '<div class="tt-ev-ico" style="color:' + m.color + '"><i class="fas ' + m.icon + '"></i></div>' +
                             '<div class="tt-ev-body">' +
                                 '<div class="tt-ev-row"><span class="tt-ev-badge" style="background:' + m.color + '1a;color:' + m.color + '">' + esc(m.label) + '</span>' +
                                 (e.event_date ? '<span class="tt-ev-date">' + fmtDate(e.event_date) + '</span>' : '') +
