@@ -190,10 +190,13 @@ async def cache_and_timing(request: Request, call_next):
                 or seg in INDEX_SHELL_PAGES
                 or path in ADMIN_PAGE_PATHS
             )
-            if is_shell:
+            if is_shell or path.endswith(".html"):
+                # Mọi file .html (kể cả nội dung nhúng /frontend/*.html) → LUÔN revalidate.
+                # ⚠️ Bài học: nếu cache dài cho HTML có ?v=... thì sửa HTML mà quên bump
+                # CACHE_VERSION ⇒ trình duyệt vẫn phục vụ bản cũ tới 7 ngày.
                 response.headers.setdefault("Cache-Control", "no-cache")
             elif "v=" in (request.url.query or ""):
-                # Nội dung nhúng có ?v=CACHE_VERSION → URL đã gắn phiên bản, đổi version là đổi URL
+                # Asset có ?v=CACHE_VERSION → URL đã gắn phiên bản, đổi version là đổi URL
                 # ⇒ cache dài để mở lại trang tức thì, không cần revalidate.
                 response.headers.setdefault("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400")
             else:

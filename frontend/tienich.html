@@ -31,17 +31,17 @@
         <div id="toolBody">
             <div class="ti-toolbar">
                 <div class="ti-switch">
-                    <button type="button" class="ti-chip" data-tool="adj"><i class="fas fa-chart-line"></i> Giá điều chỉnh</button>
-                    <button type="button" class="ti-chip" data-tool="dep"><i class="fas fa-piggy-bank"></i> Lợi nhuận tiền gửi</button>
-                    <button type="button" class="ti-chip" data-tool="ex"><i class="fas fa-coins"></i> Tỷ giá ngoại tệ</button>
-                    <button type="button" class="ti-chip" data-tool="alloc"><i class="fas fa-balance-scale"></i> Chia đều vốn đầu tư</button>
+                    <button type="button" class="ti-chip" data-tool="adj">Giá điều chỉnh</button>
+                    <button type="button" class="ti-chip" data-tool="dep">Lợi nhuận tiền gửi</button>
+                    <button type="button" class="ti-chip" data-tool="ex">Tỷ giá ngoại tệ</button>
+                    <button type="button" class="ti-chip" data-tool="alloc">Chia đều vốn đầu tư</button>
                 </div>
             </div>
 
             <!-- Tool 1: Giá điều chỉnh -->
             <div id="panelAdj" style="display:none;">
                 <div class="ti-card">
-                    <h3><i class="fas fa-chart-line"></i> Giá điều chỉnh cổ phiếu</h3>
+                    <h3>Giá điều chỉnh cổ phiếu</h3>
                     <div class="ti-row">
                         <div class="ti-field">
                             <label>Giá trước ngày giao dịch không hưởng quyền <span class="opt">(đ/cổ phiếu) *</span></label>
@@ -56,15 +56,15 @@
                 </div>
 
                 <div class="ti-card">
-                    <h3><i class="fas fa-list-ol"></i> Các sự kiện điều chỉnh</h3>
+                    <h3>Các sự kiện điều chỉnh</h3>
                     <div id="evList"></div>
                     <div class="ti-actions">
                         <button type="button" class="ti-btn ghost" id="addEv"><i class="fas fa-plus"></i> Thêm sự kiện</button>
                     </div>
                     <hr class="ti-sep" />
                     <div class="ti-actions">
-                        <button type="button" class="ti-btn primary" id="calcAdj"><i class="fas fa-calculator"></i> Tính toán</button>
-                        <button type="button" class="ti-btn ghost" id="resetAdj"><i class="fas fa-undo"></i> Đặt lại</button>
+                        <button type="button" class="ti-btn primary" id="calcAdj">Tính toán</button>
+                        <button type="button" class="ti-btn ghost" id="resetAdj">Đặt lại</button>
                     </div>
                 </div>
                 <div id="adjResult"></div>
@@ -73,7 +73,7 @@
             <!-- Tool 2: Lợi nhuận tiền gửi -->
             <div id="panelDep" style="display:none;">
                 <div class="ti-card">
-                    <h3><i class="fas fa-piggy-bank"></i> Lợi nhuận tiền gửi</h3>
+                    <h3>Lợi nhuận tiền gửi</h3>
                     <div class="ti-row">
                         <div class="ti-field">
                             <label>Số tiền gửi <span class="opt">(đ) *</span></label>
@@ -111,9 +111,9 @@
                     <div class="ti-hint" id="depHint"></div>
                     <hr class="ti-sep" />
                     <div class="ti-actions">
-                        <button type="button" class="ti-btn primary" id="calcDep"><i class="fas fa-calculator"></i> Tính toán</button>
+                        <button type="button" class="ti-btn primary" id="calcDep">Tính toán</button>
                         <button type="button" class="ti-btn ghost" id="exampleDep">Ví dụ</button>
-                        <button type="button" class="ti-btn ghost" id="resetDep"><i class="fas fa-undo"></i> Đặt lại</button>
+                        <button type="button" class="ti-btn ghost" id="resetDep">Đặt lại</button>
                     </div>
                 </div>
                 <div id="depResult"></div>
@@ -181,7 +181,7 @@
                  giá hiện tại tự lấy từ API thị trường có sẵn của TuniX (/api/stocks/{mã}/quote). -->
             <div id="panelAlloc" style="display:none;">
                 <div class="ti-card">
-                    <h3><i class="fas fa-scale-balanced"></i> Chia đều vốn đầu tư</h3>
+                    <h3>Chia đều vốn đầu tư</h3>
                     <div class="ti-row">
                         <div class="ti-field">
                             <label>Bạn có bao nhiêu tiền muốn đầu tư? <span class="opt">(tổng vốn · VNĐ) *</span></label>
@@ -205,17 +205,13 @@
                     </div>
                     <hr class="ti-sep" />
                     <div class="ti-actions">
-                        <button type="button" class="ti-btn primary" id="alCalc"><i class="fas fa-calculator"></i> Tính toán</button>
+                        <button type="button" class="ti-btn primary" id="alCalc">Tính toán</button>
                     </div>
                     <div class="ti-hint">Không cần nhập giá: TuniX tự lấy <b>giá hiện tại</b> của từng mã và tự chia đều vốn. Số lượng mua làm tròn xuống theo <b>lô 100</b> cổ phiếu.</div>
                 </div>
                 <div class="err-list" id="alErrors" style="display:none;"></div>
                 <div id="alResult"></div>
             </div>
-        </div>
-
-        <div class="ti-note" style="margin-top:18px;">
-            <i class="fas fa-circle-info"></i> Các công cụ chỉ hỗ trợ <b>tính toán lý thuyết</b>. Không dùng kết quả để đưa ra khuyến nghị mua, bán hoặc nắm giữ bất kỳ cổ phiếu hay sản phẩm tài chính nào.
         </div>
     </div>
 

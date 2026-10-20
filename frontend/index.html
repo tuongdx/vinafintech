@@ -2747,28 +2747,28 @@
                 <span class="mm-dd" id="mmQlts">
                     <a href="/quan-ly-tai-san" class="mm-item" data-action="quan-ly-tai-san">Quản lý tài sản <i class="fas fa-chevron-down mm-caret"></i></a>
                     <span class="mm-sub" id="mmQltsSub" role="menu">
-                        <a role="menuitem" href="/quan-ly-tai-san/phan-tich-tai-san" class="mm-sub-item" data-qlts-sub="overview"><i class="fas fa-chart-pie"></i> Phân tích tài sản</a>
-                        <a role="menuitem" href="/quan-ly-tai-san/danh-muc-dang-nam-giu" class="mm-sub-item" data-qlts-sub="holdings"><i class="fas fa-briefcase"></i> Danh mục đang nắm giữ</a>
-                        <a role="menuitem" href="/quan-ly-tai-san/danh-muc-theo-doi" class="mm-sub-item" data-qlts-sub="watchlist"><i class="fas fa-eye"></i> Danh mục theo dõi</a>
-                        <a role="menuitem" href="/quan-ly-tai-san/bang-danh-muc" class="mm-sub-item" data-qlts-sub="portfolio"><i class="fas fa-table"></i> Bảng danh mục</a>
-                        <a role="menuitem" href="/quan-ly-tai-san/trung-tam-canh-bao" class="mm-sub-item" data-qlts-sub="alerts"><i class="fas fa-bell"></i> Trung tâm cảnh báo</a>
-                        <a role="menuitem" href="/quan-ly-tai-san/su-kien-lien-quan" class="mm-sub-item" data-qlts-sub="events"><i class="fas fa-calendar-day"></i> Sự kiện liên quan</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/phan-tich-tai-san" class="mm-sub-item" data-qlts-sub="overview">Phân tích tài sản</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/danh-muc-dang-nam-giu" class="mm-sub-item" data-qlts-sub="holdings">Danh mục đang nắm giữ</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/danh-muc-theo-doi" class="mm-sub-item" data-qlts-sub="watchlist">Danh mục theo dõi</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/bang-danh-muc" class="mm-sub-item" data-qlts-sub="portfolio">Bảng danh mục</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/trung-tam-canh-bao" class="mm-sub-item" data-qlts-sub="alerts">Trung tâm cảnh báo</a>
+                        <a role="menuitem" href="/quan-ly-tai-san/su-kien-lien-quan" class="mm-sub-item" data-qlts-sub="events">Sự kiện liên quan</a>
                     </span>
                 </span>
                 <span class="mm-sep"></span>
                 <span class="mm-dd" id="mmTienIch">
                     <a href="/tien-ich" class="mm-item" data-action="tien-ich">Tiện ích <i class="fas fa-chevron-down mm-caret"></i></a>
                     <span class="mm-sub" id="mmTienIchSub" role="menu">
-                        <a role="menuitem" href="/tien-ich/gia-dieu-chinh-co-phieu" class="mm-sub-item" data-ti-sub="adj"><i class="fas fa-chart-line"></i> Giá điều chỉnh cổ phiếu</a>
-                        <a role="menuitem" href="/tien-ich/loi-nhuan-tien-gui" class="mm-sub-item" data-ti-sub="dep"><i class="fas fa-piggy-bank"></i> Lợi nhuận tiền gửi</a>
-                        <a role="menuitem" href="/tien-ich/ty-gia-ngoai-te" class="mm-sub-item" data-ti-sub="ex"><i class="fas fa-coins"></i> Tỷ giá ngoại tệ</a>
-                        <a role="menuitem" href="/tien-ich/chia-deu-von-dau-tu" class="mm-sub-item" data-ti-sub="alloc"><i class="fas fa-balance-scale"></i> Chia đều vốn đầu tư</a>
+                        <a role="menuitem" href="/tien-ich/gia-dieu-chinh-co-phieu" class="mm-sub-item" data-ti-sub="adj">Giá điều chỉnh cổ phiếu</a>
+                        <a role="menuitem" href="/tien-ich/loi-nhuan-tien-gui" class="mm-sub-item" data-ti-sub="dep">Lợi nhuận tiền gửi</a>
+                        <a role="menuitem" href="/tien-ich/ty-gia-ngoai-te" class="mm-sub-item" data-ti-sub="ex">Tỷ giá ngoại tệ</a>
+                        <a role="menuitem" href="/tien-ich/chia-deu-von-dau-tu" class="mm-sub-item" data-ti-sub="alloc">Chia đều vốn đầu tư</a>
                     </span>
                 </span>
                 <span class="mm-sep"></span>
                 <!-- Menu "Tín hiệu" — CHỈ hiện khi đã đăng nhập VÀ được admin cấp quyền (users.signal_access).
                      JS bật/tắt ở applySignalNav() (mặc định ẩn để không lộ với người chưa được cấp). -->
-                <a href="/tin-hieu" class="mm-item" data-action="tin-hieu" id="mmTinHieu" style="display:none;"><i class="fas fa-satellite-dish"></i> Tín hiệu</a>
+                <a href="/tin-hieu" class="mm-item" data-action="tin-hieu" id="mmTinHieu" style="display:none;">Tín hiệu</a>
                 <span class="mm-sep" id="mmTinHieuSep" style="display:none;"></span>
                 <a href="/tuniai" class="mm-item mm-ai" data-action="tuniai"><i class="fas fa-robot"></i> TuniAI</a>
             </nav>
@@ -3395,7 +3395,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20261015f';
+        const CACHE_VERSION = '20261020a';
         // Slug URL đẹp cho các section Quản lý tài sản
         window.__QLTS_SLUGS = {
             overview: 'phan-tich-tai-san',

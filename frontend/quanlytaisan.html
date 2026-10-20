@@ -638,6 +638,8 @@
             let tradeMode = 'buy';
             let cryptoSignalsData = null; // kết quả quét tín hiệu Crypto (AI)
             let stockSignalsData = null;  // kết quả quét cảnh báo Cổ phiếu (AI)
+            // Tự động quét AI MỘT LẦN mỗi lần tải trang (mở lại trang = quét & cập nhật mới).
+            const AUTO_SCAN_DONE = { stock: false, crypto: false };
             const chartCache = {};
             const TIP_PNL = 'Tổng lãi/lỗ = Giá trị hiện tại của danh mục − Tổng vốn đã đầu tư. TuniX tính theo giá thị trường realtime so với giá vốn các vị thế đang nắm giữ.';
             const TIP_INVESTED = 'Tổng vốn đã dùng để mua cổ phiếu đang nắm giữ (số lượng × giá vốn bình quân). Giá vốn được TuniX TỰ ĐIỀU CHỈNH theo cổ tức/chia tách sau ngày mua: cổ tức tiền mặt làm giảm giá vốn, cổ tức/thưởng bằng cổ phiếu làm tăng số lượng — nên tổng vốn ở đây đã trừ phần cổ tức tiền mặt đã nhận.';
@@ -1136,7 +1138,7 @@
                       '</tbody></table></div>'
                     : '<div class="pf-table-wrap"><div class="pf-empty"><i class="fas fa-briefcase" style="font-size:30px;color:#c3ccd8;"></i><br/>Danh mục tài sản của bạn đang trống.<br/>Hãy thêm cổ phiếu bạn đang nắm giữ ở form bên dưới.</div></div>';
                 return '<div class="pf-card">' +
-                    '<div class="pf-ah"><h2><i class="fas fa-chart-line" style="color:#008080;font-size:14px;margin-right:6px;"></i>Danh sách cổ phiếu</h2>' +
+                    '<div class="pf-ah"><h2>Danh sách cổ phiếu</h2>' +
                     '<div class="pf-astats">' +
                         '<div class="pf-astat"><span class="pf-albl">Tổng đầu tư</span><b>' + fmtMoney(tt.totalCost) + ' đ</b></div>' +
                         (tt.pending > 0 ? '<div class="pf-astat"><span class="pf-albl">Cổ tức chờ nhận</span><b class="pf-pend-val">+' + fmtMoney(tt.pending) + ' đ</b></div>' : '') +
@@ -1157,8 +1159,8 @@
                 const submitLabel = editing ? 'Lưu' : (tradeMode === 'sell' ? 'Bán' : 'Mua');
                 const toggle = (editing || DEMO) ? '' :
                     '<div class="pf-trade-toggle">' +
-                        '<button type="button" class="pf-tt' + (tradeMode === 'buy' ? ' active' : '') + '" data-mode="buy"><i class="fas fa-cart-plus"></i> Mua</button>' +
-                        '<button type="button" class="pf-tt' + (tradeMode === 'sell' ? ' active' : '') + '" data-mode="sell"><i class="fas fa-cart-arrow-down"></i> Bán</button>' +
+                        '<button type="button" class="pf-tt' + (tradeMode === 'buy' ? ' active' : '') + '" data-mode="buy">Mua</button>' +
+                        '<button type="button" class="pf-tt' + (tradeMode === 'sell' ? ' active' : '') + '" data-mode="sell">Bán</button>' +
                     '</div>';
                 const fields = editing
                     ? '<div class="pf-field"><label>Giá vốn (đ)</label><input type="text" inputmode="numeric" autocomplete="off" id="pfAvg" min="0" max="1000000" step="100" placeholder="VD: 26.500" value="' + esc(avg) + '" ' + disabled + ' /></div>' +
@@ -1168,7 +1170,7 @@
                       '<div class="pf-field"><label>Số lượng mua/bán</label><input type="text" inputmode="numeric" autocomplete="off" id="pfQty" min="0" max="1000000" step="1" placeholder="VD: 1.000" ' + disabled + ' /></div>' +
                       '<div class="pf-field"><label>Phí giao dịch (%)</label><input type="number" id="pfFee" min="0" max="10" step="0.01" placeholder="VD: 0.15" value="0.15" ' + disabled + ' /></div>';
                 const submitField = '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary" id="pfSubmit" ' + (DEMO ? 'disabled' : '') + '>' + submitLabel + '</button>' + (editing ? '<button type="button" class="btn" id="pfCancelEdit">Hủy</button>' : '') + '</div>';
-                return '<div class="pf-form-head"><i class="fas fa-exchange-alt"></i> ' + esc(title) + '</div>' +
+                return '<div class="pf-form-head">' + esc(title) + '</div>' +
                     toggle +
                     '<div class="pf-form-row">' +
                         '<div class="pf-field"><label>Mã</label><input type="text" id="pfSymbol" maxlength="3" placeholder="VD: HDB" value="' + esc(sym) + '" ' + (editing || DEMO ? 'disabled' : '') + ' autocomplete="off" spellcheck="false" /></div>' +
@@ -1329,7 +1331,7 @@
             function cashCardHtml() {
                 const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
                 return '<div class="pf-card" id="pfCashCard">' +
-                    '<div class="pf-ah"><h2><i class="fas fa-money-bill-wave" style="color:#00a08a;font-size:14px;margin-right:6px;"></i>Tiền mặt</h2>' +
+                    '<div class="pf-ah"><h2>Tiền mặt</h2>' +
                     '<span class="pf-atotal">Tổng quy VND: <b id="cashTotalLbl">' + fmtMoney(cashTotalVnd()) + ' đ</b>' +
                         '<button type="button" class="cash-hist-btn" id="paCashHistBtn" ' + (DEMO ? 'disabled' : '') + ' title="Lịch sử tiền vào/ra"><i class="fas fa-clock-rotate-left"></i> Lịch sử vào/ra</button></span></div>' +
                     '<div class="cash-bals">' +
@@ -1337,7 +1339,7 @@
                         '<div class="cash-bal"><span class="cash-cur">USDT / USDC</span><b id="cashUsdtLbl">' + fmtDec(cashUsdt) + ' USDT</b><small id="cashUsdtVndLbl"' + (cashFxRate > 0 ? '' : ' style="display:none;"') + '>' + fmtUsdtVnd(cashUsdt) + '</small></div>' +
                     '</div>' +
                     '<div class="pf-stock-form">' +
-                        '<div class="pf-form-head"><i class="fas fa-money-bill-wave"></i> Nạp / Rút tiền mặt</div>' +
+                        '<div class="pf-form-head">Nạp / Rút tiền mặt</div>' +
                         '<div class="pf-form-row">' +
                             '<div class="pf-field" style="flex:0 1 220px;"><label>Quỹ</label><div class="cash-cur-seg">' +
                                 '<button type="button" class="cash-cur-btn' + (cashCur === 'VND' ? ' active' : '') + '" data-ccur="VND" ' + (DEMO ? 'disabled' : '') + '>VND</button>' +
@@ -1456,7 +1458,7 @@
                     '</tr>';
                 }).join('') : '<tr><td colspan="8" class="pf-empty">Chưa có vị thế nào — Mua bên dưới để theo dõi.</td></tr>';
                 return '<div class="pf-card">' +
-                    '<div class="pf-ah"><h2><i class="fas fa-coins" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2>' +
+                    '<div class="pf-ah"><h2>' + esc(m.title) + '</h2>' +
                     '<div class="pf-astats">' +
                         '<div class="pf-astat"><span class="pf-albl">Tổng đầu tư</span><b>' + fmtDec(totalCost) + ' ' + curLbl + '</b>' + (cryptoFx ? '<span class="pf-vnd">≈ ' + fmtMoney(totalCost * cryptoFx.usd_vnd) + ' đ</span>' : '') + '</div>' +
                         '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtDec(totalCur) + ' ' + curLbl + '</b>' + (cryptoFx ? '<span class="pf-vnd">≈ ' + fmtMoney(totalCur * cryptoFx.usd_vnd) + ' đ</span>' : '') + '</div>' +
@@ -1488,7 +1490,7 @@
                     '</tr>';
                 }).join('') : '<tr><td colspan="5" class="pf-empty">' + esc(emptyText) + '</td></tr>';
                 return '<div class="pf-card">' +
-                    '<div class="pf-ah"><h2><i class="fas ' + m.icon + '" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2>' +
+                    '<div class="pf-ah"><h2>' + esc(m.title) + '</h2>' +
                     '<div class="pf-astats">' +
                         '<div class="pf-astat"><span class="pf-albl">Tổng đầu tư</span><b>' + fmtMoney(total) + ' đ</b></div>' +
                         '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtMoney(total) + ' đ</b></div>' +
@@ -1503,16 +1505,15 @@
             function assetCryptoForm() {
                 const mode = assetMode.crypto === 'sell' ? 'sell' : 'buy';
                 const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
-                const ico = mode === 'sell' ? 'fa-cart-arrow-down' : 'fa-cart-plus';
                 const toggle = DEMO ? '' :
                     '<div class="pf-trade-toggle">' +
-                        '<button type="button" class="pf-tt pa-tt' + (mode === 'buy' ? ' active' : '') + '" data-cls="crypto" data-mode="buy"><i class="fas fa-cart-plus"></i> Mua</button>' +
-                        '<button type="button" class="pf-tt pa-tt' + (mode === 'sell' ? ' active' : '') + '" data-cls="crypto" data-mode="sell"><i class="fas fa-cart-arrow-down"></i> Bán</button>' +
+                        '<button type="button" class="pf-tt pa-tt' + (mode === 'buy' ? ' active' : '') + '" data-cls="crypto" data-mode="buy">Mua</button>' +
+                        '<button type="button" class="pf-tt pa-tt' + (mode === 'sell' ? ' active' : '') + '" data-cls="crypto" data-mode="sell">Bán</button>' +
                     '</div>';
                 const amountLabel = mode === 'sell' ? 'Số tiền nhận về (USDT/USDC)' : 'Số tiền mua (USDT/USDC)';
                 const subLabel = mode === 'sell' ? 'Bán' : 'Mua';
                 return '<div class="pf-stock-form">' +
-                    '<div class="pf-form-head"><i class="fas ' + ico + '"></i> Mua/Bán Crypto (USDT/USDC)</div>' +
+                    '<div class="pf-form-head">Mua/Bán Crypto (USDT/USDC)</div>' +
                     toggle +
                     '<div class="pf-form-row">' +
                         '<div class="pf-field" style="flex:1 1 200px;"><label>Tên crypto</label><input type="text" id="pacryptoName" placeholder="' + esc(ASSET_META.crypto.ph) + '" ' + disabled + ' autocomplete="off" spellcheck="false" /></div>' +
@@ -1520,7 +1521,7 @@
                         '<div class="pf-field"><label>Giá (USDT/USDC)</label><input type="text" inputmode="numeric" autocomplete="off" id="pacryptoPrice" min="0" step="any" placeholder="VD: 100.000" ' + disabled + ' /></div>' +
                         '<div class="pf-field"><label>' + esc(amountLabel) + '</label><input type="text" inputmode="numeric" autocomplete="off" id="pacryptoAmt" min="0" step="any" placeholder="VD: 1.000" ' + disabled + ' /></div>' +
                         '<div class="pf-field" style="flex:0 1 110px;"><label>Phí (%)</label><input type="number" id="pacryptoFee" min="0" max="100" step="0.01" value="0.10" ' + disabled + ' /></div>' +
-                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-submit" data-cls="crypto" ' + (DEMO ? 'disabled' : '') + '><i class="fas ' + ico + '"></i> ' + subLabel + '</button></div>' +
+                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-submit" data-cls="crypto" ' + (DEMO ? 'disabled' : '') + '>' + subLabel + '</button></div>' +
                     '</div>' +
                     '<div id="pacryptoPreview" class="pf-cr-empty"></div>' +
                     (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
@@ -1531,20 +1532,19 @@
                 const mode = assetMode[cls] === 'sell' ? 'sell' : 'buy';
                 const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
                 const subLabel = mode === 'sell' ? 'Bán' : 'Mua';
-                const ico = mode === 'sell' ? 'fa-cart-arrow-down' : 'fa-cart-plus';
                 const toggle = DEMO ? '' :
                     '<div class="pf-trade-toggle">' +
-                        '<button type="button" class="pf-tt pa-tt' + (mode === 'buy' ? ' active' : '') + '" data-cls="' + cls + '" data-mode="buy"><i class="fas fa-cart-plus"></i> Mua</button>' +
-                        '<button type="button" class="pf-tt pa-tt' + (mode === 'sell' ? ' active' : '') + '" data-cls="' + cls + '" data-mode="sell"><i class="fas fa-cart-arrow-down"></i> Bán</button>' +
+                        '<button type="button" class="pf-tt pa-tt' + (mode === 'buy' ? ' active' : '') + '" data-cls="' + cls + '" data-mode="buy">Mua</button>' +
+                        '<button type="button" class="pf-tt pa-tt' + (mode === 'sell' ? ' active' : '') + '" data-cls="' + cls + '" data-mode="sell">Bán</button>' +
                     '</div>';
                 return '<div class="pf-stock-form">' +
-                    '<div class="pf-form-head"><i class="fas ' + ico + '"></i> Mua/Bán ' + esc(m.name) + '</div>' +
+                    '<div class="pf-form-head">Mua/Bán ' + esc(m.name) + '</div>' +
                     toggle +
                     '<div class="pf-form-row">' +
                         '<div class="pf-field" style="flex:1 1 200px;"><label>Tên khoản</label><input type="text" id="pa' + cls + 'Name" placeholder="' + esc(m.ph) + '" ' + disabled + ' autocomplete="off" spellcheck="false" /></div>' +
                         '<div class="pf-field"><label>Đơn giá (đ)</label><input type="text" inputmode="numeric" autocomplete="off" id="pa' + cls + 'Price" min="0" step="any" placeholder="' + esc(m.phPrice || 'VD: 25.000.000') + '" ' + disabled + ' /></div>' +
                         '<div class="pf-field"><label>Số lượng</label><input type="text" inputmode="numeric" autocomplete="off" id="pa' + cls + 'Qty" min="0" step="any" placeholder="VD: 0,5" ' + disabled + ' /></div>' +
-                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-submit" data-cls="' + cls + '" ' + (DEMO ? 'disabled' : '') + '><i class="fas ' + ico + '"></i> ' + subLabel + '</button></div>' +
+                        '<div class="pf-field pf-submit"><button type="button" class="btn btn-primary pa-submit" data-cls="' + cls + '" ' + (DEMO ? 'disabled' : '') + '>' + subLabel + '</button></div>' +
                     '</div>' +
                     (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
                 '</div>';
@@ -1594,7 +1594,7 @@
                     '</tr>';
                 }).join('') : '<tr><td colspan="5" class="pf-empty">Chưa có khoản tiền gửi nào — nhập bên dưới để theo dõi.</td></tr>';
                 return '<div class="pf-card">' +
-                    '<div class="pf-ah"><h2><i class="fas fa-landmark" style="color:#008080;font-size:14px;margin-right:6px;"></i>' + esc(m.title) + '</h2>' +
+                    '<div class="pf-ah"><h2>' + esc(m.title) + '</h2>' +
                     '<div class="pf-astats">' +
                         '<div class="pf-astat"><span class="pf-albl">Tổng tiền gửi</span><b>' + fmtMoney(total) + ' đ</b></div>' +
                         '<div class="pf-astat"><span class="pf-albl">Giá trị hiện tại</span><b>' + fmtMoney(total) + ' đ</b></div>' +
@@ -1610,7 +1610,7 @@
             function assetDepositForm() {
                 const disabled = DEMO ? ' disabled title="Đăng nhập để quản lý tài sản thật"' : '';
                 return '<div class="pf-stock-form">' +
-                    '<div class="pf-form-head"><i class="fas fa-landmark"></i> Thêm khoản tiền gửi</div>' +
+                    '<div class="pf-form-head">Thêm khoản tiền gửi</div>' +
                     '<div class="pf-form-row">' +
                         '<div class="pf-field"><label>Số tiền gửi (đ)</label><input type="text" inputmode="numeric" autocomplete="off" id="paDepositAmount" min="0" step="10000" placeholder="VD: 100.000.000" ' + disabled + ' /></div>' +
                         '<div class="pf-field"><label>Lãi suất (%/năm)</label><input type="number" id="paDepositRate" min="0" step="0.01" placeholder="VD: 4,80" ' + disabled + ' /></div>' +
@@ -2225,8 +2225,7 @@
                 return '<div class="pf-card ca-sect">' +
                     '<div class="pf-ca-head">' +
                         '<div class="pf-ca-hinfo">' +
-                            '<h3 style="margin:0;"><i class="fas fa-coins" style="color:#d99a2b;margin-right:7px;"></i>Tín hiệu Crypto<span class="ca-ai">AI</span></h3>' +
-                            '<div class="pf-ca-sub">Phân tích các mã crypto đang theo dõi &amp; vị thế của bạn bằng AI — gồm Cơ hội · Cảnh báo · Xu hướng. Bấm nút bên phải để AI quét &amp; nhận định thị trường.</div>' +
+                            '<h3 style="margin:0;">Tín hiệu Crypto<span class="ca-ai">AI</span></h3>' +
                         '</div>' +
                         '<button type="button" id="cryptoAlertScan" class="pf-scan-btn ca-scan"><i class="fas fa-sync-alt"></i> Quét tín hiệu</button>' +
                     '</div>' +
@@ -2259,17 +2258,16 @@
                 const sev = CRYPTO_SEV_META[String(it.severity || '').toUpperCase()] || CRYPTO_SEV_META.MEDIUM;
                 const str = Number(it.strength) || 0, conf = Number(it.confidence) || 0;
                 const head = symChip(it.symbol) +
-                    (cryptoInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
+                    (cryptoInPosition(it.symbol) ? '<span class="ca-tag ca-pos">Vị thế</span>' : '') +
                     '<span class="pf-ac-imp" style="color:' + sev.color + '">' + esc(sev.label) + '</span>' +
                     '<span class="ca-str">Độ mạnh <b>' + str + '</b>/100 · Tin cậy <b>' + conf + '</b></span>';
                 let extra = '';
                 if (isOpp) {
-                    if (it.zone) extra += '<div class="ca-zone"><i class="fas fa-arrows-left-right"></i> Vùng giá quan trọng: <b>' + esc(it.zone) + '</b></div>';
-                    if (it.confirmation) extra += '<div class="ca-confirm"><i class="fas fa-check-double"></i> Xác nhận: ' + esc(it.confirmation) + '</div>';
+                    if (it.zone) extra += '<div class="ca-zone">Vùng giá quan trọng: <b>' + esc(it.zone) + '</b></div>';
+                    if (it.confirmation) extra += '<div class="ca-confirm">Xác nhận: ' + esc(it.confirmation) + '</div>';
                 }
-                if (it.why) extra += '<div class="pf-ac-why"><i class="fas fa-circle-question"></i> Vì sao: ' + esc(it.why) + '</div>';
+                if (it.why) extra += '<div class="pf-ac-why">Vì sao: ' + esc(it.why) + '</div>';
                 return '<div class="pf-alert-card ca-card" style="border-left-color:' + ic.c + '">' +
-                    '<div class="pf-ac-left"><i class="fas ' + ic.i + '" style="color:' + ic.c + '"></i></div>' +
                     '<div class="pf-ac-main">' +
                         '<div class="pf-ac-top">' + head + '</div>' +
                         '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
@@ -2287,10 +2285,9 @@
                 }).join('');
                 const str = Number(it.strength) || 0;
                 return '<div class="pf-alert-card ca-card" style="border-left-color:#4a7fc4">' +
-                    '<div class="pf-ac-left"><i class="fas fa-chart-line" style="color:#4a7fc4"></i></div>' +
                     '<div class="pf-ac-main">' +
                         '<div class="pf-ac-top">' + symChip(it.symbol) +
-                            (cryptoInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
+                            (cryptoInPosition(it.symbol) ? '<span class="ca-tag ca-pos">Vị thế</span>' : '') +
                             '<span class="ca-str">Độ mạnh xu hướng <b>' + str + '</b>/100</span></div>' +
                         '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
                         '<div class="ca-trend-chips">' + ch + '</div>' +
@@ -2311,20 +2308,9 @@
                 }
                 const opp = d.opportunities || [], war = d.alerts || [], tr = d.trends || [];
                 const total = opp.length + war.length + tr.length;
-                if (meta) {
-                    const ago = d.scanned_at ? fmtAgo(d.scanned_at) : 'chưa quét';
-                    const pos = (d.in_position || []).length;
-                    meta.innerHTML = '<div class="pf-ca-meta">' +
-                        '<span><i class="fas fa-clock"></i> Cập nhật: <b>' + esc(ago) + '</b></span>' +
-                        '<span><i class="fas fa-microchip"></i> Phân tích <b>' + esc((d.symbols || []).join(', ')) + '</b></span>' +
-                        (pos ? '<span><i class="fas fa-briefcase"></i> ' + pos + ' vị thế đang nắm</span>' : '') +
-                        '<span><i class="fas fa-bell"></i> ' + total + ' tín hiệu</span>' +
-                    '</div>';
-                }
+                if (meta) meta.innerHTML = '';
                 if (!total) {
-                    list.innerHTML = '<div class="pf-empty">Chưa có tín hiệu nào cho danh mục crypto của bạn.' +
-                        (d.scanned_at ? '' : ' Hãy bấm "Quét tín hiệu" để AI phân tích.') +
-                    '</div>';
+                    list.innerHTML = '<div class="pf-empty">Chưa có tín hiệu nào cho danh mục crypto của bạn.</div>';
                     notifyParentHeight(); return;
                 }
                 let html = '';
@@ -2332,7 +2318,7 @@
                     const items = b.k === 'opportunities' ? opp : (b.k === 'alerts' ? war : tr);
                     html += '<div class="pf-alert-block" data-block="' + b.k + '">' +
                         '<div class="pf-alert-block-head">' +
-                            '<i class="fas ' + b.icon + '" style="color:' + b.color + '"></i> ' + esc(b.label) +
+                            esc(b.label) +
                             '<span class="pf-alert-block-count" style="background:' + b.color + '1a;color:' + b.color + '">' + items.length + '</span>' +
                         '</div>' +
                         (items.length ? items.map(function (it) { return b.k === 'trends' ? cryptoTrendHtml(it) : cryptoItemHtml(it, b.k); }).join('')
@@ -2413,7 +2399,16 @@
                         renderCryptoSignals();
                         if (lockedFree) applyCryptoTeaser(lockedFree);
                     })
-                    .catch(function() { list.innerHTML = '<div class="pf-empty">Không tải được tín hiệu.</div>'; notifyParentHeight(); });
+                    .catch(function() { list.innerHTML = '<div class="pf-empty">Không tải được tín hiệu.</div>'; notifyParentHeight(); })
+                    .finally(function() { autoScanSignals('crypto', lockedFree); });
+            }
+            // Tự quét lại 1 lần/trang khi vừa tải xong dữ liệu (không áp dụng cho bản xem trước bị khoá).
+            function autoScanSignals(kind, lockedFree) {
+                if (DEMO || lockedFree || AUTO_SCAN_DONE[kind]) return;
+                const btn = document.getElementById(kind === 'stock' ? 'stockAlertScan' : 'cryptoAlertScan');
+                if (!btn || btn.disabled) return;
+                AUTO_SCAN_DONE[kind] = true;
+                btn.click();
             }
             function applyCryptoTeaser(lockedFree) {
                 const gate = window.TuniXMembership;
@@ -2437,8 +2432,7 @@
                 return '<div class="pf-card ca-sect">' +
                     '<div class="pf-ca-head">' +
                         '<div class="pf-ca-hinfo">' +
-                            '<h3 style="margin:0;"><i class="fas fa-chart-column" style="color:#008080;margin-right:7px;"></i>Cảnh báo Cổ phiếu<span class="ca-ai">AI</span></h3>' +
-                            '<div class="pf-ca-sub">Phân tích các cổ phiếu đang nắm giữ &amp; theo dõi của bạn bằng AI — gồm Cơ hội · Cảnh báo · Xu hướng. Bấm nút bên phải để AI quét &amp; nhận định thị trường.</div>' +
+                            '<h3 style="margin:0;">Cảnh báo Cổ phiếu<span class="ca-ai">AI</span></h3>' +
                         '</div>' +
                         '<button type="button" id="stockAlertScan" class="pf-scan-btn ca-scan"><i class="fas fa-sync-alt"></i> Quét cảnh báo</button>' +
                     '</div>' +
@@ -2481,17 +2475,16 @@
                 const sev = CRYPTO_SEV_META[String(it.severity || '').toUpperCase()] || CRYPTO_SEV_META.MEDIUM;
                 const str = Number(it.strength) || 0, conf = Number(it.confidence) || 0;
                 const head = symChip(it.symbol) +
-                    (stockInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
+                    (stockInPosition(it.symbol) ? '<span class="ca-tag ca-pos">Vị thế</span>' : '') +
                     '<span class="pf-ac-imp" style="color:' + sev.color + '">' + esc(sev.label) + '</span>' +
                     '<span class="ca-str">Độ mạnh <b>' + str + '</b>/100 · Tin cậy <b>' + conf + '</b></span>';
                 let extra = '';
                 if (isOpp) {
-                    if (it.zone) extra += '<div class="ca-zone"><i class="fas fa-arrows-left-right"></i> Vùng giá quan trọng: <b>' + esc(it.zone) + '</b> đ</div>';
-                    if (it.confirmation) extra += '<div class="ca-confirm"><i class="fas fa-check-double"></i> Xác nhận: ' + esc(it.confirmation) + '</div>';
+                    if (it.zone) extra += '<div class="ca-zone">Vùng giá quan trọng: <b>' + esc(it.zone) + '</b> đ</div>';
+                    if (it.confirmation) extra += '<div class="ca-confirm">Xác nhận: ' + esc(it.confirmation) + '</div>';
                 }
-                if (it.why) extra += '<div class="pf-ac-why"><i class="fas fa-circle-question"></i> Vì sao: ' + esc(it.why) + '</div>';
+                if (it.why) extra += '<div class="pf-ac-why">Vì sao: ' + esc(it.why) + '</div>';
                 return '<div class="pf-alert-card ca-card" style="border-left-color:' + ic.c + '">' +
-                    '<div class="pf-ac-left"><i class="fas ' + ic.i + '" style="color:' + ic.c + '"></i></div>' +
                     '<div class="pf-ac-main">' +
                         '<div class="pf-ac-top">' + head + '</div>' +
                         '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
@@ -2509,10 +2502,9 @@
                 }).join('');
                 const str = Number(it.strength) || 0;
                 return '<div class="pf-alert-card ca-card" style="border-left-color:#4a7fc4">' +
-                    '<div class="pf-ac-left"><i class="fas fa-chart-line" style="color:#4a7fc4"></i></div>' +
                     '<div class="pf-ac-main">' +
                         '<div class="pf-ac-top">' + symChip(it.symbol) +
-                            (stockInPosition(it.symbol) ? '<span class="ca-tag ca-pos"><i class="fas fa-briefcase"></i> Vị thế</span>' : '') +
+                            (stockInPosition(it.symbol) ? '<span class="ca-tag ca-pos">Vị thế</span>' : '') +
                             '<span class="ca-str">Độ mạnh xu hướng <b>' + str + '</b>/100</span></div>' +
                         '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
                         '<div class="ca-trend-chips">' + ch + '</div>' +
@@ -2533,16 +2525,7 @@
                 }
                 const opp = d.opportunities || [], war = d.alerts || [], tr = d.trends || [];
                 const total = opp.length + war.length + tr.length;
-                if (meta) {
-                    const ago = d.scanned_at ? fmtAgo(d.scanned_at) : 'chưa quét';
-                    const pos = (d.in_position || []).length;
-                    meta.innerHTML = '<div class="pf-ca-meta">' +
-                        '<span><i class="fas fa-clock"></i> Cập nhật: <b>' + esc(ago) + '</b></span>' +
-                        '<span><i class="fas fa-microchip"></i> Phân tích <b>' + esc((d.symbols || []).join(', ')) + '</b></span>' +
-                        (pos ? '<span><i class="fas fa-briefcase"></i> ' + pos + ' vị thế đang nắm</span>' : '') +
-                        '<span><i class="fas fa-bell"></i> ' + total + ' tín hiệu</span>' +
-                    '</div>';
-                }
+                if (meta) meta.innerHTML = '';
                 if (!total) {
                     list.innerHTML = '<div class="pf-empty">Chưa có tín hiệu nào cho cổ phiếu của bạn.' +
                         (d.scanned_at ? '' : ' Hãy bấm "Quét cảnh báo" để AI phân tích.') +
@@ -2554,7 +2537,7 @@
                     const items = b.k === 'opportunities' ? opp : (b.k === 'alerts' ? war : tr);
                     html += '<div class="pf-alert-block" data-block="' + b.k + '">' +
                         '<div class="pf-alert-block-head">' +
-                            '<i class="fas ' + b.icon + '" style="color:' + b.color + '"></i> ' + esc(b.label) +
+                            esc(b.label) +
                             '<span class="pf-alert-block-count" style="background:' + b.color + '1a;color:' + b.color + '">' + items.length + '</span>' +
                         '</div>' +
                         (items.length ? items.map(function (it) { return b.k === 'trends' ? stockTrendHtml(it) : stockItemHtml(it, b.k); }).join('')
@@ -2608,7 +2591,8 @@
                         renderStockSignals();
                         if (lockedFree) applyStockTeaser(lockedFree);
                     })
-                    .catch(function() { list.innerHTML = '<div class="pf-empty">Không tải được cảnh báo.</div>'; notifyParentHeight(); });
+                    .catch(function() { list.innerHTML = '<div class="pf-empty">Không tải được cảnh báo.</div>'; notifyParentHeight(); })
+                    .finally(function() { autoScanSignals('stock', lockedFree); });
             }
             function applyStockTeaser(lockedFree) {
                 const gate = window.TuniXMembership;
@@ -3290,7 +3274,7 @@
             function renderTabChips() {
                 return '<div class="pf-tabchips" id="pfTabChips">' + Object.keys(TAB_DEFS).map(function(k) {
                     const d = TAB_DEFS[k];
-                    return '<button type="button" class="pf-tabchip" data-tab="' + k + '"><i class="fas ' + d.icon + '"></i> ' + esc(d.label) + '</button>';
+                    return '<button type="button" class="pf-tabchip" data-tab="' + k + '">' + esc(d.label) + '</button>';
                 }).join('') + '</div>';
             }
             function bindTabChips() {
