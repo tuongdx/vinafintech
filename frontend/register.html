@@ -890,7 +890,7 @@
                                 if (auth.refresh_token) localStorage.setItem('tunix_refresh_token', auth.refresh_token);
                                 if (auth.user) localStorage.setItem('tunix_user', JSON.stringify(auth.user));
                                 showMessage('✅ Đăng ký thành công! Đang vào TuniX…', 'success');
-                                setTimeout(function() { window.location.href = '/Home'; }, 700);
+                                setTimeout(function() { window.location.href = '/'; }, 700);
                             })
                             .catch(function() {
                                 showMessage('✅ Đăng ký thành công. Vui lòng đăng nhập để tiếp tục.', 'success');
