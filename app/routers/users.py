@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, require_roles
@@ -48,6 +49,89 @@ def _last_super_admin(db: Session) -> int:
     return (
         db.query(User).filter(User.role == RoleEnum.super_admin, User.is_active.is_(True)).count() or 0
     )
+
+
+def _purge_user_dependencies(db: Session, user_id: int) -> None:
+    """Xoá/bỏ liên kết MỌI dữ liệu tham chiếu tới user TRƯỚC khi xoá user.
+
+    Trên PostgreSQL (production) các bảng con đều có FOREIGN KEY tới ``users.id`` và
+    KHÔNG có ON DELETE CASCADE ⇒ xoá thẳng user sẽ vi phạm khoá ngoại và API trả 500
+    (frontend chỉ hiện "Yêu cầu thất bại."). Hàm này dọn dữ liệu con theo 2 cách:
+    - Bảng dữ liệu RIÊNG của user → xoá hẳn.
+    - Cột tham chiếu KHÔNG bắt buộc (tác giả tin, người xử lý ticket…) → giữ bản ghi, set NULL.
+    """
+    from app.models import (  # import cục bộ để tránh vòng import khi module nạp sớm
+        Alert,
+        AiConversation,
+        AiMemory,
+        AssetEvent,
+        CashTransaction,
+        CryptoWatchlist,
+        EmailVerificationToken,
+        Feedback,
+        MemberQuota,
+        News,
+        Notification,
+        NotificationRead,
+        PasswordResetToken,
+        PortfolioHolding,
+        SignalPosition,
+        SocialAccount,
+        StockSymbol,
+        SupportReply,
+        SupportTicket,
+        UserAsset,
+        Watchlist,
+    )
+
+    # Ticket của user: xoá reply của các ticket đó trước (reply có FK tới support_tickets.id).
+    ticket_ids = [row[0] for row in db.query(SupportTicket.id).filter(SupportTicket.user_id == user_id).all()]
+    if ticket_ids:
+        db.query(SupportReply).filter(SupportReply.ticket_id.in_(ticket_ids)).delete(synchronize_session=False)
+
+    # Bảng dữ liệu riêng của user (user_id NOT NULL) → xoá hết.
+    for model in (
+        SupportReply,
+        SupportTicket,
+        PasswordResetToken,
+        EmailVerificationToken,
+        SocialAccount,
+        AiConversation,
+        AiMemory,
+        MemberQuota,
+        Watchlist,
+        CryptoWatchlist,
+        PortfolioHolding,
+        UserAsset,
+        CashTransaction,
+        NotificationRead,
+        Notification,
+        Alert,
+        AssetEvent,
+        SignalPosition,
+    ):
+        db.query(model).filter(model.user_id == user_id).delete(synchronize_session=False)
+
+    # Cột tham chiếu không bắt buộc → giữ bản ghi, chỉ bỏ liên kết tới user bị xoá.
+    db.query(News).filter(News.author_id == user_id).update({News.author_id: None}, synchronize_session=False)
+    db.query(StockSymbol).filter(StockSymbol.added_by_id == user_id).update(
+        {StockSymbol.added_by_id: None}, synchronize_session=False
+    )
+    db.query(Feedback).filter(Feedback.user_id == user_id).update({Feedback.user_id: None}, synchronize_session=False)
+    db.query(SupportTicket).filter(SupportTicket.assignee_id == user_id).update(
+        {SupportTicket.assignee_id: None}, synchronize_session=False
+    )
+    db.query(UserDeleteRequest).filter(UserDeleteRequest.reviewed_by_id == user_id).update(
+        {UserDeleteRequest.reviewed_by_id: None}, synchronize_session=False
+    )
+    # Yêu cầu xoá nhắm tới user này hoặc do chính user gửi → xoá luôn.
+    db.query(UserDeleteRequest).filter(
+        or_(
+            UserDeleteRequest.target_user_id == user_id,
+            UserDeleteRequest.requested_by_id == user_id,
+        )
+    ).delete(synchronize_session=False)
+    db.flush()
 
 
 def _delete_request_out(r: UserDeleteRequest, db: Session) -> dict:
@@ -179,6 +263,8 @@ def delete_user(
         raise HTTPException(status_code=403, detail="Bạn không có quyền xóa tài khoản này.")
     if user.role == RoleEnum.super_admin and _last_super_admin(db) <= 1:
         raise HTTPException(status_code=400, detail="Không thể xóa super admin cuối cùng.")
+    # Dọn dữ liệu tham chiếu trước (Postgres: FK không cascade ⇒ xoá thẳng sẽ lỗi 500).
+    _purge_user_dependencies(db, user.id)
     db.delete(user)
     db.commit()
     return {"message": "Deleted"}
@@ -355,7 +441,13 @@ def approve_delete_request(
     if target:
         if target.role == RoleEnum.super_admin and _last_super_admin(db) <= 1:
             raise HTTPException(status_code=400, detail="Không thể xóa super admin cuối cùng.")
+        # Dọn dữ liệu tham chiếu trước (Postgres: FK không cascade).
+        # Lưu ý: hàm này cũng xoá yêu cầu xoá đang xử lý (target_user_id trỏ tới user bị xoá).
+        _purge_user_dependencies(db, target.id)
         db.delete(target)
+        db.commit()
+        return {"message": "Approved"}
+    # Không tìm thấy user (đã bị xoá trước đó) → chỉ đánh dấu yêu cầu đã duyệt.
     req.status = UserDeleteRequestStatus.approved
     req.reviewed_by_id = current_user.id
     req.reviewed_at = datetime.utcnow()

@@ -4354,7 +4354,7 @@
                     window.location.replace('/admin/login?next=' + encodeURIComponent(window.location.pathname));
                     throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
                 }
-                let detail = 'Yêu cầu thất bại.';
+                let detail = 'Yêu cầu thất bại (' + res.status + ').';
                 try { const d = await res.json(); detail = d.detail || detail; } catch (e) {}
                 const err = new Error(detail);
                 err.status = res.status;
