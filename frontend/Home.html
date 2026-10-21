@@ -1171,9 +1171,9 @@
                 // Khởi động TẤT CẢ fetch song song cùng lúc
                 const dashP = fetchJson('/api/stocks/market-dashboard');
                 const screenerP = fetchJson('/api/stocks/stock-screener');
-                const oppP = fetchJson('/api/stocks/opportunities');
+                let oppP;   // gán sau khi khai báo hàm loadTodayOpp() bên dưới
                 // "Cơ hội mới": snapshot backend tự cập nhật theo thị trường vào 12h trưa hằng ngày
-                const discP = fetchJson('/api/stocks/new-opportunities');
+                let discP;
                 // Tin tức quan trọng: mỗi chuyên mục (Chứng khoán/Ngân hàng) lấy tin mới nhất của nó rồi trộn.
                 const newsP = Promise.all(HOME_NEWS_CATEGORIES.map(function(c) {
                     return fetchJson('/api/news?category=' + c + '&limit=' + NEWS_PER_CATEGORY)
@@ -1210,19 +1210,50 @@
                 });
 
                 // 3) Cơ hội nổi bật hôm nay (engine backend); fallback rổ cũ nếu lỗi
-                oppP.then(function(d) {
-                    if (d) { renderTodayOpp(d); return; }
-                    screenerP.then(function() {
+                //    LẦN ĐẦU sau khi khởi động, backend có thể trả {ok:false} trong lúc còn
+                //    dựng dữ liệu thị trường (chờ tối đa 8s) ⇒ KHÔNG coi là "hết tín hiệu":
+                //    giữ trạng thái đang tải và TỰ THỬ LẠI, chỉ fallback khi đã hết lượt.
+                const showHotLoading = function() {
+                    const el = document.getElementById('ovHot');
+                    if (el) el.innerHTML = '<div class="ov-empty">Đang tải cơ hội nổi bật…</div>';
+                };
+                const fallbackHot = function() {
+                    return screenerP.then(function() {
                         const fallback = notableStocks.length ? pickNotable(notableStocks) : [];
                         oppHasStocks = fallback.length > 0;
                         if (fallback.length) renderHot(fallback);
                         else document.getElementById('ovHot').innerHTML = '<div class="ov-empty">Không tải được dữ liệu. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
                         refreshNewsCount();
                     });
-                });
+                };
+                const loadTodayOpp = function(attempt) {
+                    return fetchJson('/api/stocks/opportunities').then(function(d) {
+                        if (d && d.ok) { renderTodayOpp(d); return; }
+                        if (attempt < 8) {
+                            showHotLoading();
+                            return new Promise(function(res) { setTimeout(res, 3000); })
+                                .then(function() { return loadTodayOpp(attempt + 1); });
+                        }
+                        return fallbackHot();
+                    });
+                };
+                oppP = loadTodayOpp(0);
 
                 // 4) Cơ hội mới (snapshot 12h trưa hằng ngày — /api/stocks/new-opportunities)
-                discP.then(function(d) { if (d) renderOpps(d); });
+                //    Cold start: server có thể trả ok=false (chưa dựng xong screener) ⇒ thử lại
+                //    vài lần thay vì để block trống tới khi hết TTL fallback.
+                const loadNewOpps = function(attempt) {
+                    return fetchJson('/api/stocks/new-opportunities').then(function(d) {
+                        const hasGroups = !!(d && Array.isArray(d.strategies) && d.strategies.length);
+                        if (hasGroups) { renderOpps(d); return; }
+                        if (attempt < 8) {
+                            return new Promise(function(res) { setTimeout(res, 4000); })
+                                .then(function() { return loadNewOpps(attempt + 1); });
+                        }
+                        if (d) renderOpps(d);
+                    });
+                };
+                discP = loadNewOpps(0);
 
                 // 5) Tin tức quan trọng
                 // Chip mã cổ phiếu của mỗi tin cần bản đồ mã từ screener (NEWS_SYMS). Lần load

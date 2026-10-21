@@ -41,7 +41,10 @@ logger = logging.getLogger("tunix.home_opportunities")
 HOME_STRATEGY_KEYS = ("growth", "value", "cash_flow")
 
 _SNAPSHOT_PREFIX = "home-opportunities"
-_FALLBACK_TTL = 300          # nguồn lỗi ⇒ thử lại sau 5 phút (không ghi đè bản tốt gần nhất)
+# Nguồn lỗi ⇒ CHỈ giữ bản fallback ngắn (20s) để request kế tiếp còn thử dựng lại.
+# (Trước đây 300s: lần load ĐẦU sau khi khởi động gặp screener chưa sẵn sàng sẽ bị
+#  "dính" block trống tới 5 phút, phải sang trang khác rồi quay lại mới có dữ liệu.)
+_FALLBACK_TTL = 20
 _REFRESH_LOCK = threading.Lock()
 _REFRESH_STARTED = False
 _LAST_GOOD: dict[str, Any] | None = None
