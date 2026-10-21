@@ -165,20 +165,16 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         role=RoleEnum.member,
         plan=PlanTierEnum.free,
         terms_accepted=True,
-        email_verified=False,
+        # Đăng ký qua form = kích hoạt NGAY (không chặn đăng nhập chờ xác thực email).
+        # Người dùng vẫn có thể yêu cầu gửi lại email xác thực ở màn hình đăng nhập nếu cần.
+        email_verified=True,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
 
-    # Gửi email xác thực (dev mode: link in ra console)
-    try:
-        _create_and_send_verification(db, user)
-    except Exception:  # noqa: BLE001 — không làm hỏng đăng ký nếu email lỗi
-        pass
-
     return {
-        "message": "Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.",
+        "message": "Đăng ký thành công. Bạn có thể đăng nhập ngay.",
         "email": user.email,
     }
 
