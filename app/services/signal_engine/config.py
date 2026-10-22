@@ -53,6 +53,10 @@ DEFAULTS: dict[str, Any] = {
         "universe_limit": 0,            # 0 = quét TOÀN BỘ mã đủ điều kiện (thanh khoản TB20)
         "use_cache": False,             # False = tính lại từ dữ liệu mới nhất (không dùng cache cũ)
         "scan_workers": 4,              # trần luồng của job NỀN (Render free 512MB: giữ thấp để tránh OOM)
+        # Số mã mỗi LÔ khi quét nền (0 = cả vũ trụ 1 lượt). Chia lô để bộ nhớ đỉnh thấp:
+        # snapshot từng lô được lưu DB rồi giải phóng — quét cả vũ trụ 1 lượt từng làm instance
+        # Render free (512MB) bị OOM-kill giữa lúc quét.
+        "scan_batch_size": 24,
         "refresh_open_signals": True,   # sau khi quét: đóng tín hiệu quá hạn T+ & cập nhật mã còn lại
     },
     "features": {

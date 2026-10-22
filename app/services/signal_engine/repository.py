@@ -45,6 +45,17 @@ def _now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+def iso_utc(value: datetime | None) -> str | None:
+    """ISO CÓ múi giờ cho mốc lưu trong DB (DB lưu UTC naive — `datetime.utcnow`).
+
+    Thiếu múi giờ thì trình duyệt sẽ hiểu mốc đó là GIỜ ĐỊA PHƯƠNG (VN: lệch 7 giờ) ⇒
+    cột "Ngày tạo"/"Vào lệnh" hiển thị sai. Vì vậy mọi mốc trả ra API đều gắn tường minh.
+    """
+    if value is None:
+        return None
+    return (value if value.tzinfo else value.replace(tzinfo=timezone.utc)).isoformat()
+
+
 def _dump(value: Any) -> str:
     try:
         return json.dumps(value, ensure_ascii=False, default=str)
@@ -455,7 +466,7 @@ def last_scan_at(db: Session) -> str | None:
     except Exception as exc:  # noqa: BLE001 — thiếu bảng/cột ⇒ không chặn trang
         logger.warning("không đọc được thời điểm quét gần nhất: %s", exc)
         return None
-    return value.isoformat() if value else None
+    return iso_utc(value)
 
 
 # ---------------------------------------------------------------------------
@@ -490,9 +501,9 @@ def position_out(row: SignalPosition, live_price: float | None = None) -> dict[s
         "signal_id": row.signal_id,
         "status": row.status,
         "entry_price": row.entry_price,
-        "entry_at": row.entry_at.isoformat() if row.entry_at else None,
+        "entry_at": iso_utc(row.entry_at),
         "exit_price": row.exit_price,
-        "exit_at": row.exit_at.isoformat() if row.exit_at else None,
+        "exit_at": iso_utc(row.exit_at),
         "exit_reason": row.exit_reason,
         "current_price": current,
         "return_pct": pnl_pct if is_open else row.return_pct,
@@ -633,9 +644,9 @@ def _row_out(row: Signal) -> dict[str, Any]:
         "holding_days": row.holding_days,
         "exit_price": row.exit_price,
         "exit_reason": row.exit_reason,
-        "created_at": row.created_at.isoformat() if row.created_at else None,
-        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
-        "closed_at": row.closed_at.isoformat() if row.closed_at else None,
+        "created_at": iso_utc(row.created_at),
+        "updated_at": iso_utc(row.updated_at),
+        "closed_at": iso_utc(row.closed_at),
     }
 
 
@@ -657,7 +668,7 @@ def get_signal(db: Session, signal_id: int) -> dict[str, Any] | None:
             "from_state": h.from_state, "to_state": h.to_state, "signal": h.signal, "reason": h.reason,
             "price": h.price, "score": h.score, "exit_price": h.exit_price, "return_pct": h.return_pct,
             "holding_days": h.holding_days, "result": h.result,
-            "created_at": h.created_at.isoformat() if h.created_at else None,
+            "created_at": iso_utc(h.created_at),
         }
         for h in db.query(SignalHistory).filter(SignalHistory.signal_id == row.id).order_by(SignalHistory.id.asc()).all()
     ]
@@ -811,7 +822,7 @@ def signal_history(db: Session, *, symbol: str = "", strategy: str = "", limit: 
                 "reason": h.reason, "price": h.price, "score": h.score,
                 "exit_price": h.exit_price, "return_pct": h.return_pct,
                 "holding_days": h.holding_days, "result": h.result,
-                "created_at": h.created_at.isoformat() if h.created_at else None,
+                "created_at": iso_utc(h.created_at),
             }
             for h in rows
         ],

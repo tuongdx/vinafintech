@@ -9,17 +9,26 @@ Nguyên tắc:
 - Chạy trong **THREAD NỀN (daemon)** như các job 12h trưa khác của TuniX ⇒ KHÔNG chặn API.
 - Quét bỏ cache snapshot (``schedule.use_cache = False``) nên phân tích bằng **dữ liệu mới nhất**
   (nến ngày mới nhất + giá intraday của phiên đang chạy).
+- Quét theo **LÔ** (``schedule.scan_batch_size``): mỗi lô phân tích → lưu DB → giải phóng bộ nhớ.
+  Giữ toàn bộ snapshot của cả vũ trụ trong RAM từng làm instance Render free (512MB) bị OOM-kill
+  giữa lúc quét ⇒ DB không có tín hiệu nào.
 - Cột "Giá hiện tại" trên bảng vẫn là **giá realtime** (API quotes, cache 15s, UI tự làm mới mỗi
   phút) — độc lập với lịch quét này.
 - Mỗi mốc giờ chỉ chạy 1 lần (idempotent); kết quả lần quét gần nhất giữ trong cache tiến trình
   để hiển thị ở pill đầu trang Tín hiệu (``info()``).
+- **QUÉT BÙ sau khi khởi động** (``_catch_up_if_stale``): Render free tier NGỦ sau ~15 phút
+  không truy cập nên thread thường KHÔNG thức đúng mốc 11:00/13:30/15:00 ⇒ nếu chỉ dựa vào
+  lịch thì DB có thể KHÔNG BAO GIỜ có tín hiệu (trang Tín hiệu trống vĩnh viễn). Vì vậy khi
+  DB chưa có tín hiệu hoặc dữ liệu đã cũ, thread quét bù NGAY 1 lần rồi mới chạy theo lịch.
 """
 from __future__ import annotations
 
+import gc
 import logging
+import re
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.services.news_time import now_vn
@@ -33,10 +42,28 @@ _LAST_RUN_TTL = 7 * 86400
 # Mốc giờ mặc định khi `schedule.scan_times` để trống/sai định dạng.
 _DEFAULT_SLOTS: list[tuple[int, int]] = [(11, 0), (13, 30), (15, 0)]
 
+# Quét bù khi dữ liệu tín hiệu cũ hơn ngưỡng này (giờ). Lịch quét 3 lần/ngày ⇒ 20 giờ là
+# "đã lỡ ít nhất 1 mốc"; instance vừa thức dậy sau khi ngủ sẽ tự quét lại thay vì chờ mốc sau.
+_CATCH_UP_AGE_HOURS = 20.0
+# Chờ instance qua health-check + warm cache trang chủ (`_warm_home_caches` chạy nền từ giây
+# thứ 25) rồi mới quét: quét toàn thị trường cùng lúc với warm cache rất dễ OOM trên 512MB.
+_CATCH_UP_DELAY_SECONDS = 90.0
+
 _STARTED = False
 _RUNNING = False
 _LOCK = threading.Lock()
 _THREAD_NAME = "signals-scheduler"
+# Mốc giờ của lịch quét là GIỜ VN (naive) — gắn +07:00 khi trả ra API để trình duyệt hiển thị đúng
+# (mốc tín hiệu trong DB thì lưu UTC, xem `repository.iso_utc`).
+_TZ_SUFFIX = re.compile(r"(?:[zZ]|[+-]\d{2}:?\d{2})$")
+
+
+def vn_iso(value: datetime | str | None) -> str | None:
+    """Gắn múi giờ +07:00 cho mốc giờ VN dạng naive (đã có múi giờ thì giữ nguyên)."""
+    if not value:
+        return None
+    text = value.isoformat() if isinstance(value, datetime) else str(value)
+    return text if _TZ_SUFFIX.search(text) else text + "+07:00"
 
 
 # ---------------------------------------------------------------------------
@@ -75,6 +102,9 @@ def schedule_config(cfg: dict | None = None) -> dict[str, Any]:
         "universe_limit": universe_limit,
         "use_cache": bool(conf.get("use_cache", False)),
         "scan_workers": max(0, int(conf.get("scan_workers") or 0)),
+        # Số mã mỗi LÔ khi quét nền (0 = quét 1 lần cả vũ trụ). Chia lô ⇒ bộ nhớ đỉnh thấp
+        # hơn nhiều (Render free 512MB): snapshot của lô trước được lưu DB rồi giải phóng.
+        "batch_size": max(0, int(conf.get("scan_batch_size") or 0)),
         "refresh_open_signals": bool(conf.get("refresh_open_signals", True)),
     }
 
@@ -110,8 +140,8 @@ def info() -> dict[str, Any]:
         "times": [f"{h:02d}:{m:02d}" for h, m in conf["times"]],
         "weekdays_only": conf["weekdays_only"],
         "universe_limit": conf["universe_limit"],
-        "next_run_at": next_run().isoformat(),
-        "last_run_at": (last or {}).get("finished_at"),
+        "next_run_at": vn_iso(next_run()),
+        "last_run_at": vn_iso((last or {}).get("finished_at")),
         "last_run": last,
         # Thread quét có đang sống trong TIẾN TRÌNH này không (chẩn đoán nhanh ở UI).
         "worker_alive": any(t.name == _THREAD_NAME for t in threading.enumerate()),
@@ -153,12 +183,24 @@ def run_scan(*, limit: int | None = None, reason: str = "schedule") -> dict[str,
         if not universe:
             summary["error"] = "không lấy được vũ trụ mã đủ điều kiện"
         else:
-            result = engine_module.scan(
-                symbols=universe, limit=len(universe), cfg=cfg,
-                db=db, persist=True, use_cache=conf["use_cache"],
-            )
-            summary["scanned"] = int(result.get("count") or 0)
-            summary["as_of"] = result.get("as_of")
+            # Chia LÔ: mỗi lô phân tích + lưu DB rồi giải phóng snapshot ngay. Quét cả vũ trụ
+            # trong 1 lượt giữ toàn bộ snapshot trong RAM ⇒ OOM-kill trên Render free 512MB
+            # (đã xảy ra: instance chết giữa lúc quét và DB không có tín hiệu nào).
+            batch = conf["batch_size"] if conf["batch_size"] > 0 else len(universe)
+            scanned = 0
+            as_of = None
+            for start in range(0, len(universe), batch):
+                chunk = universe[start:start + batch]
+                result = engine_module.scan(
+                    symbols=chunk, limit=len(chunk), cfg=cfg,
+                    db=db, persist=True, use_cache=conf["use_cache"],
+                )
+                scanned += int(result.get("count") or 0)
+                as_of = as_of or result.get("as_of")
+                del result
+                gc.collect()  # trả bộ nhớ của lô vừa xong về hệ thống trước khi sang lô kế tiếp
+            summary["scanned"] = scanned
+            summary["as_of"] = as_of
             if conf["refresh_open_signals"]:
                 # Sau khi quét: đóng tín hiệu QUÁ HẠN T+ và cập nhật các mã có tín hiệu nhưng
                 # nằm ngoài vũ trụ vừa quét (những mã khác đã mới nên bước này gần như không tốn gì).
@@ -187,9 +229,72 @@ def _seconds_until_next(cfg: dict | None = None) -> float:
     return max(1.0, (next_run(now, cfg) - now).total_seconds())
 
 
-def _loop() -> None:
-    """Thread nền: ngủ tới mốc giờ kế tiếp → quét → lặp lại (không bao giờ thoát)."""
+# ---------------------------------------------------------------------------
+# Quét bù sau khi khởi động (instance vừa "thức dậy")
+# ---------------------------------------------------------------------------
+def data_age_hours() -> float | None:
+    """Số giờ kể từ lần ghi tín hiệu gần nhất trong DB; ``None`` = DB CHƯA có tín hiệu nào.
+
+    ``signals.updated_at`` lưu theo UTC (naive) nên mốc đọc lên được gắn UTC trước khi so sánh.
+    """
+    from app.db import SessionLocal
+    from app.services.signal_engine import repository
+
+    db = SessionLocal()
+    try:
+        raw = repository.last_scan_at(db)
+    finally:
+        db.close()
+    if not raw:
+        return None
+    stamp = datetime.fromisoformat(raw)
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - stamp).total_seconds() / 3600.0
+
+
+def needs_catch_up() -> bool:
+    """Có nên quét bù ngay không? (DB trống ⇒ luôn có; dữ liệu cũ ⇒ chỉ ngày giao dịch)."""
+    age = data_age_hours()
+    if age is None:
+        return True
+    if age < _CATCH_UP_AGE_HOURS:
+        return False
+    # Cuối tuần không có nến mới ⇒ quét lại cũng ra đúng dữ liệu cũ, chỉ tốn CPU.
+    return now_vn().weekday() < 5
+
+
+def _catch_up_if_stale() -> None:
+    """Quét bù 1 lần NGAY sau khi thread khởi động nếu dữ liệu trống/đã cũ."""
     global _RUNNING
+    try:
+        stale = needs_catch_up()
+    except Exception as exc:  # noqa: BLE001 — không đọc được DB thì bỏ qua, lịch vẫn chạy
+        logger.warning("không kiểm tra được độ mới của tín hiệu: %s", exc)
+        return
+    if not stale:
+        return
+    logger.info("tín hiệu chưa có/đã cũ — quét bù sau %.0f giây", _CATCH_UP_DELAY_SECONDS)
+    time.sleep(_CATCH_UP_DELAY_SECONDS)
+    if _RUNNING:
+        return
+    _RUNNING = True
+    try:
+        summary = run_scan(reason="catch-up")
+        logger.info(
+            "quét bù xong: scanned=%s expired=%s error=%s",
+            summary.get("scanned"), summary.get("expired"), summary.get("error"),
+        )
+    except Exception as exc:  # noqa: BLE001 — thread nền không được chết
+        logger.warning("quét bù sau khởi động lỗi: %s", exc)
+    finally:
+        _RUNNING = False
+
+
+def _loop() -> None:
+    """Thread nền: quét bù (nếu cần) → ngủ tới mốc giờ kế tiếp → quét → lặp lại."""
+    global _RUNNING
+    _catch_up_if_stale()
     while True:
         try:
             wait = _seconds_until_next()

@@ -127,10 +127,19 @@
         var n = Number(v);
         return isFinite(n) ? Math.round(n).toLocaleString('vi-VN') : '—';
     }
+    // Mốc thời gian: API trả ISO (mốc tín hiệu/vị thế là UTC, mốc lịch quét là +07:00).
+    // Chuỗi KHÔNG có múi giờ ⇒ hiểu là UTC (nếu để trình duyệt tự đoán, nó coi là giờ địa
+    // phương ⇒ lệch 7 giờ). Hiển thị theo GIỜ VN cho mọi người, giống các trang khác của TuniX.
     function dt(iso) {
         if (!iso) return '—';
-        var d = new Date(iso);
-        return isNaN(d.getTime()) ? '—' : d.toLocaleString('vi-VN', { hour12: false });
+        var text = String(iso);
+        if (!/[zZ]$|[+-]\d{2}:?\d{2}$/.test(text)) text += 'Z';
+        var d = new Date(text);
+        if (isNaN(d.getTime())) return '—';
+        var vn = new Date(d.getTime() + 7 * 3600 * 1000);   // VN = UTC+7
+        function p(v) { return (v < 10 ? '0' : '') + v; }
+        return p(vn.getUTCHours()) + ':' + p(vn.getUTCMinutes()) + ':' + p(vn.getUTCSeconds()) +
+            ' ' + p(vn.getUTCDate()) + '/' + p(vn.getUTCMonth() + 1) + '/' + vn.getUTCFullYear();
     }
     function signalHtml(signal) {
         if (signal === 'BUY') return '<span class="sig-signal buy">BUY</span>';
@@ -662,6 +671,7 @@
             var cntRec = $('sigCntRec');
             if (cntRec) cntRec.textContent = num(total, 0);
             var items = d.items || [];
+            if (items.length) emptyReloads = 0;
             // Nhớ chiến thuật + signal_id của từng mã đang hiển thị ⇒ khi bật ON ghi được vào vị thế.
             signalBySym = {};
             items.forEach(function (r) {
@@ -700,6 +710,10 @@
     // Mỗi lần mở trang, server sẽ (1) đóng tín hiệu đã quá hạn và (2) phân tích lại các mã còn
     // tín hiệu đang mở bằng nến mới nhất. Chạy NỀN: danh sách hiện trước, cập nhật xong mới vẽ lại.
     var refreshing = false;
+    // Số lần tự tải lại danh sách khi bảng TRỐNG (server có thể đang quét bù ở nền sau khi
+    // instance vừa "thức dậy" — xem `signal_engine/scheduler.py`).
+    var emptyReloads = 0;
+    var EMPTY_RELOAD_MAX = 5;
 
     function sigAutoRefresh(manual) {
         if (refreshing) return Promise.resolve();
@@ -837,7 +851,14 @@
         // Giá hiện tại tự làm mới mỗi phút (chỉ khi tab đang hiển thị & bảng có dữ liệu).
         setInterval(function () {
             if (document.hidden) return;
-            if (!document.querySelector('td.sig-price')) return;
+            if (!document.querySelector('td.sig-price')) {
+                // Bảng TRỐNG ⇒ tải lại danh sách vài lần (dữ liệu có thể đang được quét bù ở nền).
+                if (activeTab === 'rec' && emptyReloads < EMPTY_RELOAD_MAX && token()) {
+                    emptyReloads += 1;
+                    sigLoad(0);
+                }
+                return;
+            }
             loadLivePrices().then(sortRowsByPrice);
         }, 60000);
 
