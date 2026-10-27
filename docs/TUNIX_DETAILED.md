@@ -136,9 +136,10 @@ mở /cophieu-{MÃ}
 | `GET /stocks/{symbol}/dividends` | – | lịch sử cổ tức |
 | `GET /stocks/{symbol}/company-summary` | – | tóm tắt doanh nghiệp |
 | `GET /stocks/{symbol}/order-book` | – | sổ lệnh (bids/asks) |
-| `GET /stocks/{symbol}/trades?limit=` | 50 | giao dịch gần nhất |
+| `GET /stocks/{symbol}/trades?limit=&before=` | 50 | giao dịch khớp lệnh gần nhất; `before` (epoch giây) để phân trang lấy toàn bộ phiên (VCI tối đa 100 lệnh/request) |
+| `GET /stocks/{symbol}/money-flow?sessions=` | 10 | dòng tiền ròng N phiên gần nhất **tính từ OHLCV** (không có lịch sử mua/bán chủ động): `{symbol, sessions, source:"ohlcv-derived", items:[{date, close, change_pct, volume, value, clv, inflow, outflow, net}], summary:{inflow, outflow, net, ratio, inflow_sessions, outflow_sessions, avg_value}}` |
 | `GET /stocks/{symbol}/peers?limit=` | 10 | so sánh tương quan `{peers:[{symbol,name,is_current,market_cap,revenue,net_profit}]}` |
-| `GET /stocks/{symbol}/profit-analysis?quarters=` | 12 | `{symbol, source:"vci-finance", quarters:[{year,quarter,label,period,revenue,gross_profit,profit_before_tax,net_profit}]}` |
+| `GET /stocks/{symbol}/profit-analysis?quarters=` | 0 (toàn bộ lịch sử) | `{symbol, source:"vci-finance", quarters:[{year,quarter,label,period,revenue,gross_profit,profit_before_tax,net_profit}]}` |
 | `GET /stocks/indices` | – | VNINDEX/VN30/DJI |
 | `GET /stocks/market-overview` | – | VNINDEX, VN30, DJI, BTC, vàng TG/VN |
 | `GET /stocks/index-detail?key=&period=` | vnindex, vn30, hnx, hnx30, upcom, dowjones, nikkei, kospi, hkex, sgx, bitcoin, gold_world, gold_vn | `{value, change, percent_change, history[]}` |

@@ -3326,21 +3326,41 @@ def _vci_get_json(path: str, params: dict[str, Any] | None = None) -> dict[str, 
     return data
 
 
-def get_profit_analysis(symbol: str, quarters: int = 12) -> dict[str, Any]:
+_PROFIT_MAX_QUARTERS = 80
+
+
+def _limit_profit_quarters(result: dict[str, Any], quarters: int) -> dict[str, Any]:
+    """Cắt danh sách quý của kết quả profit-analysis. `quarters <= 0` ⇒ giữ toàn bộ lịch sử."""
+    if not isinstance(result, dict):
+        return result
+    all_quarters = result.get("quarters") or []
+    if quarters <= 0 or len(all_quarters) <= quarters:
+        return result
+    return {**result, "quarters": all_quarters[-quarters:]}
+
+
+def get_profit_analysis(symbol: str, quarters: int | None = None) -> dict[str, Any]:
     """Lợi nhuận thực tế theo quý từ báo cáo kết quả kinh doanh (VCI REST API).
 
     Lấy số liệu lợi nhuận sau thuế / trước thuế / doanh thu / lợi nhuận gộp của công ty
-    qua từng quý trong các năm, sắp xếp tăng dần theo thời gian và trả về `quarters`
-    quý gần nhất. Không phụ thuộc phiên bản vnstock (gọi thẳng VCI iQ insight).
+    qua từng quý trong các năm, sắp xếp tăng dần theo thời gian. `quarters` là số quý gần
+    nhất cần trả về; `None` / `0` / số âm ⇒ trả về TOÀN BỘ lịch sử VCI có (thường 8-15 năm).
+    Không phụ thuộc phiên bản vnstock (gọi thẳng VCI iQ insight).
     """
     symbol_upper = symbol.upper().strip()
-    safe_quarters = max(4, min(int(quarters or 12), 60))
+    try:
+        wanted_quarters = int(quarters) if quarters is not None else 0
+    except (TypeError, ValueError):
+        wanted_quarters = 0
+    wanted_quarters = max(0, min(wanted_quarters, _PROFIT_MAX_QUARTERS))
     empty = {"symbol": symbol_upper, "source": "empty", "unit": "vnd", "quarters": []}
 
+    # Cache luôn giữ TOÀN BỘ lịch sử; mỗi lần gọi tự cắt theo `quarters` để các nơi
+    # dùng khác nhau (trang chi tiết, TuniAI...) không nhận nhầm dữ liệu đã bị cắt.
     cache_key = f"profit-analysis:{symbol_upper}"
     cached = cache.get(cache_key)
     if cached is not None:
-        return cached
+        return _limit_profit_quarters(cached, wanted_quarters)
 
     try:
         # 1) Metadata chỉ tiêu -> ánh xạ mã trường (isa*) sang tên tiếng Anh.
@@ -3377,7 +3397,7 @@ def get_profit_analysis(symbol: str, quarters: int = 12) -> dict[str, Any]:
         if not isinstance(raw_quarters, list) or not raw_quarters:
             return empty
 
-        # 3) Gom dữ liệu, sắp tăng dần theo (năm, quý), giữ lại những quý mới nhất.
+        # 3) Gom dữ liệu và sắp tăng dần theo (năm, quý) — giữ toàn bộ lịch sử VCI trả về.
         quarters_data: list[dict[str, Any]] = []
         for q in raw_quarters:
             if not isinstance(q, dict):
@@ -3403,7 +3423,8 @@ def get_profit_analysis(symbol: str, quarters: int = 12) -> dict[str, Any]:
             )
 
         quarters_data.sort(key=lambda item: (item["year"], item["quarter"]))
-        quarters_data = quarters_data[-safe_quarters:]
+        if not quarters_data:
+            return empty
 
         result = {
             "symbol": symbol_upper,
@@ -3412,7 +3433,7 @@ def get_profit_analysis(symbol: str, quarters: int = 12) -> dict[str, Any]:
             "quarters": quarters_data,
         }
         cache.set(cache_key, result, ttl_seconds=21600)
-        return result
+        return _limit_profit_quarters(result, wanted_quarters)
     except Exception:
         return empty
 
@@ -4235,25 +4256,45 @@ def _order_book_vnstock(symbol_upper: str) -> dict[str, Any] | None:
         return None
 
 
-def get_recent_trades(symbol: str, limit: int = 50) -> list[dict[str, Any]]:
+def get_recent_trades(
+    symbol: str, limit: int = 50, before: int | None = None
+) -> list[dict[str, Any]]:
     """Các giao dịch khớp lệnh gần nhất của phiên (VCI intraday).
+
+    `before` (epoch giây) dùng để phân trang lấy TOÀN BỘ giao dịch của phiên:
+    trả về các lệnh có `ts <= before` (bao gồm cả giây đó). Client truyền `ts` của
+    lệnh cũ nhất đang có rồi tự loại trùng theo `id` (VCI chỉ trả tối đa 100 lệnh
+    mỗi request nên không lấy được cả phiên trong 1 lần gọi).
 
     Dữ liệu từng lệnh khớp: thời gian, giá, khối lượng, chiều mua/bán.
     Gọi TRỰC TIẾP REST API VCI (~0.1s) thay vì thư viện vnstock; fallback nếu lỗi.
     """
     symbol_upper = symbol.upper().strip()
     safe_limit = max(1, min(int(limit or 50), 200))
+    try:
+        cursor = int(before) if before is not None else None
+    except (TypeError, ValueError):
+        cursor = None
+    # VCI giới hạn 100 lệnh/request; muốn nhiều hơn phải phân trang bằng `before`.
+    vci_limit = min(safe_limit, 100)
     empty: list[dict[str, Any]] = []
 
-    cache_key = f"recent-trades:{symbol_upper}:{safe_limit}"
-    cached = cache.get(cache_key)
-    if cached is not None:
-        return cached
+    # Chỉ cache trang đầu: mỗi cursor là một key riêng, cache sẽ phình nếu lưu tất cả.
+    cache_key = f"recent-trades:{symbol_upper}:{vci_limit}" if cursor is None else None
+    if cache_key:
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
 
     try:
         response = _get_http_client().post(
             f"{_VCI_TRADING_URL}/market-watch/LEData/getAll",
-            json={"symbol": symbol_upper, "limit": safe_limit, "truncTime": None},
+            json={
+                "symbol": symbol_upper,
+                "limit": vci_limit,
+                # VCI trả các lệnh có truncTime < mốc này ⇒ +1 để bao gồm cả giây `before`.
+                "truncTime": cursor + 1 if cursor is not None else None,
+            },
             headers=_VCI_TRADING_HEADERS,
             timeout=httpx.Timeout(_VCI_TRADING_TIMEOUT, connect=10.0),
         )
@@ -4261,11 +4302,15 @@ def get_recent_trades(symbol: str, limit: int = 50) -> list[dict[str, Any]]:
         rows = data if isinstance(data, list) else []
         trades = _parse_vci_intraday(symbol_upper, rows)
         if trades:
-            cache.set(cache_key, trades, ttl_seconds=15)
+            if cache_key:
+                cache.set(cache_key, trades, ttl_seconds=15)
             return trades
     except Exception:
         pass
 
+    if cursor is not None:
+        # Fallback vnstock không hỗ trợ cursor ⇒ không dùng cho các trang sau.
+        return empty
     fallback = _recent_trades_vnstock(symbol_upper, safe_limit)
     if fallback:
         cache.set(cache_key, fallback, ttl_seconds=15)
@@ -4274,7 +4319,7 @@ def get_recent_trades(symbol: str, limit: int = 50) -> list[dict[str, Any]]:
 
 
 def _parse_vci_intraday(symbol_upper: str, rows: list[Any]) -> list[dict[str, Any]]:
-    """Parse rows VCI LEData/getAll -> [{symbol, time, price, volume, match_type, side}]."""
+    """Parse rows VCI LEData/getAll -> [{symbol,id,ts,time,price,volume,match_type,side}]."""
     trades: list[dict[str, Any]] = []
     for row in rows:
         if not isinstance(row, dict):
@@ -4290,7 +4335,8 @@ def _parse_vci_intraday(symbol_upper: str, rows: list[Any]) -> list[dict[str, An
         trades.append(
             {
                 "symbol": symbol_upper,
-                "_ts": ts,
+                "id": str(row.get("id") or ""),
+                "ts": ts,
                 "time": (
                     datetime.fromtimestamp(ts, _VN_TZ).strftime("%H:%M:%S")
                     if ts
@@ -4302,9 +4348,7 @@ def _parse_vci_intraday(symbol_upper: str, rows: list[Any]) -> list[dict[str, An
                 "side": "B" if match_type.lower().startswith("b") else "S",
             }
         )
-    trades.sort(key=lambda t: t["_ts"], reverse=True)
-    for t in trades:
-        t.pop("_ts", None)
+    trades.sort(key=lambda t: t["ts"], reverse=True)
     return trades
 
 
@@ -4334,6 +4378,8 @@ def _recent_trades_vnstock(symbol_upper: str, safe_limit: int) -> list[dict[str,
             trades.append(
                 {
                     "symbol": symbol_upper,
+                    "id": "",
+                    "ts": 0,
                     "time": time_label,
                     "price": price,
                     "volume": int(_to_float(row.get("volume"))),
@@ -4342,9 +4388,119 @@ def _recent_trades_vnstock(symbol_upper: str, safe_limit: int) -> list[dict[str,
                 }
             )
         trades.sort(key=lambda t: t["time"], reverse=True)
-        return trades[:safe_limit]
+        trades = trades[:safe_limit]
+        # Fallback không có id từ VCI → tạo id nội bộ để client loại trùng.
+        for idx, trade in enumerate(trades):
+            trade["id"] = f"fb-{trade['time']}-{trade['price']}-{trade['volume']}-{idx}"
+        return trades
     except Exception:
         return []
+
+
+_MONEY_FLOW_DEFAULT_SESSIONS = 10
+_MONEY_FLOW_MAX_SESSIONS = 60
+
+
+def _vn_session_date(value: Any) -> str:
+    """ISO time → 'YYYY-MM-DD' theo giờ VN (bar daily của Simplize là 00:00 UTC)."""
+    try:
+        dt = datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(_VN_TZ).strftime("%Y-%m-%d")
+
+
+def _money_flow_row(bar: dict[str, Any], prev_close: float) -> dict[str, Any]:
+    """Một phiên dòng tiền: tách giá trị giao dịch thành tiền VÀO / RA theo CLV."""
+    high = _to_float(bar.get("high"))
+    low = _to_float(bar.get("low"))
+    close = _to_float(bar.get("close"))
+    volume = max(0.0, _to_float(bar.get("volume")))
+    value = (high + low + close) / 3.0 * volume if volume > 0 else 0.0
+    if high > low:
+        clv = ((close - low) - (high - close)) / (high - low)
+    else:
+        clv = 0.0
+    clv = max(-1.0, min(1.0, clv))
+    inflow = value * (1.0 + clv) / 2.0
+    outflow = value * (1.0 - clv) / 2.0
+    change_pct = ((close - prev_close) / prev_close * 100.0) if prev_close > 0 else 0.0
+    return {
+        "date": _vn_session_date(bar.get("time")),
+        "time": bar.get("time") or "",
+        "close": round(close, 2),
+        "change_pct": round(change_pct, 2),
+        "volume": int(volume),
+        "value": round(value),
+        "clv": round(clv, 4),
+        "inflow": round(inflow),
+        "outflow": round(outflow),
+        "net": round(inflow - outflow),
+    }
+
+
+def get_money_flow(symbol: str, sessions: int = _MONEY_FLOW_DEFAULT_SESSIONS) -> dict[str, Any]:
+    """Dòng tiền ròng N phiên gần nhất — TÍNH từ OHLCV.
+
+    VCI/SSI chỉ cung cấp giá trị mua/bán chủ động của phiên đang diễn ra (không có
+    lịch sử theo phiên), nên dòng tiền được suy ra từ biến động giá trong phiên:
+    - Giá trị giao dịch `value` = giá TB (H+L+C)/3 × KL.
+    - Hệ số dòng tiền CLV = ((C−L)−(H−C))/(H−L) ∈ [−1, 1]: đóng cửa càng sát đỉnh
+      ⇒ càng nhiều tiền VÀO, càng sát đáy ⇒ càng nhiều tiền RA.
+    - Vào = value×(1+CLV)/2, Ra = value×(1−CLV)/2, Ròng = Vào − Ra.
+    """
+    symbol_upper = str(symbol or "").upper().strip()
+    try:
+        count = int(sessions)
+    except (TypeError, ValueError):
+        count = _MONEY_FLOW_DEFAULT_SESSIONS
+    count = max(1, min(_MONEY_FLOW_MAX_SESSIONS, count))
+
+    cache_key = f"money-flow:{symbol_upper}:{count}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    bars: list[dict[str, Any]] = []
+    try:
+        # "1m" → bar NGÀY (1m_d, ~22 phiên); "3m" của Simplize là bar 2 giờ, không dùng được.
+        raw = get_history(symbol_upper, "1d", "1m")
+        bars = [b for b in (raw or []) if isinstance(b, dict) and _to_float(b.get("close")) > 0]
+    except Exception:
+        bars = []
+
+    rows: list[dict[str, Any]] = []
+    prev_close = 0.0
+    for bar in bars:
+        rows.append(_money_flow_row(bar, prev_close))
+        prev_close = _to_float(bar.get("close")) or prev_close
+    items = rows[-count:]
+
+    inflow = sum(item["inflow"] for item in items)
+    outflow = sum(item["outflow"] for item in items)
+    net = inflow - outflow
+    total_value = inflow + outflow
+    result = {
+        "symbol": symbol_upper,
+        "sessions": count,
+        "source": "ohlcv-derived" if items else "empty",
+        "items": items,
+        "summary": {
+            "sessions": len(items),
+            "inflow": round(inflow),
+            "outflow": round(outflow),
+            "net": round(net),
+            "ratio": round(net / total_value, 4) if total_value > 0 else 0.0,
+            "inflow_sessions": sum(1 for item in items if item["net"] > 0),
+            "outflow_sessions": sum(1 for item in items if item["net"] < 0),
+            "avg_value": round(total_value / len(items)) if items else 0,
+        },
+    }
+    if items:
+        cache.set(cache_key, result, ttl_seconds=180)
+    return result
 
 
 def get_peer_comparison(symbol: str, limit: int = 10) -> dict[str, Any]:

@@ -3,7 +3,7 @@
  *
  *  RIGHT SIDEBAR  : thông tin cổ phiếu + Tổng quan + Chỉ báo (đồng bộ 2 chiều với chart)
  *                   + Hỗ trợ / Kháng cự (đồng bộ với AnalysisEngine của chart).
- *  BOTTOM DASHBOARD: Market Breadth + Tin tức nổi bật + TuniX AI Phân tích.
+ *  BOTTOM DASHBOARD: Giả định tích sản + Dòng tiền 10 phiên + TuniX AI Phân tích.
  *
  * KHÔNG tạo chart / indicator / analysis mới — tái sử dụng engine hiện tại
  * (IndicatorEngine, AnalysisEngine, IndicatorPanel) và API TuniX hiện có.
@@ -72,6 +72,15 @@ function fmtSigned(n, dec = 2) {
     return abs;
 }
 
+// VND → "tỷ" (1 chữ số thập phân). signed=true → kèm dấu +/-.
+function flowTy(v, signed) {
+    const ty = Number(v || 0) / 1e9;
+    if (!Number.isFinite(ty)) return '--';
+    const abs = Math.abs(ty).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    if (!signed) return abs;
+    return (ty > 0 ? '+' : ty < 0 ? '-' : '') + abs;
+}
+
 function fmtBig(n) {
     const v = Number(n);
     if (!Number.isFinite(v) || v <= 0) return '--';
@@ -87,21 +96,6 @@ function fmtInd(v) {
     if (Math.abs(n) >= 1e9) return (n / 1e9).toLocaleString('en-US', { maximumFractionDigits: 2 }) + 'B';
     if (Math.abs(n) >= 1e6) return (n / 1e6).toLocaleString('en-US', { maximumFractionDigits: 2 }) + 'M';
     return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
-}
-
-function timeAgo(iso) {
-    if (!iso) return '';
-    const t = new Date(iso).getTime();
-    if (!Number.isFinite(t)) return '';
-    const diff = Date.now() - t;
-    const m = Math.floor(diff / 60000);
-    if (m < 1) return 'vừa xong';
-    if (m < 60) return m + ' phút trước';
-    const h = Math.floor(m / 60);
-    if (h < 24) return h + ' giờ trước';
-    const d = Math.floor(h / 24);
-    if (d < 30) return d + ' ngày trước';
-    return new Date(t).toLocaleDateString('vi-VN');
 }
 
 // Cơ bản / Định giá / Rủi ro (dữ liệu screener).
@@ -176,8 +170,8 @@ export class FullscreenWorkspace {
         this._candles = [];
         this._quote = null;
         this._quoteLoading = false;
-        this._news = [];
-        this._newsLoading = false;
+        this._flow = null;
+        this._flowLoading = false;
         this._fund = null;
         this._ai = null;
         this._aiLoading = false;
@@ -232,7 +226,7 @@ export class FullscreenWorkspace {
     // ---------------- data hooks (gọi từ controller) ----------------
     onSymbolChange(symbol) {
         this.symbol = String(symbol || '').trim().toUpperCase();
-        this._quote = null; this._news = [];
+        this._quote = null; this._flow = null;
         this._ai = null; this._aiLoading = false;
         this._fund = null;
         if (this.sidebarEl) {
@@ -243,7 +237,7 @@ export class FullscreenWorkspace {
         }
         this._renderAll();
         this._loadQuote();
-        this._loadNews();
+        this._loadFlow();
         this._loadFundamentals();
         this._maybeLoadAI();
         // Giả định tích sản: theo mã hiện tại.
@@ -604,9 +598,9 @@ export class FullscreenWorkspace {
             '    <div class="fsb-panel-title"><i class="fa-solid fa-piggy-bank"></i> Giả định tích sản <span class="fsa-sym" id="fsaSym"></span></div>' +
             '    <div class="fsb-panel-body" id="fsAccum"></div>' +
             '  </div>' +
-            '  <div class="fsb-panel fsb-news">' +
-            '    <div class="fsb-panel-title">Tin tức nổi bật</div>' +
-            '    <div class="fsb-panel-body" id="fsNews"><div class="fss-muted">Đang cập nhật…</div></div>' +
+            '  <div class="fsb-panel fsb-flow">' +
+            '    <div class="fsb-panel-title"><i class="fa-solid fa-chart-column"></i> Dòng tiền 10 phiên</div>' +
+            '    <div class="fsb-panel-body" id="fsFlow"><div class="fss-muted">Đang cập nhật…</div></div>' +
             '  </div>' +
             '  <div class="fsb-panel fsb-ai">' +
             '    <div class="fsb-panel-title"><i class="fa-solid fa-robot"></i> TuniAI phân tích</div>' +
@@ -617,7 +611,7 @@ export class FullscreenWorkspace {
         const collapse = this.bottomEl.querySelector('.fsb-collapse');
         if (collapse) collapse.addEventListener('click', () => this.setBottomOpen(!this.bottomOpen));
 
-        this._els.news = this.bottomEl.querySelector('#fsNews');
+        this._els.flow = this.bottomEl.querySelector('#fsFlow');
         this._els.ai = this.bottomEl.querySelector('#fsAi');
         this._els.fsaSym = this.bottomEl.querySelector('#fsaSym');
         this._els.accum = this.bottomEl.querySelector('#fsAccum');
@@ -681,23 +675,24 @@ export class FullscreenWorkspace {
         return isIndexSymbol(this.symbol);
     }
 
-    async _loadNews() {
+    // Dòng tiền 10 phiên — cùng nguồn với block "Sổ lệnh / Dòng tiền" ở trang chi tiết.
+    async _loadFlow() {
         if (!this.symbol) return;
-        this._newsLoading = true;
+        if (this._isIndexSymbol()) {
+            this._flow = null;
+            this._renderFlow();
+            return;
+        }
+        this._flowLoading = true;
+        this._renderFlow();
         try {
-            let list = [];
-            try {
-                const rel = await this._fetchJSON('/news/related?symbol=' + encodeURIComponent(this.symbol) + '&limit=5');
-                if (Array.isArray(rel) && rel.length) list = rel;
-            } catch (e) { /* bỏ qua, fallback tin mới nhất */ }
-            if (!list.length) {
-                const latest = await this._fetchJSON('/news?limit=5');
-                if (Array.isArray(latest)) list = latest;
-            }
-            this._news = list.slice(0, 5);
-        } catch (e) { this._news = []; }
-        this._newsLoading = false;
-        this._renderNews();
+            const data = await this._fetchJSON('/stocks/' + encodeURIComponent(this.symbol) + '/money-flow?sessions=10');
+            this._flow = (data && Array.isArray(data.items) && data.items.length) ? data : null;
+        } catch (e) {
+            this._flow = null;
+        }
+        this._flowLoading = false;
+        this._renderFlow();
     }
 
     _maybeLoadAI() {
@@ -820,7 +815,7 @@ export class FullscreenWorkspace {
         try { this._renderFundamentals(); } catch (e) { /* ignore */ }
         try { this._renderIndicators(); } catch (e) { /* ignore */ }
         try { this._renderSR(); } catch (e) { /* ignore */ }
-        try { this._renderNews(); } catch (e) { /* ignore */ }
+        try { this._renderFlow(); } catch (e) { /* ignore */ }
         try { this._renderAI(); } catch (e) { /* ignore */ }
         try { this.syncSrCheckbox(); } catch (e) { /* ignore */ }
     }
@@ -1037,44 +1032,41 @@ export class FullscreenWorkspace {
         this._els.sr.innerHTML = html;
     }
 
-    _renderNews() {
-        if (!this._els.news) return;
-        if (!this._news.length) {
-            this._els.news.innerHTML = '<div class="fss-muted">Không có tin mới</div>';
+    _renderFlow() {
+        const el = this._els.flow;
+        if (!el) return;
+        const data = this._flow;
+        const items = (data && Array.isArray(data.items)) ? data.items : [];
+        if (!items.length) {
+            el.innerHTML = '<div class="fss-muted">' +
+                (this._flowLoading ? 'Đang cập nhật…' : 'Không có dữ liệu dòng tiền') + '</div>';
             return;
         }
-        this._els.news.innerHTML = this._news.map((n) => {
-            const title = n.title || '--';
-            const time = timeAgo(n.published_at || n.created_at);
-            const tag = (n.tags || '').split(',').map((s) => s.trim()).filter(Boolean);
-            const symTag = tag.length ? tag[0] : '';
-            return '<a href="#" class="fsb-news-item" data-id="' + Number(n.id) + '" data-slug="' + esc(n.slug || '') + '" title="' + esc(title) + '">' +
-                '<span class="fsb-news-title">' + esc(title) + '</span>' +
-                '<span class="fsb-news-meta">' +
-                (symTag ? '<span class="fsb-news-tag">' + esc(symTag) + '</span>' : '') +
-                '<span class="fsb-news-time">' + esc(time) + '</span>' +
-                '</span></a>';
-        }).join('') +
-            '<a href="#" class="fsb-news-more" id="fsNewsMore">Xem thêm →</a>';
-
-        Array.from(this._els.news.querySelectorAll('.fsb-news-item')).forEach((a) => {
-            a.addEventListener('click', (e) => {
-                e.preventDefault();
-                const id = a.dataset.id;
-                if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: a.dataset.slug }, '*');
-                }
-            });
-        });
-        const more = this._els.news.querySelector('#fsNewsMore');
-        if (more) more.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'tunix-open-url', url: '/tin-tuc' }, '*');
-            } else {
-                window.location.href = '/tin-tuc';
-            }
-        });
+        const s = data.summary || {};
+        const net = Number(s.net) || 0;
+        const maxAbs = Math.max(1, ...items.map((it) => Math.abs(Number(it.net) || 0)));
+        const bars = items.map((it) => {
+            const n = Number(it.net) || 0;
+            const up = n >= 0;
+            const h = Math.max(2, (Math.abs(n) / maxAbs) * 46);
+            const d = String(it.date || '');
+            const label = d.length >= 10 ? d.slice(8, 10) + '/' + d.slice(5, 7) : d;
+            const tip = d + ' · vào ' + flowTy(it.inflow) + ' · ra ' + flowTy(it.outflow) +
+                ' · ròng ' + flowTy(n, true) + ' tỷ';
+            return '<div class="fsf-col" title="' + esc(tip) + '">' +
+                '<div class="fsf-wrap"><span class="fsf-bar ' + (up ? 'up' : 'down') +
+                '" style="height:' + h.toFixed(1) + '%"></span></div>' +
+                '<span class="fsf-date">' + esc(label) + '</span>' +
+                '</div>';
+        }).join('');
+        el.innerHTML =
+            '<div class="fsf-top">' +
+            '<span class="fsf-net ' + (net >= 0 ? 'up' : 'down') + '">' + flowTy(net, true) + ' tỷ</span>' +
+            '<span class="fsf-sub">Ròng ' + items.length + ' phiên · ' +
+            (s.inflow_sessions || 0) + ' phiên vào / ' + (s.outflow_sessions || 0) + ' ra</span>' +
+            '</div>' +
+            '<div class="fsf-bars">' + bars + '</div>' +
+            '<div class="fsf-foot">Vào ' + flowTy(s.inflow) + ' · Ra ' + flowTy(s.outflow) + ' tỷ</div>';
     }
 
     _setAiHtml(html) {

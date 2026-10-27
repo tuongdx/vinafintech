@@ -170,6 +170,10 @@
             color: #9fb0c7;
         }
 
+        body.dark-mode .profit-hint {
+            color: #8b949e;
+        }
+
         body.dark-mode .profit-chart {
             background: #0d1117;
         }
@@ -352,11 +356,11 @@
             margin: 0;
         }
 
-        /* LEFT COLUMN */
+        /* LEFT COLUMN — khoảng cách giữa các block đồng bộ trang chủ (Home: 18px) */
         .left-col {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 18px;
         }
 
         /* ----- 1. THÔNG TIN CƠ BẢN ----- */
@@ -1593,25 +1597,42 @@
         .fsa-diff.pos { color: #0f7b3a; } .fsa-diff.neg { color: #d0314e; }
         body.dark-mode .fsa-diff.pos { color: #4ade80; } body.dark-mode .fsa-diff.neg { color: #f87171; }
 
-        /* Tin tức nổi bật */
-        .fsb-news-item {
-            display: flex; flex-direction: column; gap: 3px; padding: 6px 8px;
-            border-radius: 8px; text-decoration: none;
+        /* Dòng tiền 10 phiên (fullscreen dashboard — thay cho Tin tức nổi bật) */
+        .fsb-panel.fsb-flow .fsb-panel-body {
+            display: flex; flex-direction: column; gap: 4px;
         }
-        .fsb-news-item:hover { background: rgba(0, 128, 128, 0.06); }
-        .fsb-news-title {
-            color: #1a1f36; font-size: 12px; font-weight: 600; line-height: 1.4;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        .fsf-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+        .fsf-net { font-size: 17px; font-weight: 800; white-space: nowrap; letter-spacing: 0.2px; }
+        .fsf-net.up { color: #0f7b3a; }
+        .fsf-net.down { color: #d0314e; }
+        body.dark-mode .fsf-net.up { color: #4ade80; }
+        body.dark-mode .fsf-net.down { color: #f87171; }
+        .fsf-sub {
+            font-size: 10px; color: #8a99b1; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
         }
-        body.dark-mode .fsb-news-title { color: #e6edf3; }
-        .fsb-news-meta { display: flex; align-items: center; gap: 8px; font-size: 10px; color: #8a99b1; }
-        .fsb-news-tag { color: #008080; font-weight: 600; }
-        .fsb-news-time { color: #8a99b1; }
-        .fsb-news-more {
-            display: inline-block; margin-top: 4px; font-size: 11px; font-weight: 600;
-            color: #008080; text-decoration: none; padding: 4px 8px;
+        body.dark-mode .fsf-sub { color: #8b949e; }
+        .fsf-bars {
+            flex: 1 1 auto; min-height: 44px;
+            display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px;
         }
-        .fsb-news-more:hover { text-decoration: underline; }
+        .fsf-col { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+        .fsf-wrap { position: relative; flex: 1 1 auto; width: 100%; min-height: 0; }
+        .fsf-wrap::before {
+            content: ''; position: absolute; left: 0; right: 0; top: 50%;
+            border-top: 1px dashed #e3e9f2;
+        }
+        body.dark-mode .fsf-wrap::before { border-top-color: #30363d; }
+        .fsf-bar { position: absolute; left: 20%; right: 20%; border-radius: 2px; }
+        .fsf-bar.up { bottom: 50%; background: linear-gradient(180deg, #4ade80, #16a34a); }
+        .fsf-bar.down { top: 50%; background: linear-gradient(180deg, #f87171, #dc2626); }
+        .fsf-date { font-size: 8.5px; color: #8a99b1; line-height: 1; white-space: nowrap; }
+        body.dark-mode .fsf-date { color: #6e7d92; }
+        .fsf-foot {
+            font-size: 10px; color: #6b7a8f; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        body.dark-mode .fsf-foot { color: #8b949e; }
 
         /* AI / TuniX AI */
         .fsb-ai-body { line-height: 1.6; color: #1a1f36; }
@@ -1885,7 +1906,7 @@
         .order-trades-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 18px;
             align-items: stretch;
         }
 
@@ -1893,7 +1914,7 @@
         .order-col {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 18px;
             min-width: 0;
         }
 
@@ -1910,6 +1931,224 @@
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 4px;
+        }
+
+        /* Tab Sổ lệnh / Dòng tiền trong block Sổ lệnh */
+        .ob-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 2px;
+        }
+
+        .ob-head .order-tabs {
+            flex: 1;
+            margin: 0;
+            padding-bottom: 5px;
+            border-bottom: none;
+            font-size: 13px;
+            gap: 16px;
+        }
+
+        .ob-symbol {
+            font-size: 12px;
+            font-weight: 600;
+            color: #008080;
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .ob-symbol {
+            color: #4dd0c4;
+        }
+
+        .ob-panel[hidden] {
+            display: none;
+        }
+
+        .mf-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 6px;
+            padding: 20px 16px 14px;
+            color: #8a99b1;
+        }
+
+        .mf-empty > i {
+            font-size: 26px;
+            color: rgba(0, 128, 128, 0.55);
+        }
+
+        .mf-empty-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5a72;
+            transition: color 0.3s ease;
+        }
+
+        .mf-empty p {
+            margin: 0;
+            max-width: 340px;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        /* Dòng tiền 10 phiên: KPI + biểu đồ cột phân kỳ (xanh = vào, đỏ = ra) */
+        .mf-kpis {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            margin: 10px 0 10px;
+        }
+
+        .mf-kpi {
+            background: #f7f9fc;
+            border-radius: 10px;
+            padding: 6px 8px;
+            min-width: 0;
+            transition: background 0.3s ease;
+        }
+
+        .mf-kpi-label {
+            display: block;
+            font-size: 9px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #8a99b1;
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+
+        .mf-kpi-value {
+            display: block;
+            margin-top: 2px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #4a5a72;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color 0.3s ease;
+        }
+
+        .mf-kpi-value.up {
+            color: #16a34a;
+        }
+
+        .mf-kpi-value.down {
+            color: #dc2626;
+        }
+
+        .mf-bars {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(0, 1fr);
+            gap: 4px;
+            align-items: end;
+        }
+
+        .mf-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .mf-col-val {
+            font-size: 9px;
+            font-weight: 600;
+            color: #8a99b1;
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+
+        .mf-col-val.up {
+            color: #16a34a;
+        }
+
+        .mf-col-val.down {
+            color: #dc2626;
+        }
+
+        .mf-bar-wrap {
+            position: relative;
+            width: 100%;
+            height: 92px;
+        }
+
+        .mf-bar-wrap::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            border-top: 1px dashed #e3e9f2;
+            transition: border-color 0.3s ease;
+        }
+
+        .mf-bar {
+            position: absolute;
+            left: 18%;
+            right: 18%;
+            border-radius: 3px;
+        }
+
+        .mf-bar.up {
+            bottom: 50%;
+            background: linear-gradient(180deg, #4ade80, #16a34a);
+        }
+
+        .mf-bar.down {
+            top: 50%;
+            background: linear-gradient(180deg, #f87171, #dc2626);
+        }
+
+        .mf-col-date {
+            font-size: 9px;
+            color: #8a99b1;
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+
+        .mf-foot {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 10px;
+            margin-top: 8px;
+            font-size: 10px;
+            color: #6b7a8f;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .mf-kpi {
+            background: #21262d;
+        }
+
+        body.dark-mode .mf-kpi-value {
+            color: #c9d1d9;
+        }
+
+        body.dark-mode .mf-bar-wrap::before {
+            border-top-color: #30363d;
+        }
+
+        body.dark-mode .mf-col-val,
+        body.dark-mode .mf-col-date,
+        body.dark-mode .mf-foot {
+            color: #8b949e;
+        }
+
+        body.dark-mode .mf-empty {
+            color: #8b949e;
+        }
+
+        body.dark-mode .mf-empty-title {
+            color: #c9d1d9;
         }
 
         .order-table {
@@ -1986,6 +2225,94 @@
             transition: color 0.3s ease, border-color 0.3s ease;
         }
 
+        /* Block Sổ lệnh cao cố định (theo tab Dòng tiền) → tab Sổ lệnh giãn kín chiều cao */
+        #orderBookBlock {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #orderBookBlock .ob-panel {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        #orderBookPanel:not([hidden]) {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #orderBookPanel .order-table {
+            flex: 1 1 auto;
+        }
+
+        #orderBookPanel .order-table td {
+            vertical-align: middle;
+        }
+
+        /* Dải giá trần / tham chiếu / sàn — lấp phần trống của tab Sổ lệnh */
+        .ob-limits[hidden] {
+            display: none;
+        }
+
+        .ob-limits {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 4px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: #f7f9fc;
+            font-size: 11px;
+            transition: background 0.3s ease;
+        }
+
+        .ob-limits > span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .ob-limits em {
+            font-style: normal;
+            font-size: 10px;
+            color: #8a99b1;
+        }
+
+        .ob-limits b {
+            font-weight: 700;
+            color: #4a5a72;
+        }
+
+        .ob-limits b.ceil {
+            color: #8e44ad;
+        }
+
+        .ob-limits b.floor {
+            color: #0f6bbd;
+        }
+
+        body.dark-mode .ob-limits {
+            background: #21262d;
+        }
+
+        body.dark-mode .ob-limits em {
+            color: #8b949e;
+        }
+
+        body.dark-mode .ob-limits b {
+            color: #c9d1d9;
+        }
+
+        body.dark-mode .ob-limits b.ceil {
+            color: #c792ea;
+        }
+
+        body.dark-mode .ob-limits b.floor {
+            color: #58a6ff;
+        }
+
         .order-summary {
             margin-top: 8px;
             font-size: 11px;
@@ -2019,14 +2346,57 @@
             margin-bottom: 10px;
         }
 
+        .rt-session {
+            font-size: 11px;
+            font-weight: 500;
+            color: #8a99b1;
+            transition: color 0.3s ease;
+        }
+
+        .rt-status {
+            min-height: 12px;
+            margin-top: 6px;
+            font-size: 10px;
+            color: #8a99b1;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .rt-session,
+        body.dark-mode .rt-status {
+            color: #8b949e;
+        }
+
         .trade-table-wrapper {
-            max-height: 340px;
+            /* Vừa đúng 14 dòng giao dịch: header 22px + 14 × 27px (font 12px, padding 4px) */
+            max-height: 400px;
             overflow-y: auto;
-            scrollbar-width: none;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 128, 128, 0.35) transparent;
         }
 
         .trade-table-wrapper::-webkit-scrollbar {
-            display: none;
+            width: 6px;
+        }
+
+        .trade-table-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .trade-table-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(0, 128, 128, 0.35);
+            border-radius: 3px;
+        }
+
+        .trade-table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 128, 128, 0.55);
+        }
+
+        body.dark-mode .trade-table-wrapper {
+            scrollbar-color: rgba(0, 128, 128, 0.6) transparent;
+        }
+
+        body.dark-mode .trade-table-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(0, 128, 128, 0.6);
         }
 
         .trade-table {
@@ -2278,7 +2648,7 @@
         .profit-chart {
             position: relative;
             width: 100%;
-            height: 150px;
+            height: 180px;
             background: #f8faff;
             border-radius: 8px;
             transition: background 0.3s ease;
@@ -2287,14 +2657,58 @@
             justify-content: center;
         }
 
+        .profit-hint {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: #8a99b1;
+            margin: -2px 0 6px;
+            transition: color 0.3s ease;
+        }
+
+        .profit-hint[hidden] {
+            display: none;
+        }
+
+        /* Lịch sử có thể lên tới ~40 quý ⇒ cuộn ngang thay vì dồn cột lại cho dễ đọc.
+           padding-top chừa chỗ cho tooltip: overflow-x:auto khiến overflow-y thành auto,
+           nếu không chừa chỗ thì tooltip (nằm phía trên cột) sẽ bị cắt mất. */
+        .profit-chart-scroll {
+            width: 100%;
+            height: 100%;
+            padding-top: 78px;
+            box-sizing: border-box;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+        }
+
+        .profit-chart-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .profit-chart-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 128, 128, 0.35);
+            border-radius: 3px;
+        }
+
+        body.dark-mode .profit-chart-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 128, 128, 0.55);
+        }
+
         .profit-chart-inner {
             display: flex;
             align-items: flex-end;
-            justify-content: space-around;
-            gap: 5px;
-            width: 100%;
+            /* margin auto trên từng cột: ít quý thì dàn đều cả chiều ngang, nhiều quý
+               (tràn) thì margin auto = 0 ⇒ vẫn cuộn được từ cột đầu tiên. */
+            justify-content: flex-start;
+            gap: 4px;
+            width: max-content;
+            min-width: 100%;
             height: 100%;
-            padding: 20px 10px 0;
+            padding: 2px 12px 4px;
+            box-sizing: border-box;
         }
 
         .profit-bar-col {
@@ -2302,17 +2716,19 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-end;
-            gap: 4px;
-            flex: 1;
-            min-width: 0;
+            gap: 3px;
+            flex: 1 1 auto;
+            min-width: 20px;
+            max-width: 44px;
+            margin: 0 auto;
             height: 100%;
             position: relative;
             cursor: pointer;
         }
 
         .profit-bar-col .bar {
-            width: 18px;
-            max-width: 72%;
+            width: 16px;
+            max-width: 70%;
             border-radius: 3px 3px 0 0;
             transition: filter 0.2s ease;
             min-height: 2px;
@@ -2329,6 +2745,10 @@
             overflow: hidden;
             max-width: 100%;
             transition: color 0.3s ease;
+        }
+
+        .profit-bar-col.year-start .label {
+            font-weight: 700;
         }
 
         .profit-bar-col .tooltip {
@@ -2370,17 +2790,18 @@
             font-weight: 600;
         }
 
-        /* Tooltip cột ĐẦU / CUỐI trong "So sánh tương quan" và "Phân tích lợi nhuận":
-           khi canh giữa (left:50% + translateX(-50%)) tooltip của cột đầu/cuối tràn ra mép
-           block và bị CẮT MẤT thông tin (body/html có overflow:hidden). Căn sát mép trong để
-           tooltip luôn hiển thị trọn vẹn trong block. */
+        /* Tooltip cột sát mép trong "So sánh tương quan" và "Phân tích lợi nhuận":
+           khi canh giữa (left:50% + translateX(-50%)) tooltip của cột sát mép tràn ra
+           ngoài block và bị CẮT MẤT thông tin (body/html có overflow:hidden), đồng thời
+           làm biểu đồ cuộn ngang oan. Căn sát mép trong để tooltip luôn hiển thị trọn vẹn.
+           JS gắn .tt-left cho 4 cột đầu và .tt-right cho 4 cột cuối (tooltip khá rộng). */
         .peer-chart > .peer-col:first-child .tooltip,
-        .profit-chart-inner > .profit-bar-col:first-child .tooltip {
+        .profit-chart-inner > .profit-bar-col.tt-left .tooltip {
             left: 0;
             transform: none;
         }
         .peer-chart > .peer-col:last-child .tooltip,
-        .profit-chart-inner > .profit-bar-col:last-child .tooltip {
+        .profit-chart-inner > .profit-bar-col.tt-right .tooltip {
             left: auto;
             right: 0;
             transform: none;
@@ -3077,7 +3498,7 @@
         .reports-news-split {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-            gap: 8px;
+            gap: 18px;
             align-items: start;
         }
 
@@ -3759,20 +4180,45 @@
             <div class="order-trades-row">
 
                 <div class="order-col">
-                    <div class="order-book">
-                        <h3 id="orderBookTitle">Sổ lệnh · TCB</h3>
-                        <table class="order-table">
-                            <thead>
-                                <tr>
-                                    <th class="vol-l">KL mua</th><th class="price-col">Giá mua</th>
-                                    <th class="price-col">Giá bán</th><th class="vol-r">KL bán</th>
-                                </tr>
-                            </thead>
-                            <tbody id="orderBookBody">
-                                <tr><td colspan="4" style="text-align:center;color:#8a99b1;padding:10px 0;">Đang tải...</td></tr>
-                            </tbody>
-                        </table>
-                        <div class="order-summary" id="orderSummary"></div>
+                    <div class="order-book" id="orderBookBlock">
+                        <div class="ob-head">
+                            <div class="order-tabs ob-tabs" id="orderBookTabs" role="tablist" aria-label="Sổ lệnh và Dòng tiền">
+                                <span id="obTabBook" class="active" role="tab" tabindex="0" aria-selected="true"
+                                      aria-controls="orderBookPanel" data-ob-tab="book">Sổ lệnh</span>
+                                <span id="obTabFlow" role="tab" tabindex="-1" aria-selected="false"
+                                      aria-controls="moneyFlowPanel" data-ob-tab="flow">Dòng tiền</span>
+                            </div>
+                            <span class="ob-symbol" id="orderBookTitle"></span>
+                        </div>
+
+                        <!-- Tab Sổ lệnh: giữ nguyên bảng + tổng KL như trước -->
+                        <div class="ob-panel" id="orderBookPanel" role="tabpanel" aria-labelledby="obTabBook" data-ob-panel="book">
+                            <table class="order-table">
+                                <thead>
+                                    <tr>
+                                        <th class="vol-l">KL mua</th><th class="price-col">Giá mua</th>
+                                        <th class="price-col">Giá bán</th><th class="vol-r">KL bán</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orderBookBody">
+                                    <tr><td colspan="4" style="text-align:center;color:#8a99b1;padding:10px 0;">Đang tải...</td></tr>
+                                </tbody>
+                            </table>
+                            <div class="ob-limits" id="orderBookLimits" hidden></div>
+                            <div class="order-summary" id="orderSummary"></div>
+                        </div>
+
+                        <!-- Tab Dòng tiền: dòng tiền ròng 10 phiên, backend tính từ OHLCV (/money-flow) -->
+                        <div class="ob-panel" id="moneyFlowPanel" role="tabpanel" aria-labelledby="obTabFlow" data-ob-panel="flow" hidden>
+                            <div class="mf-kpis" id="moneyFlowKpis"></div>
+                            <div id="moneyFlowChart">
+                                <div class="mf-empty">
+                                    <i class="fas fa-chart-column"></i>
+                                    <div class="mf-empty-title">Đang tải dòng tiền...</div>
+                                </div>
+                            </div>
+                            <div class="mf-foot" id="moneyFlowFoot"></div>
+                        </div>
                     </div>
 
                     <!-- 4. SO SÁNH TƯƠNG QUAN (ngay dưới Sổ lệnh) -->
@@ -3795,8 +4241,8 @@
                 </div>
 
                 <div class="recent-trades">
-                    <h3>Giao dịch gần nhất</h3>
-                    <div class="trade-table-wrapper">
+                    <h3>Giao dịch gần nhất <span class="rt-session" id="recentTradesSession"></span></h3>
+                    <div class="trade-table-wrapper" id="recentTradesWrapper">
                         <table class="trade-table">
                             <thead>
                                 <tr><th>Thời gian</th><th>Khối lượng</th><th>Giá</th><th>M/B</th></tr>
@@ -3806,6 +4252,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="rt-status" id="recentTradesStatus"></div>
                 </div>
             </div>
 
@@ -3813,6 +4260,7 @@
             <div class="profit-block">
                 <h3>Phân tích lợi nhuận <span id="profitSymbol"></span></h3>
                 <div class="profit-legend" id="profitLegend"></div>
+                <div class="profit-hint" id="profitHint" hidden><i class="fas fa-arrows-left-right"></i> Cuộn ngang để xem toàn bộ lịch sử</div>
                 <div class="profit-chart" id="profitChart">
                     <div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
                 </div>
@@ -3938,7 +4386,7 @@
         let tunixChartModulePromise = null;
         // Version của khối chart engine — BẮT BUỘC bump khi sửa file trong /static/chart/
         // (module import không có query sẽ bị HTTP cache 1 giờ; thêm ?v= để lần tải sau lấy bản mới).
-        const CHART_ASSET_VER = '20261009a';
+        const CHART_ASSET_VER = '20261027b';
         function getTunixChartModule() {
             if (!tunixChartModulePromise) {
                 tunixChartModulePromise = import('/static/chart/stockDetailChart.js?v=' + CHART_ASSET_VER);
@@ -4156,6 +4604,7 @@
             if (/\/quote(\?|$)/.test(path)) return 8000; // giá realtime: TTL ngắn
             if (/\/order-book|\/trades|\/foreign/.test(path)) return 25000;
             if (/\/company-summary|\/dividends|\/reports|\/profit-analysis|\/shareholders|\/peers|\/history/.test(path)) return 300000;
+            if (/\/money-flow/.test(path)) return 120000; // phiên hiện tại còn cập nhật trong ngày
             return 60000;
         }
         async function api(path, opts) {
@@ -4290,8 +4739,25 @@
             const body = document.getElementById('orderBookBody');
             const title = document.getElementById('orderBookTitle');
             const summary = document.getElementById('orderSummary');
+            const limits = document.getElementById('orderBookLimits');
             if (title) {
-                title.textContent = `Sổ lệnh · ${(book && book.symbol) || getSymbolFromQuery()}`;
+                title.textContent = (book && book.symbol) || getSymbolFromQuery();
+            }
+
+            if (limits) {
+                const ceiling = Number(book && book.ceiling) || 0;
+                const reference = Number(book && book.reference_price) || 0;
+                const floor = Number(book && book.floor) || 0;
+                if (ceiling > 0 || reference > 0 || floor > 0) {
+                    limits.innerHTML =
+                        '<span><em>Trần</em><b class="ceil">' + formatNumber(ceiling, 0) + '</b></span>' +
+                        '<span><em>TC</em><b>' + formatNumber(reference, 0) + '</b></span>' +
+                        '<span><em>Sàn</em><b class="floor">' + formatNumber(floor, 0) + '</b></span>';
+                    limits.hidden = false;
+                } else {
+                    limits.innerHTML = '';
+                    limits.hidden = true;
+                }
             }
 
             const bids = Array.isArray(book && book.bids) ? book.bids : [];
@@ -4318,18 +4784,24 @@
             if (summary) {
                 const totalBuy = bids.reduce((acc, b) => acc + Number(b.volume || 0), 0);
                 const totalSell = asks.reduce((acc, a) => acc + Number(a.volume || 0), 0);
+                const buyValue = bids.reduce((acc, b) => acc + Number(b.price || 0) * Number(b.volume || 0), 0);
+                const sellValue = asks.reduce((acc, a) => acc + Number(a.price || 0) * Number(a.volume || 0), 0);
                 const diff = totalBuy - totalSell;
                 const diffClass = diff >= 0 ? 'text-green' : 'text-red';
                 summary.innerHTML = `
                     <span>Tổng KL mua: <strong>${formatNumber(totalBuy)}</strong></span>
                     <span>Tổng KL bán: <strong>${formatNumber(totalSell)}</strong></span>
                     <span>Chênh lệch: <strong class="${diffClass}">${formatSigned(diff, 0)}</strong></span>
+                    <span>GT mua: <strong>${formatNumber(buyValue / 1e9, 1)} tỷ</strong></span>
+                    <span>GT bán: <strong>${formatNumber(sellValue / 1e9, 1)} tỷ</strong></span>
                 `;
             }
         }
 
         async function loadOrderBook(symbol) {
             const body = document.getElementById('orderBookBody');
+            const title = document.getElementById('orderBookTitle');
+            if (title) title.textContent = String(symbol || '').toUpperCase();
             if (body) {
                 body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#8a99b1;padding:10px 0;">Đang tải...</td></tr>';
             }
@@ -4344,42 +4816,353 @@
             }
         }
 
-        function renderRecentTrades(trades) {
-            const body = document.getElementById('recentTradesBody');
-            if (!body) return;
-            if (!Array.isArray(trades) || trades.length === 0) {
-                body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#8a99b1;padding:10px 0;">Không có dữ liệu</td></tr>';
+        // ===== DÒNG TIỀN 10 PHIÊN =====
+        // Backend tính từ OHLCV (/stocks/{symbol}/money-flow): tách giá trị giao dịch
+        // thành tiền vào/ra theo vị trí giá đóng cửa trong biên độ phiên (CLV).
+        const MONEY_FLOW_SESSIONS = 10;
+        const moneyFlowState = { symbol: '', loaded: false, gen: 0 };
+
+        function moneyFlowPanelVisible() {
+            const panel = document.getElementById('moneyFlowPanel');
+            return !!panel && !panel.hidden;
+        }
+
+        function moneyFlowPlaceholder(title, detail) {
+            return '<div class="mf-empty"><i class="fas fa-chart-column"></i>' +
+                '<div class="mf-empty-title">' + title + '</div>' +
+                (detail ? '<p>' + detail + '</p>' : '') + '</div>';
+        }
+
+        // Cố định chiều cao block Sổ lệnh/Dòng tiền theo đúng chiều cao khi hiển thị tab
+        // Dòng tiền — đổi tab không làm block (và phần trang bên dưới) co giãn/nhảy.
+        function syncOrderBookHeight() {
+            const block = document.getElementById('orderBookBlock');
+            const book = document.getElementById('orderBookPanel');
+            const flow = document.getElementById('moneyFlowPanel');
+            if (!block || !book || !flow || !flow.querySelector('.mf-bars')) return;
+            const bookHidden = book.hidden;
+            const flowHidden = flow.hidden;
+            const prevMinHeight = block.style.minHeight;
+            block.style.minHeight = '';
+            book.hidden = true;   // đo với tab Dòng tiền đang hiển thị
+            flow.hidden = false;
+            const height = Math.round(block.getBoundingClientRect().height);
+            book.hidden = bookHidden;
+            flow.hidden = flowHidden;
+            block.style.minHeight = height > 0 ? height + 'px' : prevMinHeight;
+        }
+
+        // VND → "tỷ" (1 chữ số thập phân; 0 hiển thị gọn là "0")
+        function formatFlowTy(value, decimals, signed) {
+            const ty = Number(value || 0) / 1e9;
+            if (!Number.isFinite(ty)) return '--';
+            if (!ty) return '0';
+            const digits = decimals === undefined ? 1 : decimals;
+            return signed ? formatSigned(ty, digits) : formatNumber(ty, digits);
+        }
+
+        function resetMoneyFlow(symbol) {
+            const sym = String(symbol || '').toUpperCase();
+            if (moneyFlowState.symbol === sym) return;
+            moneyFlowState.symbol = sym;
+            moneyFlowState.loaded = false;
+            moneyFlowState.gen += 1; // huỷ kết quả của request mã cũ đang bay
+            const kpis = document.getElementById('moneyFlowKpis');
+            const chart = document.getElementById('moneyFlowChart');
+            const foot = document.getElementById('moneyFlowFoot');
+            if (kpis) kpis.innerHTML = '';
+            if (chart) chart.innerHTML = moneyFlowPlaceholder('Đang tải dòng tiền...');
+            if (foot) foot.innerHTML = '';
+        }
+
+        function renderMoneyFlow(data) {
+            const kpis = document.getElementById('moneyFlowKpis');
+            const chart = document.getElementById('moneyFlowChart');
+            const foot = document.getElementById('moneyFlowFoot');
+            if (!chart) return;
+            const items = Array.isArray(data && data.items) ? data.items : [];
+            const summary = (data && data.summary) || {};
+            if (!items.length) {
+                if (kpis) kpis.innerHTML = '';
+                if (foot) foot.innerHTML = '';
+                chart.innerHTML = moneyFlowPlaceholder('Chưa có dữ liệu phù hợp', 'Không lấy được lịch sử giá của mã này để tính dòng tiền.');
+                const block = document.getElementById('orderBookBlock');
+                if (block) block.style.minHeight = '';
                 return;
             }
+            const netSign = Number(summary.net || 0) >= 0 ? 'up' : 'down';
+            if (kpis) {
+                kpis.innerHTML =
+                    '<div class="mf-kpi"><span class="mf-kpi-label">Tiền vào</span>' +
+                        '<span class="mf-kpi-value up">' + formatFlowTy(summary.inflow) + ' tỷ</span></div>' +
+                    '<div class="mf-kpi"><span class="mf-kpi-label">Tiền ra</span>' +
+                        '<span class="mf-kpi-value down">' + formatFlowTy(summary.outflow) + ' tỷ</span></div>' +
+                    '<div class="mf-kpi"><span class="mf-kpi-label">Ròng ' + items.length + ' phiên</span>' +
+                        '<span class="mf-kpi-value ' + netSign + '">' + formatFlowTy(summary.net, 1, true) + ' tỷ</span></div>';
+            }
+            const maxAbs = Math.max.apply(null, items.map(function (it) {
+                return Math.abs(Number(it.net) || 0);
+            }).concat([1]));
+            chart.innerHTML = '<div class="mf-bars">' + items.map(function (it) {
+                const net = Number(it.net) || 0;
+                const up = net >= 0;
+                const height = Math.max(2.5, (Math.abs(net) / maxAbs) * 48);
+                const date = String(it.date || '');
+                const label = date.length >= 10 ? date.slice(8, 10) + '/' + date.slice(5, 7) : date;
+                const tip = date + ' · giá ' + formatNumber(it.close, 0) +
+                    ' (' + formatSigned(it.change_pct, 2) + '%) · KL ' + formatNumber(it.volume, 0) +
+                    ' · vào ' + formatFlowTy(it.inflow) + ' tỷ · ra ' + formatFlowTy(it.outflow) +
+                    ' tỷ · ròng ' + formatFlowTy(net, 1, true) + ' tỷ';
+                return '<div class="mf-col" title="' + tip + '">' +
+                    '<span class="mf-col-val ' + (up ? 'up' : 'down') + '">' + formatFlowTy(net, Math.abs(net / 1e9) >= 10 ? 0 : 1, true) + '</span>' +
+                    '<div class="mf-bar-wrap"><span class="mf-bar ' + (up ? 'up' : 'down') + '" style="height:' + height.toFixed(1) + '%"></span></div>' +
+                    '<span class="mf-col-date">' + label + '</span>' +
+                    '</div>';
+            }).join('') + '</div>';
+            if (foot) {
+                foot.innerHTML = '<span>' + (summary.inflow_sessions || 0) + ' phiên tiền vào · ' + (summary.outflow_sessions || 0) + ' phiên tiền ra</span>' +
+                    '<span>TB ' + formatFlowTy(summary.avg_value) + ' tỷ/phiên</span>' +
+                    '<span>Đơn vị: tỷ đồng</span>';
+            }
+            syncOrderBookHeight();
+        }
 
-            const rows = trades.map(item => {
-                const isBuy = String(item.match_type || item.side || '').toLowerCase().startsWith('b');
-                return `
-                    <tr>
-                        <td>${escapeHtml(item.time || '--')}</td>
-                        <td>${formatNumber(item.volume || 0)}</td>
-                        <td class="price ${isBuy ? 'buy' : 'sell'}">${formatNumber(item.price || 0, 0)}</td>
-                        <td class="${isBuy ? 'mb-b' : 'mb-s'}">${isBuy ? 'M' : 'B'}</td>
-                    </tr>
-                `;
-            }).join('');
-            body.innerHTML = rows;
+        async function loadMoneyFlow(symbol, opts) {
+            const force = !!(opts && opts.force);
+            // `preload`: nạp ngầm khi tab Dòng tiền còn ẩn — để đo & cố định chiều cao block.
+            const preload = !!(opts && opts.preload);
+            const sym = String(symbol || moneyFlowState.symbol || getSymbolFromQuery()).trim().toUpperCase();
+            if (!sym) return;
+            if (moneyFlowState.symbol !== sym) resetMoneyFlow(sym);
+            if (!force && moneyFlowState.loaded) return;
+            if (!force && !preload && !moneyFlowPanelVisible()) return;
+            const gen = moneyFlowState.gen + 1;
+            moneyFlowState.gen = gen;
+            const chart = document.getElementById('moneyFlowChart');
+            if (chart) chart.innerHTML = moneyFlowPlaceholder('Đang tải dòng tiền...');
+            try {
+                const data = await api(`/stocks/${encodeURIComponent(sym)}/money-flow?sessions=${MONEY_FLOW_SESSIONS}`);
+                if (moneyFlowState.gen !== gen || moneyFlowState.symbol !== sym) return;
+                moneyFlowState.loaded = true;
+                renderMoneyFlow(data);
+            } catch (error) {
+                console.error('Failed to load money flow:', error);
+                if (moneyFlowState.gen === gen && moneyFlowState.symbol === sym && chart) {
+                    chart.innerHTML = moneyFlowPlaceholder('Không tải được dữ liệu dòng tiền', 'Vui lòng thử lại sau ít phút.');
+                }
+            }
+        }
+
+        // Đổi bề rộng (breakpoint 2 cột ⇄ 1 cột) → đo lại chiều cao tab Dòng tiền để khoá block.
+        let orderBookHeightTimer = null;
+        window.addEventListener('resize', function() {
+            clearTimeout(orderBookHeightTimer);
+            orderBookHeightTimer = setTimeout(syncOrderBookHeight, 120);
+        });
+
+        // Tab "Sổ lệnh" / "Dòng tiền" — chỉ đổi panel hiển thị, KHÔNG gọi lại API sổ lệnh
+        // khi chuyển tab (dữ liệu sổ lệnh đã tải 1 lần trong loadOrderBook).
+        (function initOrderBookTabs() {
+            const tabsEl = document.getElementById('orderBookTabs');
+            if (!tabsEl) return;
+            const tabs = Array.from(tabsEl.querySelectorAll('[data-ob-tab]'));
+            const panels = Array.from(document.querySelectorAll('#orderBookBlock .ob-panel'));
+            const activate = function(name) {
+                tabs.forEach(function(tab) {
+                    const on = tab.getAttribute('data-ob-tab') === name;
+                    tab.classList.toggle('active', on);
+                    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                    tab.tabIndex = on ? 0 : -1;
+                });
+                panels.forEach(function(panel) {
+                    panel.hidden = panel.getAttribute('data-ob-panel') !== name;
+                });
+                if (name === 'flow') {
+                    loadMoneyFlow(moneyFlowState.symbol || getSymbolFromQuery());
+                    syncOrderBookHeight();
+                }
+            };
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    activate(this.getAttribute('data-ob-tab'));
+                });
+                tab.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        activate(this.getAttribute('data-ob-tab'));
+                    }
+                });
+            });
+        })();
+
+        // ===== GIAO DỊCH GẦN NHẤT (tải dần để xem hết phiên) =====
+        // VCI chỉ trả tối đa 100 lệnh/request ⇒ tải dần bằng cursor `before` (ts lệnh cũ nhất).
+        const RECENT_TRADES_PAGE_SIZE = 100;
+        const recentTradesState = {
+            symbol: '',
+            count: 0,
+            seen: new Set(),
+            cursor: null,
+            done: false,
+            loading: false,
+            failures: 0,
+            sessionDate: '',
+            gen: 0,
+        };
+
+        function recentTradeKey(item) {
+            if (item && item.id) return String(item.id);
+            return `${item && item.ts}|${item && item.time}|${item && item.price}|${item && item.volume}|${item && item.match_type}`;
+        }
+
+        function recentTradeRowHtml(item) {
+            const isBuy = String(item.match_type || item.side || '').toLowerCase().startsWith('b');
+            return `
+                <tr>
+                    <td>${escapeHtml(item.time || '--')}</td>
+                    <td>${formatNumber(item.volume || 0)}</td>
+                    <td class="price ${isBuy ? 'buy' : 'sell'}">${formatNumber(item.price || 0, 0)}</td>
+                    <td class="${isBuy ? 'mb-b' : 'mb-s'}">${isBuy ? 'M' : 'B'}</td>
+                </tr>
+            `;
+        }
+
+        function formatSessionDate(ts) {
+            if (!ts) return '';
+            try {
+                return new Intl.DateTimeFormat('vi-VN', {
+                    timeZone: 'Asia/Ho_Chi_Minh',
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                }).format(new Date(Number(ts) * 1000));
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function updateRecentTradesChrome() {
+            const st = recentTradesState;
+            const sessionEl = document.getElementById('recentTradesSession');
+            const statusEl = document.getElementById('recentTradesStatus');
+            if (sessionEl) {
+                sessionEl.textContent = st.sessionDate ? `· phiên ${st.sessionDate}` : '';
+            }
+            if (statusEl) {
+                if (st.loading && !st.count) statusEl.textContent = 'Đang tải...';
+                else if (st.loading) statusEl.textContent = `Đang tải thêm… đã có ${formatNumber(st.count)} giao dịch`;
+                else if (!st.count) statusEl.textContent = '';
+                else if (st.done) statusEl.textContent = `Đã hiển thị toàn bộ ${formatNumber(st.count)} giao dịch của phiên${st.sessionDate ? ' ' + st.sessionDate : ''}`;
+                else statusEl.textContent = `Đã tải ${formatNumber(st.count)} giao dịch · cuộn xuống để xem thêm`;
+            }
+        }
+
+        function appendRecentTrades(rows) {
+            const body = document.getElementById('recentTradesBody');
+            if (!body || !Array.isArray(rows) || rows.length === 0) return 0;
+            const st = recentTradesState;
+            const fresh = [];
+            for (const item of rows) {
+                if (!item || typeof item !== 'object') continue;
+                const key = recentTradeKey(item);
+                if (st.seen.has(key)) continue;
+                st.seen.add(key);
+                fresh.push(item);
+            }
+            if (fresh.length === 0) return 0;
+            const html = fresh.map(recentTradeRowHtml).join('');
+            if (st.count === 0) body.innerHTML = html;
+            else body.insertAdjacentHTML('beforeend', html);
+            st.count += fresh.length;
+            const oldestTs = Number(fresh[fresh.length - 1] && fresh[fresh.length - 1].ts);
+            if (Number.isFinite(oldestTs) && oldestTs > 0) {
+                st.cursor = oldestTs;
+                if (!st.sessionDate) {
+                    st.sessionDate = formatSessionDate(Math.max(...fresh.map(r => Number(r.ts) || 0)));
+                }
+            }
+            return fresh.length;
+        }
+
+        async function fetchRecentTradesPage() {
+            const st = recentTradesState;
+            const qs = new URLSearchParams({ limit: String(RECENT_TRADES_PAGE_SIZE) });
+            if (st.cursor != null) qs.set('before', String(st.cursor));
+            return api(`/stocks/${encodeURIComponent(st.symbol)}/trades?${qs.toString()}`);
+        }
+
+        async function loadMoreRecentTrades() {
+            const st = recentTradesState;
+            const body = document.getElementById('recentTradesBody');
+            if (!st.symbol || st.loading || st.done || !body) return;
+            const gen = st.gen;
+            st.loading = true;
+            updateRecentTradesChrome();
+            try {
+                const rows = await fetchRecentTradesPage();
+                if (st.gen !== gen) return;
+                if (!Array.isArray(rows) || rows.length === 0) {
+                    st.done = true;
+                } else {
+                    const added = appendRecentTrades(rows);
+                    st.failures = 0;
+                    if (rows.length < RECENT_TRADES_PAGE_SIZE) {
+                        st.done = true;
+                    } else if (added === 0) {
+                        // Giây này có > 100 lệnh: VCI không phân trang được trong cùng 1 giây
+                        // ⇒ lùi qua giây đó để đi tiếp phần lịch sử còn lại của phiên.
+                        const oldest = Math.min(...rows.map(r => Number(r && r.ts) || Infinity));
+                        if (Number.isFinite(oldest) && oldest > 1) st.cursor = oldest - 1;
+                        else st.done = true;
+                    }
+                }
+            } catch (error) {
+                if (st.gen !== gen) return;
+                console.error('Failed to load more recent trades:', error);
+                st.failures += 1;
+                if (st.failures >= 3) st.done = true;
+            } finally {
+                if (st.gen === gen) {
+                    st.loading = false;
+                    updateRecentTradesChrome();
+                }
+            }
         }
 
         async function loadRecentTrades(symbol) {
+            const st = recentTradesState;
             const body = document.getElementById('recentTradesBody');
+            const wrapper = document.getElementById('recentTradesWrapper');
+            st.gen += 1;
+            st.symbol = String(symbol || '').toUpperCase();
+            st.count = 0;
+            st.seen = new Set();
+            st.cursor = null;
+            st.done = false;
+            st.loading = false;
+            st.failures = 0;
+            st.sessionDate = '';
+            if (wrapper) wrapper.scrollTop = 0;
             if (body) {
                 body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#8a99b1;padding:10px 0;">Đang tải...</td></tr>';
             }
-            try {
-                const trades = await api(`/stocks/${encodeURIComponent(symbol)}/trades?limit=50`);
-                renderRecentTrades(trades);
-            } catch (error) {
-                console.error('Failed to load recent trades:', error);
-                if (body) {
-                    body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#e74c3c;padding:10px 0;">Không có dữ liệu</td></tr>';
-                }
+            updateRecentTradesChrome();
+            await loadMoreRecentTrades();
+            if (body && st.count === 0) {
+                body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#8a99b1;padding:10px 0;">Không có dữ liệu</td></tr>';
             }
+        }
+
+        // Cuộn gần cuối bảng ⇒ tự tải thêm 100 lệnh cũ hơn.
+        const recentTradesWrapperEl = document.getElementById('recentTradesWrapper');
+        if (recentTradesWrapperEl) {
+            let recentTradesScrollTimer = null;
+            recentTradesWrapperEl.addEventListener('scroll', function() {
+                if (recentTradesScrollTimer) return;
+                recentTradesScrollTimer = setTimeout(function() {
+                    recentTradesScrollTimer = null;
+                    const el = recentTradesWrapperEl;
+                    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 80) loadMoreRecentTrades();
+                }, 120);
+            });
         }
 
         // ===== SO SÁNH TƯƠNG QUAN (cùng ngành) =====
@@ -4497,11 +5280,20 @@
             });
         }
 
-        // ===== PHÂN TÍCH LỢI NHUẬN (biểu đồ cột theo quý, màu theo năm) =====
-        const PROFIT_YEAR_COLORS = ['#3498db', '#9b59b6', '#e67e22', '#2ecc71', '#e74c3c', '#1abc9c', '#f39c12', '#16a085'];
+        // ===== PHÂN TÍCH LỢI NHUẬN (biểu đồ cột theo quý, màu theo năm, đủ toàn bộ lịch sử) =====
+        const PROFIT_YEAR_COLORS = ['#3498db', '#9b59b6', '#e67e22', '#2ecc71', '#e74c3c', '#1abc9c', '#f39c12', '#16a085', '#8e44ad', '#d35400', '#27ae60', '#34495e'];
 
-        function profitYearColor(year, minYear) {
-            return PROFIT_YEAR_COLORS[(year - minYear) % PROFIT_YEAR_COLORS.length];
+        // Mỗi năm một màu riêng: dùng bảng màu quen thuộc, vượt quá 12 năm thì xoay theo
+        // góc vàng (golden angle) để các năm không bị trùng màu.
+        function profitYearColor(yearIndex) {
+            if (yearIndex < PROFIT_YEAR_COLORS.length) return PROFIT_YEAR_COLORS[yearIndex];
+            return `hsl(${Math.round((yearIndex * 137.508) % 360)}, 62%, 52%)`;
+        }
+
+        function buildProfitYearColors(years) {
+            const map = new Map();
+            years.forEach((year, index) => map.set(year, profitYearColor(index)));
+            return map;
         }
 
         function formatProfitValue(value) {
@@ -4510,19 +5302,26 @@
             return formatMarketCap(v);
         }
 
-        function renderProfitLegend(years, minYear) {
+        function renderProfitLegend(years, yearColors) {
             const legend = document.getElementById('profitLegend');
             if (!legend) return;
             legend.innerHTML = years.map(y => `
                 <span class="legend-item">
-                    <span class="legend-dot" style="background:${profitYearColor(y, minYear)};"></span>
+                    <span class="legend-dot" style="background:${yearColors.get(y)};"></span>
                     Năm ${y}
                 </span>
             `).join('');
         }
 
+        function updateProfitScrollHint(scroller) {
+            const hint = document.getElementById('profitHint');
+            if (!hint) return;
+            hint.hidden = !(scroller && scroller.scrollWidth > scroller.clientWidth + 2);
+        }
+
         function renderProfitChart(data) {
             const chart = document.getElementById('profitChart');
+            const hint = document.getElementById('profitHint');
             const titleSymbol = document.getElementById('profitSymbol');
             if (titleSymbol && data && data.symbol) {
                 titleSymbol.textContent = `· ${escapeHtml(data.symbol)}`;
@@ -4532,25 +5331,30 @@
             const quarters = Array.isArray(data && data.quarters) ? data.quarters : [];
             if (quarters.length === 0) {
                 chart.innerHTML = '<div class="info-empty">Không có dữ liệu lợi nhuận</div>';
+                if (hint) hint.hidden = true;
                 return;
             }
 
-            const minYear = Math.min(...quarters.map(q => q.year));
             const maxProfit = Math.max(...quarters.map(q => Math.max(0, Number(q.net_profit || 0))), 1);
             const years = [...new Set(quarters.map(q => q.year))].sort((a, b) => a - b);
+            const yearColors = buildProfitYearColors(years);
 
-            renderProfitLegend(years, minYear);
+            renderProfitLegend(years, yearColors);
 
-            chart.innerHTML = `<div class="profit-chart-inner">` + quarters.map(q => {
+            chart.innerHTML = '<div class="profit-chart-scroll"><div class="profit-chart-inner">' + quarters.map((q, idx) => {
                 const val = Number(q.net_profit || 0);
                 const h = Math.max(2, Math.round((Math.max(0, val) / maxProfit) * 100));
-                const color = profitYearColor(q.year, minYear);
-                const periodLabel = `${q.label}/${String(q.year).slice(2)}`;
+                const color = yearColors.get(q.year) || profitYearColor(0);
                 const profitTxt = formatProfitValue(val);
                 const revenueTxt = formatProfitValue(q.revenue);
                 const pbtTxt = formatProfitValue(q.profit_before_tax);
+                const yearStart = Number(q.quarter) === 1;
+                const labelTxt = yearStart ? String(q.year) : `Q${q.quarter}`;
+                // Tooltip rộng hơn cột ⇒ 4 cột sát mép phải/trái được căn vào trong để
+                // không tràn ra ngoài (và không tạo thanh cuộn ngang vô ích).
+                const edgeClass = idx < 4 ? ' tt-left' : (idx >= quarters.length - 4 ? ' tt-right' : '');
                 return `
-                    <div class="profit-bar-col" title="${escapeHtml(q.period)}">
+                    <div class="profit-bar-col${yearStart ? ' year-start' : ''}${edgeClass}" title="${escapeHtml(q.period)}">
                         <div class="tooltip">
                             <div class="tt-head">${escapeHtml(q.label)}/${q.year}</div>
                             <div class="tt-row"><span>Lợi nhuận sau thuế</span><span class="tt-val" style="color:${color}">${profitTxt}</span></div>
@@ -4558,19 +5362,36 @@
                             ${pbtTxt !== '--' ? `<div class="tt-row"><span>Lợi nhuận trước thuế</span><span class="tt-val">${pbtTxt}</span></div>` : ''}
                         </div>
                         <div class="bar" style="height:${h}%;background:${color};"></div>
-                        <div class="label">${escapeHtml(periodLabel)}</div>
+                        <div class="label"${yearStart ? ` style="color:${color};"` : ''}>${escapeHtml(labelTxt)}</div>
                     </div>
                 `;
-            }).join('') + `</div>`;
+            }).join('') + '</div></div>';
+
+            const scroller = chart.querySelector('.profit-chart-scroll');
+            updateProfitScrollHint(scroller);
+            // Mặc định nhìn thấy các quý mới nhất; phần lịch sử cũ hơn nằm bên trái.
+            if (scroller) scroller.scrollLeft = scroller.scrollWidth;
+        }
+
+        // Đổi kích thước cửa sổ ⇒ bật/tắt gợi ý "cuộn ngang" cho khớp với độ rộng mới.
+        const profitChartEl = document.getElementById('profitChart');
+        if (profitChartEl && window.ResizeObserver) {
+            const profitResizeObserver = new ResizeObserver(() => {
+                updateProfitScrollHint(profitChartEl.querySelector('.profit-chart-scroll'));
+            });
+            profitResizeObserver.observe(profitChartEl);
         }
 
         async function loadProfitAnalysis(symbol) {
             const chart = document.getElementById('profitChart');
+            const hint = document.getElementById('profitHint');
+            if (hint) hint.hidden = true;
             if (chart) {
                 chart.innerHTML = '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
             }
             try {
-                const data = await api(`/stocks/${encodeURIComponent(symbol)}/profit-analysis?quarters=12`);
+                // Không truyền quarters ⇒ lấy TOÀN BỘ lịch sử VCI có (thường từ 2018).
+                const data = await api(`/stocks/${encodeURIComponent(symbol)}/profit-analysis`);
                 renderProfitChart(data);
             } catch (error) {
                 console.error('Failed to load profit analysis:', error);
@@ -5458,6 +6279,8 @@
                 // Block TuniAI Analysis: chỉ hiển thị + chỉ gọi API khi đã đăng nhập
                 if (applyTuniAnalysisVisibility()) loadTuniAnalysis(symbol);
                 loadOrderBook(symbol);
+                resetMoneyFlow(symbol);
+                loadMoneyFlow(symbol, { preload: true });
                 loadRecentTrades(symbol);
                 loadPeerComparison(symbol);
                 // Preload nền Lịch sử cổ tức + Tóm tắt doanh nghiệp (không chặn UI) →

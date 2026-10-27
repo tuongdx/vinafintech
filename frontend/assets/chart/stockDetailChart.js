@@ -35,7 +35,7 @@ import { LastPriceLine } from './core/lastPriceLine.js';
 // `?v=` BẮT BUỘC: /static/* không version bị HTTP cache 1 giờ. Bump khi sửa positionLine.js.
 import { PositionLine } from './core/positionLine.js?v=20260927d';
 import { HistoryLoader } from './core/historyLoader.js';
-import { FullscreenWorkspace } from './ui/fullscreenWorkspace.js?v=20261009a';
+import { FullscreenWorkspace } from './ui/fullscreenWorkspace.js?v=20261027b';
 
 export function createStockDetailChart(options) {
     const container = options.container;

@@ -21,6 +21,7 @@ from app.services.vnstock_service import (
     get_market_dashboard,
     get_market_map,
     get_market_overview,
+    get_money_flow,
     get_order_book,
     get_peer_comparison,
     get_profit_analysis,
@@ -121,9 +122,16 @@ def order_book(symbol: str):
     return get_order_book(symbol)
 
 
+@router.get("/{symbol}/money-flow")
+def money_flow(symbol: str, sessions: int = 10):
+    """Dòng tiền ròng N phiên gần nhất (tính từ OHLCV — xem get_money_flow)."""
+    return get_money_flow(symbol, sessions=sessions)
+
+
 @router.get("/{symbol}/trades")
-def trades(symbol: str, limit: int = 50):
-    return get_recent_trades(symbol, limit=limit)
+def trades(symbol: str, limit: int = 50, before: int | None = None):
+    # `before` (epoch giây) để phân trang lấy toàn bộ giao dịch của phiên.
+    return get_recent_trades(symbol, limit=limit, before=before)
 
 
 @router.get("/{symbol}/peers")
@@ -132,7 +140,8 @@ def peers(symbol: str, limit: int = 10):
 
 
 @router.get("/{symbol}/profit-analysis")
-def profit_analysis(symbol: str, quarters: int = 12):
+def profit_analysis(symbol: str, quarters: int = 0):
+    # quarters = 0 ⇒ trả về toàn bộ lịch sử có sẵn (dùng cho block "Phân tích lợi nhuận").
     return get_profit_analysis(symbol, quarters=quarters)
 
 

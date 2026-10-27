@@ -130,7 +130,7 @@ Các bảng chính trong `app/models.py`:
 
 | Router | Nhóm endpoint chính |
 |---|---|
-| `stocks` | `/stocks/search`, `/{sym}/quote`, `/history`, `/financials`, `/insider-trades`, `/shareholders`, `/reports`, `/dividends`, `/company-summary`, `/order-book`, `/trades`, `/peers`, `/profit-analysis`, `/indices`, `/market-overview`, `/index-detail`, `/market-map`, `/realtime-board`, `/foreign-trading`, `/watchlist` |
+| `stocks` | `/stocks/search`, `/{sym}/quote`, `/history`, `/financials`, `/insider-trades`, `/shareholders`, `/reports`, `/dividends`, `/company-summary`, `/order-book`, `/trades`, `/money-flow`, `/peers`, `/profit-analysis`, `/indices`, `/market-overview`, `/index-detail`, `/market-map`, `/realtime-board`, `/foreign-trading`, `/watchlist` |
 | `chart` | `/chart/history`, `/chart/config`, `/chart/search`, `/chart/quote`, `/chart/server-time` |
 | `ai` | `/ai/status`, `/ai/chat` (SSE) |
 | `auth` | đăng nhập/đăng ký/refresh/oauth/reset mật khẩu |
@@ -177,8 +177,8 @@ Các block (tải song song, chart render sớm không chờ quote):
 1. **Thông tin cơ bản** — giá, % thay đổi, nút yêu thích.
 2. **Chỉ số cơ bản** — vốn hoá, P/E, P/B, EPS, ROE, ROA, KLGD TB, %1W/1M/YTD.
 3. **Biểu đồ nến** — Lightweight Charts, timeframe 1H/1D/1W/1M, chỉ báo (SMA/EMA/RSI/MACD/BB), drawings, so sánh, phân tích, export PNG, fullscreen.
-4. **Sổ lệnh** + **So sánh tương quan** (click mã → chuyển sang mã đó).
-5. **Giao dịch gần nhất**.
+4. **Sổ lệnh** + **So sánh tương quan** (click mã → chuyển sang mã đó). Block Sổ lệnh có 2 tab: **Sổ lệnh** (giữ nguyên) và **Dòng tiền** — dòng tiền ròng **10 phiên** tính từ OHLCV (`/stocks/{symbol}/money-flow`): giá trị giao dịch (giá TB × KL) tách thành tiền vào/ra theo hệ số CLV `((C−L)−(H−C))/(H−L)`; hiển thị 3 KPI (vào / ra / ròng) + biểu đồ cột phân kỳ (xanh = vào, đỏ = ra). VCI/SSI không có lịch sử mua/bán chủ động theo phiên nên số liệu là ước lượng từ biến động giá, không phải giá trị mua/bán chủ động.
+5. **Giao dịch gần nhất** — tải dần theo cursor `before`: cuộn xuống để tự nạp thêm các lệnh khớp cũ hơn của phiên (VCI trả tối đa 100 lệnh/request nên phải phân trang). Khung bảng cao vừa đúng **14 dòng** (header 22px + 14 × 27px = 400px) để lấp kín chiều cao block.
 6. **Phân tích lợi nhuận** (biểu đồ cột theo quý, nguồn VCI).
 7. **Cơ cấu cổ đông**.
 8. **Giả định tích sản 5 năm** (DCA 5tr/tháng vs ngân hàng, ô nhập số tuỳ chỉnh).
@@ -186,6 +186,7 @@ Các block (tải song song, chart render sớm không chờ quote):
 
 - Hỗ trợ **mã chỉ số** (VNINDEX, VN30, HNX, HNXINDEX, HNX30, UPCOM, UPINDEX, UPCOMM): ẩn các block không có dữ liệu (sổ lệnh, giao dịch gần nhất, so sánh tương quan, phân tích lợi nhuận, cơ cấu cổ đông, báo cáo, tích sản).
 - **Fullscreen** (`?fs=1`): parent-driven; thoát fullscreen trả chart về chiều cao bình thường, icon nến fullscreen đúng mã đang xem, thoát từ trang không phải chi tiết thì quay lại trang trước.
+- **Dashboard fullscreen** (`.chart-bottom`): **Giả định tích sản 5 năm** · **Dòng tiền 10 phiên** (cùng nguồn `/stocks/{symbol}/money-flow`: ròng 10 phiên + cột vào/ra, có tooltip từng phiên) · **TuniAI phân tích**. Panel Dòng tiền thay cho panel Tin tức nổi bật trước đây.
 
 ---
 
