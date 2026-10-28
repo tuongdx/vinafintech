@@ -2819,8 +2819,190 @@ def _get_quote_fundamentals(symbol: str) -> dict[str, Any]:
     return out
 
 
+# ---------------------------------------------------------------------------
+# Quote block đầu trang chi tiết — nguồn vnstock (bảng giá VCI)
+# ---------------------------------------------------------------------------
+_VCI_PRICE_BOARD_PATH = "/price/symbols/getList"
+
+
+def _build_price_board_snapshot(
+    symbol: str,
+    *,
+    name: Any,
+    exchange: Any,
+    price: Any,
+    reference_price: Any,
+    open_price: Any,
+    high: Any,
+    low: Any,
+    volume: Any,
+    traded_value: Any,
+    bid_price: Any = 0,
+    bid_volume: Any = 0,
+    ask_price: Any = 0,
+    ask_volume: Any = 0,
+    listed_shares: Any = 0,
+    trading_status: Any = "",
+    as_of: Any = "",
+    source: str = "vnstock-vci",
+) -> dict[str, Any]:
+    """Chuẩn hoá 1 dòng bảng giá VCI về schema quote của TuniX.
+
+    Giá / khối lượng / giá trị khớp lệnh lấy NGUYÊN từ bảng giá (nguồn vnstock),
+    không suy diễn từ nến ngày. `traded_value` là VND.
+    """
+    price_v = _to_float(price)
+    reference_v = _to_float(reference_price)
+    if price_v <= 0:
+        price_v = reference_v
+    change_v = price_v - reference_v if price_v > 0 and reference_v > 0 else 0.0
+    volume_v = int(_to_float(volume))
+    value_v = _to_float(traded_value)
+    if value_v <= 0 and price_v > 0 and volume_v > 0:
+        value_v = price_v * volume_v
+    shares_v = _to_float(listed_shares)
+    exchange_v = str(exchange or "").strip().upper()
+
+    snapshot: dict[str, Any] = {
+        "symbol": symbol,
+        "name": str(name or symbol),
+        "exchange": _EXCHANGE_CANONICAL.get(exchange_v, exchange_v),
+        "price": price_v,
+        "matched_price": price_v,
+        "change": round(change_v, 4),
+        "percent_change": round((change_v / reference_v * 100.0) if reference_v > 0 else 0.0, 4),
+        "reference_price": reference_v,
+        "open": _to_float(open_price),
+        "high": _to_float(high),
+        "low": _to_float(low),
+        "volume": volume_v,
+        "value": round(value_v, 2),
+        "bid_price_1": _to_float(bid_price),
+        "bid_volume_1": int(_to_float(bid_volume)),
+        "ask_price_1": _to_float(ask_price),
+        "ask_volume_1": int(_to_float(ask_volume)),
+        "trading_status": str(trading_status or ""),
+        "as_of": str(as_of or ""),
+        "source": source,
+    }
+    # Vốn hoá = giá khớp × số CP niêm yết (VCI) — luôn khớp giá đang hiển thị,
+    # tránh dùng marketCap snapshot của nguồn khác (có thể lệch giá/ngày).
+    if shares_v > 0 and price_v > 0:
+        snapshot["market_cap"] = round(price_v * shares_v, 2)
+    return snapshot
+
+
+def _vci_price_board_snapshot(symbol_upper: str) -> dict[str, Any] | None:
+    """Snapshot bảng giá VCI qua REST (đúng endpoint `vnstock Trading.price_board` dùng)."""
+    try:
+        response = _get_http_client().post(
+            f"{_VCI_TRADING_URL}{_VCI_PRICE_BOARD_PATH}",
+            json={"symbols": [symbol_upper]},
+            headers=_VCI_TRADING_HEADERS,
+            timeout=httpx.Timeout(_VCI_TRADING_TIMEOUT, connect=10.0),
+        )
+        rows = response.json()
+    except Exception:
+        return None
+    if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
+        return None
+
+    item = rows[0]
+    listing = item.get("listingInfo") or {}
+    match = item.get("matchPrice") or {}
+    bid_ask = item.get("bidAsk") or {}
+    bids = bid_ask.get("bidPrices") or []
+    asks = bid_ask.get("askPrices") or []
+    bid1 = bids[0] if bids and isinstance(bids[0], dict) else {}
+    ask1 = asks[0] if asks and isinstance(asks[0], dict) else {}
+    # VCI trả giá trị khớp lệnh theo triệu đồng.
+    traded_value = _to_float(match.get("accumulatedValue")) * 1_000_000
+
+    return _build_price_board_snapshot(
+        symbol_upper,
+        name=listing.get("organName") or listing.get("enOrganName"),
+        exchange=listing.get("board") or listing.get("exchange"),
+        price=match.get("matchPrice"),
+        reference_price=listing.get("refPrice") or match.get("referencePrice"),
+        open_price=match.get("openPrice"),
+        high=match.get("highest"),
+        low=match.get("lowest"),
+        volume=match.get("accumulatedVolume"),
+        traded_value=traded_value,
+        bid_price=bid1.get("price"),
+        bid_volume=bid1.get("volume"),
+        ask_price=ask1.get("price"),
+        ask_volume=ask1.get("volume"),
+        listed_shares=listing.get("listedShare"),
+        trading_status=listing.get("tradingStatus"),
+        as_of=match.get("receivedTime") or bid_ask.get("receivedTime") or listing.get("tradingDate"),
+    )
+
+
+def _vnstock_price_board_snapshot(symbol_upper: str) -> dict[str, Any] | None:
+    """Fallback bảng giá qua thư viện vnstock (VCI) khi REST đổi schema/lỗi.
+
+    Chậm hơn (~5s lần import đầu) nên chỉ dùng khi REST không trả dữ liệu.
+    """
+    try:
+        from vnstock import Trading  # lazy import
+
+        df = Trading(source="VCI", symbol=symbol_upper, show_log=False).price_board(
+            [symbol_upper], flatten_columns=True
+        )
+    except Exception:
+        return None
+    if df is None or getattr(df, "empty", True):
+        return None
+
+    row = df.iloc[0]
+
+    def pick(*names: str) -> Any:
+        for name in names:
+            value = row.get(name)
+            if value is not None and str(value).strip() not in ("", "nan", "None"):
+                return value
+        return None
+
+    return _build_price_board_snapshot(
+        symbol_upper,
+        name=pick("listing_organ_name", "listing_en_organ_name"),
+        exchange=pick("listing_exchange", "listing_board"),
+        price=pick("match_match_price", "match_avg_match_price"),
+        reference_price=pick("listing_ref_price", "match_reference_price"),
+        open_price=pick("match_open_price"),
+        high=pick("match_highest"),
+        low=pick("match_lowest"),
+        volume=pick("match_accumulated_volume"),
+        traded_value=_to_float(pick("match_accumulated_value")) * 1_000_000,
+        bid_price=pick("bid_ask_bid_1_price"),
+        bid_volume=pick("bid_ask_bid_1_volume"),
+        ask_price=pick("bid_ask_ask_1_price"),
+        ask_volume=pick("bid_ask_ask_1_volume"),
+        listed_shares=pick("listing_listed_share"),
+        trading_status=pick("listing_trading_status"),
+        as_of=pick("match_sending_time", "bid_ask_transaction_time"),
+    )
+
+
+@_singleflight(lambda symbol: f"price-board:{symbol.upper()}", 10)
+def _price_board_snapshot(symbol: str) -> dict[str, Any] | None:
+    """Snapshot bảng giá (nguồn vnstock) cho block "Thông tin cơ bản"."""
+    symbol_upper = symbol.upper().strip()
+    snapshot = _vci_price_board_snapshot(symbol_upper)
+    if snapshot:
+        return snapshot
+    return _vnstock_price_board_snapshot(symbol_upper)
+
+
 @_singleflight(lambda symbol: f"quote:{symbol.upper()}", 15)
 def get_quote(symbol: str) -> dict[str, Any]:
+    """Quote cho block "Thông tin cơ bản" ở trang chi tiết cổ phiếu.
+
+    Nguồn chính: bảng giá vnstock (VCI) — giá, KL, GTGD, OHLC, giá tham chiếu,
+    dư mua/bán, tên doanh nghiệp, sàn, vốn hoá (giá × số CP niêm yết).
+    Fallback: Simplize khi bảng giá không khả dụng.
+    """
     key = f"quote:{symbol.upper()}"
     cached = cache.get(key)
     if cached is not None:
@@ -2867,15 +3049,30 @@ def get_quote(symbol: str) -> dict[str, Any]:
         }
 
     try:
-        # Nạp SONG SONG các nguồn độc lập (giá mới nhất / lịch sử 1M / chỉ số cơ bản) để
-        # giảm thời gian trả quote — trước đây chạy tuần tự nên lần đầu mất ~tổng 3 request.
-        with ThreadPoolExecutor(max_workers=3) as pool:
+        # Nạp SONG SONG bảng giá vnstock (VCI) + chỉ số cơ bản để giảm thời gian trả quote.
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            f_board = pool.submit(_price_board_snapshot, symbol.upper())
+            f_fund = pool.submit(_get_quote_fundamentals, symbol.upper())
+            board = f_board.result()
+            fundamentals = f_fund.result()
+
+        # Nguồn chính: bảng giá vnstock (VCI) — giá, KL, GTGD, OHLC, dư mua/bán, tên, sàn.
+        if board:
+            result = dict(board)
+            board_market_cap = result.pop("market_cap", 0)
+            result.update(fundamentals)
+            if board_market_cap:
+                result["market_cap"] = board_market_cap
+            result["valid"] = True
+            cache.set(key, result, ttl_seconds=15)
+            return result
+
+        # Fallback: giữ nguyên nguồn cũ khi bảng giá vnstock không khả dụng.
+        with ThreadPoolExecutor(max_workers=2) as pool:
             f_last = pool.submit(_simplize_last, "stock", [symbol.upper()])
             f_hist = pool.submit(get_history, symbol.upper(), "1d", "1m")
-            f_fund = pool.submit(_get_quote_fundamentals, symbol.upper())
             last_map = f_last.result()
             history = f_hist.result()
-            fundamentals = f_fund.result()
         last = last_map.get(symbol.upper(), {})
         latest_bar = history[-1] if history else {}
 
