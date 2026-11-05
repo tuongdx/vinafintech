@@ -139,7 +139,7 @@ def _create_and_send_verification(db: Session, user: User) -> str:
     db.commit()
     base_url = settings.app_url or settings.frontend_url
     verify_url = f"{base_url}/verify-email?token={token}"
-    send_email(user.email, "TuniX - Xác thực email", build_verify_email_html(verify_url, user.full_name))
+    send_email(user.email, "VinaFintech - Xác thực email", build_verify_email_html(verify_url, user.full_name))
     return verify_url
 
 
@@ -277,7 +277,7 @@ def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
     if not provider_user_id:
         raise HTTPException(status_code=400, detail="Không xác định được tài khoản Google.")
 
-    # Case 1: Google Account đã liên kết với TuniX
+    # Case 1: Google Account đã liên kết với VinaFintech
     account = (
         db.query(SocialAccount)
         .filter(SocialAccount.provider == "google", SocialAccount.provider_user_id == provider_user_id)
@@ -406,7 +406,7 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
 
     base_url = settings.app_url or settings.frontend_url
     reset_url = f"{base_url}/reset-password?token={token}"
-    send_email(user.email, "TuniX - Đặt lại mật khẩu", build_reset_email_html(reset_url))
+    send_email(user.email, "VinaFintech - Đặt lại mật khẩu", build_reset_email_html(reset_url))
     return {"message": generic}
 
 

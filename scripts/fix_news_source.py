@@ -8,7 +8,7 @@ Chạy trên DB local (SQLite — đọc DATABASE_URL trong .env):
     py scripts/fix_news_source.py
 
 Chạy trên DB production (Render Postgres) — truyền URL đích:
-    py scripts/fix_news_source.py "postgresql://USER:PASS@host:5432/tunix?sslmode=require"
+    py scripts/fix_news_source.py "postgresql://USER:PASS@host:5432/VinaFintech?sslmode=require"
     (hoặc set env DATABASE_URL rồi chạy không tham số)
 """
 import os

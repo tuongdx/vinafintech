@@ -102,7 +102,7 @@ def _stable_api_max_age(path: str) -> int | None:
     ):
         return 600
     # Bộ dữ liệu screener/discover vốn đã cache server 30 phút → cache trình duyệt 60s
-    # giúp các trang (cổ phiếu/khám phá/danh mục/TuniAI/trang chủ) load lại gần như tức thì.
+    # giúp các trang (cổ phiếu/khám phá/danh mục/VinaF AI/trang chủ) load lại gần như tức thì.
     if path.startswith("/api/stocks/stock-screener") or path.startswith("/api/stocks/stock-discover"):
         return 60
     # Bảng xếp hạng realtime (poll định kỳ ở trang Khám phá) — KHÔNG cache trình duyệt
@@ -240,7 +240,7 @@ app.include_router(crypto.router, prefix=api)
 app.include_router(gold.router, prefix=api)
 app.include_router(exchange.router, prefix=api)
 app.include_router(assets.router, prefix=api)
-# TuniX Signal Engine — API Tín hiệu (yêu cầu đăng nhập + quyền được cấp: role admin hoặc
+# VinaFintech Signal Engine — API Tín hiệu (yêu cầu đăng nhập + quyền được cấp: role admin hoặc
 # cờ users.signal_access do admin bật) + API public phân tích (không có BUY/SELL)
 app.include_router(signals_admin.router, prefix=api)
 app.include_router(signal_public.router, prefix=api)
@@ -277,7 +277,7 @@ def on_startup() -> None:
             session.close()
     except Exception:  # noqa: BLE001 — không để lỗi seed làm hỏng startup
         pass
-    # Đăng ký 3 chiến thuật của TuniX Signal Engine (idempotent) vào bảng signal_strategies.
+    # Đăng ký 3 chiến thuật của VinaFintech Signal Engine (idempotent) vào bảng signal_strategies.
     try:
         from app.services.signal_engine import repository as signal_repository
 
@@ -332,7 +332,7 @@ def on_startup() -> None:
         vnstock_service.start_daily_reports_refresh()
     except Exception:  # noqa: BLE001
         pass
-    # Tín hiệu TuniX: QUÉT TỰ ĐỘNG toàn thị trường theo lịch (mặc định 11:00 · 13:30 · 15:00
+    # Tín hiệu VinaFintech: QUÉT TỰ ĐỘNG toàn thị trường theo lịch (mặc định 11:00 · 13:30 · 15:00
     # giờ VN mỗi ngày giao dịch) — thread nền riêng, không chặn người dùng.
     try:
         from app.services.signal_engine import scheduler as signal_scheduler
@@ -418,7 +418,7 @@ def root():
     index_file = frontend_path / "index.html"
     if index_file.exists():
         return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    return {"message": "TuniX API running"}
+    return {"message": "VinaFintech API running"}
 
 
 @app.get("/api/health")
@@ -451,12 +451,12 @@ PAGE_MAP: dict[str, str] = {
     # Trang Crypto: /crypto giữ nguyên shell, nội dung nạp vào iframe left-col.
     "crypto": "crypto.html",
     "kham-pha": "KhamPha.html",
-    "tuniai": "TuniAI.html",
+    "vinafai": "VinafAI.html",
     "caidat": "caidat.html",
     "taikhoan": "taikhoan.html",
     "doimatkhau": "doimatkhau.html",
     "quan-ly-tai-san": "quanlytaisan.html",
-    # Trang Tín hiệu (TuniX Signal Engine): /tin-hieu giữ nguyên shell, nội dung nạp vào iframe left-col.
+    # Trang Tín hiệu (VinaFintech Signal Engine): /tin-hieu giữ nguyên shell, nội dung nạp vào iframe left-col.
     # Menu CHỈ hiện với tài khoản đã đăng nhập VÀ được admin cấp quyền (users.signal_access);
     # API /api/signals kiểm tra quyền ở server (require_signal_access).
     "tin-hieu": "tin-hieu.html",
@@ -513,8 +513,8 @@ INDEX_SHELL_PAGES = {
     "crypto",
     # Trang khám phá: /kham-pha giữ nguyên shell, nội dung nạp vào left-col.
     "kham-pha",
-    # Trang TuniAI: /tuniai giữ nguyên shell, nội dung nạp vào left-col.
-    "tuniai",
+    # Trang VinaF AI: /vinafai giữ nguyên shell, nội dung nạp vào left-col.
+    "vinafai",
     # Trang Quản lý tài sản: /quan-ly-tai-san giữ nguyên shell, nội dung nạp vào iframe left-col.
     "quan-ly-tai-san",
     # Trang Tín hiệu: /tin-hieu giữ nguyên shell, nội dung nạp vào iframe left-col.
@@ -537,7 +537,7 @@ INDEX_SHELL_PAGES = {
 
 @app.get("/admin/login")
 def admin_login_page():
-    """Trang đăng nhập quản trị — cùng phong cách TuniX."""
+    """Trang đăng nhập quản trị — cùng phong cách VinaFintech."""
     page_file = frontend_path / "AdminLogin.html"
     if not page_file.exists():
         raise HTTPException(status_code=404, detail="Page file not found")
@@ -546,7 +546,7 @@ def admin_login_page():
 
 @app.get("/favicon.ico")
 def favicon_ico():
-    """Favicon gốc — trả logo TuniX (ICO) để trình duyệt tự tìm tại /favicon.ico."""
+    """Favicon gốc — trả logo VinaFintech (ICO) để trình duyệt tự tìm tại /favicon.ico."""
     icon_file = frontend_path / "Logo" / "favicon.ico"
     if icon_file.exists():
         return FileResponse(str(icon_file), media_type="image/x-icon")

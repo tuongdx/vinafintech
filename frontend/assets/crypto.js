@@ -1,4 +1,4 @@
-/* TuniX — Crypto (trang crypto.html)
+/* VinaFintech — Crypto (trang crypto.html)
    Dữ liệu Binance qua backend /api/crypto/* — frontend không gọi Binance trực tiếp.
    Cập nhật định kỳ bằng polling (15s) — không cần reload trang. */
 (function () {

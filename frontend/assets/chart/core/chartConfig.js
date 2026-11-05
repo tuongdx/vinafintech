@@ -6,7 +6,7 @@
  * DATASET = toàn bộ lịch sử có sẵn của mã (từ biên dữ liệu → hiện tại), do
  * HistoryLoader tải dần theo (symbol, timeframe) và cache riêng.
  *
- * Lưu ý: 1H (Giờ) KHÔNG có trong danh sách — nguồn dữ liệu TuniX/Simplize chưa
+ * Lưu ý: 1H (Giờ) KHÔNG có trong danh sách — nguồn dữ liệu VinaFintech/Simplize chưa
  * cung cấp OHLCV intraday, nên không hiển thị lựa chọn 1 giờ (tránh chọn rồi báo lỗi).
  */
 

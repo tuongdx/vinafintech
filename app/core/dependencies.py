@@ -70,7 +70,7 @@ ADMIN_ROLES = (RoleEnum.super_admin, RoleEnum.admin)
 
 
 def require_signal_access(user: User = Depends(get_current_user)) -> User:
-    """Quyền dùng tính năng **Tín hiệu** (TuniX Signal Engine).
+    """Quyền dùng tính năng **Tín hiệu** (VinaFintech Signal Engine).
 
     Cho phép khi:
     - role là super-admin/admin (quản trị nội bộ), HOẶC

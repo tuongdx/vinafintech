@@ -1,4 +1,4 @@
-"""AI models cho TuniX Signal Engine.
+"""AI models cho VinaFintech Signal Engine.
 
 ⚠️ TRUNG THỰC (spec §8, §33.6, §33.12):
 Project hiện **CHƯA có model AI nào được train** (không có checkpoint, không có

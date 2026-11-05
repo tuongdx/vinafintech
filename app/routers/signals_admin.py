@@ -1,4 +1,4 @@
-"""API tính năng **Tín hiệu** (TuniX Signal Engine) cho người dùng đã được CẤP QUYỀN.
+"""API tính năng **Tín hiệu** (VinaFintech Signal Engine) cho người dùng đã được CẤP QUYỀN.
 
 BẢO MẬT (spec §4, §33.3-§33.5):
 - Mọi endpoint yêu cầu đăng nhập + ``require_signal_access``: role super-admin/admin **hoặc**

@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>Tin tức - TuniX</title>
+    <title>Tin tức - VinaFintech</title>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B528QFKRN9"></script>
     <script>
@@ -218,6 +218,121 @@
             background: #e0e6ec;
             color: #1a1f36;
         }
+        .market-highlight {
+            margin-bottom: 16px;
+            padding: 14px;
+            background: #fff;
+            border: 1px solid #e5e9f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .market-highlight[hidden] { display: none; }
+        .market-highlight-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .market-highlight-title { font-size: 15px; font-weight: 800; color: #1a1f36; }
+        .market-highlight-note { color: #8a99b1; font-size: 11px; }
+        .market-highlight-link {
+            border: 0;
+            background: transparent;
+            color: #008080;
+            font: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .market-highlight-link:hover { text-decoration: underline; }
+        .mh-opportunities {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .mh-opportunity {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            padding: 10px 12px;
+            border: 1px solid #e9edf2;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
+        .mh-opportunity:hover { border-color: #9acbcb; background: #f7fbfb; }
+        .mh-opportunity-symbol { font-size: 14px; font-weight: 800; color: #1a1f36; }
+        .mh-opportunity-name {
+            overflow: hidden;
+            color: #8a99b1;
+            font-size: 10px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .mh-opportunity-change { margin-left: auto; font-size: 12px; font-weight: 800; white-space: nowrap; }
+        .mh-opportunity-change.pos { color: #0b7a5c; }
+        .mh-opportunity-change.neg { color: #d0314e; }
+        .mh-opportunity-score {
+            min-width: 28px;
+            padding: 4px 5px;
+            border-radius: 7px;
+            background: #e8f4f3;
+            color: #008080;
+            font-size: 10px;
+            font-weight: 800;
+            text-align: center;
+        }
+        .mh-fallback {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 10px;
+        }
+        .mh-panel { min-width: 0; padding: 10px; border: 1px solid #e9edf2; border-radius: 10px; }
+        .mh-panel-title { margin-bottom: 8px; font-size: 12px; font-weight: 800; color: #1a1f36; }
+        .mh-map { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+        .mh-map-cell {
+            min-width: 0;
+            min-height: 31px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            line-height: 1.15;
+        }
+        .mh-map-cell:hover { filter: brightness(1.08); }
+        .mh-map-cell span { max-width: 100%; overflow: hidden; font-size: 9px; font-weight: 800; text-overflow: ellipsis; }
+        .mh-map-cell small { margin-top: 2px; font-size: 8px; }
+        .mh-map-up { background: #00a745; }
+        .mh-map-down { background: #dc3545; }
+        .mh-map-flat { background: #d6a400; }
+        .mh-radar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 10px; }
+        .mh-radar-row { min-width: 0; }
+        .mh-radar-label { margin-bottom: 4px; color: #8a99b1; font-size: 9px; font-weight: 700; }
+        .mh-radar-items { display: flex; flex-wrap: wrap; gap: 4px; }
+        .mh-chip {
+            max-width: 100%;
+            overflow: hidden;
+            padding: 3px 7px;
+            border: 0;
+            border-radius: 12px;
+            background: #eef6f5;
+            color: #087c7c;
+            cursor: pointer;
+            font: inherit;
+            font-size: 9px;
+            font-weight: 700;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .mh-chip:hover { background: #dcefed; }
+        .mh-empty { grid-column: 1 / -1; color: #8a99b1; font-size: 11px; }
         body.dark-mode .search-info {
             background: #1c2128;
             border-color: #30363d;
@@ -549,6 +664,15 @@
             border-color: #30363d;
             color: #768390;
         }
+        body.dark-mode .market-highlight { background: #161b22; border-color: #30363d; }
+        body.dark-mode .market-highlight-title,
+        body.dark-mode .mh-opportunity-symbol,
+        body.dark-mode .mh-panel-title { color: #e6edf3; }
+        body.dark-mode .mh-opportunity,
+        body.dark-mode .mh-panel { border-color: #30363d; }
+        body.dark-mode .mh-opportunity:hover { background: #1b2229; }
+        body.dark-mode .mh-opportunity-score,
+        body.dark-mode .mh-chip { background: #183330; color: #4db6b6; }
 
         /* ============================================================
                    RESPONSIVE
@@ -560,6 +684,8 @@
             .digest-medium {
                 grid-template-columns: 1fr;
             }
+            .mh-opportunities { grid-template-columns: 1fr; }
+            .mh-fallback { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -569,6 +695,8 @@
             <span id="searchInfoText"></span>
             <button type="button" id="searchClearBtn"><i class="fas fa-times"></i> Xóa tìm kiếm</button>
         </div>
+
+        <section class="market-highlight" id="marketHighlight" hidden aria-live="polite"></section>
 
         <div class="news-grid" id="newsGrid">
             <div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải tin tức...</div>
@@ -584,7 +712,7 @@
 
     <script>
         // ============================================================
-        // TuniX - Trang tin tức (danh mục + lưới tin)
+        // VinaFintech - Trang tin tức (danh mục + lưới tin)
         // Nhúng trong left-col của index.html qua iframe.
         // ============================================================
         (function () {
@@ -629,6 +757,8 @@
             var searchInfoEl = document.getElementById('searchInfo');
             var searchInfoTextEl = document.getElementById('searchInfoText');
             var searchClearBtn = document.getElementById('searchClearBtn');
+            var marketHighlightEl = document.getElementById('marketHighlight');
+            var marketHighlightRequest = 0;
 
             // ---------------- Theme (nhận từ parent index.html) ----------------
             function applyTheme(mode) {
@@ -709,6 +839,163 @@
                 return c ? c.icon : 'fa-newspaper';
             }
 
+            function marketPct(value) {
+                var n = Number(value);
+                if (!Number.isFinite(n)) return '--';
+                return (n > 0 ? '+' : '') + n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%';
+            }
+
+            function openMarketStock(symbol) {
+                if (!symbol || !window.parent || window.parent === window) return;
+                window.parent.postMessage({ type: 'tunix-open-stock', symbol: symbol }, '*');
+            }
+
+            function marketStockButton(symbol, label) {
+                if (!symbol) return '';
+                return '<button type="button" class="mh-chip" data-symbol="' + esc(symbol) +
+                    '" title="' + esc(label || symbol) + '">' + esc(label || symbol) + '</button>';
+            }
+
+            function bindMarketStockButtons() {
+                marketHighlightEl.querySelectorAll('button[data-symbol]').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        openMarketStock(button.getAttribute('data-symbol'));
+                    });
+                });
+            }
+
+            function renderMarketOpportunities(items) {
+                var cards = items.slice(0, 3).map(function (item) {
+                    var symbol = String(item.symbol || '').trim().toUpperCase();
+                    var changeClass = Number(item.percent_change) < 0 ? 'neg' : 'pos';
+                    var score = Number(item.opportunity_score != null ? item.opportunity_score : item.score);
+                    return '<div class="mh-opportunity" role="button" tabindex="0" data-symbol="' + esc(symbol) + '">' +
+                        '<div><div class="mh-opportunity-symbol">' + esc(symbol) + '</div>' +
+                        '<div class="mh-opportunity-name">' + esc(item.name || symbol) + '</div></div>' +
+                        '<span class="mh-opportunity-change ' + changeClass + '">' + marketPct(item.percent_change) + '</span>' +
+                        (Number.isFinite(score) ? '<span class="mh-opportunity-score">' + esc(Math.round(score)) + '</span>' : '') +
+                        '</div>';
+                }).filter(function (html) { return html.indexOf('data-symbol=""') === -1; });
+
+                if (!cards.length) return false;
+                marketHighlightEl.innerHTML =
+                    '<div class="market-highlight-head"><div class="market-highlight-title">🔥 Cơ hội nổi bật hôm nay</div>' +
+                    '<button type="button" class="market-highlight-link" data-market-page="true">Xem thị trường <i class="fas fa-arrow-right"></i></button></div>' +
+                    '<div class="mh-opportunities">' + cards.join('') + '</div>';
+                bindMarketStockButtons();
+                marketHighlightEl.querySelectorAll('.mh-opportunity').forEach(function (card) {
+                    function open() { openMarketStock(card.getAttribute('data-symbol')); }
+                    card.addEventListener('click', open);
+                    card.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            open();
+                        }
+                    });
+                });
+                return true;
+            }
+
+            function radarSymbols(items, includeChange) {
+                if (!Array.isArray(items) || !items.length) return '<span class="market-highlight-note">Chưa có dữ liệu</span>';
+                return items.slice(0, 3).map(function (item) {
+                    var symbol = typeof item === 'string' ? item : item && item.symbol;
+                    if (!symbol) return '';
+                    var label = symbol;
+                    if (includeChange && item && item.percent_change != null) label += ' ' + marketPct(item.percent_change);
+                    return marketStockButton(symbol, label);
+                }).join('') || '<span class="market-highlight-note">Chưa có dữ liệu</span>';
+            }
+
+            function renderMarketFallback(mapData, dashData) {
+                var cells = mapData.cells.slice(0, 18);
+                var mapHtml = cells.map(function (cell) {
+                    var status = cell.status;
+                    var color = status === 'up' || status === 'ceiling' ? 'mh-map-up'
+                        : status === 'down' || status === 'floor' ? 'mh-map-down' : 'mh-map-flat';
+                    return '<button type="button" class="mh-map-cell ' + color + '" data-symbol="' + esc(cell.symbol) +
+                        '" title="' + esc(cell.name || cell.symbol) + ' · ' + marketPct(cell.percent_change) + '">' +
+                        '<span>' + esc(cell.symbol) + '</span><small>' + esc(marketPct(cell.percent_change)) + '</small></button>';
+                }).join('');
+                var radar = dashData.radar || {};
+                var hot = radar.hot_sector;
+                var hotSector = hot
+                    ? '<div class="mh-radar-row"><div class="mh-radar-label">Ngành hút tiền</div><div class="mh-radar-items">' +
+                        '<span class="market-highlight-note">' + esc(hot.name || 'Ngành nổi bật') + (hot.avg_pct != null ? ' ' + marketPct(hot.avg_pct) : '') + '</span>' +
+                        (hot.top_gainer ? marketStockButton(hot.top_gainer, 'Dẫn đầu: ' + hot.top_gainer) : '') + '</div></div>'
+                    : '';
+                var radarHtml = hotSector +
+                    '<div class="mh-radar-row"><div class="mh-radar-label">Breakout</div><div class="mh-radar-items">' + radarSymbols(radar.breakout, true) + '</div></div>' +
+                    '<div class="mh-radar-row"><div class="mh-radar-label">Volume bất thường</div><div class="mh-radar-items">' + radarSymbols(radar.volume_spike, false) + '</div></div>' +
+                    '<div class="mh-radar-row"><div class="mh-radar-label">Khối ngoại mua ròng</div><div class="mh-radar-items">' + radarSymbols(radar.foreign_buy, false) + '</div></div>';
+
+                marketHighlightEl.innerHTML =
+                    '<div class="market-highlight-head"><div><div class="market-highlight-title">Bản đồ thị trường</div>' +
+                    '<div class="market-highlight-note">Các mã có thanh khoản cao trong phiên</div></div>' +
+                    '<button type="button" class="market-highlight-link" data-market-page="true">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                    '<div class="mh-fallback"><div class="mh-panel"><div class="mh-map">' +
+                    (mapHtml || '<div class="mh-empty">Chưa có dữ liệu bản đồ thị trường.</div>') +
+                    '</div></div><div class="mh-panel"><div class="mh-panel-title">VinaFintech Market Radar</div>' +
+                    '<div class="mh-radar">' + radarHtml + '</div></div></div>';
+                bindMarketStockButtons();
+            }
+
+            function openMarketPage() {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'tunix-open-page', url: '/thi-truong' }, '*');
+                }
+            }
+
+            async function refreshMarketHighlight() {
+                var requestId = ++marketHighlightRequest;
+                if (currentCat || currentQ) {
+                    marketHighlightEl.hidden = true;
+                    marketHighlightEl.innerHTML = '';
+                    notifyParentHeight();
+                    return;
+                }
+
+                marketHighlightEl.hidden = true;
+                marketHighlightEl.innerHTML = '';
+                try {
+                    var response = await fetch('/api/stocks/opportunities', { cache: 'no-store' });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    var opportunities = await response.json();
+                    if (requestId !== marketHighlightRequest) return;
+                    if (!opportunities || opportunities.ok !== true || !Array.isArray(opportunities.items)) {
+                        throw new Error('Invalid opportunities response');
+                    }
+
+                    if (opportunities.items.length) {
+                        if (!renderMarketOpportunities(opportunities.items)) return;
+                    } else {
+                        var responses = await Promise.all([
+                            fetch('/api/stocks/market-map', { cache: 'no-store' }),
+                            fetch('/api/stocks/market-dashboard', { cache: 'no-store' })
+                        ]);
+                        if (!responses[0].ok || !responses[1].ok) {
+                            throw new Error('Market fallback request failed');
+                        }
+                        var fallbackData = await Promise.all([responses[0].json(), responses[1].json()]);
+                        if (requestId !== marketHighlightRequest) return;
+                        if (!fallbackData[0] || !Array.isArray(fallbackData[0].cells) ||
+                            !fallbackData[1] || !fallbackData[1].radar) {
+                            throw new Error('Invalid market fallback response');
+                        }
+                        renderMarketFallback(fallbackData[0], fallbackData[1]);
+                    }
+                    var marketLink = marketHighlightEl.querySelector('[data-market-page]');
+                    if (marketLink) marketLink.addEventListener('click', openMarketPage);
+                    marketHighlightEl.hidden = false;
+                } catch (error) {
+                    if (requestId !== marketHighlightRequest) return;
+                    marketHighlightEl.hidden = true;
+                    marketHighlightEl.innerHTML = '';
+                    console.warn('Không thể tải dữ liệu cơ hội/bản đồ thị trường:', error);
+                }
+                notifyParentHeight();
+            }
+
             // ---------------- Chọn chuyên mục (điều khiển từ header index.html) ----------------
             function notifyParentCat() {
                 if (window.parent && window.parent !== window) {
@@ -776,9 +1063,9 @@
             }
 
             // ---------------- Render news ----------------
-            function cardHtml(n) {
+            function cardHtml(n, eagerImage) {
                 var img = n.image_url
-                    ? '<img src="' + esc(n.image_url) + '" alt="" loading="lazy" onload="window.__newsNotify && window.__newsNotify()" />'
+                    ? '<img src="' + esc(n.image_url) + '" alt="" loading="' + (eagerImage === true ? 'eager' : 'lazy') + '" referrerpolicy="no-referrer" onload="window.__newsNotify && window.__newsNotify()" />'
                     : '<div class="no-img"><i class="fas fa-newspaper"></i></div>';
                 var cat = categoryLabel(n.category);
                 var catIc = categoryIcon(n.category);
@@ -825,7 +1112,9 @@
             // Các trang sau: thêm bài mới vào cuối lưới tin
             function appendNews(list, limit) {
                 var before = gridEl.querySelectorAll('.news-card').length;
-                gridEl.insertAdjacentHTML('beforeend', list.map(cardHtml).join(''));
+                gridEl.insertAdjacentHTML('beforeend', list.map(function (item) {
+                    return cardHtml(item, false);
+                }).join(''));
                 var cards = gridEl.querySelectorAll('.news-card');
                 for (var i = before; i < cards.length; i++) {
                     bindCard(cards[i]);
@@ -1075,6 +1364,7 @@
 
             // Nạp lại từ đầu (chuyển chuyên mục / xóa tìm kiếm / lần mở đầu)
             async function loadNews() {
+                refreshMarketHighlight();
                 nextOffset = 0;
                 hasMore = true;
                 isLoadingMore = false;
@@ -1127,7 +1417,9 @@
 
                 var data = await fetchNews(0, count);
                 if (!data.length) { renderEmpty(); return; }
-                gridEl.innerHTML = data.map(cardHtml).join('');
+                gridEl.innerHTML = data.map(function (item, index) {
+                    return cardHtml(item, index < 4);
+                }).join('');
                 gridEl.querySelectorAll('.news-card').forEach(bindCard);
 
                 nextOffset = data.length;

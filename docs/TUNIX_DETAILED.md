@@ -1,7 +1,7 @@
-# TuniX — Tài liệu Đặc tả Chi Tiết (Detailed Specification)
+# VinaFintech — Tài liệu Đặc tả Chi Tiết (Detailed Specification)
 
 > Phiên bản: 1.0 · Cập nhật: 2026-08-16
-> Tài liệu này đi sâu vào từng module: cấu hình, cơ sở dữ liệu, API, nguồn dữ liệu, cache, frontend, TuniAI, chart engine và deploy.
+> Tài liệu này đi sâu vào từng module: cấu hình, cơ sở dữ liệu, API, nguồn dữ liệu, cache, frontend, VinaF AI, chart engine và deploy.
 > Bản tổng quan ngắn gọn xem tại `docs/TUNIX_SPEC.md`.
 
 ---
@@ -14,9 +14,9 @@
 4. [API chi tiết theo từng router](#4)
 5. [Nguồn dữ liệu & cache map](#5)
 6. [Frontend — luồng điều hướng & giao thức postMessage](#6)
-7. [TuniAI — chat & tools](#7)
+7. [VinaF AI — chat & tools](#7)
 8. [Chart Engine chi tiết](#8)
-9. [TuniAI market ticker — đã gỡ bỏ](#9)
+9. [VinaF AI market ticker — đã gỡ bỏ](#9)
 10. [Hiệu năng & tối ưu](#10)
 11. [Deploy & biến môi trường](#11)
 12. [Các tính năng lớn đã triển khai](#12)
@@ -70,7 +70,7 @@ mở /cophieu-{MÃ}
 
 | Biến | Mặc định | Mô tả |
 |---|---|---|
-| `APP_NAME` / `APP_ENV` / `API_PREFIX` | TuniX API / development / `/api` | định danh |
+| `APP_NAME` / `APP_ENV` / `API_PREFIX` | VinaFintech API / development / `/api` | định danh |
 | `DATABASE_URL` | `sqlite:///./tunix.db` | prod dùng Postgres Render |
 | `SECRET_KEY`, `ALGORITHM` | change_me / HS256 | JWT |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | 60 | access token |
@@ -82,11 +82,11 @@ mở /cophieu-{MÃ}
 | `SMTP_HOST/PORT/USER/PASSWORD/FROM/USE_TLS` | – / 587 / – / – / no-reply@tunix.vn / true | gửi email reset |
 | `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI` | "" | OAuth Google |
 | `LOGIN_RATE_LIMIT_MINUTES/MAX` | 15 / 10 | chống brute-force |
-| `DEEPSEEK_API_KEY` | "" | TuniAI (bắt buộc để chat + nhận định AI) |
+| `DEEPSEEK_API_KEY` | "" | VinaF AI (bắt buộc để chat + nhận định AI) |
 | `DEEPSEEK_BASE_URL` / `MODEL` | https://api.deepseek.com / deepseek-chat | model AI |
 | `AI_CHAT_MAX_TURNS` | 8 | số vòng tool-calling tối đa |
 | `AI_CHAT_MAX_TOKENS` | 4096 | giới hạn trả lời |
-| `AI_RATE_LIMIT_MINUTES/MAX` | 5 / 30 | rate limit TuniAI |
+| `AI_RATE_LIMIT_MINUTES/MAX` | 5 / 30 | rate limit VinaF AI |
 
 ---
 
@@ -160,7 +160,7 @@ mở /cophieu-{MÃ}
 | `GET /chart/server-time` | – | `{time}` |
 | `GET /chart/library-status` | – | trạng thái thư viện |
 
-### 4.3 `ai` — TuniAI
+### 4.3 `ai` — VinaF AI
 | Path | Auth | Mô tả |
 |---|---|---|
 | `GET /ai/status` | public | `{configured, model, enabled, access_level}` |
@@ -193,7 +193,7 @@ mở /cophieu-{MÃ}
 | Simplize Web | `https://simplize.vn` | scrape `__NEXT_DATA__` (summary, dividends) |
 | VCI iQ | `https://iq.vietcap.com.vn/api/iq-insight-service` | BCTC / lợi nhuận |
 | KBS | `https://kbbuddywts.kbsec.com.vn/iis-server/investment` | OHLCV sâu + 1H |
-| DeepSeek | `https://api.deepseek.com/chat/completions` | TuniAI |
+| DeepSeek | `https://api.deepseek.com/chat/completions` | VinaF AI |
 
 ### 5.2 Cache map (`SimpleTTLCache` — in-memory, dict)
 | Key | TTL | Ghi chú |
@@ -244,7 +244,7 @@ mở /cophieu-{MÃ}
 ---
 
 <a name="7"></a>
-## 7. TuniAI — chat, tools, market insight
+## 7. VinaF AI — chat, tools, market insight
 
 ### 7.1 Chat (`ai_service.py`)
 - System prompt: phải dùng tool, tiếng Việt, không bịa số liệu, không khuyến nghị mua/bán.
@@ -284,11 +284,11 @@ breadth:  { up, down, flat }   (best-effort, tốn kém)
 ---
 
 <a name="9"></a>
-## 9. TuniAI market ticker — đã gỡ bỏ
+## 9. VinaF AI market ticker — đã gỡ bỏ
 
 - **2026-08-21**: dòng chữ chạy nhận định thị trường (ticker) dưới header **đã bị gỡ bỏ**.
   Endpoint `/api/ai/market-insight` + các hàm ticker trong `ai_service.py` và giao diện ticker trong `index.html` đã xoá.
-- **Giữ nguyên**: tool chat `get_market_flow` (dòng tiền + VNINDEX) vẫn hoạt động trong TuniAI chat.
+- **Giữ nguyên**: tool chat `get_market_flow` (dòng tiền + VNINDEX) vẫn hoạt động trong VinaF AI chat.
 
 ---
 
@@ -308,7 +308,7 @@ breadth:  { up, down, flat }   (best-effort, tốn kém)
 
 `render.yaml`:
 - **Database**: `Tunix-test1-db` / `tunixtest1` (Postgres free, region singapore).
-- **Service**: `tunix` (web, python, free, singapore, `autoDeploy: true`).
+- **Service**: `VinaFintech` (web, python, free, singapore, `autoDeploy: true`).
   - `buildCommand: pip install -r requirements.txt`
   - `startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT`
   - Env: `APP_ENV=production`, `SECRET_KEY` (generateValue), `DATABASE_URL` (from DB), `FRONTEND_URL=https://tunix.onrender.com`, `DEEPSEEK_API_KEY` (sync:false — set thủ công).
@@ -326,6 +326,6 @@ breadth:  { up, down, flat }   (best-effort, tốn kém)
 | 2026-08-16 | Fix fullscreen: trả chart về chiều cao bình thường; icon nến fullscreen đúng mã; thoát fullscreen quay lại trang trước |
 | 2026-08-16 | Click mã trong "So sánh tương quan" → chuyển mã; ẩn spinner ô nhập tích sản; clamp tooltip mép block |
 | 2026-08-16 | Tối ưu tốc độ (quote song song, frontend tải song song) + dọn dẹp source |
-| 2026-08-16 | **TuniAI market ticker**: endpoint market-insight, tool `get_market_flow`, nhận định dòng tiền + VNINDEX + lời khuyên NĐT, chỉ hiện trang chủ, cập nhật 5 phút |
-| 2026-08-21 | **Gỡ bỏ TuniAI market ticker** (dòng chữ chạy dưới header): xoá endpoint `/api/ai/market-insight`, frontend ticker; giữ tool `get_market_flow` cho chat |
+| 2026-08-16 | **VinaF AI market ticker**: endpoint market-insight, tool `get_market_flow`, nhận định dòng tiền + VNINDEX + lời khuyên NĐT, chỉ hiện trang chủ, cập nhật 5 phút |
+| 2026-08-21 | **Gỡ bỏ VinaF AI market ticker** (dòng chữ chạy dưới header): xoá endpoint `/api/ai/market-insight`, frontend ticker; giữ tool `get_market_flow` cho chat |
 | 2026-08-16 | Tài liệu: `docs/TUNIX_SPEC.md` (tổng quan) + `docs/TUNIX_DETAILED.md` (chi tiết — tài liệu này) |

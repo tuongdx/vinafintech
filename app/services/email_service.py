@@ -48,11 +48,11 @@ def build_reset_email_html(reset_url: str) -> str:
     return f"""\
 <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #e5e9f0;border-radius:16px;overflow:hidden;">
   <div style="background:#008080;padding:20px 24px;">
-    <span style="color:#fff;font-size:22px;font-weight:800;">Tuni<span style="opacity:.7">X</span></span>
+    <span style="color:#fff;font-size:22px;font-weight:800;">VinaFintech</span>
   </div>
   <div style="padding:24px;">
     <h2 style="color:#1a1f36;margin:0 0 12px;">Đặt lại mật khẩu</h2>
-    <p style="color:#4a5a72;line-height:1.6;">Bạn nhận được email này vì chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản TuniX của bạn.</p>
+    <p style="color:#4a5a72;line-height:1.6;">Bạn nhận được email này vì chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản VinaFintech của bạn.</p>
     <p style="color:#4a5a72;line-height:1.6;">Nhấn nút bên dưới để tạo mật khẩu mới. Liên kết có hiệu lực trong 30 phút.</p>
     <p style="text-align:center;margin:24px 0;">
       <a href="{reset_url}" style="background:#008080;color:#fff;padding:12px 28px;border-radius:30px;text-decoration:none;font-weight:600;">Đặt lại mật khẩu</a>
@@ -68,15 +68,15 @@ def build_verify_email_html(verify_url: str, full_name: str = "") -> str:
     return f"""\
 <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #e5e9f0;border-radius:16px;overflow:hidden;">
   <div style="background:#008080;padding:20px 24px;">
-    <span style="color:#fff;font-size:22px;font-weight:800;">Tuni<span style="opacity:.7">X</span></span>
+    <span style="color:#fff;font-size:22px;font-weight:800;">VinaFintech</span>
   </div>
   <div style="padding:24px;">
     <h2 style="color:#1a1f36;margin:0 0 12px;">Xác thực địa chỉ email</h2>
     <p style="color:#4a5a72;line-height:1.6;">{greeting}</p>
-    <p style="color:#4a5a72;line-height:1.6;">Cảm ơn bạn đã đăng ký tài khoản TuniX. Vui lòng nhấn nút bên dưới để xác thực địa chỉ email và kích hoạt tài khoản.</p>
+    <p style="color:#4a5a72;line-height:1.6;">Cảm ơn bạn đã đăng ký tài khoản VinaFintech. Vui lòng nhấn nút bên dưới để xác thực địa chỉ email và kích hoạt tài khoản.</p>
     <p style="text-align:center;margin:24px 0;">
       <a href="{verify_url}" style="background:#008080;color:#fff;padding:12px 28px;border-radius:30px;text-decoration:none;font-weight:600;">Xác thực email</a>
     </p>
-    <p style="color:#8a99b1;font-size:12px;">Liên kết có hiệu lực trong 24 giờ. Nếu bạn không đăng ký tài khoản TuniX, bạn có thể bỏ qua email này.</p>
+    <p style="color:#8a99b1;font-size:12px;">Liên kết có hiệu lực trong 24 giờ. Nếu bạn không đăng ký tài khoản VinaFintech, bạn có thể bỏ qua email này.</p>
   </div>
 </div>"""

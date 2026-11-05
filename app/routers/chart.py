@@ -1,6 +1,6 @@
 """Router cung cấp dữ liệu cho TradingView Advanced Charts.
 
-Tất cả dữ liệu đều lấy từ TuniX (qua chart_service -> vnstock_service -> Simplize).
+Tất cả dữ liệu đều lấy từ VinaFintech (qua chart_service -> vnstock_service -> Simplize).
 Frontend TradingView Datafeed gọi các endpoint này; KHÔNG gọi thẳng Simplize.
 
 Endpoints:

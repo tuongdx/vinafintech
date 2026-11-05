@@ -1,4 +1,4 @@
-"""CLI TuniX Signal Engine — chạy từ terminal:
+"""CLI VinaFintech Signal Engine — chạy từ terminal:
 
     py scripts/run_signal_engine.py --symbol FPT              # phân tích 1 mã (in đầy đủ, có BUY/SELL)
     py scripts/run_signal_engine.py --scan --limit 30         # quét N mã (mặc định KHÔNG ghi DB)
@@ -125,7 +125,7 @@ def cmd_overview() -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="TuniX Signal Engine CLI (ADMIN)")
+    parser = argparse.ArgumentParser(description="VinaFintech Signal Engine CLI (ADMIN)")
     parser.add_argument("--symbol", help="Phân tích 1 mã (in cả Entry/Stop Loss)")
     parser.add_argument("--scan", action="store_true", help="Quét nhiều mã")
     parser.add_argument("--limit", type=int, default=20, help="Số mã khi quét (mặc định 20)")

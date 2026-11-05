@@ -1,5 +1,5 @@
 # ============================================================
-# TuniX — Render Blueprint (Free tier)
+# VinaFintech — Render Blueprint (Free tier)
 # Deploy cả web service + PostgreSQL bằng 1 file.
 # Cách dùng: push lên GitHub, vào render.com → New → Blueprint
 # → chọn repo tuongdx/tunix-test → Render tự tạo mọi thứ.
@@ -19,7 +19,7 @@ databases:
 
 services:
   - type: web
-    name: tunix
+    name: VinaFintech
     runtime: python
     plan: free                 # 512 MB RAM, ngủ sau 15 phút không truy cập
     region: singapore
@@ -32,8 +32,8 @@ services:
       # Tạo SECRET_KEY ngẫu nhiên, an toàn khi deploy
       - key: SECRET_KEY
         generateValue: true
-      # TuniAI (DeepSeek) — Điền API key tại Dashboard Render (không lưu secret trong git)
-      # Sau khi thêm, vào Render → Service tunix → Environment → set DEEPSEEK_API_KEY rồi Deploy lại.
+      # VinaF AI (DeepSeek) — Điền API key tại Dashboard Render (không lưu secret trong git)
+      # Sau khi thêm, vào Render → Service VinaFintech → Environment → set DEEPSEEK_API_KEY rồi Deploy lại.
       - key: DEEPSEEK_API_KEY
         sync: false
       # Kết nối Postgres tự động (internal URL, cùng region)

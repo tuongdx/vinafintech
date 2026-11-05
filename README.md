@@ -1,6 +1,6 @@
-# TuniX Stock Analysis Platform
+# VinaFintech Stock Analysis Platform
 
-Du an khoi tao backend FastAPI + frontend HTML/CSS/JS cho he thong phan tich chung khoan TuniX.
+Du an khoi tao backend FastAPI + frontend HTML/CSS/JS cho he thong phan tich chung khoan VinaFintech.
 
 ## 1) Cau truc
 

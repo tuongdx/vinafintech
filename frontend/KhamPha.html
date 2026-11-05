@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>Khám phá cơ hội - TuniX</title>
+    <title>Khám phá cơ hội - VinaFintech</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
@@ -354,7 +354,7 @@
                     <aside class="kp-ai">
                         <h3>Hãy để AI tìm cơ hội</h3>
                         <textarea id="kpAiText" placeholder="VD: Cổ phiếu ngân hàng P/E thấp, tăng trưởng tốt…"></textarea>
-                        <button class="ka-btn" id="kpAiBtn"><i class="fas fa-wand-magic-sparkles"></i> Tìm bằng TuniAI</button>
+                        <button class="ka-btn" id="kpAiBtn"><i class="fas fa-wand-magic-sparkles"></i> Tìm bằng VinaF AI</button>
                         <div class="ka-prompts" id="kpAiPrompts"></div>
                     </aside>
                     <!-- 2 cơ hội còn lại hiển thị dưới panel AI, vẫn thuộc block "Cơ hội nổi bật hôm nay" -->
@@ -392,7 +392,7 @@
 
         <!-- XẾP HẠNG -->
         <section class="kp-sec">
-            <h2>Xếp hạng TuniX<span class="kp-live" id="kpRankLive"><i class="fas fa-circle"></i> Realtime</span></h2>
+            <h2>Xếp hạng VinaFintech<span class="kp-live" id="kpRankLive"><i class="fas fa-circle"></i> Realtime</span></h2>
             <div class="kp-rank-tabs" id="kpRankTabs"></div>
             <div class="kp-table-wrap" id="kpRank"></div>
             <div class="kp-rank-foot" id="kpRankAsOf"></div>
@@ -411,7 +411,7 @@
             const sparkCache = {};
             let rankings = [];
             let activeRank = 'growth';
-            // ---- Trạng thái cập nhật realtime của block "Xếp hạng TuniX" ----
+            // ---- Trạng thái cập nhật realtime của block "Xếp hạng VinaFintech" ----
             const RANK_POLL_MS = 30000;   // chu kỳ làm mới giá/% thay đổi
             let rankAsOf = '';            // mốc dữ liệu bảng giá (ISO) do server trả về
             let rankCells = {};           // { tab: { symbol: {price, pct} } } — so sánh để nhấp nháy
@@ -793,7 +793,7 @@
 
                 mapEl.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif"><g id="kmViewport">' + inner + '</g></svg>';
                 document.getElementById('kpMapLegend').innerHTML =
-                    '<span class="lg"><span class="dot" style="background:#008080;"></span> Tuni Score ≥ 70</span>' +
+                    '<span class="lg"><span class="dot" style="background:#008080;"></span> VinaFintech Score ≥ 70</span>' +
                     '<span class="lg"><span class="dot" style="background:#f5a623;"></span> 50–69</span>' +
                     '<span class="lg"><span class="dot" style="background:#d0314e;"></span> &lt; 50</span>' +
                     '<span class="lg"><span class="bub" style="width:16px;height:16px;"></span> Vốn hoá</span>';
@@ -861,7 +861,7 @@
                     '<div class="mt-sym">' + esc(s.symbol) + '<span style="font-size:11px;color:#008080;font-weight:800;">' + (s.tuni_score || 0) + '/100</span></div>' +
                     '<div class="mt-name">' + esc(s.name) + '</div>' +
                     '<div class="mt-rows">' +
-                        '<div class="mt-row"><span>Tuni Score</span><b>' + (s.tuni_score || 0) + ' / 100</b></div>' +
+                        '<div class="mt-row"><span>VinaFintech Score</span><b>' + (s.tuni_score || 0) + ' / 100</b></div>' +
                         '<div class="mt-row"><span>Opportunity Score</span><b>' + (s.opportunity_score || 0) + ' / 100</b></div>' +
                         '<div class="mt-row"><span>Growth Score</span><b>' + (s.growth_score || 0) + ' / 100</b></div>' +
                         '<div class="mt-row"><span>Valuation Score</span><b>' + (s.valuation_score || 0) + ' / 100</b></div>' +

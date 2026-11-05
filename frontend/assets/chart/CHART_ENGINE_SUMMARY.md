@@ -1,13 +1,13 @@
-# TuniX — Advanced Financial Chart Engine · Tổng kết toàn dự án
+# VinaFintech — Advanced Financial Chart Engine · Tổng kết toàn dự án
 
 **Phiên bản:** 25 phase (PHASE 1 → PHASE 25) · **Nền tảng:** Lightweight Charts v5.2.1 (TradingView open-source, MIT)
-**Dữ liệu:** 100% từ backend TuniX (không dữ liệu giả) · **Trạng thái:** ✅ hoàn thiện, đã kiểm thử trình duyệt thực.
+**Dữ liệu:** 100% từ backend VinaFintech (không dữ liệu giả) · **Trạng thái:** ✅ hoàn thiện, đã kiểm thử trình duyệt thực.
 
 ---
 
 ## 1. Tổng quan
 
-Biểu đồ nến chuyên nghiệp cho trang **TuniX** (phân tích cổ phiếu Việt Nam), xây dựng theo kiến trúc
+Biểu đồ nến chuyên nghiệp cho trang **VinaFintech** (phân tích cổ phiếu Việt Nam), xây dựng theo kiến trúc
 **modular, nhẹ, không fake data**, hoàn thiện qua **25 phase** — mỗi phase một tính năng lớn, kiểm thử
 trong trình duyệt thực (Playwright) trước khi bàn giao.
 
@@ -167,7 +167,7 @@ settingsPanel, lastPriceLine`.
 
 ## 9. Hướng dẫn kiểm tra
 
-1. Chạy backend: uvicorn trên cổng 8000 (venv `c:/4.Deverlop/1.Python/TuniX/.venv`).
+1. Chạy backend: uvicorn trên cổng 8000 (venv `c:/4.Deverlop/1.Python/VinaFintech/.venv`).
 2. Mở `http://localhost:8000/cophieu-FPT` (hoặc `cophieu-DXG`).
 3. Mở DevTools console, gõ `window.__tunixChartDebug` để kiểm tra các module.
 4. Kiểm tra nhanh: bật chỉ báo RSI/MACD (sub-pane), hover để xem crosshair sync, `?` để mở bảng phím tắt,

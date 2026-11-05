@@ -14,7 +14,7 @@ Mapping:
                    file không có thì lấy thời điểm import - giờ VN)
 
 Trạng thái ban đầu: pending_approval (chờ duyệt).
-Author mặc định: "Ban biên tập TuniX".
+Author mặc định: "Ban biên tập VinaFintech".
 
 Chạy:
     python scripts/import_markettimes_news.py
@@ -30,7 +30,7 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
 from app.models import News, NewsStatusEnum
-from app.services import news_time
+from app.services import news_tags, news_time
 
 JSON_PATH = Path(r"C:\4.Deverlop\1.Python\Crawl-tintuc\markettimes_finance_articles.json")
 
@@ -147,10 +147,10 @@ def import_news(db: Session) -> None:
             category=(item.get("category") or "Tài chính").strip(),
             image_url=(item.get("main_image") or "").strip() or None,
             image_caption=caption,
-            tags=_join_tags(item.get("tags")),
+            tags=news_tags.with_default_news_tags(_join_tags(item.get("tags"))),
             source="MarketTimes",
             source_url=url,
-            author_name="Ban biên tập TuniX",
+            author_name="Ban biên tập VinaFintech",
             status=NewsStatusEnum.pending_approval,
             published_at=published_at or news_time.now_vn(),
         )

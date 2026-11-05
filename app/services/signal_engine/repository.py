@@ -716,7 +716,7 @@ def expire_overdue(db: Session, *, max_holding_sessions: int | None = None,
                    cfg: dict | None = None) -> dict[str, Any]:
     """Đóng các tín hiệu ĐANG HIỆU LỰC đã QUÁ HẠN nắm giữ T+ (mặc định 10 phiên).
 
-    Vì sao: tín hiệu TuniX là tín hiệu T+ (ngắn hạn) — quá hạn nắm giữ thì KHÔNG còn hiệu lực.
+    Vì sao: tín hiệu VinaFintech là tín hiệu T+ (ngắn hạn) — quá hạn nắm giữ thì KHÔNG còn hiệu lực.
     Trước đây không có bước này nên tín hiệu từ nhiều tuần trước vẫn hiển thị "Đang hiệu lực"
     trên trang Tín hiệu (bug thật đã gặp).
 

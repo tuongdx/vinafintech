@@ -3,10 +3,10 @@
  *
  * Nhiệm vụ:
  *   - Kiểm tra & nạp thư viện charting_library (đặt tại /static/tradingview/charting_library/).
- *   - Tạo widget TradingView với datafeed TuniX (TuniXDatafeed).
+ *   - Tạo widget TradingView với datafeed VinaFintech (TuniXDatafeed).
  *   - Đồng bộ theme (dark/light), đổi symbol, đổi timeframe, visible range.
  *   - Lưu/khôi phục layout chart (saveChartLayout/loadChartLayout — abstraction,
- *     hiện lưu localStorage; sau này đổi sang lưu database TuniX khi có user account).
+ *     hiện lưu localStorage; sau này đổi sang lưu database VinaFintech khi có user account).
  *
  * CÁCH CÀI THƯ VIỆN:
  *   Đặt thư mục charting_library (bản cấp phép từ TradingView) vào:
@@ -23,7 +23,7 @@
 
   // ---------------------------------------------------------------------------
   // Storage adapter cho layout chart (saveChartLayout / loadChartLayout)
-  // Abstraction để sau này chuyển sang lưu database TuniX:
+  // Abstraction để sau này chuyển sang lưu database VinaFintech:
   //   - backend: GET/PUT /api/chart/layout?symbol=... (cần auth)
   //   - thay đổi 2 hàm dưới là xong, không đụng phần widget.
   // ---------------------------------------------------------------------------
@@ -113,7 +113,7 @@
     this.onError = options.onError || null;   // callback khi lỗi
   }
 
-  // Đồng bộ theme với website TuniX
+  // Đồng bộ theme với website VinaFintech
   TuniXTradingViewChart.prototype.setTheme = function (mode) {
     var theme = mode === 'dark' ? 'dark' : 'light';
     this._theme = theme;
@@ -130,7 +130,7 @@
     return this._theme;
   };
 
-  // Đổi symbol (TuniX gọi khi người dùng đổi mã trên giao diện)
+  // Đổi symbol (VinaFintech gọi khi người dùng đổi mã trên giao diện)
   TuniXTradingViewChart.prototype.setSymbol = function (symbol, interval, callback) {
     var self = this;
     var normalized = String(symbol || '').toUpperCase();
@@ -167,7 +167,7 @@
     }
   };
 
-  // Đặt khoảng thời gian hiển thị (dùng cho các nút kỳ hạn 1W/1M/3M/... của TuniX)
+  // Đặt khoảng thời gian hiển thị (dùng cho các nút kỳ hạn 1W/1M/3M/... của VinaFintech)
   TuniXTradingViewChart.prototype.setVisibleRange = function (from, to) {
     if (this._widget && typeof this._widget.chart === 'function') {
       try {
@@ -208,7 +208,7 @@
 
   // ---------------------------------------------------------------------------
   // Lưu / khôi phục layout chart (indicator, settings, drawing, màu, timeframe...)
-  // Hiện lưu localStorage theo mã cổ phiếu. Để lưu database TuniX sau này,
+  // Hiện lưu localStorage theo mã cổ phiếu. Để lưu database VinaFintech sau này,
   // thay nội dung layoutStorage.save/load bằng API (xem chú thích ở trên).
   // ---------------------------------------------------------------------------
   TuniXTradingViewChart.prototype.saveChartLayout = function (callback) {
@@ -317,8 +317,8 @@
         'create_volume_indicator_by_default',
       ],
       disabled_features: [
-        // TuniX dùng auto-save + saveChartLayout/loadChartLayout (localStorage,
-        // sẵn sàng nâng cấp lên database TuniX) thay cho dialog Save/Load của TV.
+        // VinaFintech dùng auto-save + saveChartLayout/loadChartLayout (localStorage,
+        // sẵn sàng nâng cấp lên database VinaFintech) thay cho dialog Save/Load của TV.
         'header_saveload',
         'volume_force_overlay',
       ],

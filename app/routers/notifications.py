@@ -2,7 +2,7 @@
 
 - Cổ phiếu: báo cáo mới về cổ phiếu yêu thích, tăng trần / giảm sàn, biến động bất thường.
 - Tin tức: cổ phiếu yêu thích có tin mới.
-- Hệ thống: thay đổi / tính năng mới của TuniX gửi đến toàn bộ thành viên.
+- Hệ thống: thay đổi / tính năng mới của VinaFintech gửi đến toàn bộ thành viên.
 
 Thông báo được sinh idempotent khi user mở danh sách (dedupe bằng (user, type, ref_key)),
 lưu lại làm lịch sử; is_read đánh dấu đã đọc.

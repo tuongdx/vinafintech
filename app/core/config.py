@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "TuniX API"
+    app_name: str = "VinaFintech API"
     app_env: str = "development"
     api_prefix: str = "/api"
 
@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     # APP_URL — link xác thực/đặt lại mật khẩu; nếu trống sẽ dùng FRONTEND_URL
     app_url: str = ""
 
-    # TuniAI (DeepSeek) — Phase 1 AI Chat
+    # VinaF AI (DeepSeek) — Phase 1 AI Chat
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-chat"
@@ -90,7 +90,7 @@ class Settings(BaseSettings):
 
     # Bộ lọc "cổ phiếu giao dịch được" — VỐN HOÁ LỚN + THANH KHOẢN đủ để nhà đầu tư giao dịch
     # hằng ngày. Áp dụng cho MỌI block lấy mã từ toàn thị trường: Market Radar (trang chủ),
-    # TuniX Market Radar (trang Thị trường), Khám phá theo chiến lược + Xếp hạng TuniX
+    # VinaFintech Market Radar (trang Thị trường), Khám phá theo chiến lược + Xếp hạng VinaFintech
     # (trang Khám phá), "Cơ hội mới" (trang chủ) và universe quét của trang Tín hiệu.
     stock_min_market_cap: float = 1e12            # vốn hoá tối thiểu (VND) — 1.000 tỷ
     stock_min_liquidity_ty: float = 10.0          # GTGD tối thiểu (tỷ VND/phiên, TB 10 phiên)

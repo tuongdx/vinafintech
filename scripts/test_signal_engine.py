@@ -1,4 +1,4 @@
-"""Test TuniX Signal Engine (spec §30) — chạy: ``py scripts/test_signal_engine.py``
+"""Test VinaFintech Signal Engine (spec §30) — chạy: ``py scripts/test_signal_engine.py``
 
 Bao gồm:
 1. Feature: RSI (Wilder, đối chiếu ví dụ chuẩn), MA alignment, momentum, volume, CMF,
@@ -321,7 +321,7 @@ def _fake_snapshot() -> dict:
                   "confidence": {"value": 85}, "score": 88})
     features = feat.build_features(make_bars(UPTREND_CLOSES), make_bars([100] * 200), cfg, "TEST")
     return {
-        "symbol": "TEST", "engine": "TuniX Signal Engine", "as_of": "2026-01-01", "price": 219.0,
+        "symbol": "TEST", "engine": "VinaFintech Signal Engine", "as_of": "2026-01-01", "price": 219.0,
         "status": "OK", "errors": [], "config_version": cfg_module.config_version(),
         "features": features,
         "ai": AI_UNTRAINED,
@@ -867,7 +867,7 @@ def test_backtest() -> None:
 
 def main() -> int:
     print("=" * 78)
-    print("TuniX Signal Engine — test suite")
+    print("VinaFintech Signal Engine — test suite")
     print("=" * 78)
     for fn in (test_indicators, test_wavelet, test_strategies, test_scoring_and_state,
                test_serializers, test_cache_gate_regression, test_cache_persist_regression,

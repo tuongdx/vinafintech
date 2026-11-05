@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Xác định NGUỒN (source) của bài viết theo chuyên mục.
 
-Trang tin TuniX gộp bài crawl từ 2 nguồn báo:
+Trang tin VinaFintech gộp bài crawl từ 2 nguồn báo:
   - An ninh Tiền tệ (antt.nguoiduatin.vn): Chứng khoán, Ngân hàng, Doanh nghiệp.
   - MarketTimes (markettimes.vn): Bất động sản, Kinh doanh, Quốc tế, Công nghệ.
 

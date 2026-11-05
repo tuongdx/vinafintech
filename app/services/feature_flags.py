@@ -50,7 +50,7 @@ BLOCK_FEATURES: list[dict[str, str]] = [
     },
     {
         "key": "ai_unlimited",
-        "name": "TuniAI không giới hạn",
+        "name": "VinaF AI không giới hạn",
         "description": "Hỏi đáp không giới hạn lượt/cuộc trò chuyện cho hội viên",
     },
 ]

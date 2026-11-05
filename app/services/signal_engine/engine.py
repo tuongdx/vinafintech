@@ -170,7 +170,7 @@ def default_universe(limit: int | None = None, cfg: dict | None = None) -> list[
         page = vnstock_service.get_stock_screener_page() or {}
         rows = [r for r in (page.get("stocks") or []) if isinstance(r, dict)]
         # CHỈ quét cổ phiếu VỐN HOÁ LỚN + THANH KHOẢN đủ để giao dịch hằng ngày
-        # (bộ lọc dùng chung với Market Radar / Khám phá theo chiến lược / Xếp hạng TuniX).
+        # (bộ lọc dùng chung với Market Radar / Khám phá theo chiến lược / Xếp hạng VinaFintech).
         rows = [r for r in rows if vnstock_service.is_tradable_stock(r)]
         # + Thanh khoản TRUNG BÌNH 20 PHIÊN >= ngưỡng (mặc định 5 tỷ/phiên) — cùng quy tắc
         # với bộ lọc hiển thị ở trang Tín hiệu (xem `liquid_universe_symbols`).
@@ -377,7 +377,7 @@ def _assemble(symbol: str, features: dict, ai_payload: dict, regime: dict, marke
 
     return {
         "symbol": symbol,
-        "engine": "TuniX Signal Engine",
+        "engine": "VinaFintech Signal Engine",
         "config_version": cfg_module.config_version(),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "as_of": features.get("as_of"),
@@ -554,7 +554,7 @@ def _mark_refresh_at(db, at: datetime) -> None:
 
 def refresh_open_signals(db=None, cfg: dict | None = None, max_symbols: int | None = None,
                          use_cache: bool = True, force: bool = False) -> dict[str, Any]:
-    """Cập nhật lại tín hiệu ĐANG MỞ của TuniX Signal Engine (tín hiệu T+).
+    """Cập nhật lại tín hiệu ĐANG MỞ của VinaFintech Signal Engine (tín hiệu T+).
 
     Gồm 3 bước:
     1. **Đóng tín hiệu QUÁ HẠN**: tín hiệu đang hiệu lực (CONFIRMED/ACTIVE/WEAKENING) đã quá

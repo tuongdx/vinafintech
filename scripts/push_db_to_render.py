@@ -146,7 +146,7 @@ def main() -> int:
     target_url = load_target_url(args.url)
     if not target_url and args.dry_run:
         # dry-run chỉ đọc nguồn nên không bắt buộc URL đích.
-        target_url = "postgresql://dry-run@dry-run.invalid/tunix"
+        target_url = "postgresql://dry-run@dry-run.invalid/VinaFintech"
     if not target_url:
         print("❌ Chưa có URL DB đích.")
         print("   Chạy lại ở terminal thật (không pipe) để script tự hỏi URL, hoặc:")

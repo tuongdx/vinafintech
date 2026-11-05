@@ -1,5 +1,5 @@
 /**
- * TuniX — "Tiện ích": các hàm tính toán thuần (không phụ thuộc DOM) để dễ kiểm thử.
+ * VinaFintech — "Tiện ích": các hàm tính toán thuần (không phụ thuộc DOM) để dễ kiểm thử.
  * Dùng chung cho trình duyệt (window.TuniXCalc) và Node (module.exports).
  *
  * Tool 1 — Giá điều chỉnh cổ phiếu (corporate actions)
@@ -273,7 +273,7 @@
 
     // ---------- Tool 3: Chia đều vốn đầu tư ----------
     // Người dùng CHỈ nhập: (1) tổng vốn, (2) danh sách mã. Giá hiện tại do API thị trường
-    // của TuniX cung cấp (không hard-code giá, không bắt người dùng nhập giá).
+    // của VinaFintech cung cấp (không hard-code giá, không bắt người dùng nhập giá).
     //   Vốn phân bổ mỗi mã = Tổng vốn / Số mã
     //   Số lượng lý thuyết = Vốn phân bổ / Giá hiện tại
     //   Số lượng mua      = floor(Số lượng lý thuyết / Lô) × Lô   (KHÔNG làm tròn lên để không vượt vốn)

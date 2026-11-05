@@ -1,7 +1,7 @@
 # charting_library — Thư mục dành riêng cho TradingView Advanced Charts
 
 > ⚠️ **KHÔNG có thư viện TradingView ở đây.** Đây là vị trí dành riêng (placeholder)
-> để bạn đặt bản **charting_library** do TradingView cấp phép. TuniX **không tự tải
+> để bạn đặt bản **charting_library** do TradingView cấp phép. VinaFintech **không tự tải
 > hay nhúng thư viện từ nguồn không chính thức** — bạn phải đưa thư viện được
 > cấp phép vào đây theo hướng dẫn chính thức của TradingView.
 
@@ -31,7 +31,7 @@ frontend/assets/tradingview/charting_library/
 ## Sau khi đặt thư viện
 
 Không cần sửa code. `frontend/assets/tradingview/tv-chart.js` sẽ tự phát hiện thư
-viện và khởi tạo TradingView Advanced Charts với **datafeed dữ liệu TuniX**
+viện và khởi tạo TradingView Advanced Charts với **datafeed dữ liệu VinaFintech**
 (`/api/chart/*`). Biểu đồ chạy ngay trên trang chi tiết cổ phiếu (nút "TradingView").
 
 ## Cấu trúc dữ liệu
@@ -40,8 +40,8 @@ viện và khởi tạo TradingView Advanced Charts với **datafeed dữ liệu
 TradingView Advanced Charts
    |  Datafeed API (tv-datafeed.js)
    v
-/api/chart/*  (FastAPI backend TuniX)
-   |  chart_service -> vnstock_service -> Simplize (dữ liệu OHLCV TuniX)
+/api/chart/*  (FastAPI backend VinaFintech)
+   |  chart_service -> vnstock_service -> Simplize (dữ liệu OHLCV VinaFintech)
    v
-Dữ liệu OHLCV thực của TuniX (1D/1W/1M)
+Dữ liệu OHLCV thực của VinaFintech (1D/1W/1M)
 ```

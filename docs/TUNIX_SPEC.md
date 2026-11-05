@@ -1,16 +1,16 @@
-# TuniX — Tài liệu Đặc tả (Specification)
+# VinaFintech — Tài liệu Đặc tả (Specification)
 
-> Phiên bản: 1.0 · Cập nhật: 2026-08-16 · Mục đích: mô tả kiến trúc, tính năng, API và nguồn dữ liệu của hệ thống TuniX.
+> Phiên bản: 1.0 · Cập nhật: 2026-08-16 · Mục đích: mô tả kiến trúc, tính năng, API và nguồn dữ liệu của hệ thống VinaFintech.
 
 ---
 
 ## 1. Tổng quan
 
-**TuniX** là nền tảng **phân tích cổ phiếu Việt Nam** (HOSE/HNX/UPCoM) gồm:
+**VinaFintech** là nền tảng **phân tích cổ phiếu Việt Nam** (HOSE/HNX/UPCoM) gồm:
 
 - **Trang chủ / Thị trường**: tổng quan chỉ số (VNINDEX, VN30, HNX, HNX30, UPCOM, Dow Jones, Bitcoin, vàng thế giới, vàng trong nước), bộ lọc cổ phiếu, tin tức.
 - **Trang chi tiết cổ phiếu** (`/cophieu-{MÃ}`): biểu đồ nến chuyên sâu, sổ lệnh, giao dịch gần nhất, so sánh tương quan, phân tích lợi nhuận, cơ cấu cổ đông, báo cáo, giả định tích sản.
-- **TuniAI**: trợ lý AI chat (DeepSeek + Tool Calling) với các tool lấy dữ liệu thị trường, cổ phiếu, tin tức.
+- **VinaF AI**: trợ lý AI chat (DeepSeek + Tool Calling) với các tool lấy dữ liệu thị trường, cổ phiếu, tin tức.
 - **Tin tức**, hỗ trợ (ticket, FAQ, góp ý), tài khoản/đăng nhập (JWT + OAuth Google), quản trị (admin).
 - **Watchlist** theo dõi cổ phiếu, thông báo.
 
@@ -29,9 +29,9 @@ flowchart LR
     S --> S1[Simplize API<br/>giá, screener, khối ngoại]
     S --> S2[VCI iQ Insight<br/>BCTC / lợi nhuận]
     S --> S3[KBS<br/>OHLCV sâu + 1H]
-    S --> S4[DeepSeek<br/>TuniAI chat]
+    S --> S4[DeepSeek<br/>VinaF AI chat]
     S --> DB[(PostgreSQL / SQLite<br/>SQLAlchemy)]
-    F --> T[TuniAI Chat Widget<br/>SSE streaming]
+    F --> T[VinaF AI Chat Widget<br/>SSE streaming]
 ```
 
 - **SPA-like**: điều hướng trong trang bằng `loadContent()`; URL đẹp qua `history.replaceState` (`/cophieu-{MÃ}`, `/tin-tuc`, `/chung-khoan`, `/ngan-hang`, `/bat-dong-san`, `/doanh-nghiep`, `/dong-tien-thong-minh`, `/tai-chinh-quoc-te`, `/cong-nghe`, `/tien-ao` (Crypto), `/{slug}-{id}.html`).
@@ -60,7 +60,7 @@ flowchart LR
 ## 4. Cấu trúc thư mục
 
 ```
-TuniX/
+VinaFintech/
 ├── main.py                    # entrypoint: from app.main import app
 ├── render.yaml                # Render blueprint (web + Postgres)
 ├── requirements.txt
@@ -80,7 +80,7 @@ TuniX/
 │   └── services/
 │       ├── vnstock_service.py # data layer (Simplize/VCI/KBS), SimpleTTLCache
 │       ├── chart_service.py   # chart history / index chart / config
-│       ├── ai_service.py      # TuniAI: chat, tools, market insight
+│       ├── ai_service.py      # VinaF AI: chat, tools, market insight
 │       ├── email_service.py   # SMTP (gửi email reset mật khẩu)
 │       └── oauth_service.py   # Google OAuth
 ├── frontend/
@@ -152,7 +152,7 @@ Các bảng chính trong `app/models.py`:
 | **Simplize** (`api2.simplize.vn`) | giá realtime, lịch sử, screener, khối ngoại, độ rộng, directory | `SimpleTTLCache` theo key; quote 15s, foreign 90s, board 10s |
 | **VCI iQ** (`iq.vietcap.com.vn`) | BCTC / lợi nhuận quý (phân tích lợi nhuận) | cache 6h |
 | **KBS** (`kbbuddywts.kbsec.com.vn`) | OHLCV sâu ~10 năm + intraday **1H** | data TTL 60s, earliest 1h |
-| **DeepSeek** | TuniAI chat (tool calling) | cần `DEEPSEEK_API_KEY` |
+| **DeepSeek** | VinaF AI chat (tool calling) | cần `DEEPSEEK_API_KEY` |
 | **File cache** (`.cache/*.json`) | symbol_directory, symbol_summaries (24h), screener, dividends, business | tồn tại trên đĩa |
 
 **Cache**: `SimpleTTLCache` (in-memory, dict) + file cache JSON cho dữ liệu nặng.
@@ -161,7 +161,7 @@ Các bảng chính trong `app/models.py`:
 
 ## 8. Frontend — shell & điều hướng
 
-- `index.html` là shell: header (logo, tìm kiếm, icon nến fullscreen, thông báo, theme, tài khoản), nav tin tức, **TuniAI chat widget** (SSE), footer.
+- `index.html` là shell: header (logo, tìm kiếm, icon nến fullscreen, thông báo, theme, tài khoản), nav tin tức, **VinaF AI chat widget** (SSE), footer.
 - `loadContent(page)`:
   - Trang **embedded** (Home.html, StockDetail.html, tin-tuc.html, tintuc.html, caidat.html, taikhoan.html, doimatkhau.html) → dựng `<iframe id="contentEmbedFrame">` (cache-bust `?v=Date.now()`), điều chỉnh chiều cao qua `postMessage` (`tunix-embed-height`).
   - Trang khác (TrungTamTroGiup, HuongDanSuDung, CauHoiThuongGap, LienHe, GopY, DieuKhoanSuDung, ChinhSachBaoMat, MienTruTrachNhiem) → `fetch` + `DOMParser` nhúng nội dung.
@@ -186,11 +186,11 @@ Các block (tải song song, chart render sớm không chờ quote):
 
 - Hỗ trợ **mã chỉ số** (VNINDEX, VN30, HNX, HNXINDEX, HNX30, UPCOM, UPINDEX, UPCOMM): ẩn các block không có dữ liệu (sổ lệnh, giao dịch gần nhất, so sánh tương quan, phân tích lợi nhuận, cơ cấu cổ đông, báo cáo, tích sản).
 - **Fullscreen** (`?fs=1`): parent-driven; thoát fullscreen trả chart về chiều cao bình thường, icon nến fullscreen đúng mã đang xem, thoát từ trang không phải chi tiết thì quay lại trang trước.
-- **Dashboard fullscreen** (`.chart-bottom`): **Giả định tích sản 5 năm** · **Dòng tiền 10 phiên** (cùng nguồn `/stocks/{symbol}/money-flow`: ròng 10 phiên + cột vào/ra, có tooltip từng phiên) · **TuniAI phân tích**. Panel Dòng tiền thay cho panel Tin tức nổi bật trước đây.
+- **Dashboard fullscreen** (`.chart-bottom`): **Giả định tích sản 5 năm** · **Dòng tiền 10 phiên** (cùng nguồn `/stocks/{symbol}/money-flow`: ròng 10 phiên + cột vào/ra, có tooltip từng phiên) · **VinaF AI phân tích**. Panel Dòng tiền thay cho panel Tin tức nổi bật trước đây.
 
 ---
 
-## 10. TuniAI
+## 10. VinaF AI
 
 ### 10.1 Chat (DeepSeek + Tool Calling)
 - `POST /api/ai/chat` (cần đăng nhập + rate limit + gói): vòng lặp tool-calling, trả `{reply, tool_calls}` hoặc stream SSE (`/ai/chat?stream`).
@@ -221,7 +221,7 @@ Thư mục `frontend/assets/chart/`:
 
 ## 12. Deploy
 
-- **Render** (`render.yaml`): web service `tunix` + Postgres `Tunix-test1-db` (region Singapore), `autoDeploy: true` khi push `main`.
+- **Render** (`render.yaml`): web service `VinaFintech` + Postgres `Tunix-test1-db` (region Singapore), `autoDeploy: true` khi push `main`.
 - `buildCommand: pip install -r requirements.txt`, `startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT`.
 - Env: `APP_ENV=production`, `SECRET_KEY` (tự sinh), `DATABASE_URL` (từ DB), `FRONTEND_URL=https://tunix.onrender.com`, `DEEPSEEK_API_KEY` (set thủ công).
 - Scripts: `migrate_to_render.py`, `push_news_to_render.py`, `create_superadmin.py`.
@@ -233,7 +233,7 @@ Thư mục `frontend/assets/chart/`:
 - `get_quote` chạy **song song** 3 request mạng (giá/lịch sử/chỉ số cơ bản) qua `ThreadPoolExecutor`.
 - Chart + các panel (sổ lệnh, giao dịch, so sánh) tải **song song với quote**; chart render sớm không chờ quote chậm.
 - Cache đa tầng: in-memory TTL + file cache JSON; chỉ số cơ bản cache 24h.
-- Ticker TuniAI cache 5 phút; board best-effort có timeout.
+- Ticker VinaF AI cache 5 phút; board best-effort có timeout.
 
 ---
 

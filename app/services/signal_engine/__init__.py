@@ -1,4 +1,4 @@
-"""TuniX Signal Engine — bộ engine phân tích tín hiệu định lượng cho chứng khoán VN.
+"""VinaFintech Signal Engine — bộ engine phân tích tín hiệu định lượng cho chứng khoán VN.
 
 Cấu trúc:
     config.py         ngưỡng/trọng số tập trung (spec §26)

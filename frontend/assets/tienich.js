@@ -1,4 +1,4 @@
-/* TuniX — Tiện ích: logic giao diện (phụ thuộc tiênich-calc.js). */
+/* VinaFintech — Tiện ích: logic giao diện (phụ thuộc tiênich-calc.js). */
 (function () {
     const Calc = window.TuniXCalc;
     if (!Calc) { return; }
@@ -51,7 +51,7 @@
         alloc: {
             title: '⚖️ Chia đều vốn đầu tư', icon: 'fa-balance-scale',
             head: 'Chia đều vốn đầu tư',
-            sub: 'Nhập tổng tiền và các mã muốn mua — TuniX tự lấy giá hiện tại, tự chia đều vốn và tính số lượng mua theo lô 100.'
+            sub: 'Nhập tổng tiền và các mã muốn mua — VinaFintech tự lấy giá hiện tại, tự chia đều vốn và tính số lượng mua theo lô 100.'
         }
     };
     function showTool(tool) {

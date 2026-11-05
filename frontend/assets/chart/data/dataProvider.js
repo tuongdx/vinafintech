@@ -1,6 +1,6 @@
 /**
- * DataProvider — lấy dữ liệu OHLCV từ TuniX (backend /api/chart/history).
- * Chỉ gọi qua TuniX backend; KHÔNG gọi thẳng nguồn ngoài, KHÔNG tạo dữ liệu giả.
+ * DataProvider — lấy dữ liệu OHLCV từ VinaFintech (backend /api/chart/history).
+ * Chỉ gọi qua VinaFintech backend; KHÔNG gọi thẳng nguồn ngoài, KHÔNG tạo dữ liệu giả.
  *
  * Hỗ trợ toàn bộ dataset theo (symbol, timeframe):
  *   - fetchInitial(symbol, interval, countback): tải cửa sổ ban đầu.

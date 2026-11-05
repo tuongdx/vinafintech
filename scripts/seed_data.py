@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Seed dữ liệu nền tảng cho TuniX (chạy trên máy local, idempotent).
+"""Seed dữ liệu nền tảng cho VinaFintech (chạy trên máy local, idempotent).
 
 Seed các bảng: plans, features, faqs, settings, users (super admin + test),
 news (bài viết demo tiếng Việt).
@@ -59,33 +59,33 @@ FEATURES = [
     ("ai_analysis", "Phân tích AI", "Dự đoán xu hướng bằng AI", PlanTierEnum.pro),
     ("custom_report", "Báo cáo tùy chỉnh", "Tạo báo cáo theo yêu cầu", PlanTierEnum.pro),
     ("support_24h", "Hỗ trợ 24/7", "Hỗ trợ qua chat và email 24/7", PlanTierEnum.pro),
-    # Feature backend TuniAI (ai.py) — Phase 1 mở cho mọi user
-    ("ai_chat", "TuniAI Chat", "Trò chuyện, phân tích thị trường bằng AI", PlanTierEnum.free),
+    # Feature backend VinaF AI (ai.py) — Phase 1 mở cho mọi user
+    ("ai_chat", "VinaF AI Chat", "Trò chuyện, phân tích thị trường bằng AI", PlanTierEnum.free),
 ]
 
 # (question, answer, category)
 FAQS = [
-    ("TuniX là gì?", "TuniX là nền tảng phân tích cổ phiếu và quản trị tài sản cho thị trường Việt Nam: dữ liệu thị trường và cổ phiếu, bộ lọc và khám phá cơ hội, lãi suất ngân hàng, giá vàng – bạc, crypto, các công cụ tính toán, tin tức và trợ lý AI TuniAI. TuniX không khuyến nghị mua, bán hay nắm giữ bất kỳ mã chứng khoán nào.", "getting-started"),
-    ("Tôi có cần đăng ký tài khoản để sử dụng TuniX không?", "Không bắt buộc. Bạn có thể xem Thị trường, Cổ phiếu, Khám phá, Lãi ngân hàng, Giá Vàng/Bạc, Crypto, Tiện ích và Tin tức khi chưa đăng nhập. Cần tài khoản (miễn phí) khi muốn dùng Quản lý tài sản, TuniAI và nhận thông báo – cảnh báo.", "getting-started"),
-    ("TuniX có những khu vực chính nào?", "Menu chính gồm: Thị trường (chỉ số, dòng tiền, tin nổi bật), Cổ phiếu (theo nhóm ngành, bộ lọc, chi tiết mã và biểu đồ kỹ thuật), Khám phá (cơ hội nổi bật, bản đồ cơ hội, chiến lược, xếp hạng), Lãi ngân hàng, Giá Vàng/Bạc, Crypto, Quản lý tài sản (danh mục, cảnh báo AI, phân tích tài sản), Tiện ích (giá điều chỉnh, lãi tiền gửi, tỷ giá) và TuniAI. Trang Tin tức và ô tìm kiếm cổ phiếu luôn có ở thanh trên cùng.", "getting-started"),
-    ("Làm thế nào để tạo tài khoản?", "Bấm icon tài khoản ở góc phải thanh trên cùng → chọn Đăng ký ngay, điền Họ tên, Email, Số điện thoại (không bắt buộc) và mật khẩu tối thiểu 6 ký tự. Sau khi đồng ý điều khoản, TuniX gửi email xác thực — mở email và bấm liên kết để kích hoạt tài khoản; nếu chưa nhận được, bấm Gửi lại email xác thực.", "account"),
-    ("Tôi quên mật khẩu, làm sao để lấy lại?", "Tại trang Đăng nhập, chọn Quên mật khẩu?, nhập email đã đăng ký. TuniX sẽ gửi liên kết đặt lại mật khẩu về email của bạn.", "account"),
+    ("VinaFintech là gì?", "VinaFintech là nền tảng phân tích cổ phiếu và quản trị tài sản cho thị trường Việt Nam: dữ liệu thị trường và cổ phiếu, bộ lọc và khám phá cơ hội, lãi suất ngân hàng, giá vàng – bạc, crypto, các công cụ tính toán, tin tức và trợ lý AI VinaF AI. VinaFintech không khuyến nghị mua, bán hay nắm giữ bất kỳ mã chứng khoán nào.", "getting-started"),
+    ("Tôi có cần đăng ký tài khoản để sử dụng VinaFintech không?", "Không bắt buộc. Bạn có thể xem Thị trường, Cổ phiếu, Khám phá, Lãi ngân hàng, Giá Vàng/Bạc, Crypto, Tiện ích và Tin tức khi chưa đăng nhập. Cần tài khoản (miễn phí) khi muốn dùng Quản lý tài sản, VinaF AI và nhận thông báo – cảnh báo.", "getting-started"),
+    ("VinaFintech có những khu vực chính nào?", "Menu chính gồm: Thị trường (chỉ số, dòng tiền, tin nổi bật), Cổ phiếu (theo nhóm ngành, bộ lọc, chi tiết mã và biểu đồ kỹ thuật), Khám phá (cơ hội nổi bật, bản đồ cơ hội, chiến lược, xếp hạng), Lãi ngân hàng, Giá Vàng/Bạc, Crypto, Quản lý tài sản (danh mục, cảnh báo AI, phân tích tài sản), Tiện ích (giá điều chỉnh, lãi tiền gửi, tỷ giá) và VinaF AI. Trang Tin tức và ô tìm kiếm cổ phiếu luôn có ở thanh trên cùng.", "getting-started"),
+    ("Làm thế nào để tạo tài khoản?", "Bấm icon tài khoản ở góc phải thanh trên cùng → chọn Đăng ký ngay, điền Họ tên, Email, Số điện thoại (không bắt buộc) và mật khẩu tối thiểu 6 ký tự. Sau khi đồng ý điều khoản, VinaFintech gửi email xác thực — mở email và bấm liên kết để kích hoạt tài khoản; nếu chưa nhận được, bấm Gửi lại email xác thực.", "account"),
+    ("Tôi quên mật khẩu, làm sao để lấy lại?", "Tại trang Đăng nhập, chọn Quên mật khẩu?, nhập email đã đăng ký. VinaFintech sẽ gửi liên kết đặt lại mật khẩu về email của bạn.", "account"),
     ("Làm sao để đổi mật khẩu?", "Mở menu tài khoản (bấm tên hoặc ảnh đại diện ở góc phải) → Thông tin tài khoản → bấm Đổi mật khẩu, nhập mật khẩu hiện tại và mật khẩu mới rồi lưu lại.", "account"),
-    ("TuniX có bảo mật thông tin tài khoản của tôi không?", "Có. Mật khẩu được mã hóa một chiều (bcrypt) và không hiển thị lại; phiên đăng nhập dùng JWT có thời hạn và tự động làm mới; email phải được xác thực trước khi sử dụng tài khoản. Khi triển khai chính thức, toàn bộ kết nối đi qua HTTPS.", "account"),
+    ("VinaFintech có bảo mật thông tin tài khoản của tôi không?", "Có. Mật khẩu được mã hóa một chiều (bcrypt) và không hiển thị lại; phiên đăng nhập dùng JWT có thời hạn và tự động làm mới; email phải được xác thực trước khi sử dụng tài khoản. Khi triển khai chính thức, toàn bộ kết nối đi qua HTTPS.", "account"),
     ("Tôi có thể xóa tài khoản không?", "Có. Trong Thông tin tài khoản, bạn gửi yêu cầu xóa tài khoản. Yêu cầu sẽ được quản trị viên phê duyệt trước khi dữ liệu bị xóa.", "account"),
-    ("TuniAI là gì và dùng được những gì?", "TuniAI là trợ lý AI của TuniX: hỏi đáp về cổ phiếu, báo cáo tài chính, phân tích biểu đồ, tìm cổ phiếu theo tiêu chí, tình hình thị trường và cả danh mục bạn đang nắm giữ/theo dõi. Câu trả lời có thể kèm bảng số liệu, biểu đồ và xuất ra PDF. Tài khoản Miễn phí được 1 câu hỏi và 2 cuộc trò chuyện mới mỗi tháng; gói Hội viên hỏi không giới hạn.", "features"),
+    ("VinaF AI là gì và dùng được những gì?", "VinaF AI là trợ lý AI của VinaFintech: hỏi đáp về cổ phiếu, báo cáo tài chính, phân tích biểu đồ, tìm cổ phiếu theo tiêu chí, tình hình thị trường và cả danh mục bạn đang nắm giữ/theo dõi. Câu trả lời có thể kèm bảng số liệu, biểu đồ và xuất ra PDF. Tài khoản Miễn phí được 1 câu hỏi và 2 cuộc trò chuyện mới mỗi tháng; gói Hội viên hỏi không giới hạn.", "features"),
     ("Trung tâm cảnh báo hoạt động như thế nào?", "Trung tâm cảnh báo (trong Quản lý tài sản) dùng AI phân tích các mã cổ phiếu và coin bạn đang nắm giữ hoặc theo dõi, trả về 3 nhóm Cơ hội – Cảnh báo – Xu hướng kèm mức độ mạnh, độ tin cậy và lý do cụ thể. Bấm Quét để phân tích lại khi danh mục hoặc thị trường thay đổi.", "features"),
-    ("Tôi có thể theo dõi danh mục đầu tư của mình trên TuniX không?", "Có. Trong Quản lý tài sản, bạn ghi nhận cổ phiếu, crypto, vàng/bạc và tiền gửi ngân hàng; quản lý tiền mặt VND/USDT; theo dõi thêm những mã chưa sở hữu; xem bảng danh mục với lãi/lỗ, vùng hỗ trợ – kháng cự và trạng thái kỹ thuật; xem sự kiện liên quan (cổ tức, chốt quyền, kết quả kinh doanh) và phân tích tài sản tổng thể.", "features"),
-    ("Tiện ích của TuniX gồm những công cụ gì?", "Ba công cụ trong menu Tiện ích: (1) Giá điều chỉnh cổ phiếu sau cổ tức, chia tách hoặc phát hành quyền mua; (2) Lợi nhuận tiền gửi — tính lãi đơn hoặc lãi kép, có thể gửi thêm định kỳ mỗi tháng; (3) Tỷ giá ngoại tệ — xem tỷ giá và hoán đổi giữa VND với các ngoại tệ, có tùy chọn trừ phí.", "features"),
-    ("Dữ liệu thị trường trên TuniX lấy từ đâu?", "TuniX tổng hợp dữ liệu từ các nguồn công khai: giá và chỉ số chứng khoán Việt Nam, bảng giá vàng trong nước và thế giới, tỷ giá ngoại tệ, lãi suất huy động của các ngân hàng và dữ liệu crypto từ các sàn lớn. Dữ liệu được lưu đệm để tải nhanh và tự làm mới theo từng khu vực; một số nguồn có thể chậm hơn thực tế vài giây đến vài phút.", "features"),
-    ("Các gói dịch vụ của TuniX gồm những gì?", "TuniX có 2 hình thức sử dụng:\n\n• Miễn phí (mặc định khi đăng ký): dùng đầy đủ dữ liệu và công cụ của website — Thị trường, Cổ phiếu (biểu đồ kỹ thuật, chỉ báo), Khám phá, Lãi ngân hàng, Giá Vàng/Bạc, Crypto, Tiện ích, Tin tức và Quản lý tài sản (danh mục, tiền mặt, theo dõi, phân tích tài sản). TuniAI có hạn mức 1 câu hỏi + 2 cuộc trò chuyện mới mỗi tháng.\n\n• Hội viên - Gói tháng: 99.000đ/tháng, gia hạn mỗi tháng.\n• Hội viên - Gói năm: 999.000đ/năm, thanh toán 1 lần cho 12 tháng (tiết kiệm hơn gói tháng).\n\nMở gói Hội viên, bạn được: TuniAI không giới hạn câu hỏi, Trung tâm cảnh báo đầy đủ (cảnh báo cổ phiếu và tín hiệu crypto do AI phân tích, có nút Quét), cùng toàn bộ nhóm chiến lược và bảng xếp hạng nâng cao ở trang Khám phá.\n\nĐăng ký Hội viên tại icon tài khoản (góc phải trang chủ) → Hội viên, hoặc bấm nút \"Nâng cấp Hội viên\" ở những khu vực đang bị khoá.", "billing"),
+    ("Tôi có thể theo dõi danh mục đầu tư của mình trên VinaFintech không?", "Có. Trong Quản lý tài sản, bạn ghi nhận cổ phiếu, crypto, vàng/bạc và tiền gửi ngân hàng; quản lý tiền mặt VND/USDT; theo dõi thêm những mã chưa sở hữu; xem bảng danh mục với lãi/lỗ, vùng hỗ trợ – kháng cự và trạng thái kỹ thuật; xem sự kiện liên quan (cổ tức, chốt quyền, kết quả kinh doanh) và phân tích tài sản tổng thể.", "features"),
+    ("Tiện ích của VinaFintech gồm những công cụ gì?", "Ba công cụ trong menu Tiện ích: (1) Giá điều chỉnh cổ phiếu sau cổ tức, chia tách hoặc phát hành quyền mua; (2) Lợi nhuận tiền gửi — tính lãi đơn hoặc lãi kép, có thể gửi thêm định kỳ mỗi tháng; (3) Tỷ giá ngoại tệ — xem tỷ giá và hoán đổi giữa VND với các ngoại tệ, có tùy chọn trừ phí.", "features"),
+    ("Dữ liệu thị trường trên VinaFintech lấy từ đâu?", "VinaFintech tổng hợp dữ liệu từ các nguồn công khai: giá và chỉ số chứng khoán Việt Nam, bảng giá vàng trong nước và thế giới, tỷ giá ngoại tệ, lãi suất huy động của các ngân hàng và dữ liệu crypto từ các sàn lớn. Dữ liệu được lưu đệm để tải nhanh và tự làm mới theo từng khu vực; một số nguồn có thể chậm hơn thực tế vài giây đến vài phút.", "features"),
+    ("Các gói dịch vụ của VinaFintech gồm những gì?", "VinaFintech có 2 hình thức sử dụng:\n\n• Miễn phí (mặc định khi đăng ký): dùng đầy đủ dữ liệu và công cụ của website — Thị trường, Cổ phiếu (biểu đồ kỹ thuật, chỉ báo), Khám phá, Lãi ngân hàng, Giá Vàng/Bạc, Crypto, Tiện ích, Tin tức và Quản lý tài sản (danh mục, tiền mặt, theo dõi, phân tích tài sản). VinaF AI có hạn mức 1 câu hỏi + 2 cuộc trò chuyện mới mỗi tháng.\n\n• Hội viên - Gói tháng: 99.000đ/tháng, gia hạn mỗi tháng.\n• Hội viên - Gói năm: 999.000đ/năm, thanh toán 1 lần cho 12 tháng (tiết kiệm hơn gói tháng).\n\nMở gói Hội viên, bạn được: VinaF AI không giới hạn câu hỏi, Trung tâm cảnh báo đầy đủ (cảnh báo cổ phiếu và tín hiệu crypto do AI phân tích, có nút Quét), cùng toàn bộ nhóm chiến lược và bảng xếp hạng nâng cao ở trang Khám phá.\n\nĐăng ký Hội viên tại icon tài khoản (góc phải trang chủ) → Hội viên, hoặc bấm nút \"Nâng cấp Hội viên\" ở những khu vực đang bị khoá.", "billing"),
     ("Tôi có thể nâng cấp/hạ cấp gói dịch vụ không?", "Có. Mở menu tài khoản → Hội viên để xem gói hiện tại, ngày hết hạn và chọn gói mới: Gói tháng 99.000đ/tháng hoặc Gói năm 999.000đ/12 tháng (gói năm rẻ hơn nếu tính theo tháng). Nếu không gia hạn, tài khoản tự trở về hình thức Miễn phí khi gói hết hạn.", "billing"),
-    ("Khi gói Hội viên hết hạn thì điều gì xảy ra?", "Tài khoản trở về hình thức Miễn phí: TuniAI áp dụng lại hạn mức theo tháng và các khu vực dành riêng cho Hội viên sẽ bị khoá (bạn vẫn thấy một phần nội dung dưới dạng mờ để tham khảo). Danh mục, danh sách theo dõi và lịch sử trò chuyện của bạn vẫn được giữ nguyên.", "billing"),
+    ("Khi gói Hội viên hết hạn thì điều gì xảy ra?", "Tài khoản trở về hình thức Miễn phí: VinaF AI áp dụng lại hạn mức theo tháng và các khu vực dành riêng cho Hội viên sẽ bị khoá (bạn vẫn thấy một phần nội dung dưới dạng mờ để tham khảo). Danh mục, danh sách theo dõi và lịch sử trò chuyện của bạn vẫn được giữ nguyên.", "billing"),
     ("Tôi đăng ký hoặc gia hạn gói Hội viên ở đâu?", "Mở menu tài khoản → Hội viên, chọn Gói tháng hoặc Gói năm rồi xác nhận. Gói được kích hoạt ngay và thông tin gói (ngày bắt đầu, ngày hết hạn) hiển thị tại đây. Bạn cũng có thể bấm nút “Nâng cấp Hội viên” ở các khu vực đang bị khoá.", "billing"),
 ]
 
 SETTINGS = [
-    ("site_name", "TuniX"),
+    ("site_name", "VinaFintech"),
     ("contact_email", "support@tunix.vn"),
     ("free_mode", "true"),
     ("default_theme", "light"),
@@ -281,8 +281,8 @@ def seed_news(db: Session) -> int:
                 content=content,
                 category=category,
                 tags=tags,
-                source="Ban biên tập TuniX",
-                author_name="Ban biên tập TuniX",
+                source="Ban biên tập VinaFintech",
+                author_name="Ban biên tập VinaFintech",
                 status=NewsStatusEnum.published,
             )
         )
@@ -294,7 +294,7 @@ def seed_news(db: Session) -> int:
 def main() -> None:
     db: Session = SessionLocal()
     try:
-        print("=== Seed dữ liệu TuniX ===\n")
+        print("=== Seed dữ liệu VinaFintech ===\n")
 
         n = seed_plans(db)
         print(f"[plans] Thêm mới: {n} (tổng: {db.query(Plan).count()})")

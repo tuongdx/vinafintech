@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/x-icon" href="/frontend/Logo/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>TuniX - Nền tảng đầu tư thông minh và quản lý đầu tư hiệu quả</title>
+    <title>VinaFintech - Công nghệ phân tích đầu tư tài sản số</title>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B528QFKRN9"></script>
     <script>
@@ -2698,7 +2698,7 @@
             <header class="header">
                 <div class="header-left">
                     <div class="logo-wrap">
-                        <a href="/" class="logo"><span style="color:#008080;font-weight:800;">Tuni</span><span style="color:#8A95A5;font-weight:800;">X</span></a>
+                        <a href="/" class="logo" aria-label="VinaFintech"><img src="/frontend/Logo/VinaFintech-Logo.png" alt="VinaFintech" style="width:168px;height:42px;object-fit:contain;" /></a>
                         <span class="logo-sub" id="logoSub"></span>
                     </div>
                     <div class="header-search">
@@ -2795,10 +2795,10 @@
             <!-- ============================================================ -->
             <div class="right-col">
 
-                <!-- BANNER: Tham gia đầu tư cùng TuniX -->
+                <!-- BANNER: Tham gia đầu tư cùng VinaFintech -->
                 <div class="banner-block">
                     <span class="banner-icon" id="bannerIcon">🚀</span>
-                    <h3 id="bannerTitle">Tham gia đầu tư cùng TuniX</h3>
+                    <h3 id="bannerTitle">Tham gia đầu tư cùng VinaFintech</h3>
                     <p id="bannerText">Nhận định thị trường, phân tích chuyên sâu, dữ liệu thời gian thực và công cụ thông minh giúp bạn có thể tự tối ưu hóa danh mục đầu tư.</p>
                     <a href="/register" class="btn-join" id="bannerBtn">Đăng ký ngay</a>
                     <div class="banner-features">
@@ -3040,11 +3040,11 @@
         <footer class="footer">
             <div class="footer-grid">
                 <div>
-                    <a href="/" class="logo"><span style="color:#008080;font-weight:800;">Tuni</span><span style="color:#8A95A5;font-weight:800;">X</span></a>
+                    <a href="/" class="logo" aria-label="VinaFintech"><img src="/frontend/Logo/VinaFintech-Logo.png" alt="VinaFintech" style="width:168px;height:42px;object-fit:contain;" /></a>
                     <p class="footer-description">
-                        TuniX là nền tảng phân tích cổ phiếu toàn diện và quản trị tài sản.<br>
-                        TuniX lấy dữ liệu thực tế từ thị trường giúp các nhà đầu tư và tư vấn đầu tư có nhận định chuyên sâu về thị trường chứng khoán Việt Nam.<br>
-                        TuniX không khuyến nghị mua, bán, nắm giữ bất kỳ mã chứng khoán nào.<br>
+                        VinaFintech là nền tảng phân tích cổ phiếu toàn diện và quản trị tài sản.<br>
+                        VinaFintech lấy dữ liệu thực tế từ thị trường giúp các nhà đầu tư và tư vấn đầu tư có nhận định chuyên sâu về thị trường chứng khoán Việt Nam.<br>
+                        VinaFintech không khuyến nghị mua, bán, nắm giữ bất kỳ mã chứng khoán nào.<br>
                         Người dùng tự đánh giá và tự chịu trách nhiệm với quyết định đầu tư của mình.<br>
                         Xin cảm ơn!
                     </p>
@@ -3092,7 +3092,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <span>&copy; 2026 TuniX. Tất cả các quyền được bảo lưu.</span>
+                <span>&copy; 2026 VinaFintech. Tất cả các quyền được bảo lưu.</span>
                 <div class="badges">
                     <span><i class="fas fa-shield-alt"></i> Bảo mật SSL</span>
                     <span><i class="fas fa-clock"></i> Dữ liệu thời gian thực</span>
@@ -3598,7 +3598,7 @@
         }
 
         // Header: nút chuyển giữa "Thị trường" (trang chủ) và "Tin tức" (trang tin tức).
-        // Đang ở trang tin tức → logo TuniX hiện thêm chữ nhỏ "Tin tức", nút đổi thành "Thị trường".
+        // Đang ở trang tin tức → logo VinaFintech hiện thêm chữ nhỏ "Tin tức", nút đổi thành "Thị trường".
         let isNewsPage = false;
         function setHeaderContext(isNews) {
             isNewsPage = !!isNews;
@@ -3611,7 +3611,7 @@
             // Chữ nhỏ dưới logo luôn hiện: "Thị trường" (trang chủ) / "Tin tức" (trang tin tức).
             if (wrap) wrap.classList.add('has-sub');
             if (sub) sub.textContent = isNews ? 'Tin tức' : 'Thị trường';
-            // Logo TuniX: ở tin tức → về trang chủ tin tức; ở thị trường → về trang chủ thị trường.
+            // Logo VinaFintech: ở tin tức → về trang chủ tin tức; ở thị trường → về trang chủ thị trường.
             if (logo) logo.href = isNews ? '/tin-tuc' : '/';
             if (link) {
                 const iconName = isNews ? 'fa-chart-line' : 'fa-newspaper';
@@ -3803,7 +3803,7 @@
             window.history.replaceState({}, '', '/kham-pha');
             setHeaderContext(false);
         }
-        // ===== Menu "Tín hiệu" (TuniX Signal Engine) =====
+        // ===== Menu "Tín hiệu" (VinaFintech Signal Engine) =====
         // Chỉ hiện khi ĐÃ ĐĂNG NHẬP và tài khoản ĐƯỢC CẤP QUYỀN (users.signal_access) hoặc là quản trị viên.
         // Quyền thật được SERVER kiểm tra ở /api/signals (require_signal_access) — đây chỉ là đồng bộ hiển thị.
         const SIGNAL_NAV_ROLES = ['super-admin', 'admin'];
@@ -4154,7 +4154,7 @@
             }
         }
 
-        // Logo TuniX — bấm về trang chủ tương ứng: tin tức → /tin-tuc, thị trường → /.
+        // Logo VinaFintech — bấm về trang chủ tương ứng: tin tức → /tin-tuc, thị trường → /.
         const logoLink = document.querySelector('.logo-wrap .logo');
         if (logoLink) {
             logoLink.addEventListener('click', function(e) {
@@ -4566,7 +4566,7 @@
             const sep = page.includes('?') ? '&' : '?';
             const iframe = document.createElement('iframe');
             iframe.setAttribute('src', page + sep + 'v=' + CACHE_VERSION);
-            iframe.setAttribute('title', 'TuniX Embedded Content');
+            iframe.setAttribute('title', 'VinaFintech Embedded Content');
             iframe.setAttribute('allow', 'fullscreen');
             iframe.dataset.frameKey = key;
             iframe.style.display = 'none';
@@ -5912,8 +5912,8 @@
                 const loggedIn = !!localStorage.getItem('tunix_access_token');
                 if (loggedIn) {
                     if (icon) icon.innerHTML = '<i class="fas fa-robot" style="color:#fff;"></i>';
-                    if (title) title.textContent = 'TuniX mới cho ra mắt TuniAI';
-                    if (text) text.textContent = 'Với TuniAI bạn có thể hỏi về cổ phiếu, mã chứng khoán, thị trường, so sánh mã, lấy dữ liệu realtime, tin tức, BCTC từ TuniX và có thể phân tích thông minh như broker nhiều kinh nghiệm trong thị trường.';
+                    if (title) title.textContent = 'VinaFintech mới cho ra mắt TuniAI';
+                    if (text) text.textContent = 'Với TuniAI bạn có thể hỏi về cổ phiếu, mã chứng khoán, thị trường, so sánh mã, lấy dữ liệu realtime, tin tức, BCTC từ VinaFintech và có thể phân tích thông minh như broker nhiều kinh nghiệm trong thị trường.';
                     if (btn) {
                         btn.textContent = 'Trải nghiệm TuniAI ngay';
                         btn.href = '#';
@@ -5924,7 +5924,7 @@
                     }
                 } else {
                     if (icon) icon.textContent = '🚀';
-                    if (title) title.textContent = 'Tham gia đầu tư cùng TuniX';
+                    if (title) title.textContent = 'Tham gia đầu tư cùng VinaFintech';
                     if (text) text.textContent = 'Nhận định thị trường, phân tích chuyên sâu, dữ liệu thời gian thực và công cụ thông minh giúp bạn có thể tự tối ưu hóa danh mục đầu tư.';
                     if (btn) {
                         btn.textContent = 'Đăng ký ngay';

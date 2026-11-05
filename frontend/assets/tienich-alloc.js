@@ -1,7 +1,7 @@
-/* TuniX — Tiện ích → "Chia đều vốn đầu tư": logic giao diện.
+/* VinaFintech — Tiện ích → "Chia đều vốn đầu tư": logic giao diện.
  *
  * Người dùng CHỈ nhập 2 thứ: tổng vốn + danh sách mã cổ phiếu.
- * Giá hiện tại lấy từ API CÓ SẴN của TuniX: GET /api/stocks/{mã}/quote
+ * Giá hiện tại lấy từ API CÓ SẴN của VinaFintech: GET /api/stocks/{mã}/quote
  * (cùng nguồn dữ liệu với trang chi tiết cổ phiếu) — KHÔNG tạo API giá riêng.
  *
  * Toàn bộ phép tính nằm ở module thuần frontend/assets/tienich-calc.js
@@ -142,7 +142,7 @@
         removeSymbol(btn.getAttribute('data-sym'));
     });
 
-    // ---------- Lấy giá hiện tại (dùng API giá có sẵn của TuniX) ----------
+    // ---------- Lấy giá hiện tại (dùng API giá có sẵn của VinaFintech) ----------
     function fetchQuote(sym) {
         return fetch('/api/stocks/' + encodeURIComponent(sym) + '/quote', { cache: 'no-store' })
             .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })

@@ -1,6 +1,6 @@
 """Crypto — service lấy dữ liệu từ Binance (tách tầng khỏi giao diện).
 
-Kiến trúc: Binance → TuniX Backend → Frontend (frontend KHÔNG gọi Binance trực tiếp).
+Kiến trúc: Binance → VinaFintech Backend → Frontend (frontend KHÔNG gọi Binance trực tiếp).
 - Danh sách: 1 request `GET /api/v3/ticker/24hr` (~3000+ ticker) → lọc ~100 mã có
   thanh khoản (quoteVolume 24h) cao nhất — KHÔNG bắn N request/coin.
 - Klines (biểu đồ): `GET /api/v3/klines` theo từng cặp.
@@ -24,7 +24,7 @@ from app.models import Setting
 _BINANCE_HOSTS = ("https://data-api.binance.vision", "https://api.binance.com")
 # data-api.binance.vision là mirror market-data CHÍNH THỨC của Binance — KHÔNG geo-
 # restrict, dùng được từ Mỹ / Render (api.binance.com bị geo-block ở Mỹ, trả 451).
-_UA = {"User-Agent": "Mozilla/5.0 (TuniX/1.0)", "Accept": "application/json"}
+_UA = {"User-Agent": "Mozilla/5.0 (VinaFintech/1.0)", "Accept": "application/json"}
 
 _QUOTE = "USDT"
 # Bybit public API — nguồn dự phòng KHÔNG geo/cloud-block (dùng được từ Render/SG khi
@@ -406,7 +406,7 @@ def _trim_src(s: str, limit: int) -> str:
 
 
 def _translate_vi(text: str) -> str:
-    """Dịch sang tiếng Việt bằng AI đang dùng cho TuniAI (DeepSeek)."""
+    """Dịch sang tiếng Việt bằng AI đang dùng cho VinaF AI (DeepSeek)."""
     src = (text or "").strip()
     if not src:
         return ""

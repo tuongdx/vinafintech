@@ -1,5 +1,5 @@
-/* TuniX — Tỷ giá ngoại tệ (exchange.html) — logic frontend.
-   Dữ liệu lấy từ TuniX backend (/api/exchange/rates) — KHÔNG gọi API ngoài trực tiếp.
+/* VinaFintech — Tỷ giá ngoại tệ (exchange.html) — logic frontend.
+   Dữ liệu lấy từ VinaFintech backend (/api/exchange/rates) — KHÔNG gọi API ngoài trực tiếp.
    Mọi chuyển đổi tính ngay trên máy (dữ liệu đã cache) để không spam request. */
 (function () {
     'use strict';

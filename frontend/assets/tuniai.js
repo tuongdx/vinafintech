@@ -13,9 +13,9 @@
                 { p: 'Phân tích danh mục của tôi', icon: 'fa-briefcase', title: 'AI Portfolio', tag: 'Danh mục' }
             ];
 
-            // Text hiển thị trong khung chat khi TuniAI đang xử lý/tìm kiếm thông tin
+            // Text hiển thị trong khung chat khi VinaF AI đang xử lý/tìm kiếm thông tin
             // (chỉ hiện khi chưa trả được nội dung; khi có câu trả lời sẽ bị thay thế tự động).
-            const WAITING_HTML = '<span class="ta-wait"><i class="fas fa-spinner fa-spin"></i> Xin chờ chút để TuniAI xử lý thông tin...</span>';
+            const WAITING_HTML = '<span class="ta-wait"><i class="fas fa-spinner fa-spin"></i> Xin chờ chút để VinaF AI xử lý thông tin...</span>';
 
             // ---------- Quản lý hội thoại (đồng bộ server theo tài khoản) ----------
             const CONV_KEY = 'tunix_ai_conversations';
@@ -37,9 +37,9 @@
                     '<div class="ta-locked">' +
                         '<div class="ta-lock-icon"><i class="fas fa-lock"></i></div>' +
                         '<h2>Trang bị khóa</h2>' +
-                        '<p>Trang TuniAI yêu cầu đăng nhập để sử dụng trợ lý tài chính thông minh.</p>' +
+                        '<p>Trang VinaF AI yêu cầu đăng nhập để sử dụng trợ lý tài chính thông minh.</p>' +
                         '<div class="ta-lock-actions">' +
-                            '<a class="ta-lock-btn primary" href="/Login?next=' + encodeURIComponent('/tuniai') + '" target="_top"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>' +
+                            '<a class="ta-lock-btn primary" href="/Login?next=' + encodeURIComponent('/vinafai') + '" target="_top"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>' +
                             '<a class="ta-lock-btn" href="/register" target="_top"><i class="fas fa-user-plus"></i> Tạo tài khoản</a>' +
                         '</div>' +
                     '</div>';
@@ -538,7 +538,7 @@
                 t = t.replace(/```([\s\S]*?)```/g, function(m, c) { return '<pre>' + c + '</pre>'; });
                 t = t.replace(/`([^`]+)`/g, function(m, c) { return '<code>' + c + '</code>'; });
                 t = t.replace(/\*\*([^*]+)\*\*/g, function(m, c) { return '<strong>' + c + '</strong>'; });
-                // Ảnh chart cổ phiếu do TuniX cung cấp (khối Markdown image trỏ về /api/stocks/.../chart-svg).
+                // Ảnh chart cổ phiếu do VinaFintech cung cấp (khối Markdown image trỏ về /api/stocks/.../chart-svg).
                 t = t.replace(/!\[([^\]]*)\]\((\/api\/stocks\/[^)\s]*chart-svg[^)\s]*)\)/g, function(m, alt, src) {
                     return '<img class="ta-img" src="' + src + '" alt="' + escChat(alt || 'chart') + '" loading="lazy"/>';
                 });
@@ -633,12 +633,12 @@
                 if (!sheet) return;
                 let html =
                     '<div class="ps-head">' +
-                        '<div class="ps-brand">TuniX · TuniAI</div>' +
+                        '<div class="ps-brand">VinaFintech · VinaF AI</div>' +
                         '<div class="ps-title">Nội dung phân tích</div>' +
                         '<div class="ps-meta">' + (question ? 'Câu hỏi: ' + escChat(question) + ' · ' : '') + 'Xuất lúc: ' + new Date().toLocaleString('vi-VN') + '</div>' +
                     '</div>' +
-                    '<div class="ps-msg"><div class="ps-ai"><span class="ps-ai-ico"><i class="fas fa-robot"></i></span>TuniAI trả lời</div><div class="ps-body">' + renderAiText(content) + '</div></div>' +
-                    '<div class="ps-foot">Tài liệu được tạo tự động bởi TuniX. Nội dung chỉ mang tính tham khảo, không phải khuyến nghị đầu tư.</div>';
+                    '<div class="ps-msg"><div class="ps-ai"><span class="ps-ai-ico"><i class="fas fa-robot"></i></span>VinaF AI trả lời</div><div class="ps-body">' + renderAiText(content) + '</div></div>' +
+                    '<div class="ps-foot">Tài liệu được tạo tự động bởi VinaFintech. Nội dung chỉ mang tính tham khảo, không phải khuyến nghị đầu tư.</div>';
                 sheet.innerHTML = html;
                 setTimeout(function() {
                     try { window.focus(); window.print(); } catch (e) {}
@@ -676,7 +676,7 @@
                     exportContentToPdf(content, question);
                 });
             }
-            // Thêm thanh nút xuất PDF VÀO TRONG khung trả lời (.ta-ai-reply) của TuniAI
+            // Thêm thanh nút xuất PDF VÀO TRONG khung trả lời (.ta-ai-reply) của VinaF AI
             // (giữ nguyên nút "Xuất PDF" toàn bộ hội thoại ở header chat).
             function attachExportBar(replyHost, content, question) {
                 const host = (replyHost && replyHost.classList && replyHost.classList.contains('ta-ai-reply'))
@@ -708,7 +708,7 @@
                 if (!c || !c.messages || !c.messages.length) {
                     msgsEl.innerHTML = '<div class="ta-welcome">' +
                         '<div class="tw-ico"><i class="fas fa-robot"></i></div>' +
-                        '<div class="tw-title">TuniAI — Trợ lý chứng khoán Việt Nam</div>' +
+                        '<div class="tw-title">VinaF AI — Trợ lý chứng khoán Việt Nam</div>' +
                         '<div class="tw-text">Hỏi về cổ phiếu, doanh nghiệp, thị trường hoặc danh mục của bạn.</div>' +
                         '<div class="ta-suggests"></div>' +
                         '<div class="ta-tools"></div>' +
@@ -724,7 +724,7 @@
                         html += '<div class="ta-msg-user">' + escChat(m.content) + '</div>';
                     } else if (m.role === 'assistant') {
                         html += '<div class="ta-msg-ai"><div class="ta-ai-avatar"><i class="fas fa-robot"></i></div>' +
-                            '<div class="ta-ai-body"><div class="ta-ai-name">TuniAI</div>' +
+                            '<div class="ta-ai-body"><div class="ta-ai-name">VinaF AI</div>' +
                             '<div class="ta-ai-reply">' + renderAiText(m.content) + '</div></div></div>';
                     }
                 });
@@ -822,7 +822,7 @@
                 const row = document.createElement('div');
                 row.className = 'ta-msg-ai';
                 row.innerHTML = '<div class="ta-ai-avatar"><i class="fas fa-robot"></i></div>' +
-                    '<div class="ta-ai-body"><div class="ta-ai-name">TuniAI</div><div class="ta-ai-reply">' +
+                    '<div class="ta-ai-body"><div class="ta-ai-name">VinaF AI</div><div class="ta-ai-reply">' +
                     (html || '<div class="ta-typing"><span></span><span></span><span></span></div>') +
                     '</div></div>';
                 msgsEl.appendChild(row);
@@ -869,12 +869,12 @@
             async function streamAnswer(bubble) {
                 const res = await fetchChat(false);
                 if (!res.ok) {
-                    let detail = 'Lỗi khi gọi TuniAI. Vui lòng thử lại.';
+                    let detail = 'Lỗi khi gọi VinaF AI. Vui lòng thử lại.';
                     try { const d = await res.json(); if (d && d.detail) detail = d.detail; } catch (e) {}
                     if (res.status === 401) detail = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
-                    // Hết lượt hỏi TuniAI miễn phí → tin nhắn ngắn + mở DIALOG nổi trên khung chat.
-                    if (res.status === 403 && /hết lượt|TuniAI miễn phí/i.test(detail)) {
-                        bubble.innerHTML = escChat('Bạn đã dùng hết lượt hỏi TuniAI miễn phí trong tháng này.');
+                    // Hết lượt hỏi VinaF AI miễn phí → tin nhắn ngắn + mở DIALOG nổi trên khung chat.
+                    if (res.status === 403 && /hết lượt|VinaF AI miễn phí/i.test(detail)) {
+                        bubble.innerHTML = escChat('Bạn đã dùng hết lượt hỏi VinaF AI miễn phí trong tháng này.');
                         if (window.TuniXMembership && window.TuniXMembership.showQuotaDialog) window.TuniXMembership.showQuotaDialog();
                         return '';
                     }
@@ -918,7 +918,7 @@
                 }
                 // Xử lý xong mà vẫn chưa có nội dung/lỗi nào → bỏ text chờ, thay bằng thông báo nhẹ.
                 if (!received && !sawError) {
-                    bubble.innerHTML = 'TuniAI chưa tìm thấy đủ thông tin để trả lời. Bạn vui lòng thử lại với câu hỏi khác nhé.';
+                    bubble.innerHTML = 'VinaF AI chưa tìm thấy đủ thông tin để trả lời. Bạn vui lòng thử lại với câu hỏi khác nhé.';
                     scrollChat();
                 }
                 // Có câu trả lời hoàn chỉnh → gắn nút xuất PDF riêng cho câu trả lời này.
@@ -933,7 +933,7 @@
                 if (!c) { newChat(); c = currentConv(); }
                 if (!loggedIn()) {
                     const b = addAiMsg('');
-                    if (b) b.innerHTML = 'Hãy <strong>đăng nhập</strong> để được hỏi đáp về cổ phiếu. <a href="/Login?next=/tuniai" target="_top" style="color:#008080;font-weight:700;">Đăng nhập</a>';
+                    if (b) b.innerHTML = 'Hãy <strong>đăng nhập</strong> để được hỏi đáp về cổ phiếu. <a href="/Login?next=/vinafai" target="_top" style="color:#008080;font-weight:700;">Đăng nhập</a>';
                     return;
                 }
                 addUserMsg(prompt);
@@ -946,7 +946,7 @@
                 busy = true;
                 const btn = document.getElementById('taBtn');
                 if (btn) btn.disabled = true;
-                // Hiển thị text chờ khi TuniAI đang xử lý/tìm kiếm (xóa đi khi có nội dung trả về).
+                // Hiển thị text chờ khi VinaF AI đang xử lý/tìm kiếm (xóa đi khi có nội dung trả về).
                 const bubble = addAiMsg(WAITING_HTML);
                 if (!bubble) { busy = false; saveConvs(); return; }
                 streamAnswer(bubble).then(function(reply) {
@@ -1033,7 +1033,7 @@
                 if (!sheet || !c || !c.messages || !c.messages.length) return;
                 let html =
                     '<div class="ps-head">' +
-                        '<div class="ps-brand">TuniX · TuniAI</div>' +
+                        '<div class="ps-brand">VinaFintech · VinaF AI</div>' +
                         '<div class="ps-title">Báo cáo phân tích chứng khoán</div>' +
                         '<div class="ps-meta">Hội thoại: ' + escChat(convTitleOf(c)) + ' · Xuất lúc: ' + new Date().toLocaleString('vi-VN') + '</div>' +
                     '</div>';
@@ -1041,10 +1041,10 @@
                     if (m.role === 'user') {
                         html += '<div class="ps-msg"><div class="ps-user">❓ Bạn hỏi</div><div class="ps-body">' + escChat(m.content) + '</div></div>';
                     } else if (m.role === 'assistant') {
-                        html += '<div class="ps-msg"><div class="ps-ai"><span class="ps-ai-ico"><i class="fas fa-robot"></i></span>TuniAI trả lời</div><div class="ps-body">' + renderAiText(m.content) + '</div></div>';
+                        html += '<div class="ps-msg"><div class="ps-ai"><span class="ps-ai-ico"><i class="fas fa-robot"></i></span>VinaF AI trả lời</div><div class="ps-body">' + renderAiText(m.content) + '</div></div>';
                     }
                 });
-                html += '<div class="ps-foot">Tài liệu được tạo tự động bởi TuniX. Nội dung chỉ mang tính tham khảo, không phải khuyến nghị đầu tư.</div>';
+                html += '<div class="ps-foot">Tài liệu được tạo tự động bởi VinaFintech. Nội dung chỉ mang tính tham khảo, không phải khuyến nghị đầu tư.</div>';
                 sheet.innerHTML = html;
             }
             function exportPdf() {

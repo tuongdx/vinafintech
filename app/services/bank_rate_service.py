@@ -1,6 +1,6 @@
 """Lãi ngân hàng — service.
 
-Tách tầng: [Ngân hàng / nguồn tự động] → TuniX Backend (ghi bảng bank_interest_rates) → API → UI.
+Tách tầng: [Ngân hàng / nguồn tự động] → VinaFintech Backend (ghi bảng bank_interest_rates) → API → UI.
 Logic tính toán tách hàm thuần (calc_interest...) để dễ kiểm thử.
 
 DỮ LIỆU: nguồn THẬT là 24HMoney (xem app/services/bank_rate_sync.py) — đồng bộ nền định kỳ, ghi đè bảng.

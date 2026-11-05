@@ -6,7 +6,7 @@ GTGD TB20 ≥ ``engine.min_avg_liquidity_20d_ty``) và ghi tín hiệu vào DB �
 có dữ liệu mới mà người dùng không phải bấm gì.
 
 Nguyên tắc:
-- Chạy trong **THREAD NỀN (daemon)** như các job 12h trưa khác của TuniX ⇒ KHÔNG chặn API.
+- Chạy trong **THREAD NỀN (daemon)** như các job 12h trưa khác của VinaFintech ⇒ KHÔNG chặn API.
 - Quét bỏ cache snapshot (``schedule.use_cache = False``) nên phân tích bằng **dữ liệu mới nhất**
   (nến ngày mới nhất + giá intraday của phiên đang chạy).
 - Quét theo **LÔ** (``schedule.scan_batch_size``): mỗi lô phân tích → lưu DB → giải phóng bộ nhớ.

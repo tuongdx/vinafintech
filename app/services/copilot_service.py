@@ -2,7 +2,7 @@
 (BCTC, định giá, dòng tiền ngoại, kỹ thuật, tin tức) và đưa ra lý do ngắn gọn.
 
 Dashboard (Home) gọi GET /api/ai/copilot để hiển thị thẻ "AI phát hiện N thay đổi".
-Người dùng bấm "Tại sao?" → mở TuniAI với prompt lấy từ change['prompt'] → AI tự
+Người dùng bấm "Tại sao?" → mở VinaF AI với prompt lấy từ change['prompt'] → AI tự
 lấy dữ liệu và giải thích.
 """
 from concurrent.futures import ThreadPoolExecutor
@@ -160,7 +160,7 @@ class CopilotService:
         all_changes.sort(key=lambda c: float(c.get("severity") or 0), reverse=True)
         changes = all_changes[:_MAX_CHANGES]
         summary = (
-            f"🔔 TuniX AI phát hiện {len(changes)} thay đổi đáng chú ý trong danh mục của bạn."
+            f"🔔 VinaFintech AI phát hiện {len(changes)} thay đổi đáng chú ý trong danh mục của bạn."
             if changes
             else "Không phát hiện thay đổi đáng chú ý nào trong danh mục hiện tại."
         )
@@ -187,7 +187,7 @@ class CopilotService:
                     "title": f"{sym} {pct_day:+.2f}% hôm nay",
                     "reason": (
                         f"Giá {sym} thay đổi {pct_day:+.2f}% trong phiên hôm nay "
-                        f"(giá {_fmt_money(price)} đ) — thuộc nhóm biến động mạnh. Dữ liệu realtime từ TuniX."
+                        f"(giá {_fmt_money(price)} đ) — thuộc nhóm biến động mạnh. Dữ liệu realtime từ VinaFintech."
                     ),
                     "prompt": (
                         f"Giải thích vì sao {sym} biến động {pct_day:+.2f}% hôm nay: nguyên nhân, "
@@ -385,7 +385,7 @@ class CopilotService:
                     "symbol": sym,
                     "type": "news",
                     "title": f"{sym}: có tin mới",
-                    "reason": f"Bài viết mới: \"{n['title']}\" — {n.get('summary') or 'Xem chi tiết trên TuniX.'}",
+                    "reason": f"Bài viết mới: \"{n['title']}\" — {n.get('summary') or 'Xem chi tiết trên VinaFintech.'}",
                     "prompt": f"Tóm tắt và phân tích tin mới nhất của {sym}: \"{n['title']}\". Ảnh hưởng đến giá và định giá.",
                     "severity": 1,
                     "direction": "trung lập",

@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>Khám phá cổ phiếu - TuniX</title>
+    <title>Khám phá cổ phiếu - VinaFintech</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
@@ -271,7 +271,7 @@
             const PAGE_SIZE = 16;
             let activeTab = 'score';
             const sparkCache = {};
-            const SCORE_TIP = 'Tuni Score là điểm đánh giá tổng hợp từ 0–100, được TuniX tính toán dựa trên nhiều yếu tố như sức khỏe tài chính, tăng trưởng, định giá, xu hướng giá và mức độ rủi ro của doanh nghiệp. Điểm số càng cao cho thấy cổ phiếu càng có nhiều yếu tố tích cực theo hệ thống đánh giá của TuniX.';
+            const SCORE_TIP = 'VinaFintech Score là điểm đánh giá tổng hợp từ 0–100, được VinaFintech tính toán dựa trên nhiều yếu tố như sức khỏe tài chính, tăng trưởng, định giá, xu hướng giá và mức độ rủi ro của doanh nghiệp. Điểm số càng cao cho thấy cổ phiếu càng có nhiều yếu tố tích cực theo hệ thống đánh giá của VinaFintech.';
             let tipEl = null;
             function ensureTip() {
                 if (!tipEl) { tipEl = document.createElement('div'); tipEl.className = 'cp-tip-pop'; document.body.appendChild(tipEl); }
@@ -350,7 +350,7 @@
                 notifyParentHeight();
             }
 
-            // ---------- TuniX Score circle ----------
+            // ---------- VinaFintech Score circle ----------
             function scoreSvg(score) {
                 const s = Number(score) || 0;
                 const r = 15, c = 2 * Math.PI * r;
@@ -689,7 +689,7 @@
                 { key: 'value', label: 'Định giá hấp dẫn' },
                 { key: 'cash_flow', label: 'Dòng tiền mạnh' },
                 { key: 'breakout', label: 'Breakout' },
-                { key: 'score', label: 'TuniX Score cao' }
+                { key: 'score', label: 'VinaFintech Score cao' }
             ];
 
             function sparkline(points, w, h, up) {

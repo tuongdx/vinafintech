@@ -1,4 +1,4 @@
-"""TuniX Signal Engine — cấu hình tập trung (KHÔNG hard-code threshold rải rác).
+"""VinaFintech Signal Engine — cấu hình tập trung (KHÔNG hard-code threshold rải rác).
 
 Thứ tự merge (sau ghi đè trước):
   1. ``DEFAULTS`` — giá trị gốc trong file này.
@@ -114,7 +114,7 @@ DEFAULTS: dict[str, Any] = {
             "strong": {"score": 70, "confirmations": 6, "technical_agreement": 0.7},
             "moderate": {"score": 55, "confirmations": 4, "technical_agreement": 0.5},
         },
-        # Vòng đời T+: tín hiệu của TuniX là tín hiệu NGẮN HẠN (T+), chỉ có ý nghĩa trong
+        # Vòng đời T+: tín hiệu của VinaFintech là tín hiệu NGẮN HẠN (T+), chỉ có ý nghĩa trong
         # một số phiên nắm giữ. Quá hạn ⇒ KHÔNG còn hiệu lực (tự đóng EXIT) và phải phân
         # tích lại bằng nến mới nhất khi mở trang Tín hiệu.
         "expiry": {

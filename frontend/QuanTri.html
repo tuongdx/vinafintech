@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>TuniX · Quản trị toàn diện</title>
+    <title>VinaFintech · Quản trị toàn diện</title>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B528QFKRN9"></script>
     <script>
@@ -3180,7 +3180,7 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-brand">
                 <a href="/" class="logo">
-                    <span class="tuni">Tuni</span><span class="x">X</span>
+                    <img src="/frontend/Logo/VinaFintech-Logo.png" alt="VinaFintech" style="width:180px;height:42px;object-fit:contain;" />
                 </a>
                 <div class="sub">Quản trị toàn diện</div>
             </div>
@@ -3603,7 +3603,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Tác giả (tùy chọn)</label>
-                                    <input type="text" id="newsAuthor" placeholder="Ví dụ: Ban biên tập TuniX" />
+                                    <input type="text" id="newsAuthor" placeholder="Ví dụ: Ban biên tập VinaFintech" />
                                     <div class="helper-text">Để trống sẽ dùng tên người đăng</div>
                                 </div>
                             </div>
@@ -3943,8 +3943,8 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Tác giả</label>
-                                <input type="text" id="importAuthor" value="Ban biên tập TuniX" />
-                                <div class="helper-text">Mặc định: Ban biên tập TuniX — có thể thay đổi theo người thực hiện.</div>
+                                <input type="text" id="importAuthor" value="Ban biên tập VinaFintech" />
+                                <div class="helper-text">Mặc định: Ban biên tập VinaFintech — có thể thay đổi theo người thực hiện.</div>
                             </div>
                             <div class="form-group">
                                 <label>Danh mục</label>
@@ -4448,7 +4448,7 @@
             { key: 'rank_cashflow', name: 'Xếp hạng: Top dòng tiền', description: 'Bảng "Top dòng tiền" — Trang Khám phá' },
             { key: 'rank_score', name: 'Xếp hạng: Top Score', description: 'Bảng "Top Score" — Trang Khám phá' },
             { key: 'alert_center', name: 'Trung tâm cảnh báo', description: 'Cảnh báo gần hỗ trợ/kháng cự, breakout, MA… (kể cả quét tín hiệu)' },
-            { key: 'ai_unlimited', name: 'TuniAI không giới hạn', description: 'Hỏi đáp không giới hạn lượt/cuộc trò chuyện cho hội viên' },
+            { key: 'ai_unlimited', name: 'VinaF AI không giới hạn', description: 'Hỏi đáp không giới hạn lượt/cuộc trò chuyện cho hội viên' },
         ];
         // Trạng thái các block website (từ /api/features) — null = chưa tải
         let featureFlagsData = null;
@@ -6982,6 +6982,7 @@
                         <span class="status-badge published">Sẽ thêm/Đã thêm: ${data.inserted}</span>
                         <span class="status-badge pending">Bỏ qua (trùng): ${data.skipped}</span>
                         ${data.updated ? `<span class="status-badge approved">Cập nhật ngày giờ: ${data.updated}</span>` : ''}
+                        ${data.repaired ? `<span class="status-badge approved">Sửa ảnh/nội dung: ${data.repaired}</span>` : ''}
                         ${data.errors ? `<span class="status-badge rejected">Lỗi: ${data.errors}</span>` : ''}
                         <span class="status-badge neutral">Trạng thái: ${statusLabel}</span>
                         <span class="status-badge neutral">Danh mục: ${escapeHtml(data.category)}</span>

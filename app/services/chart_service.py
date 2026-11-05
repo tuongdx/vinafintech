@@ -1,21 +1,21 @@
 """Dịch vụ dữ liệu cho TradingView Advanced Charts (charting_library).
 
 Chuỗi dữ liệu:
-    TuniX (adapter KBS + Simplize trong vnstock_service.py)
+    VinaFintech (adapter KBS + Simplize trong vnstock_service.py)
         -> chart_service (timestamp / lọc / aggregate / phân trang)
         -> /api/chart/* (FastAPI router)
         -> TradingView Datafeed (frontend)
         -> TradingView Advanced Charts
 
 Quy tắc dữ liệu:
-  - Chỉ dùng dữ liệu OHLCV thực của TuniX (KBS / Simplize). KHÔNG tạo dữ liệu giả.
+  - Chỉ dùng dữ liệu OHLCV thực của VinaFintech (KBS / Simplize). KHÔNG tạo dữ liệu giả.
   - Không sửa dữ liệu gốc; mọi biến đổi (aggregate 1W/1M, đổi timezone) đều là
     phép chuyển đổi chuẩn trên dữ liệu thực, giữ nguyên OHLC gốc.
   - NGUỒN CHÍNH: KBS (KB Securities) — daily ~10 năm (2016→nay), weekly/monthly,
     và INTRADAY 1H (60P). Công bố các timeframe: 1D (daily), 1W (weekly),
     1M (monthly), 1H (hourly). 1m/5m/15m/30m/4H KHÔNG được hỗ trợ.
   - FALLBACK: Simplize (daily/aggregate) nếu KBS lỗi hoặc không có dữ liệu.
-  - Realtime: TuniX không có nguồn OHLCV realtime -> chart hoạt động chế độ
+  - Realtime: VinaFintech không có nguồn OHLCV realtime -> chart hoạt động chế độ
     historical. Code subscribeBars ở frontend đã được thiết kế để bật realtime
     sau này (xem tv-datafeed.js).
 """
@@ -55,7 +55,7 @@ _PRICESCALE = 100
 # Cache ngắn hạn cho dữ liệu thô (không cache lâu -> tránh giá sai)
 # ---------------------------------------------------------------------------
 def _fetch_daily_series(symbol: str, period: str) -> list[dict[str, Any]]:
-    """Lấy chuỗi OHLCV daily từ Simplize (qua adapter TuniX) có cache TTL ngắn.
+    """Lấy chuỗi OHLCV daily từ Simplize (qua adapter VinaFintech) có cache TTL ngắn.
 
     Dùng trực tiếp _simplize_chart (không qua get_history) để tránh fallback
     dữ liệu mẫu khi Simplize lỗi — biểu đồ chỉ nhận dữ liệu thực.
@@ -140,7 +140,7 @@ def get_chart_config() -> dict[str, Any]:
         "session": CHART_SESSION,
         "has_intraday": True,
         "locale": "vi_VN",
-        "realtime": False,  # TuniX chưa có nguồn OHLCV realtime
+        "realtime": False,  # VinaFintech chưa có nguồn OHLCV realtime
     }
 
 
@@ -521,7 +521,7 @@ def get_chart_history(symbol: str, interval: str, from_ts: int = 0, to_ts: int =
 # Search & Realtime quote
 # ---------------------------------------------------------------------------
 def search_chart_symbols(query: str, limit: int = 20) -> list[dict[str, Any]]:
-    """searchSymbols: tìm mã cổ phiếu (dùng chung search_stocks của TuniX)."""
+    """searchSymbols: tìm mã cổ phiếu (dùng chung search_stocks của VinaFintech)."""
     query = (query or "").strip()
     if not query:
         return []

@@ -1,4 +1,4 @@
-"""TuniAI — Router chat (Phase 1).
+"""VinaF AI — Router chat (Phase 1).
 
 - POST /api/ai/chat  : chat với DeepSeek (stream hoặc không stream)
 - GET  /api/ai/status: trạng thái cấu hình + tính năng (public)
@@ -61,7 +61,7 @@ _TIER_ORDER = {
 
 
 def _check_ai_access(db: Session, user: User) -> None:
-    """Quyền dùng TuniAI (chat + copilot) theo block 'ai_unlimited'.
+    """Quyền dùng VinaF AI (chat + copilot) theo block 'ai_unlimited'.
 
     - Block MỞ (enabled=True) → mọi user đã đăng nhập đều dùng được.
     - Block KHOÁ (enabled=False) → chỉ hội viên đã mở gói dùng được.
@@ -69,7 +69,7 @@ def _check_ai_access(db: Session, user: User) -> None:
     if feature_flags.is_open(db, "ai_unlimited"):
         return
     if not access.is_active_member(user):
-        raise HTTPException(status_code=403, detail="TuniAI đang khoá hội viên. Vui lòng mở gói hội viên để sử dụng.")
+        raise HTTPException(status_code=403, detail="VinaF AI đang khoá hội viên. Vui lòng mở gói hội viên để sử dụng.")
 
 
 def _check_rate_limit(user_id: int) -> None:
@@ -80,7 +80,7 @@ def _check_rate_limit(user_id: int) -> None:
     if len(times) >= settings.ai_rate_limit_max:
         raise HTTPException(
             status_code=429,
-            detail="Bạn đã hỏi TuniAI quá nhiều. Vui lòng thử lại sau vài phút.",
+            detail="Bạn đã hỏi VinaF AI quá nhiều. Vui lòng thử lại sau vài phút.",
         )
     times.append(now)
     _usage[key] = times
@@ -102,7 +102,7 @@ def _get_quota(db: Session, user: User) -> MemberQuota:
 
 
 def _enforce_free_ai_question(db: Session, user: User) -> None:
-    """Quyền hỏi TuniAI theo block 'ai_unlimited'.
+    """Quyền hỏi VinaF AI theo block 'ai_unlimited'.
 
     - Block MỞ (enabled=True): mọi user (kể cả chưa mua gói) dùng KHÔNG GIỚI HẠN.
     - Block KHOÁ (enabled=False): chỉ hội viên đã mở gói được dùng.
@@ -112,7 +112,7 @@ def _enforce_free_ai_question(db: Session, user: User) -> None:
     if not access.is_active_member(user):
         raise HTTPException(
             status_code=403,
-            detail="TuniAI đang khoá hội viên. Vui lòng mở gói hội viên để sử dụng.",
+            detail="VinaF AI đang khoá hội viên. Vui lòng mở gói hội viên để sử dụng.",
         )
 
 
@@ -233,7 +233,7 @@ async def chat(
             except ai_service.AiConfigError as exc:
                 yield f"data: {json.dumps({'type': 'error', 'content': str(exc)}, ensure_ascii=False)}\n\n"
             except Exception:  # noqa: BLE001
-                yield f"data: {json.dumps({'type': 'error', 'content': 'Lỗi kết nối tới TuniAI.'}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'error', 'content': 'Lỗi kết nối tới VinaF AI.'}, ensure_ascii=False)}\n\n"
             # Cập nhật bộ nhớ (best-effort) TRƯỚC khi báo DONE để đảm bảo chạy
             try:
                 turns = []
@@ -341,7 +341,7 @@ def save_conversation(
         if not feature_flags.is_open(db, "ai_unlimited") and not access.is_active_member(user):
             raise HTTPException(
                 status_code=403,
-                detail="TuniAI đang khoá hội viên. Vui lòng mở gói hội viên để sử dụng.",
+                detail="VinaF AI đang khoá hội viên. Vui lòng mở gói hội viên để sử dụng.",
             )
         row = AiConversation(user_id=user.id, cid=cid)
         db.add(row)

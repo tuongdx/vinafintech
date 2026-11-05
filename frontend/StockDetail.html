@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>TuniX - Nền tảng đầu tư thông minh và quản lý đầu tư hiệu quả</title>
+    <title>VinaFintech - Nền tảng đầu tư thông minh và quản lý đầu tư hiệu quả</title>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B528QFKRN9"></script>
     <script>
@@ -44,7 +44,7 @@
             overflow: hidden;
         }
 
-        /* Viền cho CÁC BLOCK CHÍNH của trang chi tiết — giống block "TuniAI Analysis" (.ta-block).
+        /* Viền cho CÁC BLOCK CHÍNH của trang chi tiết — giống block "VinaF AI Analysis" (.ta-block).
            Ở đây chỉ khai báo độ dày/kiểu viền; MÀU viền do block-tint.css quyết định
            (light rgba(0,128,128,.22) · dark rgba(0,128,128,.45)) nên mọi block luôn cùng
            màu viền với .ta-block ở cả 2 chế độ sáng/tối. */
@@ -534,7 +534,7 @@
             border-top-color: #2a3648;
         }
 
-        /* ----- 1.5 TUNIX ANALYSIS (TuniX Signal Engine — người dùng) ----- */
+        /* ----- 1.5 VinaFintech ANALYSIS (VinaFintech Signal Engine — người dùng) ----- */
         .ta-block {
             background: #fff;
             border: 1px solid #e9edf2;
@@ -551,7 +551,7 @@
             align-items: center;
             gap: 8px;
         }
-        /* Block TuniAI Analysis CHỈ hiển thị khi đã đăng nhập → ẩn chắc chắn với khách */
+        /* Block VinaF AI Analysis CHỈ hiển thị khi đã đăng nhập → ẩn chắc chắn với khách */
         .ta-block[hidden] { display: none !important; }
         .ta-engine {
             font-size: 10px;
@@ -1634,7 +1634,7 @@
         }
         body.dark-mode .fsf-foot { color: #8b949e; }
 
-        /* AI / TuniX AI */
+        /* AI / VinaFintech AI */
         .fsb-ai-body { line-height: 1.6; color: #1a1f36; }
         body.dark-mode .fsb-ai-body { color: #d5dce6; }
         .fsb-ai-line { margin-bottom: 4px; }
@@ -4015,7 +4015,7 @@
     </style>
     <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
     <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
-    <!-- Biểu đồ nến: Lightweight Charts (TradingView open-source) + dữ liệu OHLCV TuniX -->
+    <!-- Biểu đồ nến: Lightweight Charts (TradingView open-source) + dữ liệu OHLCV VinaFintech -->
     <script src="/static/vendor/lightweight-charts.standalone.production.js?v=5.2.1"></script>
 </head>
 <body>
@@ -4070,11 +4070,11 @@
                 </div>
             </div>
 
-            <!-- 1.5 TUNIX ANALYSIS — TuniX Signal Engine (dành cho NGƯỜI DÙNG: chỉ phân tích,
+            <!-- 1.5 VinaFintech ANALYSIS — VinaFintech Signal Engine (dành cho NGƯỜI DÙNG: chỉ phân tích,
                  KHÔNG có BUY/SELL/Entry/Stop Loss — API public cũng không trả các field đó).
                  Block này CHỈ hiển thị với tài khoản ĐÃ ĐĂNG NHẬP (mặc định `hidden`, JS mở khi có phiên). -->
             <div class="ta-block" id="tuniAnalysisBlock" hidden>
-                <h3><i class="fas fa-brain"></i> TuniAI Analysis <span class="ta-engine" id="taEngine"></span></h3>
+                <h3><i class="fas fa-brain"></i> VinaF AI Analysis <span class="ta-engine" id="taEngine"></span></h3>
                 <div class="ta-meta" id="taMeta">Đang tải phân tích…</div>
                 <div class="ta-grid" id="taGrid"></div>
                 <div class="ta-cond-head" id="taCondHead"></div>
@@ -4085,7 +4085,7 @@
                 </div>
             </div>
 
-            <!-- 2. BIỂU ĐỒ CHART (Lightweight Charts — TradingView open-source, dữ liệu TuniX) -->
+            <!-- 2. BIỂU ĐỒ CHART (Lightweight Charts — TradingView open-source, dữ liệu VinaFintech) -->
             <div class="chart-block">
                 <div class="chart-header">
                     <div class="chart-header-left">
@@ -4380,7 +4380,7 @@
     <script>
         let lastSentHeight = 0;
         let currentQuote = null;
-        // Biểu đồ nến: TuniX Chart Engine (Lightweight Charts, modular) — dữ liệu OHLCV từ TuniX
+        // Biểu đồ nến: VinaFintech Chart Engine (Lightweight Charts, modular) — dữ liệu OHLCV từ VinaFintech
         let currentTimeframe = '1D';   // 1H, 1D, 1W, 1M
         let tunixChart = null;
         let tunixChartModulePromise = null;
@@ -4488,10 +4488,10 @@
             } catch (e) { /* ignore */ }
         }
 
-        // ---- Báo cho SHELL biết workspace biểu đồ đã dựng xong (dữ liệu + phân tích TuniAI) ----
+        // ---- Báo cho SHELL biết workspace biểu đồ đã dựng xong (dữ liệu + phân tích VinaF AI) ----
         // Shell giữ lớp "Đang mở biểu đồ phân tích kỹ thuật…" cho tới khi nhận `tunix-chart-fs-ready` ⇒
         // bấm MỘT lần là vào thẳng màn hình hoàn chỉnh. Trước đây shell gỡ lớp chờ ngay khi iframe load,
-        // nên bảng TUNIAI còn "Đang cập nhật…" (TuniAI mất ~7s) → người dùng phải thoát ra bấm lại.
+        // nên bảng TUNIAI còn "Đang cập nhật…" (VinaF AI mất ~7s) → người dùng phải thoát ra bấm lại.
         let chartFsDataReady = false, chartFsAiDone = false, chartFsReadyPosted = false;
         function postToParent(msg) {
             if (!window.parent || window.parent === window) return;
@@ -4506,7 +4506,7 @@
         function markChartFsDataReady() {
             if (chartFsDataReady) return;
             chartFsDataReady = true;
-            postChartFsProgress('ai');     // dữ liệu xong → còn chờ TuniAI
+            postChartFsProgress('ai');     // dữ liệu xong → còn chờ VinaF AI
             tryPostChartFsReady();
         }
         document.addEventListener('tunix-chart-ai-done', function () {
@@ -4667,9 +4667,9 @@
             root.innerHTML = group1.map(render).join('') + '<div class="metric-divider"></div>' + group2.map(render).join('');
         }
 
-        // ===== TuniX Chart Engine (Lightweight Charts — modular) =====
-        // PHASE 1 — Chart Core. Toàn bộ OHLCV lấy từ TuniX (backend /api/chart/history).
-        // Timeframe hỗ trợ: 1D/1W/1M (dữ liệu TuniX daily) — không giả lập intraday.
+        // ===== VinaFintech Chart Engine (Lightweight Charts — modular) =====
+        // PHASE 1 — Chart Core. Toàn bộ OHLCV lấy từ VinaFintech (backend /api/chart/history).
+        // Timeframe hỗ trợ: 1D/1W/1M (dữ liệu VinaFintech daily) — không giả lập intraday.
 
         function destroyTunixChart() {
             if (tunixChart) {
@@ -5701,7 +5701,7 @@
             stockNewsItems = Array.isArray(items) ? items : [];
             if (!stockNewsItems.length) {
                 list.innerHTML = '<div class="info-empty">Chưa có bài viết nào liên quan đến ' +
-                    escapeHtml(symbol) + ' trong dữ liệu TuniX.</div>';
+                    escapeHtml(symbol) + ' trong dữ liệu VinaFintech.</div>';
                 return;
             }
             list.innerHTML = stockNewsItems.map(n => {
@@ -5803,7 +5803,7 @@
             return true;
         }
 
-        // Block "TuniAI Analysis" CHỈ hiển thị khi đã đăng nhập; khách (chưa login) ẩn hẳn.
+        // Block "VinaF AI Analysis" CHỈ hiển thị khi đã đăng nhập; khách (chưa login) ẩn hẳn.
         function applyTuniAnalysisVisibility() {
             const block = document.getElementById('tuniAnalysisBlock');
             const on = hasValidSession();
@@ -6236,7 +6236,7 @@
             let quote = null;
             try { quote = await api(`/stocks/${encodeURIComponent(sym)}/quote`); } catch (err) { quote = null; }
             if (!quote || quote.valid === false) {
-                showChartNoData('Hiện tại TuniX không có cổ phiếu này. Hãy vui lòng nhập đúng cổ phiếu trên sàn HOSE, HNX, UpCOM.');
+                showChartNoData('Hiện tại VinaFintech không có cổ phiếu này. Hãy vui lòng nhập đúng cổ phiếu trên sàn HOSE, HNX, UpCOM.');
                 return;
             }
             // Nạp lại toàn bộ trang (quote + chart + sổ lệnh...) TẠI CHỖ — giữ nguyên fullscreen
@@ -6276,7 +6276,7 @@
                 scheduleReportsAutoRefresh();   // tự nạp lại block Báo cáo khi qua mốc 12h trưa (giờ VN)
                 loadStockNews(symbol);   // nửa phải khối Báo cáo (chưa có tên công ty → chỉ khớp theo MÃ)
                 loadAccumulation(symbol);
-                // Block TuniAI Analysis: chỉ hiển thị + chỉ gọi API khi đã đăng nhập
+                // Block VinaF AI Analysis: chỉ hiển thị + chỉ gọi API khi đã đăng nhập
                 if (applyTuniAnalysisVisibility()) loadTuniAnalysis(symbol);
                 loadOrderBook(symbol);
                 resetMoneyFlow(symbol);
@@ -6296,7 +6296,7 @@
                     return;
                 }
 
-                document.title = `${quote.symbol} - TuniX`;
+                document.title = `${quote.symbol} - VinaFintech`;
                 const stockSymbol = document.getElementById('stockSymbol');
                 const stockExchange = document.getElementById('stockExchange');
                 const stockCompanyName = document.getElementById('stockCompanyName');
@@ -6782,7 +6782,7 @@
             notifyParentHeight();
         }
 
-        // ===== 1.5 TUNIX ANALYSIS (Signal Engine — dành cho người dùng) =====
+        // ===== 1.5 VinaFintech ANALYSIS (Signal Engine — dành cho người dùng) =====
         // Gọi /api/stocks/{symbol}/analysis — response KHÔNG chứa BUY/SELL/Entry/SL/TP (serializer whitelist).
         function taNum(v, dec) {
             if (v === null || v === undefined || v === '') return '—';
@@ -6837,7 +6837,7 @@
                         ai.used_in_scoring ? (ai.trained_models + '/' + ai.total_models + ' model hoạt động') : 'Model AI chưa được train',
                         ai.used_in_scoring ? '' : 'na'),
                     taTile('Risk Score', taNum(risk.risk_score, 0), risk.level || ''),
-                    taTile('TuniX Signal Score', taNum(scores.signal_score, 1), scores.label || ''),
+                    taTile('VinaFintech Signal Score', taNum(scores.signal_score, 1), scores.label || ''),
                     taTile('Setup Strength', setup.strength || '—', (setup.confirmations || 0) + '/' + (setup.total_conditions || 0) + ' điều kiện xác nhận' +
                         (setup.unavailable_conditions ? ' · ' + setup.unavailable_conditions + ' chưa đánh giá được' : '')),
                     taTile('Market State', (d.market_state || {}).regime || '—', (d.market_state || {}).benchmark || ''),
@@ -6919,7 +6919,7 @@
             }, 200);
         });
 
-        // Block TuniAI Analysis: áp trạng thái hiển thị theo phiên đăng nhập TRƯỚC khi load dữ liệu
+        // Block VinaF AI Analysis: áp trạng thái hiển thị theo phiên đăng nhập TRƯỚC khi load dữ liệu
         applyTuniAnalysisVisibility();
         loadStockDetail();
         window.addEventListener('load', () => {

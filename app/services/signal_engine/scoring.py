@@ -1,4 +1,4 @@
-"""Signal Scoring (Phase 10) — TuniX Signal Score 0..100 + Setup Strength.
+"""Signal Scoring (Phase 10) — VinaFintech Signal Score 0..100 + Setup Strength.
 
 Điểm gồm 9 thành phần (spec §13). Mỗi thành phần 0..100, càng cao càng ủng hộ setup.
 Trọng số nằm ở ``config.signal.weights`` (spec §26) — KHÔNG hard-code ở nơi khác.

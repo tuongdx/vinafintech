@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>TuniX · Đăng nhập</title>
+    <title>VinaFintech · Đăng nhập</title>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B528QFKRN9"></script>
     <script>
@@ -631,13 +631,13 @@
 
         <!-- Logo -->
         <a href="/" class="auth-logo">
-            <span class="tuni">Tuni</span><span class="x">X</span>
+            <img src="/frontend/Logo/VinaFintech-Logo-Cropped.png" alt="VinaFintech" style="width:240px;height:56px;object-fit:contain;" />
         </a>
 
         <!-- Title -->
         <div class="auth-title">
             <h1>Đăng nhập</h1>
-            <p>Chào mừng bạn quay trở lại TuniX</p>
+            <p>Chào mừng bạn quay trở lại VinaFintech</p>
         </div>
 
         <!-- Message Box -->
@@ -652,7 +652,7 @@
                 <label for="loginEmail">Email</label>
                 <div class="input-icon-wrapper">
                     <i class="fas fa-envelope"></i>
-                    <input type="email" id="loginEmail" name="username" autocomplete="username" placeholder="example@tunix.vn" required />
+                    <input type="email" id="loginEmail" name="username" autocomplete="username" placeholder="email@example.com" required />
                 </div>
             </div>
             <div class="input-group">
@@ -929,7 +929,7 @@
                         } else {
                             clearSavedLogin();
                         }
-                        showMessage('✅ Đăng nhập thành công! Chào mừng bạn quay lại TuniX.', 'success');
+                        showMessage('✅ Đăng nhập thành công! Chào mừng bạn quay lại VinaFintech.', 'success');
                         const next = parseNextUrl();
                         setTimeout(() => { window.location.href = next; }, 600);
                     })

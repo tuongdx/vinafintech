@@ -68,7 +68,7 @@ class User(Base):
     notify_reports: Mapped[bool] = mapped_column(Boolean, default=True)
     notify_news: Mapped[bool] = mapped_column(Boolean, default=True)
     pref_theme: Mapped[str] = mapped_column(String(10), default="light")
-    # Quyền dùng tính năng "Tín hiệu" (TuniX Signal Engine) — CHỈ admin cấp cho từng tài khoản.
+    # Quyền dùng tính năng "Tín hiệu" (VinaFintech Signal Engine) — CHỈ admin cấp cho từng tài khoản.
     # Mặc định TẮT; super-admin/admin luôn có quyền (không phụ thuộc cờ này).
     signal_access: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -250,10 +250,10 @@ class Plan(Base):
 
 
 class AiMemory(Base):
-    """Bộ nhớ TuniAI học từ lịch sử trò chuyện (theo user).
+    """Bộ nhớ VinaF AI học từ lịch sử trò chuyện (theo user).
 
     - memory: bản tóm tắt tiếng Việt về sở thích / thông tin người dùng đã nói,
-      được model sinh ra để TuniAI "nhớ" qua các lần trò chuyện.
+      được model sinh ra để VinaF AI "nhớ" qua các lần trò chuyện.
     - recent : JSON list các lượt gần đây ({"role", "content"}) để cập nhật memory.
     """
 
@@ -267,7 +267,7 @@ class AiMemory(Base):
 
 
 class AiConversation(Base):
-    """Lịch sử hội thoại TuniAI theo tài khoản.
+    """Lịch sử hội thoại VinaF AI theo tài khoản.
 
     Đồng bộ lên server để người dùng logout → login lại vẫn giữ được lịch sử
     hỏi đáp của chính tài khoản đó (không phụ thuộc máy/trình duyệt).
@@ -288,7 +288,7 @@ class AiConversation(Base):
 
 
 class MemberQuota(Base):
-    """Hạn mức theo tháng cho user MIỄN PHÍ (TuniAI). Reset theo period 'YYYY-MM'."""
+    """Hạn mức theo tháng cho user MIỄN PHÍ (VinaF AI). Reset theo period 'YYYY-MM'."""
 
     __tablename__ = "member_quota"
     __table_args__ = (UniqueConstraint("user_id", "period", name="uq_member_quota_user_period"),)
@@ -491,7 +491,7 @@ class Notification(Base):
 
 
 class SystemAnnouncement(Base):
-    """Thông báo hệ thống phát đến toàn bộ thành viên (TuniX đổi mới, mở khoá tính năng...)."""
+    """Thông báo hệ thống phát đến toàn bộ thành viên (VinaFintech đổi mới, mở khoá tính năng...)."""
 
     __tablename__ = "system_announcements"
 
@@ -663,7 +663,7 @@ class AdminLog(Base):
 
 
 # ---------------------------------------------------------------------------
-# TuniX Signal Engine (menu "Tín hiệu" — ADMIN)
+# VinaFintech Signal Engine (menu "Tín hiệu" — ADMIN)
 # ---------------------------------------------------------------------------
 # LƯU Ý: đây là bảng MỚI nên `create_all` (qua ensure_schema lúc startup) tự tạo —
 # không cần ALTER TABLE. Nếu sau này THÊM CỘT vào bảng đã tồn tại thì phải khai báo

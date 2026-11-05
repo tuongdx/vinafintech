@@ -1,6 +1,6 @@
-"""Tỷ giá ngoại tệ — service TuniX cho tiện ích "Tỷ giá ngoại tệ".
+"""Tỷ giá ngoại tệ — service VinaFintech cho tiện ích "Tỷ giá ngoại tệ".
 
-Kiến trúc: Frontend → TuniX Backend → Exchange-Rate provider → Cache → Frontend.
+Kiến trúc: Frontend → VinaFintech Backend → Exchange-Rate provider → Cache → Frontend.
 
 - Provider (mặc định open.er-api.com, không cần key) có thể ĐỔI qua ENV
   (EXCHANGE_RATE_API_URL / EXCHANGE_RATE_API_KEY / EXCHANGE_CACHE_TTL) mà KHÔNG đổi frontend.
@@ -104,7 +104,7 @@ def _provider_fetch() -> dict[str, Any]:
         url = url + sep + "apikey=" + _urlquote(settings.exchange_rate_api_key)
     timeout = httpx.Timeout(15.0, connect=8.0)
     try:
-        resp = httpx.get(url, timeout=timeout, headers={"User-Agent": "TuniX/1.0", "Accept": "application/json"})
+        resp = httpx.get(url, timeout=timeout, headers={"User-Agent": "VinaFintech/1.0", "Accept": "application/json"})
     except Exception as exc:  # noqa: BLE001
         raise ExchangeRateError(f"Không kết nối được nhà cung cấp tỷ giá: {exc}") from exc
     if resp.status_code != 200:
@@ -155,7 +155,7 @@ def _provider_fetch() -> dict[str, Any]:
 
 
 def _payload(p: dict[str, Any]) -> dict[str, Any]:
-    """Payload TuniX chuẩn cho /rates (mọi loại tiền quy về VND)."""
+    """Payload VinaFintech chuẩn cho /rates (mọi loại tiền quy về VND)."""
     rates = p["rates"]
     vnd_per_usd = rates.get("VND")
     currencies: list[dict[str, Any]] = []

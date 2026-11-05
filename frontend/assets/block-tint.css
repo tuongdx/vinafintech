@@ -33,7 +33,7 @@
     border-color: rgba(0, 128, 128, 0.22);
 }
 
-/* Chat TuniAI: `.ta-app` bị các con opaque che kín → cho vùng chat
+/* Chat VinaF AI: `.ta-app` bị các con opaque che kín → cho vùng chat
    trong suốt nhẹ để lộ nền gradient của khung (vẫn đủ tương phản). */
 .ta-main {
     background: rgba(255, 255, 255, 0.72);

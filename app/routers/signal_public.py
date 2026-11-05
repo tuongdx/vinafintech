@@ -1,4 +1,4 @@
-"""API PUBLIC cho TuniX Signal Engine (spec §19-§20).
+"""API PUBLIC cho VinaFintech Signal Engine (spec §19-§20).
 
 CHỈ trả dữ liệu PHÂN TÍCH: trend / momentum / RSI / MA / volume / CMF / relative strength /
 AI score / risk score / signal score / setup strength / market state / điều kiện hội tụ.
@@ -37,7 +37,7 @@ def analysis(symbol: str) -> dict[str, Any]:
 
 @router.get("/{symbol}/scores")
 def scores(symbol: str) -> dict[str, Any]:
-    """Chỉ phần điểm (TuniX Signal Score + Risk + AI)."""
+    """Chỉ phần điểm (VinaFintech Signal Score + Risk + AI)."""
     return serializers.public_scores(_snapshot_or_404(symbol))
 
 

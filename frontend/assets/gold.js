@@ -1,4 +1,4 @@
-/* TuniX — Giá Vàng/Bạc (trang gold.html)
+/* VinaFintech — Giá Vàng/Bạc (trang gold.html)
    Dữ liệu qua backend /api/gold/* — frontend không gọi nguồn ngoài trực tiếp.
    Chỉ hiển thị: bảng giá trong nước, giá thế giới, biểu đồ, so sánh. */
 (function () {

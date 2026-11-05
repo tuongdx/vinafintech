@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>Thị trường Việt Nam - TuniX</title>
+    <title>Thị trường Việt Nam - VinaFintech</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
@@ -854,7 +854,7 @@
                 const hot = r.hot_sector;
                 const buy = r.foreign_buy || [];
                 return '<section class="tt-card tt-radar">' +
-                    '<h2>TuniX Market Radar</h2>' +
+                    '<h2>VinaFintech Market Radar</h2>' +
                     '<div class="tt-radar-grid">' +
                         '<div class="tt-radar-col"><h3>Ngành hút tiền</h3>' +
                             (hot ? '<div class="tt-radar-hot"><div class="rh-name">' + esc(hot.name) + '</div><div class="rh-pct ' + cls(hot.avg_pct) + '">' + pct(hot.avg_pct) + '</div><div class="rh-sub">Top: ' + (hot.top_gainer ? '<span class="rh-sym" data-symbol="' + esc(hot.top_gainer) + '">' + esc(hot.top_gainer) + '</span>' : '--') + ' · ' + hot.total + ' mã</div></div>'
@@ -896,9 +896,8 @@
                 if (hot) parts.push('<p><span class="ai-tag">Điểm sáng</span>Ngành <b>' + esc(hot.name) + '</b> hút tiền nhất (' + pct(hot.avg_pct) + '), dẫn dắt bởi ' + (hot.top_gainer ? '<span class="ai-sym" data-symbol="' + esc(hot.top_gainer) + '">' + esc(hot.top_gainer) + '</span>' : '--') + '.</p>');
                 if (topUp) parts.push('<p><span class="ai-tag">Đà tăng</span>Cổ phiếu breakout mạnh nhất: <span class="ai-sym" data-symbol="' + esc(topUp.symbol) + '">' + esc(topUp.symbol) + '</span> (' + pct(topUp.percent_change) + ').</p>');
                 if (topDown) parts.push('<p><span class="ai-tag">Rủi ro</span>Nhóm suy yếu đáng chú ý: <span class="ai-sym" data-symbol="' + esc(topDown.symbol) + '">' + esc(topDown.symbol) + '</span> (' + pct(topDown.percent_change) + ').</p>');
-                parts.push('<p style="color:#8a99b1;font-size:12px;">⚠️ Phân tích tự động từ dữ liệu thị trường thời gian thực của TuniX, chỉ mang tính tham khảo, không phải khuyến nghị đầu tư.</p>');
                 return '<section class="tt-card tt-ai">' +
-                    '<h2><i class="fas fa-robot tt-h2-ico" style="color:#008080;"></i> TuniAI Market Analysis</h2>' +
+                    '<h2><i class="fas fa-robot tt-h2-ico" style="color:#008080;"></i> VinaF AI Market Analysis</h2>' +
                     '<div class="tt-ai-body">' + parts.join('') + '</div></section>';
             }
 

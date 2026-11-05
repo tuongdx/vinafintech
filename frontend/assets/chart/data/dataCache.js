@@ -11,7 +11,7 @@
  *   - earliestBound     : mốc lịch sử xa nhất có sẵn (từ backend `earliestTime`).
  *   - complete          : đã tải đủ tới biên lịch sử (earliest <= earliestBound).
  *
- * KHÔNG làm sai dữ liệu: chỉ lưu nến thực từ TuniX.
+ * KHÔNG làm sai dữ liệu: chỉ lưu nến thực từ VinaFintech.
  */
 export class DataCache {
     constructor() {

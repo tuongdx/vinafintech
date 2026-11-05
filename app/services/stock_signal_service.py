@@ -1,4 +1,4 @@
-"""Phân tích tín hiệu Cổ phiếu (AI) cho Trung tâm cảnh báo TuniX.
+"""Phân tích tín hiệu Cổ phiếu (AI) cho Trung tâm cảnh báo VinaFintech.
 
 - Đối tượng: hợp WATCHLIST (bảng watchlist) + POSITIONS (portfolio_holdings).
 - Gom dữ liệu thật cho từng mã: nến 1D (lịch sử VN, đồng VND) → technical
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 _MAX_OUTPUT_TOKENS = 8000
 
 # Prompt phân tích cổ phiếu — giữ nguyên cấu trúc 3 nhóm của hệ thống (CƠ HỘI/CẢNH BÁO/XU HƯỚNG).
-SYSTEM_PROMPT = """Bạn là hệ thống phân tích tín hiệu cổ phiếu của TuniX (thị trường chứng khoán Việt Nam: HOSE/HNX/UPCOM, đơn vị giá là đồng VND). Phân tích các mã người dùng đang nắm giữ và theo dõi, sau đó tạo 3 nhóm tín hiệu: CƠ HỘI, CẢNH BÁO, XU HƯỚNG.
+SYSTEM_PROMPT = """Bạn là hệ thống phân tích tín hiệu cổ phiếu của VinaFintech (thị trường chứng khoán Việt Nam: HOSE/HNX/UPCOM, đơn vị giá là đồng VND). Phân tích các mã người dùng đang nắm giữ và theo dõi, sau đó tạo 3 nhóm tín hiệu: CƠ HỘI, CẢNH BÁO, XU HƯỚNG.
 
 QUAN TRỌNG:
 - Không được cố định bất kỳ mã cổ phiếu nào.
@@ -253,7 +253,7 @@ def _build_prompt(symbols: list[str], watch: set[str], positions: list[dict], in
         "\nPOSITIONS (đang nắm giữ — symbol, số lượng, giá vốn VND): " + pos_txt +
         "\n\nDỮ LIỆU THỊ TRƯỜNG (technical + giá lịch sử 1D, đơn vị VND):\n" + ind_txt +
         "\n\nTHỊ TRƯỜNG CHUNG VN (VN-Index + độ rộng + khối ngoại; rỗng = nguồn không lấy được):\n" + mk_txt +
-        "\n\nNEWS DATA: (TuniX chưa có nguồn tin tức chuyên sâu theo mã ở đây — bỏ qua, đừng bịa).\n" +
+        "\n\nNEWS DATA: (VinaFintech chưa có nguồn tin tức chuyên sâu theo mã ở đây — bỏ qua, đừng bịa).\n" +
         "\nHãy phân tích CHỈ các mã trong WATCHLIST/POSITIONS và trả về JSON theo schema đã quy định."
     )
 
@@ -285,7 +285,7 @@ async def _llm_json(system: str, user_prompt: str) -> dict:
     (vẫn cứu được phần đã sinh xong nhờ `parse_llm_json`).
     """
     if not settings.deepseek_api_key:
-        raise RuntimeError("TuniAI chưa được cấu hình API key DeepSeek (DEEPSEEK_API_KEY).")
+        raise RuntimeError("VinaF AI chưa được cấu hình API key DeepSeek (DEEPSEEK_API_KEY).")
     base = (settings.deepseek_base_url or "https://api.deepseek.com").rstrip("/")
     timeout = httpx.Timeout(180.0, connect=12.0)
     payload = {

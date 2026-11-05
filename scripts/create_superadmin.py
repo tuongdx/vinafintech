@@ -19,7 +19,7 @@ from app.models import PlanTierEnum, RoleEnum, User
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Tạo Super Admin TuniX")
+    parser = argparse.ArgumentParser(description="Tạo Super Admin VinaFintech")
     parser.add_argument("--email", required=True)
     parser.add_argument("--password", required=True)
     parser.add_argument("--name", default="Super Admin")

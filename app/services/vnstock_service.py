@@ -150,7 +150,7 @@ def _get_http_client() -> httpx.Client:
                 _http_client = httpx.Client(
                     timeout=_HTTP_DEFAULT_TIMEOUT,
                     limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
-                    headers={"user-agent": "TuniX/1.0", "accept": "application/json"},
+                    headers={"user-agent": "VinaFintech/1.0", "accept": "application/json"},
                     follow_redirects=True,
                     trust_env=False,
                 )
@@ -1318,8 +1318,8 @@ _screener_file_cache_mtime: float = 0.0
 # Bộ lọc "cổ phiếu giao dịch được": VỐN HOÁ LỚN + THANH KHOẢN đủ để nhà đầu tư giao
 # dịch hằng ngày. Dùng CHUNG cho mọi block lấy mã từ toàn thị trường để không nơi nào
 # lọt các mã siêu nhỏ/thanh khoản ảo (thường là UPCOM):
-#   - Market Radar (trang chủ) · TuniX Market Radar (trang Thị trường)
-#   - Khám phá theo chiến lược · Xếp hạng TuniX (trang Khám phá)
+#   - Market Radar (trang chủ) · VinaFintech Market Radar (trang Thị trường)
+#   - Khám phá theo chiến lược · Xếp hạng VinaFintech (trang Khám phá)
 #   - "Cơ hội mới" (trang chủ) · universe quét của trang Tín hiệu
 # Ngưỡng cấu hình trong settings: `stock_min_market_cap`, `stock_min_liquidity_ty`.
 # ---------------------------------------------------------------------------
@@ -2647,7 +2647,7 @@ def get_history(symbol: str, interval: str = "1d", period: str = "1y") -> list[d
 
 
 def render_candlestick_svg(symbol: str, period: str = "3m", limit: int = 72) -> str | None:
-    """Vẽ biểu đồ NẾN đơn giản (SVG) của 1 cổ phiếu — dùng để nhúng vào câu trả lời TuniAI.
+    """Vẽ biểu đồ NẾN đơn giản (SVG) của 1 cổ phiếu — dùng để nhúng vào câu trả lời VinaF AI.
 
     Trả về chuỗi SVG hoặc None nếu không đủ dữ liệu.
     """
@@ -2846,7 +2846,7 @@ def _build_price_board_snapshot(
     as_of: Any = "",
     source: str = "vnstock-vci",
 ) -> dict[str, Any]:
-    """Chuẩn hoá 1 dòng bảng giá VCI về schema quote của TuniX.
+    """Chuẩn hoá 1 dòng bảng giá VCI về schema quote của VinaFintech.
 
     Giá / khối lượng / giá trị khớp lệnh lấy NGUYÊN từ bảng giá (nguồn vnstock),
     không suy diễn từ nến ngày. `traded_value` là VND.
@@ -3512,7 +3512,7 @@ def _vci_get_json(path: str, params: dict[str, Any] | None = None) -> dict[str, 
     nên hoạt động ổn định dù server chạy bằng venv (vnstock 4.x) hay Python toàn cục (vnstock 3.x).
 
     PHẢI gửi `_VCIQ_HEADERS` (có `referer`): thiếu Referer ⇒ VCI trả 403 ⇒ các block
-    "Phân tích lợi nhuận"/"Cơ cấu cổ đông" và dữ liệu KQKD của TuniAI trống.
+    "Phân tích lợi nhuận"/"Cơ cấu cổ đông" và dữ liệu KQKD của VinaF AI trống.
     """
     query = f"?{urlencode(params)}" if params else ""
     url = f"{_VCIQ_URL}{path}{query}"
@@ -3553,7 +3553,7 @@ def get_profit_analysis(symbol: str, quarters: int | None = None) -> dict[str, A
     empty = {"symbol": symbol_upper, "source": "empty", "unit": "vnd", "quarters": []}
 
     # Cache luôn giữ TOÀN BỘ lịch sử; mỗi lần gọi tự cắt theo `quarters` để các nơi
-    # dùng khác nhau (trang chi tiết, TuniAI...) không nhận nhầm dữ liệu đã bị cắt.
+    # dùng khác nhau (trang chi tiết, VinaF AI...) không nhận nhầm dữ liệu đã bị cắt.
     cache_key = f"profit-analysis:{symbol_upper}"
     cached = cache.get(cache_key)
     if cached is not None:
@@ -5005,7 +5005,7 @@ def get_market_dashboard() -> dict[str, Any]:
             breadth["flat"] += 1
     breadth["total"] = len(cells)
 
-    # Block "Market Radar" (trang chủ) & "TuniX Market Radar" (trang Thị trường) CHỈ lấy mã
+    # Block "Market Radar" (trang chủ) & "VinaFintech Market Radar" (trang Thị trường) CHỈ lấy mã
     # VỐN HOÁ LỚN + THANH KHOẢN đủ để giao dịch hằng ngày (bộ lọc dùng chung).
     tradable = tradable_symbols()
     radar_cells = [c for c in cells if str(c.get("symbol") or "").upper() in tradable]
@@ -5234,7 +5234,7 @@ def get_market_dashboard() -> dict[str, Any]:
     return payload
 
 
-# Trọng số điểm cho TuniX Score (0-5 mỗi nhóm, tổng tối đa 25 → 0-100).
+# Trọng số điểm cho VinaFintech Score (0-5 mỗi nhóm, tổng tối đa 25 → 0-100).
 _SCORE_RISK_ADJUST = {"low": 0, "medium": -3, "high": -6, "extreme": -9}
 
 
@@ -5250,9 +5250,9 @@ def _compute_tunix_score(row: dict[str, Any]) -> int:
 
 
 def get_stock_screener_page() -> dict[str, Any]:
-    """Dữ liệu trang "Cổ phiếu": toàn bộ screener (định giá/tăng trưởng/điểm TuniX)
+    """Dữ liệu trang "Cổ phiếu": toàn bộ screener (định giá/tăng trưởng/điểm VinaFintech)
     + các nhóm "Cổ phiếu nổi bật" (tăng trưởng / định giá hấp dẫn / dòng tiền mạnh /
-    breakout / TuniX Score cao). Không cache toàn trang (dataset đã cache riêng) để
+    breakout / VinaFintech Score cao). Không cache toàn trang (dataset đã cache riêng) để
     ROE nạp nền hiển thị ngay.
     """
     dataset = _get_screener_dataset()
@@ -5362,7 +5362,7 @@ def get_stock_screener_page() -> dict[str, Any]:
 
     stocks.sort(key=lambda s: s["score"], reverse=True)
 
-    # Nạp nền ROE (symbol summary) cho top 80 theo TuniX Score — bảng mặc định hiện top score
+    # Nạp nền ROE (symbol summary) cho top 80 theo VinaFintech Score — bảng mặc định hiện top score
     try:
         if len(summary_map) < 100 and cache.get("screener-summary-enrich") is None:
             cache.set("screener-summary-enrich", 1, ttl_seconds=600)
@@ -5416,9 +5416,9 @@ def get_stock_screener_page() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# XẾP HẠNG TUNIX (block "Xếp hạng TuniX" — trang "Khám phá")
+# XẾP HẠNG VinaFintech (block "Xếp hạng VinaFintech" — trang "Khám phá")
 # ---------------------------------------------------------------------------
-# 5 bảng × 8 dòng. Thứ hạng + chỉ số cơ bản (tăng trưởng LN, P/E, cổ tức, TuniX
+# 5 bảng × 8 dòng. Thứ hạng + chỉ số cơ bản (tăng trưởng LN, P/E, cổ tức, VinaFintech
 # Score, EPS growth) lấy từ dataset screener (cập nhật theo phiên). Riêng
 # GIÁ / % THAY ĐỔI được làm mới từ bảng giá realtime (Simplize last-price) ⇒
 # bảng xếp hạng ĐỘNG, tự cập nhật trong phiên giao dịch.
@@ -5434,7 +5434,7 @@ _RANK_TAB_META: list[tuple[str, str, str, str]] = [
     ("growth", "Top tăng trưởng", "Tăng trưởng LN", "net_profit_growth"),
     ("valuation", "Top định giá", "P/E", "pe_ratio"),
     ("cash_flow", "Top dòng tiền", "Sức khỏe TC", "dividend_yield"),
-    ("score", "Top Score", "TuniX Score", "score"),
+    ("score", "Top Score", "VinaFintech Score", "score"),
     ("improve", "Top cải thiện", "Tăng trưởng dự kiến", "eps_growth"),
 ]
 
@@ -5492,7 +5492,7 @@ def _rank_live_quotes(symbols: list[str]) -> dict[str, dict[str, Any]]:
 
 
 def _build_tunix_rankings(stocks: list[dict[str, Any]], quote_loader=None) -> list[dict[str, Any]]:
-    """Dựng 5 bảng xếp hạng TuniX từ danh sách cổ phiếu (screener).
+    """Dựng 5 bảng xếp hạng VinaFintech từ danh sách cổ phiếu (screener).
 
     `quote_loader`: hàm nhận list mã → dict bảng giá realtime. Khi truyền vào, giá và
     % thay đổi của mọi dòng được làm mới theo bảng giá, đồng thời bảng "Top định giá"
@@ -5500,7 +5500,7 @@ def _build_tunix_rankings(stocks: list[dict[str, Any]], quote_loader=None) -> li
     screener) ⇒ xếp hạng đổi theo thị trường ngay trong phiên.
     Không truyền `quote_loader` → hành vi cũ (dùng snapshot screener).
     """
-    # "Xếp hạng TuniX" CHỈ lấy mã VỐN HOÁ LỚN + THANH KHOẢN đủ để giao dịch hằng ngày
+    # "Xếp hạng VinaFintech" CHỈ lấy mã VỐN HOÁ LỚN + THANH KHOẢN đủ để giao dịch hằng ngày
     # (bộ lọc dùng chung với Market Radar / Khám phá theo chiến lược).
     stocks = [s for s in stocks if is_tradable_stock(s)]
     pools = _rank_candidate_pools(stocks)
@@ -5564,7 +5564,7 @@ def _build_tunix_rankings(stocks: list[dict[str, Any]], quote_loader=None) -> li
 
 
 def _get_rank_screener_stocks() -> list[dict[str, Any]]:
-    """Phần `stocks` của trang screener (đã có TuniX Score) — cache riêng 120s.
+    """Phần `stocks` của trang screener (đã có VinaFintech Score) — cache riêng 120s.
 
     Bảng xếp hạng realtime poll ~20s/lần nên chỉ cần dựng lại phần giá; danh sách
     mã + chỉ số cơ bản tái sử dụng cache này để không tính lại toàn bộ page.
@@ -5579,8 +5579,8 @@ def _get_rank_screener_stocks() -> list[dict[str, Any]]:
 
 @_singleflight(lambda: "stock-rankings-live", _RANK_LIVE_CACHE_TTL_SECONDS, stale_while_revalidate=False)
 def get_stock_rankings_live() -> dict[str, Any]:
-    """Bảng xếp hạng TuniX cập nhật REALTIME — dùng cho vòng polling block
-    "Xếp hạng TuniX" ở trang "Khám phá" (nhẹ hơn nhiều so với stock-discover:
+    """Bảng xếp hạng VinaFintech cập nhật REALTIME — dùng cho vòng polling block
+    "Xếp hạng VinaFintech" ở trang "Khám phá" (nhẹ hơn nhiều so với stock-discover:
     không dựng featured / chiến lược / bản đồ cơ hội)."""
     stocks = _get_rank_screener_stocks()
     rankings = _build_tunix_rankings(stocks, quote_loader=_rank_live_quotes)
@@ -5665,7 +5665,7 @@ def build_discover_strategies(stocks: list[dict[str, Any]]) -> list[dict[str, An
 @_singleflight(lambda: "stock-discover-page", ttl_seconds=120, stale_while_revalidate=True)
 def get_stock_discover_page() -> dict[str, Any]:
     """Dữ liệu trang "Khám phá": cơ hội nổi bật hôm nay, chiến lược, bản đồ cơ hội
-    thị trường (bubble chart) và các bảng xếp hạng TuniX. Tái sử dụng dữ liệu
+    thị trường (bubble chart) và các bảng xếp hạng VinaFintech. Tái sử dụng dữ liệu
     screener (đã cache). Cache 120s + stale-while-revalidate.
     """
     screener = get_stock_screener_page()
@@ -5819,7 +5819,7 @@ def get_stock_discover_page() -> dict[str, Any]:
         "stocks": eligible,
     }
 
-    # ---- 4. Xếp hạng TuniX (5 bảng × 8 dòng) ----
+    # ---- 4. Xếp hạng VinaFintech (5 bảng × 8 dòng) ----
     # Lần load đầu lấy theo snapshot screener (nhanh, đã cache); block này sau đó tự
     # làm mới REALTIME qua /api/stocks/stock-rankings (giá + % thay đổi theo bảng giá).
     rankings = _build_tunix_rankings(stocks)

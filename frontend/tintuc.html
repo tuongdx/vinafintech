@@ -1072,7 +1072,7 @@
                         if (nf) nf.hidden = false;
                         const hidden = document.querySelectorAll('.article-header, .featured-image, .article-body, .article-footer, .related-news');
                         hidden.forEach(function(el) { el.style.display = 'none'; });
-                        document.title = 'Bài viết không tồn tại - TuniX';
+                        document.title = 'Bài viết không tồn tại - VinaFintech';
                         return;
                     }
                     function esc(s) {
@@ -1091,8 +1091,22 @@
                     const body = document.getElementById('ndBody');
                     const tagsEl = document.getElementById('ndTags');
                     const sourceEl = document.getElementById('ndSource');
+                    function getContentImageUrl(content) {
+                        const template = document.createElement('template');
+                        template.innerHTML = content || '';
+                        const images = template.content.querySelectorAll('img');
+                        for (const candidate of images) {
+                            const url = ['src', 'data-src', 'data-lazy-src']
+                                .map(function(attr) { return candidate.getAttribute(attr) || ''; })
+                                .find(function(value) {
+                                    return value && !value.startsWith('data:image/');
+                                });
+                            if (url) return url;
+                        }
+                        return '';
+                    }
                     if (title) title.textContent = n.title;
-                    if (author) author.textContent = n.author_name || 'TuniX';
+                    if (author) author.textContent = n.author_name || 'VinaFintech';
                     if (time) {
                         time.innerHTML = '<i class="far fa-clock"></i> ' +
                             (n.published_at || n.created_at
@@ -1100,8 +1114,20 @@
                                 : '');
                     }
                     const figure = image ? image.closest('.featured-image') : null;
-                    if (image && n.image_url) {
-                        image.src = n.image_url;
+                    const contentImageUrl = getContentImageUrl(n.content);
+                    const featuredImageUrl = n.image_url || contentImageUrl;
+                    if (image && featuredImageUrl) {
+                        image.alt = n.title || '';
+                        image.loading = 'eager';
+                        image.referrerPolicy = 'no-referrer';
+                        image.onerror = function() {
+                            if (contentImageUrl && image.src !== contentImageUrl) {
+                                image.src = contentImageUrl;
+                            } else if (figure) {
+                                figure.style.display = 'none';
+                            }
+                        };
+                        image.src = featuredImageUrl;
                         if (figure) figure.style.display = '';
                     } else if (figure) {
                         figure.style.display = 'none';
@@ -1137,7 +1163,7 @@
                         sourceEl.onclick = null;
                     }
                     window.__currentSourceUrl = n.source_url || '';
-                    document.title = n.title + ' - TuniX';
+                    document.title = n.title + ' - VinaFintech';
                     window.__currentArticleUrl = '/' + (n.slug || 'tin') + '-' + n.id + '.html';
                     // Chia sẻ Facebook: link bài viết (URL đầy đủ)
                     const fbLink = document.getElementById('shareFb');

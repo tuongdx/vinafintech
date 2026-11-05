@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>Tổng quan - TuniX</title>
+    <title>Tổng quan - VinaFintech</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
@@ -182,7 +182,7 @@
         .ov-news-item .ni-tag.pos { background: rgba(0,128,128,0.09); color: #008080; border-color: rgba(0,128,128,0.2); }
         .ov-news-item .ni-tag.neg { background: #fdeaea; color: #d0314e; border-color: rgba(208,49,78,0.2); }
 
-        /* ===== Căn chỉnh: "Tin tức quan trọng" dài bằng "TuniAI Market View" ===== */
+        /* ===== Căn chỉnh: "Tin tức quan trọng" dài bằng "VinaF AI Market View" ===== */
         .ov-main { display: flex; flex-direction: column; }
         .ov-side { display: flex; flex-direction: column; }
         .ov-main > .ov-sec:last-child { flex: 1 1 auto; display: flex; flex-direction: column; }
@@ -361,15 +361,15 @@
 
                 <!-- AI MARKET VIEW -->
                 <section class="ov-sec ov-ai">
-                    <h2>TuniAI Market View</h2>
-                    <div class="ai-tagline">TuniAI – Phân tích sâu. Cập nhật tức thì. Đồng hành cùng nhà đầu tư 24/7.</div>
+                    <h2>VinaF AI Market View</h2>
+                    <div class="ai-tagline">VinaF AI – Phân tích sâu. Cập nhật tức thì. Đồng hành cùng nhà đầu tư 24/7.</div>
                     <div class="ai-top">
                         <div class="ai-avatar"><i class="fas fa-robot"></i></div>
-                        <div><div class="ai-name">TuniAI</div><div class="ai-sub">Nhận định thị trường tự động</div></div>
+                        <div><div class="ai-name">VinaF AI</div><div class="ai-sub">Nhận định thị trường tự động</div></div>
                     </div>
                     <div class="ai-text" id="aiText">Đang phân tích…</div>
                     <div class="ai-stats" id="aiStats"></div>
-                    <button class="ai-btn" id="aiBtn"><i class="fas fa-wand-magic-sparkles"></i> Phân tích cùng TuniAI</button>
+                    <button class="ai-btn" id="aiBtn"><i class="fas fa-wand-magic-sparkles"></i> Phân tích cùng VinaF AI</button>
                 </section>
             </aside>
         </div>
@@ -878,7 +878,7 @@
                         el.innerHTML = '<div class="op-empty op-empty-login">' +
                             '<div class="opel-ico"><i class="fas fa-briefcase"></i></div>' +
                             '<div class="opel-title">Danh mục tài sản đang trống</div>' +
-                            '<div class="opel-desc">Thêm cổ phiếu đầu tiên để TuniX bắt đầu theo dõi hiệu quả danh mục của bạn.</div>' +
+                            '<div class="opel-desc">Thêm cổ phiếu đầu tiên để VinaFintech bắt đầu theo dõi hiệu quả danh mục của bạn.</div>' +
                             '<a class="op-link" href="/quan-ly-tai-san/phan-tich-tai-san">Xem chi tiết quản lý tài sản →</a>' +
                         '</div>';
                         return;
@@ -1134,7 +1134,7 @@
 
             // ---------- Cổ phiếu đáng chú ý (top 6) ----------
             // Một mã được chọn dựa trên thang điểm kết hợp:
-            //   + Điểm TuniX (chất lượng cơ bản): 50%
+            //   + Điểm VinaFintech (chất lượng cơ bản): 50%
             //   + Diễn biến giá hôm nay (% tăng/giảm): 30%
             //   + Thanh khoản (volume_ratio so TB 10 ngày): 20%
             // Ứng viên lấy từ rổ cổ phiếu lớn, thanh khoản cao -> lấy top 6.
@@ -1186,7 +1186,7 @@
 
                 let notableStocks = [];
 
-                // 1) Chỉ số + Market Radar + TuniAI Market View (market-dashboard)
+                // 1) Chỉ số + Market Radar + VinaF AI Market View (market-dashboard)
                 dashP.then(function(d) {
                     if (!d) {
                         // Dashboard lỗi → vẫn dựng Market Radar để 3 block phụ (lãi suất/vàng/crypto) hiển thị.

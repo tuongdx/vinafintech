@@ -50,7 +50,7 @@ def search(q: str):
 
 @router.get("/{symbol}/chart-svg")
 def chart_svg(symbol: str, period: str = "3m"):
-    """Ảnh biểu đồ nến (SVG) của 1 cổ phiếu — để TuniAI nhúng vào câu trả lời."""
+    """Ảnh biểu đồ nến (SVG) của 1 cổ phiếu — để VinaF AI nhúng vào câu trả lời."""
     svg = render_candlestick_svg(symbol, period=period)
     if not svg:
         from fastapi import HTTPException
@@ -205,7 +205,7 @@ def stock_lists():
 
 @router.get("/stock-screener")
 def stock_screener():
-    """Toàn bộ screener kèm điểm TuniX + nhóm 'Cổ phiếu nổi bật' cho trang Cổ phiếu."""
+    """Toàn bộ screener kèm điểm VinaFintech + nhóm 'Cổ phiếu nổi bật' cho trang Cổ phiếu."""
     return get_stock_screener_page()
 
 
@@ -225,14 +225,14 @@ def upcoming_dividends(symbols: str = ""):
 
 @router.get("/stock-rankings")
 def stock_rankings():
-    """Bảng xếp hạng TuniX REALTIME (5 bảng × 8 dòng) cho block "Xếp hạng TuniX"
+    """Bảng xếp hạng VinaFintech REALTIME (5 bảng × 8 dòng) cho block "Xếp hạng VinaFintech"
     ở trang Khám phá: giá/% thay đổi lấy từ bảng giá, endpoint nhẹ để poll định kỳ."""
     return get_stock_rankings_live()
 
 
 @router.get("/stock-discover")
 def stock_discover():
-    """Trang 'Khám phá': cơ hội nổi bật hôm nay, chiến lược, bản đồ cơ hội, xếp hạng TuniX."""
+    """Trang 'Khám phá': cơ hội nổi bật hôm nay, chiến lược, bản đồ cơ hội, xếp hạng VinaFintech."""
     data = get_stock_discover_page()
     try:
         opp = get_top_opportunities()

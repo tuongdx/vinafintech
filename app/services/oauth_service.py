@@ -126,7 +126,7 @@ def verify_google_id_token(id_token: str) -> dict[str, Any]:
     """Xác thực ĐẦY ĐỦ Google ID Token ở backend.
 
     - Token hợp lệ (Google tokeninfo endpoint).
-    - ``aud`` == GOOGLE_CLIENT_ID của TuniX.
+    - ``aud`` == GOOGLE_CLIENT_ID của VinaFintech.
     - ``iss`` hợp lệ (accounts.google.com).
     - Token chưa hết hạn.
     - Dùng ``sub`` làm định danh duy nhất của Google Account.
@@ -147,7 +147,7 @@ def verify_google_id_token(id_token: str) -> dict[str, Any]:
     if not isinstance(info, dict):
         raise RuntimeError("Google token invalid")
 
-    # 1) Audience phải đúng GOOGLE_CLIENT_ID của TuniX
+    # 1) Audience phải đúng GOOGLE_CLIENT_ID của VinaFintech
     if str(info.get("aud", "")) != settings.google_client_id:
         raise RuntimeError("Google token audience mismatch")
 

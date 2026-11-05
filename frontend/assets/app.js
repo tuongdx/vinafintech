@@ -195,7 +195,7 @@ async function loadAdminStats() {
   }
 }
 
-window.TuniX = {
+window.VinaFintech = {
   api,
   getToken,
   getRefreshToken,

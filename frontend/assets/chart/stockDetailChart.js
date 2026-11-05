@@ -731,7 +731,7 @@ export function createStockDetailChart(options) {
                 if (url) {
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'TuniX-' + state.getSymbol() + '-' + state.getTimeframe() + '.png';
+                    a.download = 'VinaFintech-' + state.getSymbol() + '-' + state.getTimeframe() + '.png';
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
@@ -924,7 +924,7 @@ export function createStockDetailChart(options) {
                     else load(symbol);
                 },
                 onOpenAi: (symbol) => {
-                    // Thoát fullscreen để người dùng dùng được chat TuniAI (panel chat nằm ở parent,
+                    // Thoát fullscreen để người dùng dùng được chat VinaF AI (panel chat nằm ở parent,
                     // sẽ bị khuất sau iframe fullscreen). Exit fullscreen rồi mới mở chat.
                     if (fsManager && fsManager.isFullscreen()) {
                         try { fsManager.toggle(); } catch (e) { /* ignore */ }

@@ -1,4 +1,4 @@
-/* TuniX — Thuật toán "Giả định tích sản" DÙNG CHUNG (1 NGUỒN DUY NHẤT).
+/* VinaFintech — Thuật toán "Giả định tích sản" DÙNG CHUNG (1 NGUỒN DUY NHẤT).
  *
  * Dùng bởi 2 nơi:
  *   1) frontend/StockDetail.html  → block "Giả định tích sản <MÃ> 5 năm" (trang chi tiết cổ phiếu)

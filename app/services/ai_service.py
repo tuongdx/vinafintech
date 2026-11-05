@@ -1,11 +1,11 @@
-"""TuniAI — Trợ lý AI chứng khoán (Phase 1).
+"""VinaF AI — Trợ lý AI chứng khoán (Phase 1).
 
-Chat với DeepSeek kèm **Tool Calling**. Các tool gọi trực tiếp hàm service của TuniX
+Chat với DeepSeek kèm **Tool Calling**. Các tool gọi trực tiếp hàm service của VinaFintech
 (vnstock_service) + truy vấn DB tin tức — không đi qua HTTP để tránh overhead.
 
 Kiến trúc (theo yêu cầu):
-    User → TuniX Chat → TuniAI (DeepSeek) --Tool Calling--> Stock/News/Market API
-        → Dữ liệu TuniX → DeepSeek phân tích → Câu trả lời
+    User → VinaFintech Chat → VinaF AI (DeepSeek) --Tool Calling--> Stock/News/Market API
+        → Dữ liệu VinaFintech → DeepSeek phân tích → Câu trả lời
 """
 import asyncio
 import contextvars
@@ -329,7 +329,7 @@ def _filter_stocks(**kw: Any) -> dict[str, Any]:
 
 
 # ===========================================================================
-# Tools — Tin tức (trực tiếp từ DB TuniX)
+# Tools — Tin tức (trực tiếp từ DB VinaFintech)
 # ===========================================================================
 def _query_news(symbol: str = "", limit: int = 8) -> list[dict[str, Any]]:
     limit = max(1, min(int(limit or 8), 20))
@@ -369,7 +369,7 @@ def _fetch_news_by_id(news_id: int) -> News | None:
 
 @_tool(
     "get_news",
-    "Tin tức thị trường mới nhất đã xuất bản trên TuniX. Có thể truyền symbol để lấy tin liên quan một mã cổ phiếu. Trả về tiêu đề, tóm tắt, thời gian.",
+    "Tin tức thị trường mới nhất đã xuất bản trên VinaFintech. Có thể truyền symbol để lấy tin liên quan một mã cổ phiếu. Trả về tiêu đề, tóm tắt, thời gian.",
     {"type": "object", "properties": {
         "symbol": {"type": "string", "description": "Mã cổ phiếu để lọc tin liên quan (tùy chọn)"},
         "limit": {"type": "integer", "description": "Số bài (mặc định 8)"},
@@ -464,7 +464,7 @@ def _portfolio_holdings() -> dict[str, Any]:
     if not rows:
         return {
             "empty": True,
-            "message": "Bạn chưa có cổ phiếu nào trong danh mục. Hãy thêm cổ phiếu đang nắm giữ ở trang Quản lý tài sản để TuniAI phân tích được danh mục.",
+            "message": "Bạn chưa có cổ phiếu nào trong danh mục. Hãy thêm cổ phiếu đang nắm giữ ở trang Quản lý tài sản để VinaF AI phân tích được danh mục.",
         }
 
     sector_map = _screener_sector_map()
@@ -629,7 +629,7 @@ def _crypto_context() -> dict[str, Any]:
     if not symbols and not positions_out:
         return {
             "empty": True,
-            "message": "Bạn chưa có coin nào trong danh sách theo dõi / vị thế crypto. Hãy thêm Crypto đang theo dõi hoặc vị thế ở trang Quản lý tài sản để TuniAI phân tích.",
+            "message": "Bạn chưa có coin nào trong danh sách theo dõi / vị thế crypto. Hãy thêm Crypto đang theo dõi hoặc vị thế ở trang Quản lý tài sản để VinaF AI phân tích.",
         }
     # Trả PHẲNG (không lồng quá sâu) để giữ đủ text khi giới hạn kích thước.
     return _cap(
@@ -1186,10 +1186,10 @@ class DeepSeekError(Exception):
     pass
 
 
-SYSTEM_PROMPT = """Bạn là TuniAI — trợ lý AI phân tích chứng khoán Việt Nam của nền tảng TuniX.
+SYSTEM_PROMPT = """Bạn là VinaF AI — trợ lý AI phân tích chứng khoán Việt Nam của nền tảng VinaFintech.
 
 QUY TẮC BẮT BUỘC:
-1. Luôn dùng TOOL để lấy dữ liệu thực tế từ TuniX trước khi trả lời. TUYỆT ĐỐI không tự bịa số liệu, giá, chỉ số.
+1. Luôn dùng TOOL để lấy dữ liệu thực tế từ VinaFintech trước khi trả lời. TUYỆT ĐỐI không tự bịa số liệu, giá, chỉ số.
 2. Nếu câu hỏi nhắc mã chưa rõ, hãy dùng search_stocks để tìm đúng mã trước.
 3. Trả lời bằng TIẾNG VIỆT, ngắn gọn, có cấu trúc (gạch đầu dòng), kèm số liệu cụ thể và ghi chú thời điểm dữ liệu.
    ĐỊNH DẠNG TRẢ LỜI: chỉ dùng Markdown thuần (dòng mới, **in đậm**, dấu "-" hoặc "1." đầu dòng).
@@ -1207,7 +1207,7 @@ QUY TẮC BẮT BUỘC:
    - Diễn giải rõ dòng nào KÉO lợi nhuận/doanh thu (doanh thu giảm, biên lãi gộp co hẹp, chi phí bán hàng/QLDN tăng, chi phí tài chính/lãi vay tăng, thu nhập khác giảm, thuế, lỗ liên doanh/liên kết...) hay ĐẨY lên.
    - Kết hợp biến_canh_cong_ty do tool trả về + get_company_summary + get_news(symbol) (đọc thêm get_news_content nếu cần) để nêu bối cảnh doanh nghiệp/ngành và tin tức liên quan (kết quả kinh doanh, chính sách, vĩ mô, nước ngoài) nếu có.
    - Nếu tool thiếu dòng/không có tin tức → nói rõ phần nào chưa có dữ liệu; TUYỆT ĐỐI không bịa nguyên nhân.
-10. NĂNG LỰC CỦA TuniAI:
+10. NĂNG LỰC CỦA VinaF AI:
    - AI Screener / tìm cổ phiếu theo yêu cầu tự nhiên → screen_stocks (lọc theo ngành, sàn, P/E, P/B, ROE, cổ tức, tăng trưởng, rủi ro, vốn hóa, khối lượng; sắp xếp theo tiêu chí).
    - Đọc BCTC → get_financial_statements (income/balance/cashflow) khi hỏi tài chính, nợ, dòng tiền.
    - Giải thích vì sao LN/doanh thu tăng-giảm/lỗ → explain_earnings_change (xem quy tắc 9).
@@ -1228,7 +1228,7 @@ QUY TẮC BẮT BUỘC:
 ![Biểu đồ X 3 tháng](/api/stocks/X/chart-svg?period=3m)
    Trong đó X là MÃ CỔ PHIẾU IN HOA. KHÔNG tự bịa URL khác, KHÔNG chèn cho mã chỉ số (VNINDEX...). Nếu không chắc có dữ liệu thì vẫn chèn — hệ thống tự bỏ qua khi không vẽ được.
 13. HỖ TRỢ CRYPTO + TRUNG TÂM CẢNH BÁO:
-   Bạn là TuniAI — trợ lý phân tích Crypto của TuniX: giúp người dùng hiểu trạng thái thị trường, các tài sản họ đang theo dõi và các vị thế họ đang nắm giữ. LUÔN lấy danh sách tài sản từ dữ liệu người dùng (watchlist/positions) được cung cấp; không cố định bất kỳ mã coin nào.
+   Bạn là VinaF AI — trợ lý phân tích Crypto của VinaFintech: giúp người dùng hiểu trạng thái thị trường, các tài sản họ đang theo dõi và các vị thế họ đang nắm giữ. LUÔN lấy danh sách tài sản từ dữ liệu người dùng (watchlist/positions) được cung cấp; không cố định bất kỳ mã coin nào.
    - Khi người dùng hỏi về CRYPTO / coin / token / altcoin (BTC, ETH...), 'coin nào đáng chú ý', 'có gì mới', 'phân tích vị thế crypto / coin của tôi', hoặc về CẢNH BÁO tài sản → BẮT BUỘC gọi get_crypto_context trước. Tool này trả: watchlist (coin đang theo dõi), positions (vị thế crypto: số lượng, giá vốn, lãi/lỗ), market_snapshot (giá hiện tại, %24h), và crypto_signals + stock_signals (tín hiệu mới nhất của Trung tâm cảnh báo: CƠ HỘI/CẢNH BÁO/XU HƯỚNG cho Crypto và Cổ phiếu).
    - CÁC BƯỚC KHI TRẢ LỜI CRYPTO: (1) Xác định tài sản liên quan từ WATCHLIST và POSITIONS. (2) Kiểm tra trạng thái thị trường chung (market_snapshot). (3) Sử dụng các cảnh báo/cơ hội/xu hướng từ crypto_signals/stock_signals (Trung tâm cảnh báo) làm context. (4) Kết hợp dữ liệu thị trường/kỹ thuật được cung cấp. (5) Giải thích ngắn gọn, dễ hiểu, có cơ sở. (6) Nếu người dùng hỏi về một tài sản ĐANG CÓ VỊ THẾ: ưu tiên phân tích vị thế — giá vốn, PnL, drawdown, trend, support/resistance, rủi ro. (7) Nếu hỏi 'coin nào đáng chú ý': CHỈ so sánh các tài sản trong WATCHLIST và POSITIONS. (8) Nếu hỏi 'có gì mới': ưu tiên các tín hiệu mới hoặc vừa thay đổi (dựa vào crypto_signals/stock_signals). (9) Nếu hỏi về một cảnh báo: giải thích vì sao hệ thống tạo cảnh báo và dữ liệu nào dẫn tới cảnh báo đó. (10) Không được tự tạo dữ liệu không có trong input.
    - NGUYÊN TẮC PHÂN TÍCH: Không khẳng định chắc chắn về giá tương lai. KHÔNG nói 'Coin này chắc chắn sẽ tăng', 'Bạn nên mua', 'Bạn nên bán'. Thay vào đó dùng: 'Tín hiệu hiện tại đang nghiêng về…', 'Đang hình thành…', 'Đáng theo dõi…', 'Rủi ro cần chú ý là…', 'Điều kiện xác nhận là…', 'Điều kiện làm mất hiệu lực kịch bản là…'. Nếu dữ liệu chưa đủ để kết luận, hãy nói rõ dữ liệu chưa đủ.
@@ -1248,7 +1248,7 @@ def _build_system(memory: str = "") -> str:
 
 
 _MEMORY_SYSTEM = (
-    "Bạn là hệ thống ghi nhớ của TuniAI. Đọc lịch sử trò chuyện và viết (TIẾNG VIỆT) một bản "
+    "Bạn là hệ thống ghi nhớ của VinaF AI. Đọc lịch sử trò chuyện và viết (TIẾNG VIỆT) một bản "
     "tóm tắt NGẮN GỌN về người dùng: cổ phiếu/ngành người dùng quan tâm, thông tin người dùng đã "
     "cung cấp (cổ phiếu đang sở hữu, tầm vốn, khẩu vị rủi ro, mục tiêu đầu tư...), chủ đề gần đây. "
     "Chỉ giữ thông tin hữu ích và chắc chắn, KHÔNG bịa. Tối đa 600 từ."
@@ -1301,7 +1301,7 @@ def _deepseek_headers() -> dict[str, str]:
 
 def _ensure_configured() -> None:
     if not settings.deepseek_api_key:
-        raise AiConfigError("TuniAI chưa được cấu hình API key DeepSeek (DEEPSEEK_API_KEY).")
+        raise AiConfigError("VinaF AI chưa được cấu hình API key DeepSeek (DEEPSEEK_API_KEY).")
 
 
 def _normalize_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:

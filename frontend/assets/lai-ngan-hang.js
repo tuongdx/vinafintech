@@ -1,4 +1,4 @@
-/* TuniX — Lãi ngân hàng (trang lai-ngan-hang.html)
+/* VinaFintech — Lãi ngân hàng (trang lai-ngan-hang.html)
    Giai đoạn 1: đọc dữ liệu tổng hợp tham khảo từ API /api/bank-rates/* (không realtime).
    Nếu Giai đoạn 2 thay nguồn → backend vẫn trả đúng contract này, UI không đổi.
 */
@@ -46,7 +46,7 @@
     function termLabel(t) { return t + ' tháng'; }
 
     // ---- Logo ngân hàng (VietQR — CDN công khai, logo chính thức) ----
-    // key = bank_code TuniX → value = mã logo trên cdn.vietqr.io/img/{code}.png
+    // key = bank_code VinaFintech → value = mã logo trên cdn.vietqr.io/img/{code}.png
     var BANK_LOGO = {
         'VCB': 'VCB', 'BID': 'BIDV', 'CTG': 'ICB', 'AGB': 'VBA', 'TCB': 'TCB', 'MBB': 'MB', 'ACB': 'ACB',
         'VPB': 'VPB', 'SHB': 'SHB', 'HDB': 'HDB', 'SGB': 'SGICB', 'PGB': 'PGB', 'LPB': 'LPB', 'OCB': 'OCB',
@@ -501,7 +501,7 @@
             });
     }
 
-    // ===== Embed / chiều cao / theme (giống các trang TuniX khác) =====
+    // ===== Embed / chiều cao / theme (giống các trang VinaFintech khác) =====
     if (window.self !== window.top) document.body.classList.add('embedded');
     function applyEmbedTheme(mode) { document.body.classList.toggle('dark-mode', mode === 'dark'); }
     function notifyParentHeight() {

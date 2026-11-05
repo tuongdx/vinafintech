@@ -1,4 +1,4 @@
-/* TuniX — trang "Tín hiệu" (/tin-hieu)
+/* VinaFintech — trang "Tín hiệu" (/tin-hieu)
  *
  * Dành cho tài khoản ĐÃ ĐĂNG NHẬP và ĐƯỢC QUẢN TRỊ CẤP QUYỀN (users.signal_access)
  * hoặc tài khoản quản trị (super-admin/admin).
@@ -129,7 +129,7 @@
     }
     // Mốc thời gian: API trả ISO (mốc tín hiệu/vị thế là UTC, mốc lịch quét là +07:00).
     // Chuỗi KHÔNG có múi giờ ⇒ hiểu là UTC (nếu để trình duyệt tự đoán, nó coi là giờ địa
-    // phương ⇒ lệch 7 giờ). Hiển thị theo GIỜ VN cho mọi người, giống các trang khác của TuniX.
+    // phương ⇒ lệch 7 giờ). Hiển thị theo GIỜ VN cho mọi người, giống các trang khác của VinaFintech.
     function dt(iso) {
         if (!iso) return '—';
         var text = String(iso);
@@ -265,7 +265,7 @@
         if (locked) {
             locked.style.display = '';
             var p = locked.querySelector('p');
-            if (p && message) p.innerHTML = esc(message) + '<br>Vui lòng liên hệ ban quản trị TuniX nếu bạn muốn sử dụng tính năng này.';
+            if (p && message) p.innerHTML = esc(message) + '<br>Vui lòng liên hệ ban quản trị VinaFintech nếu bạn muốn sử dụng tính năng này.';
         }
         notifyParentHeight();
     }
@@ -706,7 +706,7 @@
     }
 
     // ---------------- Cập nhật TÍN HIỆU T+ ----------------
-    // Tín hiệu của TuniX là tín hiệu T+ (ngắn hạn): quá hạn nắm giữ thì KHÔNG còn hiệu lực.
+    // Tín hiệu của VinaFintech là tín hiệu T+ (ngắn hạn): quá hạn nắm giữ thì KHÔNG còn hiệu lực.
     // Mỗi lần mở trang, server sẽ (1) đóng tín hiệu đã quá hạn và (2) phân tích lại các mã còn
     // tín hiệu đang mở bằng nến mới nhất. Chạy NỀN: danh sách hiện trước, cập nhật xong mới vẽ lại.
     var refreshing = false;
@@ -888,7 +888,7 @@
             });
     }
 
-    // ===== Embed / chiều cao / theme (giống các trang TuniX khác) =====
+    // ===== Embed / chiều cao / theme (giống các trang VinaFintech khác) =====
     if (window.self !== window.top) document.body.classList.add('embedded');
     function applyEmbedTheme(mode) { document.body.classList.toggle('dark-mode', mode === 'dark'); }
     function notifyParentHeight() {

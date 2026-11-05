@@ -8,7 +8,7 @@ from app.core.dependencies import require_roles
 from app.db import get_db
 from app.models import News, NewsStatusEnum, RoleEnum, User
 from app.schemas import NewsCreate, NewsOut, NewsUpdate
-from app.services import news_time
+from app.services import news_tags, news_time
 
 router = APIRouter(prefix="/news", tags=["news"])
 
@@ -38,7 +38,7 @@ def _news_out(n: News) -> dict:
         "category": n.category or "tin-tuc",
         "image_url": n.image_url,
         "image_caption": n.image_caption,
-        "tags": n.tags,
+        "tags": news_tags.with_default_news_tags(n.tags),
         "source": n.source,
         "source_url": n.source_url,
         "views": n.views or 0,
@@ -273,7 +273,7 @@ def create_news(
         image_url=payload.image_url,
         author_name=payload.author_name,
         image_caption=payload.image_caption,
-        tags=payload.tags,
+        tags=news_tags.with_default_news_tags(payload.tags),
         source=payload.source,
         source_url=payload.source_url,
         author_id=user.id,
@@ -312,7 +312,7 @@ def update_news(
     if payload.image_caption is not None:
         news.image_caption = payload.image_caption
     if payload.tags is not None:
-        news.tags = payload.tags
+        news.tags = news_tags.with_default_news_tags(payload.tags)
     if payload.source is not None:
         news.source = payload.source
     if payload.source_url is not None:

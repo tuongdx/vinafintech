@@ -5,7 +5,7 @@ Chỉ CHÈN THÊM các bài `source == 'MarketTimes'` — bỏ qua bài đã t�
 `source_url` để không trùng / không đụng dữ liệu production hiện có.
 
 Cách dùng (chạy 1 lần, giữ kín credential):
-    $env:TARGET_DATABASE_URL="postgresql://USER:PASS@host:5432/tunix?sslmode=require"
+    $env:TARGET_DATABASE_URL="postgresql://USER:PASS@host:5432/VinaFintech?sslmode=require"
     .venv\Scripts\python.exe scripts/push_news_to_render.py
     (hoặc truyền URL làm đối số đầu tiên)
 """

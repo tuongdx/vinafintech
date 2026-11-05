@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
-    <title>TuniX · Xác thực email</title>
+    <title>VinaFintech · Xác thực email</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     <style>
@@ -89,7 +89,7 @@
 </head>
 <body>
     <div class="auth-card">
-        <a href="/" class="auth-logo"><span class="tuni">Tuni</span><span class="x">X</span></a>
+        <a href="/" class="auth-logo"><img src="/frontend/Logo/VinaFintech-Logo-Cropped.png" alt="VinaFintech" style="width:240px;height:56px;object-fit:contain;" /></a>
         <button class="theme-toggle-mini" id="themeToggleMini" title="Đổi giao diện"><i class="fas fa-moon"></i></button>
 
         <div class="msg" id="msg"></div>
@@ -105,7 +105,7 @@
         <div class="vs-wrap" id="stateSuccess" style="display:none;">
             <div class="vs-ico">🎉</div>
             <div class="vs-title">Email đã được xác thực thành công 🎉</div>
-            <div class="vs-desc">Tài khoản của bạn đã được kích hoạt. Giờ bạn có thể đăng nhập và sử dụng TuniX.</div>
+            <div class="vs-desc">Tài khoản của bạn đã được kích hoạt. Giờ bạn có thể đăng nhập và sử dụng VinaFintech.</div>
             <a href="/Login" class="vs-btn">Tiếp tục đăng nhập</a>
         </div>
 
@@ -114,7 +114,7 @@
             <div class="vs-ico error"><i class="fas fa-hourglass-end"></i></div>
             <div class="vs-title">Liên kết xác thực đã hết hạn.</div>
             <div class="vs-desc">Nhập email của bạn để nhận lại email xác thực mới.</div>
-            <input type="email" class="vs-input" id="expiredEmail" placeholder="example@tunix.vn" autocomplete="email" />
+            <input type="email" class="vs-input" id="expiredEmail" placeholder="email@example.com" autocomplete="email" />
             <button type="button" class="vs-btn" id="expiredResendBtn">Gửi lại email xác thực</button>
             <span class="vs-timer" id="expiredTimer"></span>
             <a href="/Login" class="vs-back">← Về trang đăng nhập</a>

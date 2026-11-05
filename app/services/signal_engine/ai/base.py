@@ -121,7 +121,7 @@ class AIModel(ABC):
     def train(self, dataset: Any) -> None:
         """Huấn luyện — chưa triển khai trong project này."""
         raise NotImplementedError(
-            "TuniX Signal Engine chưa có pipeline huấn luyện cho model này. "
+            "VinaFintech Signal Engine chưa có pipeline huấn luyện cho model này. "
             "Cần dataset gán nhãn + pipeline riêng trước khi bật model."
         )
 

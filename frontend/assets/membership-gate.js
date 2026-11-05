@@ -1,5 +1,5 @@
-/* TuniX Membership Gate — trạng thái gói + hộp thoại mở gói + helper khóa UI.
- * Dùng chung cho: Quản lý tài sản, Thị trường, TuniAI...
+/* VinaFintech Membership Gate — trạng thái gói + hộp thoại mở gói + helper khóa UI.
+ * Dùng chung cho: Quản lý tài sản, Thị trường, VinaF AI...
  * Load như script thường (không module) → window.TuniXMembership.
  */
 (function () {
@@ -219,8 +219,8 @@
       bd.innerHTML = '<div class="qd-card">' +
         '<button type="button" class="qd-x" aria-label="Đóng"><i class="fas fa-times"></i></button>' +
         '<div class="qd-ico"><i class="fas fa-crown"></i></div>' +
-        '<div class="qd-title">' + (o.title || 'Bạn đã dùng hết lượt hỏi TuniAI miễn phí trong tháng này') + '</div>' +
-        '<div class="qd-desc">' + (o.desc || 'Mở gói Hội viên để hỏi không giới hạn và dùng toàn bộ tính năng TuniX.') + '</div>' +
+        '<div class="qd-title">' + (o.title || 'Bạn đã dùng hết lượt hỏi VinaF AI miễn phí trong tháng này') + '</div>' +
+        '<div class="qd-desc">' + (o.desc || 'Mở gói Hội viên để hỏi không giới hạn và dùng toàn bộ tính năng VinaFintech.') + '</div>' +
         '<div class="qd-go"><i class="fas fa-crown"></i> Mở khóa Hội viên</div>' +
       '</div>';
       document.body.appendChild(bd);
@@ -378,7 +378,7 @@
       ];
       var html = '<div class="tg-modal">' +
         '<div class="tg-title"><i class="fas fa-crown" style="color:#f5a623;"></i> Mở gói Hội viên</div>' +
-        '<div class="tg-sub">Mở khóa toàn bộ: TuniAI không giới hạn, Trung tâm cảnh báo, bảng danh mục (Hỗ trợ/Kháng cự/Trạng thái), TuniAI Market Analysis.</div>';
+        '<div class="tg-sub">Mở khóa toàn bộ: VinaF AI không giới hạn, Trung tâm cảnh báo, bảng danh mục (Hỗ trợ/Kháng cự/Trạng thái), VinaF AI Market Analysis.</div>';
       plans.forEach(function (p) {
         var icon = p.code === 'yearly' ? 'fa-calendar-alt' : 'fa-calendar';
         html += '<div class="tg-plan">' +
@@ -433,7 +433,7 @@
       });
     },
 
-    /* Giới hạn TuniAI free: trả true nếu còn lượt, false nếu hết/muốn mở gói. */
+    /* Giới hạn VinaF AI free: trả true nếu còn lượt, false nếu hết/muốn mở gói. */
     canAskAI: function () {
       if (this.isMember()) return true;
       var q = (this.data && this.data.quota) || {};

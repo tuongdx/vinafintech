@@ -1,7 +1,7 @@
 /**
  * TuniXDatafeed — TradingView Advanced Charts Datafeed.
  *
- * Kết nối TradingView Advanced Charts (charting_library) với dữ liệu TuniX:
+ * Kết nối TradingView Advanced Charts (charting_library) với dữ liệu VinaFintech:
  *
  *   TradingView Advanced Charts
  *        |  (Datafeed API)
@@ -9,20 +9,20 @@
  *   TuniXDatafeed (file này)
  *        |  (fetch /api/chart/*)
  *        v
- *   TuniX Backend (FastAPI -> chart_service -> vnstock_service -> Simplize)
+ *   VinaFintech Backend (FastAPI -> chart_service -> vnstock_service -> Simplize)
  *        |
  *        v
- *   Dữ liệu OHLCV của TuniX
+ *   Dữ liệu OHLCV của VinaFintech
  *
  * KHÔNG gọi thẳng Simplize/TradingView từ frontend. Mọi dữ liệu đi qua backend
- * TuniX để đảm bảo không lộ nguồn dữ liệu và không phụ thuộc API TradingView.
+ * VinaFintech để đảm bảo không lộ nguồn dữ liệu và không phụ thuộc API TradingView.
  *
- * Timeframe được hỗ trợ (chỉ hiển thị những gì TuniX thực sự có):
- *   - 1D: nến daily (dữ liệu daily của TuniX/Simplize)
+ * Timeframe được hỗ trợ (chỉ hiển thị những gì VinaFintech thực sự có):
+ *   - 1D: nến daily (dữ liệu daily của VinaFintech/Simplize)
  *   - 1W, 1M: gộp từ nến daily (backend aggregate, dữ liệu thực)
- *   - 1m/5m/15m/30m/1H/4H: KHÔNG hỗ trợ (TuniX chưa có lịch sử intraday OHLCV)
+ *   - 1m/5m/15m/30m/1H/4H: KHÔNG hỗ trợ (VinaFintech chưa có lịch sử intraday OHLCV)
  *
- * Realtime: TuniX chưa có nguồn OHLCV realtime -> subscribeBars hoạt động chế độ
+ * Realtime: VinaFintech chưa có nguồn OHLCV realtime -> subscribeBars hoạt động chế độ
  * historical. Đã thiết kế sẵn cơ chế polling (bật bằng REALTIME_ENABLED=true)
  * để sau này nối realtime thật mà không cần sửa lại kiến trúc.
  */
@@ -32,7 +32,7 @@
   var API_BASE = '/api/chart';
 
   // Bật realtime polling (chưa có nguồn thật -> mặc định TẮT).
-  // Khi TuniX có nguồn OHLCV realtime, đổi thành true và cập nhật updateLastBar.
+  // Khi VinaFintech có nguồn OHLCV realtime, đổi thành true và cập nhật updateLastBar.
   var REALTIME_ENABLED = false;
   var REALTIME_POLL_MS = 5000;
 
@@ -98,7 +98,7 @@
   };
 
   // ---------------------------------------------------------------------------
-  // searchSymbols: tìm mã cổ phiếu (dữ liệu TuniX qua /api/chart/search)
+  // searchSymbols: tìm mã cổ phiếu (dữ liệu VinaFintech qua /api/chart/search)
   // ---------------------------------------------------------------------------
   TuniXDatafeed.prototype.searchSymbols = function (userInput, exchange, symbolType, onResult) {
     var query = String(userInput || '').trim();
@@ -114,7 +114,7 @@
   };
 
   // ---------------------------------------------------------------------------
-  // resolveSymbol: lấy metadata symbol từ TuniX (/api/chart/symbols)
+  // resolveSymbol: lấy metadata symbol từ VinaFintech (/api/chart/symbols)
   // ---------------------------------------------------------------------------
   TuniXDatafeed.prototype.resolveSymbol = function (symbolName, onSymbolResolvedCallback, onResolveErrorCallback) {
     fetchJson('/symbols', { symbol: symbolName }).then(function (info) {
@@ -222,7 +222,7 @@
 
   // ---------------------------------------------------------------------------
   // subscribeBars / unsubscribeBars: realtime.
-  // TuniX hiện chưa có nguồn OHLCV realtime -> ở chế độ historical (không đẩy
+  // VinaFintech hiện chưa có nguồn OHLCV realtime -> ở chế độ historical (không đẩy
   // dữ liệu). Khi có nguồn thật: bật REALTIME_ENABLED, polling /api/chart/quote
   // và cập nhật candle hiện tại (không tạo candle duplicate).
   // ---------------------------------------------------------------------------
@@ -291,7 +291,7 @@
     });
   };
 
-  // Cho phép widget tự do đổi mã (compare/đổi symbol) — search từ TuniX
+  // Cho phép widget tự do đổi mã (compare/đổi symbol) — search từ VinaFintech
   TuniXDatafeed.prototype.supportsSymbolSearch = true;
 
   global.TuniXDatafeed = TuniXDatafeed;

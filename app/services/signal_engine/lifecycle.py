@@ -1,6 +1,6 @@
 """Vòng đời tín hiệu T+ — phát hiện tín hiệu HẾT HẠN và tín hiệu CŨ cần cập nhật lại.
 
-Tín hiệu của TuniX là tín hiệu NGẮN HẠN (T+): chỉ có ý nghĩa trong một số phiên nắm giữ
+Tín hiệu của VinaFintech là tín hiệu NGẮN HẠN (T+): chỉ có ý nghĩa trong một số phiên nắm giữ
 (`signal.expiry.max_holding_sessions`, mặc định 10 phiên). Quá hạn đó tín hiệu KHÔNG còn
 hiệu lực → phải tự đóng (EXIT) và/hoặc phân tích lại bằng nến mới nhất. Nếu không, một tín
 hiệu từ nhiều tuần trước vẫn hiển thị "Đang hiệu lực" trên trang Tín hiệu (bug đã gặp).

@@ -153,7 +153,7 @@
         .ta-ai-body { flex: 1; min-width: 0; }
         .ta-ai-name { font-size: 12px; font-weight: 800; color: #6b7a8f; margin-bottom: 6px; }
 
-        /* ===== Chat trực tiếp trên trang TuniAI ===== */
+        /* ===== Chat trực tiếp trên trang VinaF AI ===== */
         .ta-chat { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
         .ta-welcome {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -399,7 +399,7 @@
         .ta-typing span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes taBlink { 0%,80%,100% { opacity: 0.25; } 40% { opacity: 1; } }
 
-        /* ===== TuniAI đang xử lý / tìm kiếm — chưa có nội dung trả về ===== */
+        /* ===== VinaF AI đang xử lý / tìm kiếm — chưa có nội dung trả về ===== */
         .ta-wait { display: inline-flex; align-items: center; gap: 8px; color: #6b7a8f; font-size: 13px; line-height: 1.5; }
         .ta-wait i { color: #008080; font-size: 14px; }
         body.dark-mode .ta-wait { color: #8b949e; }
@@ -430,14 +430,14 @@
             html.ta-fs, body.ta-fs, body.embedded { height: auto !important; overflow: visible !important; }
             html, body { height: auto !important; overflow: visible !important; }
             body { background: #fff !important; }
-            /* Watermark tunix.vn chéo + mờ nền */
+            /* Watermark VinaFintech chéo + mờ nền */
             .pdf-watermark {
                 display: block; position: fixed; left: 0; top: 0;
                 width: 100vw; height: 100vh; margin: 0; padding: 0;
                 overflow: hidden; pointer-events: none; z-index: 10;
             }
             .pdf-watermark::before {
-                content: "tunix.vn      tunix.vn      tunix.vn      tunix.vn      tunix.vn\A\A tunix.vn      tunix.vn      tunix.vn      tunix.vn      tunix.vn\A\A tunix.vn      tunix.vn      tunix.vn      tunix.vn      tunix.vn\A\A tunix.vn      tunix.vn      tunix.vn      tunix.vn      tunix.vn";
+                content: "VinaFintech      VinaFintech      VinaFintech      VinaFintech\A\A VinaFintech      VinaFintech      VinaFintech      VinaFintech\A\A VinaFintech      VinaFintech      VinaFintech      VinaFintech\A\A VinaFintech      VinaFintech      VinaFintech      VinaFintech";
                 position: absolute; left: 50%; top: 50%;
                 transform: translate(-50%, -50%) rotate(-32deg);
                 white-space: pre; text-align: center;

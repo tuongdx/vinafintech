@@ -30,7 +30,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import require_roles
 from app.db import get_db
 from app.models import News, NewsStatusEnum, RoleEnum, ToolFile, User
-from app.services import news_source, news_time
+from app.services import news_source, news_tags, news_time
 
 router = APIRouter(prefix="/admin/tools", tags=["admin-tools"])
 
@@ -50,7 +50,7 @@ _ALLOWED_CATEGORIES = {
 
 # Block quảng cáo / banner cần XÓA bỏ hoàn toàn
 _AD_BLOCK_SELECTOR = (
-    ".c-banner, .h-show-pc, .h-show-mobile, "
+    ".c-banner, .h-show-pc, .h-show-mobile, .td-a-ad, "
     ".c-banner-item, .c-banner-item__inner, .c-banner-item__box"
 )
 
@@ -67,8 +67,8 @@ _JUNK_ATTRS = (
 )
 
 
-def clean_content(html: str) -> str:
-    """Làm sạch content_html: giữ text + ảnh, bỏ link & banner, gỡ wrapper rác."""
+def clean_content(html: str, featured_image_url: str | None = None) -> str:
+    """Làm sạch HTML và bỏ ảnh đầu bài nếu đã hiển thị ở phần ảnh đại diện."""
     soup = BeautifulSoup(html or "", "html.parser")
 
     # Bỏ comment
@@ -87,6 +87,32 @@ def clean_content(html: str) -> str:
     # Bỏ link (giữ text) — an toàn kể cả khi nguồn có <a>
     for a in soup.find_all("a"):
         a.unwrap()
+
+    # Khôi phục URL ảnh trước khi xóa thuộc tính lazy-load của nguồn.
+    for el in soup.select("img, source"):
+        for attr, lazy_attrs in (
+            ("src", ("data-src", "data-lazy-src")),
+            ("srcset", ("data-srcset", "data-lazy-srcset")),
+        ):
+            value = next((el.get(lazy_attr) for lazy_attr in lazy_attrs if el.get(lazy_attr)), None)
+            if value:
+                el[attr] = value
+
+    # Ảnh đầu bài đã được hiển thị ở phần ảnh đại diện, không lặp lại trong nội dung.
+    first_image = soup.find("img")
+    if first_image and featured_image_url:
+        image_url = (first_image.get("src") or "").split("?", 1)[0].rstrip("/")
+        featured_url = featured_image_url.split("?", 1)[0].rstrip("/")
+        if image_url == featured_url:
+            image_block = (
+                first_image.find_parent("figure")
+                or first_image.find_parent("p")
+                or first_image.find_parent("picture")
+            )
+            if image_block and not image_block.get_text(strip=True):
+                image_block.decompose()
+            else:
+                first_image.decompose()
 
     # Gỡ div bọc ngoài bài viết
     for w in soup.select("div.content-main-normal"):
@@ -121,6 +147,37 @@ def _join_tags(tags) -> str | None:
     return ", ".join(items) if items else None
 
 
+def _parse_news_json(raw: str) -> list[dict]:
+    raw = raw.lstrip("\ufeff").strip()
+    if not raw:
+        raise HTTPException(status_code=400, detail="File JSON đang trống.")
+
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        try:
+            data = json.loads(f"[{raw.strip()}]")
+        except json.JSONDecodeError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail="File JSON không hợp lệ. Hãy dùng một object hoặc danh sách bài viết dạng JSON.",
+            ) from exc
+
+    if isinstance(data, dict):
+        data = [data]
+    if not isinstance(data, list):
+        raise HTTPException(
+            status_code=400,
+            detail="File JSON phải là một object hoặc danh sách các bài viết.",
+        )
+    if any(not isinstance(item, dict) for item in data):
+        raise HTTPException(
+            status_code=400,
+            detail="Mỗi bài viết trong file JSON phải là một object.",
+        )
+    return data
+
+
 def _resolve_category(category: str) -> str:
     cat = (category or "").strip().lower()
     return cat if cat in _ALLOWED_CATEGORIES else "chung-khoan"
@@ -134,25 +191,19 @@ def _read_json(path: Path) -> list[dict]:
         )
     try:
         raw = path.read_text(encoding="utf-8")
-        data = json.loads(raw)
     except Exception as exc:
         raise HTTPException(
             status_code=400,
-            detail="Không đọc được file JSON (sai đường dẫn hoặc file không hợp lệ).",
+            detail="Không đọc được file JSON (sai đường dẫn hoặc mã hóa không hợp lệ).",
         ) from exc
-    if not isinstance(data, list):
-        raise HTTPException(
-            status_code=400,
-            detail="File JSON phải là một danh sách (array) các bài viết.",
-        )
-    return data
+    return _parse_news_json(raw)
 
 
 @router.post("/import-news")
 async def import_news(
     file: UploadFile | None = File(None),
     file_path: str = Form(""),
-    author: str = Form("Ban biên tập TuniX"),
+    author: str = Form("Ban biên tập VinaFintech"),
     category: str = Form("chung-khoan"),
     source: str = Form(""),
     approve: str = Form("false"),
@@ -178,14 +229,7 @@ async def import_news(
             raise HTTPException(
                 status_code=400, detail="Không đọc được file đã chọn (sai định dạng hoặc không phải UTF-8)."
             ) from exc
-        try:
-            data = json.loads(raw)
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail="File đã chọn không phải JSON hợp lệ.") from exc
-        if not isinstance(data, list):
-            raise HTTPException(
-                status_code=400, detail="File JSON phải là một danh sách (array) các bài viết."
-            )
+        data = _parse_news_json(raw)
     elif file_path.strip():
         data = _read_json(Path(file_path.strip()))
     else:
@@ -203,15 +247,16 @@ async def import_news(
 
     category = _resolve_category(category)
     # Nguồn tự suy theo chuyên mục (An ninh Tiền tệ vs MarketTimes); cho phép ghi đè thủ công.
-    source = (source or "").strip() or news_source.source_for_category(category)
-    author = (author or "").strip() or "Ban biên tập TuniX"
+    source_override = (source or "").strip()
+    default_source = source_override or news_source.source_for_category(category)
+    author = (author or "").strip() or "Ban biên tập VinaFintech"
 
     existing_news = {
         row.source_url: row
         for row in db.query(News).filter(News.source_url.isnot(None)).all()
     }
 
-    inserted = skipped = updated = errors = 0
+    inserted = skipped = updated = repaired = errors = 0
     inserted_titles: list[str] = []
     skipped_titles: list[str] = []
     updated_titles: list[str] = []
@@ -226,9 +271,22 @@ async def import_news(
             continue
         published_at = news_time.parse_published_at(item)
         if url and url in existing_news:
-            # Đã có bài cùng URL: chỉ cập nhật lại NGÀY GIỜ ĐĂNG nếu file có và khác dữ liệu đang lưu
-            # (giúp các bài import trước đây chưa có published_at được bổ sung đúng ngày giờ).
+            # Sửa dữ liệu ảnh cũ bị lưu sai; các nội dung đã biên tập vẫn được giữ nguyên.
             row = existing_news[url]
+            image_url = (item.get("main_image") or "").strip() or None
+            stored_content = (row.content or "").lower()
+            needs_image_repair = (
+                "data:image/" in stored_content
+                or "data-src=" in stored_content
+                or "data-srcset=" in stored_content
+                or (image_url is not None and row.image_url != image_url)
+            )
+            if needs_image_repair:
+                if not dry_bool:
+                    row.content = clean_content(item.get("content_html") or "", image_url)
+                    if image_url:
+                        row.image_url = image_url
+                repaired += 1
             if published_at is not None and row.published_at != published_at:
                 if not dry_bool:
                     row.published_at = published_at
@@ -239,16 +297,19 @@ async def import_news(
             continue
 
         if not dry_bool:
-            content = clean_content(item.get("content_html") or "")
+            image_url = (item.get("main_image") or "").strip() or None
+            content = clean_content(item.get("content_html") or "", image_url)
             news = News(
                 title=title,
                 summary=(item.get("sapo") or "").strip(),
                 content=content,
                 category=category,
-                image_url=(item.get("main_image") or "").strip() or None,
+                image_url=image_url,
                 image_caption=(item.get("image_caption") or "").strip() or None,
-                tags=_join_tags(item.get("tags")),
-                source=source,
+                tags=news_tags.with_default_news_tags(
+                    _join_tags(item.get("tags") or item.get("hashtags"))
+                ),
+                source=source_override or (item.get("source") or "").strip() or default_source,
                 source_url=url or None,
                 author_name=author,
                 status=status,
@@ -271,10 +332,11 @@ async def import_news(
         "inserted": inserted,
         "skipped": skipped,
         "updated": updated,
+        "repaired": repaired,
         "errors": errors,
         "status": status.value,
         "category": category,
-        "source": source,
+        "source": default_source,
         "author": author,
         "titles": (inserted_titles + skipped_titles)[:50],
         "updated_titles": updated_titles[:50],

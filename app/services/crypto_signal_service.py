@@ -1,4 +1,4 @@
-"""Phân tích tín hiệu Crypto cho Trung tâm cảnh báo TuniX.
+"""Phân tích tín hiệu Crypto cho Trung tâm cảnh báo VinaFintech.
 
 - Đối tượng: hợp WATCHLIST (bảng crypto_watchlist) + POSITIONS (user_assets class=crypto).
 - Gom dữ liệu thật cho từng mã: nến 1D Binance → technical (MA/EMA/RSI/MACD/ATR/SR/breakout),
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 _MAX_OUTPUT_TOKENS = 8000
 
 # Hệ thống prompt người dùng đặc tả — giữ nguyên bản.
-SYSTEM_PROMPT = """Bạn là hệ thống phân tích tín hiệu Crypto của TuniX. Phân tích các tài sản mà người dùng đang theo dõi và đang có vị thế, sau đó tạo ra 3 nhóm tín hiệu: CƠ HỘI, CẢNH BÁO, XU HƯỚNG.
+SYSTEM_PROMPT = """Bạn là hệ thống phân tích tín hiệu Crypto của VinaFintech. Phân tích các tài sản mà người dùng đang theo dõi và đang có vị thế, sau đó tạo ra 3 nhóm tín hiệu: CƠ HỘI, CẢNH BÁO, XU HƯỚNG.
 
 QUAN TRỌNG:
 - Không được cố định bất kỳ mã crypto nào.
@@ -264,7 +264,7 @@ def _build_prompt(symbols: list[str], watch: set[str], positions: set[str], inds
         "\n\nDỮ LIỆU THỊ TRƯỜNG (technical + quote, nến 1D Binance):\n" + ind_txt +
         "\n\nMARKET BREADTH / TỔNG QUAN (tính trên chính các mã được cấp):\n" + br_txt +
         "\n\nDERIVATIVES (Funding Rate + Open Interest Binance Futures; rỗng = nguồn không lấy được):\n" + de_txt +
-        "\n\nNEWS DATA: (hiện TuniX chưa có nguồn tin crypto — bỏ qua, đừng bịa).\n" +
+        "\n\nNEWS DATA: (hiện VinaFintech chưa có nguồn tin crypto — bỏ qua, đừng bịa).\n" +
         "\nHãy phân tích CHỈ các mã trong WATCHLIST/POSITIONS và trả về JSON theo schema đã quy định."
     )
 
@@ -296,7 +296,7 @@ async def _llm_json(system: str, user_prompt: str) -> dict:
     (vẫn cứu được phần đã sinh xong nhờ `parse_llm_json`).
     """
     if not settings.deepseek_api_key:
-        raise RuntimeError("TuniAI chưa được cấu hình API key DeepSeek (DEEPSEEK_API_KEY).")
+        raise RuntimeError("VinaF AI chưa được cấu hình API key DeepSeek (DEEPSEEK_API_KEY).")
     base = (settings.deepseek_base_url or "https://api.deepseek.com").rstrip("/")
     timeout = httpx.Timeout(180.0, connect=12.0)
     payload = {

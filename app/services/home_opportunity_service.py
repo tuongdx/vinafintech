@@ -14,7 +14,7 @@ Tiêu chí chọn mã dùng CHUNG `vnstock_service.build_discover_strategies` v�
 
 CHỈ lấy cổ phiếu **vốn hoá lớn + thanh khoản đủ để giao dịch hằng ngày** — dùng CHUNG bộ
 lọc `vnstock_service.is_tradable_stock` với Market Radar, Khám phá theo chiến lược, Xếp hạng
-TuniX và universe của trang Tín hiệu (ngưỡng ở `settings.stock_min_market_cap` /
+VinaFintech và universe của trang Tín hiệu (ngưỡng ở `settings.stock_min_market_cap` /
 `stock_min_liquidity_ty`), nên không còn các mã UPCOM siêu nhỏ, ít thanh khoản.
 
 Snapshot được dựng lại vào **12h trưa (giờ VN) hằng ngày**: trước 12h dùng bản 12h HÔM QUA,
@@ -71,7 +71,7 @@ def _is_tradable(s: dict[str, Any]) -> bool:
 
     Ngưỡng nằm ở `settings.stock_min_market_cap` / `settings.stock_min_liquidity_ty`
     (`vnstock_service.is_tradable_stock`) ⇒ CÙNG bộ lọc với Market Radar, Khám phá
-    theo chiến lược, Xếp hạng TuniX và universe của trang Tín hiệu.
+    theo chiến lược, Xếp hạng VinaFintech và universe của trang Tín hiệu.
     """
     return vns.is_tradable_stock(s)
 

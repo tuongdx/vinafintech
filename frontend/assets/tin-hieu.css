@@ -1,4 +1,4 @@
-/* TuniX — trang "Tín hiệu" (/tin-hieu) dành cho tài khoản ĐƯỢC CẤP QUYỀN.
+/* VinaFintech — trang "Tín hiệu" (/tin-hieu) dành cho tài khoản ĐƯỢC CẤP QUYỀN.
    CSS tự chứa (không phụ thuộc CSS trang quản trị). Có dark mode. */
 
 /* Reset giống các trang khác (KhamPha/CoPhieu…): tránh body margin 8px mặc định
@@ -18,7 +18,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
     color: #12203a;
 }
 /* Khi nhúng trong shell (iframe): bỏ padding ngang để nội dung rộng ĐÚNG BẰNG khung website
-   và bắt đầu từ mép trên — giống trang Thị trường (ThiTruong.html) và TuniAI. */
+   và bắt đầu từ mép trên — giống trang Thị trường (ThiTruong.html) và VinaF AI. */
 .embedded .th-page { padding: 0 0 40px; }
 body.dark-mode .th-page { color: #e6edf3; }
 

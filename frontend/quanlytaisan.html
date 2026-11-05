@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>Quản lý tài sản - TuniX</title>
+    <title>Quản lý tài sản - VinaFintech</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
@@ -641,8 +641,8 @@
             // Tự động quét AI MỘT LẦN mỗi lần tải trang (mở lại trang = quét & cập nhật mới).
             const AUTO_SCAN_DONE = { stock: false, crypto: false };
             const chartCache = {};
-            const TIP_PNL = 'Tổng lãi/lỗ = Giá trị hiện tại của danh mục − Tổng vốn đã đầu tư. TuniX tính theo giá thị trường realtime so với giá vốn các vị thế đang nắm giữ.';
-            const TIP_INVESTED = 'Tổng vốn đã dùng để mua cổ phiếu đang nắm giữ (số lượng × giá vốn bình quân). Giá vốn được TuniX TỰ ĐIỀU CHỈNH theo cổ tức/chia tách sau ngày mua: cổ tức tiền mặt làm giảm giá vốn, cổ tức/thưởng bằng cổ phiếu làm tăng số lượng — nên tổng vốn ở đây đã trừ phần cổ tức tiền mặt đã nhận.';
+            const TIP_PNL = 'Tổng lãi/lỗ = Giá trị hiện tại của danh mục − Tổng vốn đã đầu tư. VinaFintech tính theo giá thị trường realtime so với giá vốn các vị thế đang nắm giữ.';
+            const TIP_INVESTED = 'Tổng vốn đã dùng để mua cổ phiếu đang nắm giữ (số lượng × giá vốn bình quân). Giá vốn được VinaFintech TỰ ĐIỀU CHỈNH theo cổ tức/chia tách sau ngày mua: cổ tức tiền mặt làm giảm giá vốn, cổ tức/thưởng bằng cổ phiếu làm tăng số lượng — nên tổng vốn ở đây đã trừ phần cổ tức tiền mặt đã nhận.';
             const TIP_RETURN = 'Tỷ suất lợi nhuận = Tổng lãi/lỗ ÷ Tổng vốn đã đầu tư × 100.';
             const PERIODS = { '1D': '1w', '1W': '1m', '1M': '3m', '3M': '6m', '6M': '1y', '1Y': '2y', 'All': '5y' };
             const PALETTE = ['#008080', '#00a08a', '#4a7fc4', '#f5a623', '#7b61c4', '#d0314e', '#4f8f68', '#8a99b1', '#c98a16', '#5a8dc9'];
@@ -1995,7 +1995,7 @@
 
             // ---------- AI Review ----------
             function renderReview() {
-                if (!holdings.length) return '<div class="pf-card pf-review"><h3>TuniAI Portfolio Review</h3><div class="pf-empty">Thêm cổ phiếu để nhận đánh giá.</div></div>';
+                if (!holdings.length) return '<div class="pf-card pf-review"><h3>VinaF AI Portfolio Review</h3><div class="pf-empty">Thêm cổ phiếu để nhận đánh giá.</div></div>';
                 const t = totals();
                 const sectors = {};
                 holdings.forEach(function(h) { const sec = (screenerMap[h.symbol] && screenerMap[h.symbol].sectorName) || 'Khác'; sectors[sec] = (sectors[sec] || 0) + (Number(h.market_value) || 0); });
@@ -2039,7 +2039,7 @@
                         return '<li><span class="ic">' + s.slice(0, idx) + '</span><span>' + esc(s.slice(idx + 1)) + '</span></li>';
                     }).join('');
                 }
-                return '<div class="pf-card pf-review"><h3>TuniAI Portfolio Review</h3>' +
+                return '<div class="pf-card pf-review"><h3>VinaF AI Portfolio Review</h3>' +
                     '<div class="pf-score-row">' + ring +
                         '<div class="pf-score-meta"><div class="ps-label">Portfolio Score</div><div class="ps-label" style="color:#8a99b1;">/ 100</div><div class="ps-note">Đánh giá tự động từ dữ liệu tài sản</div></div>' +
                     '</div>' +
@@ -3068,7 +3068,7 @@
                     if (metaEl) metaEl.textContent = '';
                     bodyEl.innerHTML = '<div class="pf-perf-empty"><div class="pe-ico"><i class="fas fa-chart-line"></i></div>' +
                         '<div class="pe-title">Bạn chưa có dữ liệu đầu tư</div>' +
-                        '<div class="pe-desc">Thêm giao dịch mua cổ phiếu đầu tiên để TuniX bắt đầu theo dõi hiệu quả tài sản của bạn.</div>' +
+                        '<div class="pe-desc">Thêm giao dịch mua cổ phiếu đầu tiên để VinaFintech bắt đầu theo dõi hiệu quả tài sản của bạn.</div>' +
                         '<button type="button" class="btn btn-primary" id="pfGoAdd" style="margin-top:14px;"><i class="fas fa-plus"></i> Thêm giao dịch</button></div>';
                     const btn = document.getElementById('pfGoAdd');
                     if (btn) btn.addEventListener('click', scrollToForm);

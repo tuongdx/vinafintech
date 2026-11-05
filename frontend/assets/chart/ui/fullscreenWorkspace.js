@@ -3,10 +3,10 @@
  *
  *  RIGHT SIDEBAR  : thông tin cổ phiếu + Tổng quan + Chỉ báo (đồng bộ 2 chiều với chart)
  *                   + Hỗ trợ / Kháng cự (đồng bộ với AnalysisEngine của chart).
- *  BOTTOM DASHBOARD: Giả định tích sản + Dòng tiền 10 phiên + TuniX AI Phân tích.
+ *  BOTTOM DASHBOARD: Giả định tích sản + Dòng tiền 10 phiên + VinaFintech AI Phân tích.
  *
  * KHÔNG tạo chart / indicator / analysis mới — tái sử dụng engine hiện tại
- * (IndicatorEngine, AnalysisEngine, IndicatorPanel) và API TuniX hiện có.
+ * (IndicatorEngine, AnalysisEngine, IndicatorPanel) và API VinaFintech hiện có.
  * KHÔNG hard-code dữ liệu: trường nào chưa có API → hiển thị "--".
  *
  * Chỉ hiển thị khi body có class `chart-fullscreen` (CSS ẩn trong normal mode),
@@ -143,7 +143,7 @@ export class FullscreenWorkspace {
      *   - getSymbol, getBars, getTimeframe
      *   - getEnabledIndicators, indicatorValuesAtTime
      *   - indicatorPanel, indicatorEngine, analysisEngine
-     *   - onOpenAi(symbol)           : mở TuniX AI
+     *   - onOpenAi(symbol)           : mở VinaFintech AI
      *   - theme
      */
     constructor(deps) {
@@ -603,7 +603,7 @@ export class FullscreenWorkspace {
             '    <div class="fsb-panel-body" id="fsFlow"><div class="fss-muted">Đang cập nhật…</div></div>' +
             '  </div>' +
             '  <div class="fsb-panel fsb-ai">' +
-            '    <div class="fsb-panel-title"><i class="fa-solid fa-robot"></i> TuniAI phân tích</div>' +
+            '    <div class="fsb-panel-title"><i class="fa-solid fa-robot"></i> VinaF AI phân tích</div>' +
             '    <div class="fsb-panel-body" id="fsAi"><div class="fss-muted">Đang cập nhật…</div></div>' +
             '  </div>' +
             '</div>';
@@ -701,14 +701,14 @@ export class FullscreenWorkspace {
         this._loadAI();
     }
 
-    // Cache phân tích TuniAI theo MÃ + NGÀY (sessionStorage — dùng chung mọi iframe cùng tab):
+    // Cache phân tích VinaF AI theo MÃ + NGÀY (sessionStorage — dùng chung mọi iframe cùng tab):
     // mở lại biểu đồ toàn màn hình hiển thị NGAY và không tốn thêm lượt hỏi AI.
     _aiCacheKey(sym) {
         const day = new Date().toISOString().slice(0, 10);
         return 'tunix_ai_tech_' + String(sym || '').toUpperCase() + '_' + day;
     }
 
-    // Báo cho trang chi tiết biết phân tích TuniAI đã xong (mọi nhánh: ok / lỗi / chưa đăng nhập)
+    // Báo cho trang chi tiết biết phân tích VinaF AI đã xong (mọi nhánh: ok / lỗi / chưa đăng nhập)
     // → StockDetail chuyển tiếp thành `tunix-chart-fs-ready` cho shell để gỡ lớp "Đang mở…".
     _signalAiDone() {
         try { document.dispatchEvent(new CustomEvent('tunix-chart-ai-done', { detail: { symbol: this.symbol } })); } catch (e) { /* ignore */ }
@@ -754,7 +754,7 @@ export class FullscreenWorkspace {
                 }),
             });
             if (!res.ok) {
-                let detail = 'Lỗi khi gọi TuniAI. Vui lòng thử lại.';
+                let detail = 'Lỗi khi gọi VinaF AI. Vui lòng thử lại.';
                 try { const d = await res.json(); if (d && d.detail) detail = d.detail; } catch (e) { /* ignore */ }
                 if (res.status === 401) detail = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
                 this._ai = { status: 'error', detail };
@@ -1093,7 +1093,7 @@ export class FullscreenWorkspace {
         }
         if (ai.status === 'login') {
             this._setAiHtml(
-                '<div class="fss-muted">Đăng nhập để dùng TuniAI phân tích.</div>' +
+                '<div class="fss-muted">Đăng nhập để dùng VinaF AI phân tích.</div>' +
                 '<button type="button" class="fsb-ai-btn" id="fsAiLogin">Đăng nhập</button>'
             );
             return;

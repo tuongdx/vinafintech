@@ -1,8 +1,8 @@
 """Giá Vàng/Bạc — service tách tầng.
 
 Kiến trúc:
-  Vàng trong nước (giavang.org — nhiều thương hiệu)   → TuniX Backend → Frontend
-  Vàng/Bạc thế giới (Yahoo Finance, GC=F / SI=F)      → TuniX Backend → Frontend
+  Vàng trong nước (giavang.org — nhiều thương hiệu)   → VinaFintech Backend → Frontend
+  Vàng/Bạc thế giới (Yahoo Finance, GC=F / SI=F)      → VinaFintech Backend → Frontend
 
 Nguyên tắc:
   - KHÔNG hard-code giá. Mọi giá trị đều lấy live từ nguồn.

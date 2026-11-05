@@ -1,12 +1,12 @@
 /**
- * TuniX — CUSTOM CONTEXT MENU (menu chuột phải dùng chung toàn site)
+ * VinaFintech — CUSTOM CONTEXT MENU (menu chuột phải dùng chung toàn site)
  * ==================================================================
  * ⚠️ MẶC ĐỊNH TẮT (user chốt 2026-09-28): website dùng MENU NGẦM ĐỊNH CỦA TRÌNH DUYỆT.
  * File này chỉ còn là thư viện tuỳ chọn — KHÔNG tự gắn listener khi nạp nữa.
  * Bật lại: đặt `window.TUNIX_CONTEXT_MENU_AUTO = true` TRƯỚC thẻ <script> này,
  * hoặc gọi `window.TuniXContextMenu.install()` sau khi trang đã tải.
  *
- * (Bản gốc) Thay menu chuột phải MẶC ĐỊNH của trình duyệt bằng menu của TuniX, hiển thị tại vị trí
+ * (Bản gốc) Thay menu chuột phải MẶC ĐỊNH của trình duyệt bằng menu của VinaFintech, hiển thị tại vị trí
  * con trỏ, giao diện kiểu Chrome (light + dark-mode), logic theo NGỮ CẢNH click.
  *
  * KIẾN TRÚC (1 file, JavaScript thuần — KHÔNG dùng framework vì toàn bộ frontend của dự án
@@ -410,7 +410,7 @@
      *    (mỗi action nhận ctx, KHÔNG tự đóng menu — ContextMenu lo việc đó)
      * ══════════════════════════════════════════════════════════════════ */
 
-    /* Mở TuniAI với ngữ cảnh: ưu tiên điền sẵn vào ô chat nếu đang ở trang TuniAI. */
+    /* Mở VinaF AI với ngữ cảnh: ưu tiên điền sẵn vào ô chat nếu đang ở trang VinaF AI. */
     function askAi(ctx, kind) {
         var box = document.getElementById('taInput');
         var prompt = buildAiPrompt(ctx, kind);
@@ -418,7 +418,7 @@
             box.value = prompt;
             box.focus();
             try { box.dispatchEvent(new Event('input', { bubbles: true })); } catch (err) { /* ignore */ }
-            utils.toast('Đã điền câu hỏi vào TuniAI');
+            utils.toast('Đã điền câu hỏi vào VinaF AI');
             return;
         }
         // Nhúng trong shell → nhờ shell chuyển trang + gửi câu hỏi
@@ -426,14 +426,14 @@
             try { window.parent.postMessage({ type: 'tunix-ai-open', prompt: prompt, context: aiContext(ctx, kind) }, '*'); return; } catch (err) { /* ignore */ }
         }
         // Có API điều hướng của shell
-        if (typeof window.openTuniAiPage === 'function') {
+        if (typeof window.openVinaFAiPage === 'function') {
             try { sessionStorage.setItem('tunix_ai_prompt', prompt); } catch (err) { /* ignore */ }
-            window.openTuniAiPage();
+            window.openVinaFAiPage();
             return;
         }
-        // Trang độc lập: lưu prompt rồi sang trang /tuniai
+        // Trang độc lập: lưu prompt rồi sang trang /vinafai
         try { sessionStorage.setItem('tunix_ai_prompt', prompt); } catch (err) { /* ignore */ }
-        location.href = '/tuniai';
+        location.href = '/vinafai';
     }
 
     function aiContext(ctx, kind) {
@@ -457,7 +457,7 @@
 
     function buildAiPrompt(ctx, kind) {
         var c = aiContext(ctx, kind);
-        var lines = ['[Hỏi AI từ menu chuột phải TuniX]'];
+        var lines = ['[Hỏi AI từ menu chuột phải VinaFintech]'];
         lines.push('pageUrl: ' + c.pageUrl);
         if (c.pageTitle) lines.push('pageTitle: ' + c.pageTitle);
         if (c.selectedText) lines.push('selectedText: ' + c.selectedText);
@@ -469,14 +469,14 @@
         if (kind === 'text') lines.push('Yêu cầu: giải thích/đánh giá giúp tôi nội dung được chọn ở trên (bối cảnh chứng khoán – tài chính nếu liên quan).');
         else if (kind === 'link') lines.push('Yêu cầu: cho biết liên kết này nói về gì và điểm đáng chú ý (dựa trên URL/ngữ cảnh, nêu rõ nếu không đọc được nội dung bên trong).');
         else if (kind === 'image') lines.push('Yêu cầu: mô tả/thông tin về hình ảnh này và ý nghĩa của nó trên trang.');
-        else if (kind === 'video' || kind === 'audio') lines.push('Yêu cầu: cho biết thông tin về nội dung media này và cách đối chiếu với dữ liệu TuniX.');
+        else if (kind === 'video' || kind === 'audio') lines.push('Yêu cầu: cho biết thông tin về nội dung media này và cách đối chiếu với dữ liệu VinaFintech.');
         else if (kind === 'element') lines.push('Yêu cầu: giải thích phần tử/khối nội dung này trên trang và ý nghĩa của nó.');
         else lines.push('Yêu cầu: tôi đang xem trang này, hãy gợi ý tôi nên xem/chú ý gì tiếp theo.');
         return lines.join('\n');
     }
 
     function fileNameForPage() {
-        var slug = String(document.title || 'tunix').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').toLowerCase();
+        var slug = String(document.title || 'VinaFintech').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').toLowerCase();
         var d = new Date();
         var stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
         return 'tunix-' + (slug || 'page').slice(0, 60) + '-' + stamp + '.html';
@@ -502,7 +502,7 @@
         var strip = clone.querySelectorAll('script,style,noscript,iframe,nav,aside,footer,header,form,button,svg,.no-reader,.advertisement');
         for (var j = 0; j < strip.length; j++) if (strip[j].parentNode) strip[j].parentNode.removeChild(strip[j]);
         var body = clone.innerHTML;
-        var title = utils.esc(document.title || 'TuniX');
+        var title = utils.esc(document.title || 'VinaFintech');
         var src = utils.esc(location.href);
         return '<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8" />' +
             '<meta name="viewport" content="width=device-width,initial-scale=1" />' +
@@ -519,7 +519,7 @@
             '.rd-wrap a{color:#0f766e;} .rd-wrap blockquote{border-left:3px solid #0f766e;margin:16px 0;padding:6px 14px;color:#475569;}' +
             '.rd-wrap table{width:100%;border-collapse:collapse;font:14px system-ui,sans-serif;} .rd-wrap td,.rd-wrap th{border:1px solid #e2e8f0;padding:6px 8px;}' +
             '@media (prefers-color-scheme:dark){body{background:#0d1117;color:#e6edf3}.rd-wrap{background:#161b22}}' +
-            '</style></head><body><div class="rd-wrap"><div class="rd-bar"><i>📖</i> <span>Chế độ đọc TuniX</span>' +
+            '</style></head><body><div class="rd-wrap"><div class="rd-bar"><i>📖</i> <span>Chế độ đọc VinaFintech</span>' +
             ' · <a href="' + src + '">Mở trang gốc</a></div>' + body + '</div></body></html>';
     }
 
@@ -588,7 +588,7 @@
             var html = readerHtml();
             var url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
             window.open(url, '_blank', 'noopener,noreferrer');
-            utils.toast('Đã mở chế độ đọc (bản TuniX)');
+            utils.toast('Đã mở chế độ đọc (bản VinaFintech)');
         },
         searchPage: function (ctx) { googleSearch(ctx.selectedText || ctx.pageTitle || ctx.pageUrl); },
         translatePage: function (ctx) {
@@ -809,7 +809,7 @@
 
         savePage: {
             id: 'savePage', label: 'Lưu thành tệp (.html)', icon: ICON.save, shortcut: 'Ctrl+S',
-            hint: 'Trình duyệt không cho trang web mở hộp thoại “Lưu thành…” — TuniX tải tệp HTML của trang này về máy.',
+            hint: 'Trình duyệt không cho trang web mở hộp thoại “Lưu thành…” — VinaFintech tải tệp HTML của trang này về máy.',
             run: contextMenuActions.savePage
         },
         print: { id: 'print', label: 'In…', icon: ICON.print, shortcut: 'Ctrl+P', run: contextMenuActions.print },
@@ -832,7 +832,7 @@
         translatePage: { id: 'translatePage', label: 'Dịch sang Tiếng Việt', icon: ICON.translate, run: contextMenuActions.translatePage },
         viewSource: {
             id: 'viewSource', label: 'Xem nguồn trang (HTML)', icon: ICON.source, shortcut: 'Ctrl+U',
-            hint: 'Mở bản HTML của trang do TuniX tải về (trình duyệt không cho trang web mở view-source:).',
+            hint: 'Mở bản HTML của trang do VinaFintech tải về (trình duyệt không cho trang web mở view-source:).',
             run: contextMenuActions.viewSource
         },
         inspect: {
@@ -1050,7 +1050,7 @@
         var el = document.createElement('div');
         el.className = MENU_CLASS;
         el.setAttribute('role', 'menu');
-        el.setAttribute('aria-label', 'Menu chuột phải TuniX');
+        el.setAttribute('aria-label', 'Menu chuột phải VinaFintech');
         el.setAttribute('tabindex', '-1');
         itemEls = [];
         activeIndex = -1;
@@ -1100,7 +1100,7 @@
     function onContextMenu(e) {
         // Thành phần khác đã xử lý (vd menu drawing của StockDetail) → nhường
         if (e.defaultPrevented) return;
-        // Chuột phải trên chính menu/modal của TuniX → không mở menu mới
+        // Chuột phải trên chính menu/modal của VinaFintech → không mở menu mới
         var t = e.target;
         if (t && t.closest && (t.closest('.' + MENU_CLASS) || t.closest('.tunix-ctx-modal'))) {
             e.preventDefault();
@@ -1147,7 +1147,7 @@
             }
             return;
         }
-        // Phím tắt toàn cục của TuniX (KHÔNG đụng tới shortcut mặc định khác của trình duyệt)
+        // Phím tắt toàn cục của VinaFintech (KHÔNG đụng tới shortcut mặc định khác của trình duyệt)
         if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
             if (e.key === 'ArrowLeft') { e.preventDefault(); goBackPage(); return; }
             if (e.key === 'ArrowRight') { e.preventDefault(); goForwardPage(); return; }
@@ -1219,7 +1219,7 @@
     };
 
     // ⚠️ KHÔNG tự bật: mặc định dùng menu ngầm định của TRÌNH DUYỆT (user chốt 2026-09-28).
-    // Bật lại menu TuniX bằng `window.TUNIX_CONTEXT_MENU_AUTO = true` (đặt trước khi nạp file)
+    // Bật lại menu VinaFintech bằng `window.TUNIX_CONTEXT_MENU_AUTO = true` (đặt trước khi nạp file)
     // hoặc `window.TuniXContextMenu.install()` sau khi trang đã tải.
     if (window.TUNIX_CONTEXT_MENU_AUTO === true) useContextMenu();
 })();
