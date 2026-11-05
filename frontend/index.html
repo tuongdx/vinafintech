@@ -2770,7 +2770,7 @@
                      JS bật/tắt ở applySignalNav() (mặc định ẩn để không lộ với người chưa được cấp). -->
                 <a href="/tin-hieu" class="mm-item" data-action="tin-hieu" id="mmTinHieu" style="display:none;">Tín hiệu</a>
                 <span class="mm-sep" id="mmTinHieuSep" style="display:none;"></span>
-                <a href="/tuniai" class="mm-item mm-ai" data-action="tuniai"><i class="fas fa-robot"></i> TuniAI</a>
+                <a href="/vinafai" class="mm-item mm-ai" data-action="tuniai"><i class="fas fa-robot"></i> VinaF AI</a>
             </nav>
 
             <!-- HEADER NAV: thanh danh mục tin tức (chỉ hiện khi ở trang tin tức) -->
@@ -3153,7 +3153,7 @@
             'lai-ngan-hang': '/frontend/lai-ngan-hang.html',
             'gia-vang-bac': '/frontend/gold.html',
             'crypto': '/frontend/crypto.html',
-            'tuniai': '/frontend/TuniAI.html',
+            'vinafai': '/frontend/VinafAI.html',
             'quan-ly-tai-san': '/frontend/quanlytaisan.html',
             'tin-hieu': '/frontend/tin-hieu.html',
             'tien-ich': '/frontend/tienich.html',
@@ -3848,11 +3848,11 @@
         }
 
         function openTuniAiPage() {
-            // Mở trang "TuniAI" (dedicated) trong shell — URL đẹp /tuniai.
+            // Mở trang VinaF AI trong shell — URL đẹp /vinafai.
             if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
             if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
-            loadContent('/frontend/TuniAI.html');
-            window.history.replaceState({}, '', '/tuniai');
+            loadContent('/frontend/VinafAI.html');
+            window.history.replaceState({}, '', '/vinafai');
             setHeaderContext(false);
         }
         const newsPageLink = document.getElementById('newsPageLink');
@@ -3910,7 +3910,7 @@
             else if (/^\/gia-vang-bac/.test(pg) || /gold\.html/.test(pg)) active = 'gia-vang-bac';
             else if (/^\/crypto/.test(pg) || /crypto\.html/.test(pg)) active = 'crypto';
             else if (/^\/kham-pha/.test(pg) || /KhamPha\.html/.test(pg)) active = 'kham-pha';
-            else if (/^\/tuniai/.test(pg) || /TuniAI\.html/.test(pg)) active = 'tuniai';
+            else if (/^\/vinafai/.test(pg) || /VinafAI\.html/.test(pg)) active = 'tuniai';
             else if (/^\/tin-hieu(?:\.html)?(?:[?#].*)?$/.test(pg) || /tin-hieu\.html/.test(pg)) active = 'tin-hieu';
             else if (/^\/ty-gia-ngoai-te/.test(pg) || /exchange\.html/.test(pg)) active = 'tien-ich';
             else if (/^\/tien-ich(?:\/|$|[?#])/.test(pg) || /tienich\.html/.test(pg)) active = 'tien-ich';
@@ -3966,7 +3966,7 @@
                 'gia-vang-bac': '/frontend/gold.html',
                 'crypto': '/frontend/crypto.html',
                 'kham-pha': '/frontend/KhamPha.html',
-                'tuniai': '/frontend/TuniAI.html',
+                'tuniai': '/frontend/VinafAI.html',
                 'tin-hieu': '/frontend/tin-hieu.html',
                 'quan-ly-tai-san': '/frontend/quanlytaisan.html',
                 'tien-ich': '/frontend/tienich.html'
@@ -4752,7 +4752,7 @@
             updateRightColumnForStock(relatedSymbol);
 
             // Home va StockDetail duoc nhung bang iframe de giu nguyen HTML/CSS/JS.
-            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/frontend\/caidat\.html(?:[?#].*)?$/.test(page) || /^\/frontend\/taikhoan\.html(?:[?#].*)?$/.test(page) || /^\/frontend\/doimatkhau\.html(?:[?#].*)?$/.test(page) || /^\/quan-ly-tai-san(?:[?#].*)?$/.test(page) || /^\/frontend\/quanlytaisan\.html(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/tuniai(?:[?#].*)?$/.test(page) || /^\/frontend\/TuniAI\.html(?:[?#].*)?$/.test(page) || /^\/tien-ich(?:[?#].*)?$/.test(page) || /^\/frontend\/tienich\.html(?:[?#].*)?$/.test(page) || /^\/lai-ngan-hang(?:[?#].*)?$/.test(page) || /^\/frontend\/lai-ngan-hang\.html(?:[?#].*)?$/.test(page) || /^\/gia-vang-bac(?:[?#].*)?$/.test(page) || /^\/frontend\/gold\.html(?:[?#].*)?$/.test(page) || /^\/crypto(?:[?#].*)?$/.test(page) || /^\/frontend\/crypto\.html(?:[?#].*)?$/.test(page) || /^\/ty-gia-ngoai-te(?:[?#].*)?$/.test(page) || /^\/frontend\/exchange\.html(?:[?#].*)?$/.test(page) || /^\/tin-hieu(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-hieu\.html(?:[?#].*)?$/.test(page);
+            const isEmbeddedPage = page.includes('Home.html') || page === '/Home' || /^\/Home(?:[?#].*)?$/.test(page) || page.includes('StockDetail.html') || /^\/StockDetail(?:[?#].*)?$/.test(page) || /^\/tintuc(?:[?#].*)?$/.test(page) || /^\/tin-tuc(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-tuc\.html(?:[?#].*)?$/.test(page) || /^\/caidat(?:[?#].*)?$/.test(page) || /^\/taikhoan(?:[?#].*)?$/.test(page) || /^\/doimatkhau(?:[?#].*)?$/.test(page) || /^\/frontend\/caidat\.html(?:[?#].*)?$/.test(page) || /^\/frontend\/taikhoan\.html(?:[?#].*)?$/.test(page) || /^\/frontend\/doimatkhau\.html(?:[?#].*)?$/.test(page) || /^\/quan-ly-tai-san(?:[?#].*)?$/.test(page) || /^\/frontend\/quanlytaisan\.html(?:[?#].*)?$/.test(page) || /^\/thi-truong(?:[?#].*)?$/.test(page) || /^\/frontend\/ThiTruong\.html(?:[?#].*)?$/.test(page) || /^\/co-phieu(?:\/(?:nganh(?:\/[^/?#]*)*|[^/?#]+))?(?:[?#].*)?$/.test(page) || /^\/frontend\/CoPhieu\.html(?:[?#].*)?$/.test(page) || /^\/kham-pha(?:[?#].*)?$/.test(page) || /^\/frontend\/KhamPha\.html(?:[?#].*)?$/.test(page) || /^\/vinafai(?:[?#].*)?$/.test(page) || /^\/frontend\/VinafAI\.html(?:[?#].*)?$/.test(page) || /^\/tien-ich(?:[?#].*)?$/.test(page) || /^\/frontend\/tienich\.html(?:[?#].*)?$/.test(page) || /^\/lai-ngan-hang(?:[?#].*)?$/.test(page) || /^\/frontend\/lai-ngan-hang\.html(?:[?#].*)?$/.test(page) || /^\/gia-vang-bac(?:[?#].*)?$/.test(page) || /^\/frontend\/gold\.html(?:[?#].*)?$/.test(page) || /^\/crypto(?:[?#].*)?$/.test(page) || /^\/frontend\/crypto\.html(?:[?#].*)?$/.test(page) || /^\/ty-gia-ngoai-te(?:[?#].*)?$/.test(page) || /^\/frontend\/exchange\.html(?:[?#].*)?$/.test(page) || /^\/tin-hieu(?:[?#].*)?$/.test(page) || /^\/frontend\/tin-hieu\.html(?:[?#].*)?$/.test(page);
             // Ẩn thanh cuộn trang khi đang xem chi tiết bài viết
             const isArticlePage = /^\/tintuc(?:[?#].*)?$/.test(page);
             document.body.classList.toggle('article-mode', isArticlePage);
@@ -5333,7 +5333,7 @@
                 '/crypto': '/frontend/crypto.html',
                 '/tin-hieu': '/frontend/tin-hieu.html',
                 '/kham-pha': '/frontend/KhamPha.html',
-                '/tuniai': '/frontend/TuniAI.html',
+                '/vinafai': '/frontend/VinafAI.html',
                 '/tin-tuc': '/frontend/tin-tuc.html',
                 '/TrungTamTroGiup': '/frontend/TrungTamTroGiup.html',
                 '/HuongDanSuDung': '/frontend/HuongDanSuDung.html',
@@ -5612,9 +5612,9 @@
             // Trang khám phá: /kham-pha → nạp discovery vào left-col.
             loadContent('/frontend/KhamPha.html');
             setHeaderContext(false);
-        } else if (pathPage === 'tuniai' || initialPage === 'tuniai') {
-            // Trang TuniAI: /tuniai → nạp dedicated AI page vào left-col.
-            loadContent('/frontend/TuniAI.html');
+        } else if (pathPage === 'vinafai' || initialPage === 'vinafai') {
+            // Trang VinaF AI: /vinafai → nạp dedicated AI page vào left-col.
+            loadContent('/frontend/VinafAI.html');
             setHeaderContext(false);
         } else if (pathPage === 'tin-hieu' || initialPage === 'tin-hieu') {
             // Trang Tín hiệu: /tin-hieu → nạp vào left-col (trang tự kiểm tra quyền với server).
