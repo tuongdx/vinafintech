@@ -98,7 +98,15 @@ def _stable_api_max_age(path: str) -> int | None:
     Trả None nếu không nên cache ở trình duyệt (tránh stale cho dữ liệu realtime)."""
     if any(
         seg in path
-        for seg in ("/company-summary", "/dividends", "/reports", "/profit-analysis", "/shareholders", "/business")
+        for seg in (
+            "/company-summary",
+            "/dividends",
+            "/reports",
+            "/profit-analysis",
+            "/financial-statement",
+            "/shareholders",
+            "/business",
+        )
     ):
         return 600
     # Bộ dữ liệu screener/discover vốn đã cache server 30 phút → cache trình duyệt 60s

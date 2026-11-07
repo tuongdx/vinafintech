@@ -239,11 +239,6 @@
         @keyframes kpPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.22; } }
         .kp-live.paused { color: #b07800; background: rgba(245, 166, 35, 0.12); border-color: rgba(245, 166, 35, 0.35); }
         .kp-live.paused i { animation: none; }
-        .kp-rank-foot {
-            margin-top: 10px; font-size: 11.5px; color: #8a99b1;
-            display: flex; justify-content: flex-end; align-items: center; gap: 6px; text-align: right;
-        }
-        .kp-rank-foot b { color: #4a5a72; font-weight: 700; }
         /* Nhấp nháy ô giá khi số vừa đổi ở lần cập nhật realtime */
         .kp-table tbody td.cell-up { animation: kpCellUp 1.2s ease-out; }
         .kp-table tbody td.cell-down { animation: kpCellDown 1.2s ease-out; }
@@ -320,8 +315,6 @@
         body.dark-mode .kp-table .rk-name { color: #8b949e; }
         body.dark-mode .kp-live { color: #4dd8c4; background: rgba(77, 216, 196, 0.12); border-color: rgba(77, 216, 196, 0.35); }
         body.dark-mode .kp-live.paused { color: #e6c36a; background: rgba(230, 195, 106, 0.12); border-color: rgba(230, 195, 106, 0.35); }
-        body.dark-mode .kp-rank-foot { color: #8b949e; }
-        body.dark-mode .kp-rank-foot b { color: #adbac7; }
         body.dark-mode .kp-ai { background: #161b22; border-color: rgba(0,128,128,0.4); }
         body.dark-mode .kp-ai textarea { background: #0d1117; border-color: #30363d; color: #e6edf3; }
         body.dark-mode .kp-ai .ka-prompt { background: #0d1117; border-color: #30363d; color: #adbac7; }
@@ -332,7 +325,9 @@
         @media (max-width: 820px) { .kp-strategies { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 560px) { .kp-featured, .kp-strategies { grid-template-columns: 1fr; } .kp-hero { padding: 20px; } }
     </style>
-    <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20261107a" />
+
+    <link rel="stylesheet" href="/static/theme-instant.css?v=20261107a" />
 </head>
 <body>
     <div class="kp-page">
@@ -395,7 +390,6 @@
             <h2>Xếp hạng VinaFintech<span class="kp-live" id="kpRankLive"><i class="fas fa-circle"></i> Realtime</span></h2>
             <div class="kp-rank-tabs" id="kpRankTabs"></div>
             <div class="kp-table-wrap" id="kpRank"></div>
-            <div class="kp-rank-foot" id="kpRankAsOf"></div>
         </section>
     </div>
 
@@ -413,7 +407,6 @@
             let activeRank = 'growth';
             // ---- Trạng thái cập nhật realtime của block "Xếp hạng VinaFintech" ----
             const RANK_POLL_MS = 30000;   // chu kỳ làm mới giá/% thay đổi
-            let rankAsOf = '';            // mốc dữ liệu bảng giá (ISO) do server trả về
             let rankCells = {};           // { tab: { symbol: {price, pct} } } — so sánh để nhấp nháy
             let rankTimer = null, rankInFlight = false, rankVisible = false;
 
@@ -951,32 +944,6 @@
                     ? '<i class="fas fa-circle"></i> Realtime'
                     : '<i class="fas fa-circle"></i> Tạm dừng';
             }
-            function parseIsoFlexKp(t) {
-                // ISO của Python có thể có 6 chữ số phần giây (.022147) → V8 Date.parse
-                // trả NaN, nên cắt về 3 chữ số (mili-giây) trước khi parse.
-                if (!t) return NaN;
-                return Date.parse(String(t).replace(/(\.\d{3})\d+/, '$1'));
-            }
-            function fmtVnSecKp(t) {
-                const ms = parseIsoFlexKp(t);
-                if (isNaN(ms)) return '';
-                const vn = new Date(ms + 7 * 3600 * 1000); // VN = UTC+7
-                return pad2(vn.getUTCDate()) + '/' + pad2(vn.getUTCMonth() + 1) + '/' + vn.getUTCFullYear()
-                    + ' · ' + pad2(vn.getUTCHours()) + ':' + pad2(vn.getUTCMinutes()) + ':' + pad2(vn.getUTCSeconds());
-            }
-            function renderRankAsOf(d) {
-                const el = document.getElementById('kpRankAsOf');
-                if (!el) return;
-                const market = fmtVnSecKp(rankAsOf);            // mốc dữ liệu thị trường (nếu có)
-                const fetched = fmtVnSecKp(d && d.updated_at);  // thời điểm server lấy bảng giá
-                const txt = market ? 'Dữ liệu bảng giá: <b>' + esc(market) + '</b>'
-                    : (fetched ? 'Cập nhật: <b>' + esc(fetched) + '</b>' : '');
-                const liveCount = (d && d.live_rows != null && d.total_rows)
-                    ? (d.live_rows + '/' + d.total_rows + ' mã có giá realtime') : '';
-                el.innerHTML = '<i class="far fa-clock"></i> ' + txt
-                    + (liveCount ? ' · ' + esc(liveCount) : '')
-                    + ' · tự động làm mới mỗi ' + (RANK_POLL_MS / 1000) + ' giây';
-            }
             async function refreshRankings() {
                 if (rankInFlight) return;
                 rankInFlight = true;
@@ -986,10 +953,8 @@
                     const d = await res.json();
                     if (!Array.isArray(d.rankings) || !d.rankings.length) throw new Error('empty');
                     rankings = d.rankings;
-                    rankAsOf = d.as_of || '';
                     renderRankTabs();
                     renderRankTable();
-                    renderRankAsOf(d);
                     setRankLive(true);
                     notifyParentHeight();
                 } catch (e) {
@@ -1077,7 +1042,6 @@
                     rankings = d.rankings || [];
                     renderRankTabs();
                     renderRankTable();
-                    renderRankAsOf(null);
                     // Xếp hạng: bật vòng cập nhật realtime (giá/% thay đổi theo bảng giá).
                     // Gọi 1 lần ngay sau khi trang tải xong để block đã có giá realtime
                     // trước khi người dùng cuộn tới; sau đó chỉ poll khi block hiển thị.
@@ -1130,5 +1094,7 @@
     </script>
     <script src="/static/context-menu.js?v=20260928a"></script>
     <script src="/static/dividend-badge.js?v=20260926c"></script>
+
+    <script src="/static/theme-instant.js?v=20261107a"></script>
 </body>
 </html>

@@ -3713,6 +3713,123 @@ def get_financial_statement(symbol: str, section: str = "balance", periods: int 
         return empty
 
 
+def get_financial_statement_table(
+    symbol: str,
+    section: str = "balance",
+    periods: int = 8,
+    period: str = "quarter",
+) -> dict[str, Any]:
+    """Bảng BÁO CÁO TÀI CHÍNH đầy đủ (mọi chỉ tiêu) để hiển thị dạng bảng.
+
+    Khác `get_financial_statement` (trả dict tiêu đề tiếng Anh → giá trị, dùng cho AI),
+    hàm này giữ ĐÚNG THỨ TỰ chỉ tiêu của báo cáo gốc + nhãn tiếng Việt + cấp phân cấp,
+    nên FE render được Cân đối kế toán / KQKD / Lưu chuyển tiền tệ như báo cáo.
+
+    - section: balance | income | cashflow (alias: cdkt, kqkd, lctt...)
+    - period : quarter | year (báo cáo quý / báo cáo năm)
+    - periods: số kỳ gần nhất (2..12)
+    """
+    symbol_upper = symbol.upper().strip()
+    section_key = _FIN_SECTION_ALIAS.get(str(section).lower().strip(), "BALANCE_SHEET")
+    period_kind = "year" if str(period).lower().strip() in ("year", "annual", "y", "nam") else "quarter"
+    try:
+        wanted = int(periods) if periods is not None else 8
+    except (TypeError, ValueError):
+        wanted = 8
+    wanted = max(2, min(wanted, 12))
+    empty = {
+        "symbol": symbol_upper,
+        "section": section_key,
+        "period": period_kind,
+        "source": "empty",
+        "unit": "vnd",
+        "periods": [],
+        "rows": [],
+    }
+    cache_key = f"fin-table:{symbol_upper}:{section_key}:{period_kind}:{wanted}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    try:
+        meta = _vci_get_json(f"/v1/company/{symbol_upper}/financial-statement/metrics")
+        metrics = [
+            r
+            for r in ((meta.get("data") or {}).get(section_key) or [])
+            if isinstance(r, dict) and r.get("field")
+        ]
+        fin = _vci_get_json(
+            f"/v1/company/{symbol_upper}/financial-statement",
+            {"section": section_key},
+        )
+        raw = (fin.get("data") or {}).get("quarters" if period_kind == "quarter" else "years") or []
+        if not metrics or not isinstance(raw, list) or not raw:
+            return empty
+
+        cols: list[dict[str, Any]] = []
+        for row in raw:
+            if not isinstance(row, dict):
+                continue
+            try:
+                year = int(row.get("yearReport"))
+                length = int(row.get("lengthReport"))
+            except (TypeError, ValueError):
+                continue
+            if period_kind == "quarter":
+                if not (1 <= length <= 4):
+                    continue
+                cols.append({"key": f"{year}-{length:02d}", "label": f"Q{length}/{year}", "row": row})
+            else:
+                cols.append({"key": f"{year}", "label": f"Năm {year}", "row": row})
+        cols.sort(key=lambda c: c["key"])
+        cols = cols[-wanted:]
+        if not cols:
+            return empty
+
+        rows: list[dict[str, Any]] = []
+        for m in metrics:
+            field = str(m.get("field") or "")
+            values: list[float | None] = []
+            has_value = False
+            for c in cols:
+                v = c["row"].get(field)
+                if isinstance(v, (int, float)):
+                    values.append(round(float(v), 2))
+                    has_value = True
+                else:
+                    values.append(None)
+            # Chỉ tiêu không áp dụng cho doanh nghiệp này (VD ngân hàng vs sản xuất) → bỏ
+            if not has_value:
+                continue
+            try:
+                level = int(m.get("level") or 1)
+            except (TypeError, ValueError):
+                level = 1
+            rows.append(
+                {
+                    "field": field,
+                    "title_en": str(m.get("titleEn") or ""),
+                    "title_vi": str(m.get("titleVi") or ""),
+                    "level": level,
+                    "parent": m.get("parent"),
+                    "values": values,
+                }
+            )
+
+        result = {
+            "symbol": symbol_upper,
+            "section": section_key,
+            "period": period_kind,
+            "source": "vci-finance",
+            "unit": "vnd",
+            "periods": [{"period": c["key"], "label": c["label"]} for c in cols],
+            "rows": rows,
+        }
+        cache.set(cache_key, result, ttl_seconds=21600)
+        return result
+    except Exception:
+        return empty
+
+
 def get_income_statement_detail(symbol: str, quarters: int = 8) -> dict[str, Any]:
     """Chi tiết Bảng Kết quả kinh doanh (KQKD) theo quý — để AI giải thích NGUYÊN NHÂN
     tăng/giảm doanh thu - lợi nhuận (bridge: doanh thu, biên gộp, chi phí bán hàng/QLDN,
@@ -4956,8 +5073,8 @@ def get_market_dashboard() -> dict[str, Any]:
 
     Gom: 4 chỉ số chính (VNINDEX/VN30/HNX/UPCOM + history để vẽ mini chart),
     độ rộng thị trường (tăng/giảm/tham chiếu + trần/sàn), dòng tiền (GTGD, khối ngoại,
-    thanh khoản), hiệu suất ngành, radar (ngành hút tiền / breakout / volume lạ / nhóm
-    suy yếu / khối ngoại mua mạnh) và top cổ phiếu ảnh hưởng VN-INDEX.
+    thanh khoản), hiệu suất ngành, radar (khối ngoại bán mạnh / khối ngoại mua mạnh /
+    breakout / volume lạ / nhóm suy yếu) và top cổ phiếu ảnh hưởng VN-INDEX.
     Cache 60s + stale-while-revalidate (hết hạn trả bản cũ ngay, refresh nền).
     """
     # 1) Bốn chỉ số chính
@@ -5043,12 +5160,13 @@ def get_market_dashboard() -> dict[str, Any]:
         flow["foreign_net"] = (ft.get("totals") or {}).get("net")
         # Danh sách mã hiển thị trong block Market Radar: CHỈ giữ mã VỐN HOÁ LỚN +
         # THANH KHOẢN đủ để giao dịch hằng ngày (bộ lọc dùng chung).
+        # Mỗi chiều giữ 8 mã mạnh nhất: khối ngoại mua mạnh / khối ngoại bán mạnh.
         flow["foreign_buy_top"] = [
             it for it in (ft.get("buy_list") or []) if str(it.get("symbol") or "").upper() in tradable
-        ][:5]
+        ][:8]
         flow["foreign_sell_top"] = [
             it for it in (ft.get("sell_list") or []) if str(it.get("symbol") or "").upper() in tradable
-        ][:5]
+        ][:8]
     except Exception:
         pass
     try:
@@ -5225,6 +5343,7 @@ def get_market_dashboard() -> dict[str, Any]:
             "volume_spike": volume_spike,
             "weak": weak,
             "foreign_buy": flow.get("foreign_buy_top", []),
+            "foreign_sell": flow.get("foreign_sell_top", []),
             "breakout_tech": breakout_tech,
             "risk_signal": risk_signal,
             "volume_spike_ratio": volume_spike_ratio,

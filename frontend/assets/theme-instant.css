@@ -1,0 +1,19 @@
+/* ============================================================
+   theme-instant.css — đổi dark/light phải đổi màu NGAY, không fade.
+
+   Nhiều block/card khai báo `transition: all .3s` hoặc `transition: background .3s`
+   nên khi đổi theme nền bị fade 300ms, trong khi các lớp con (ô dính, header bảng,
+   chữ…) đổi tức thì ⇒ màu vừa TRỄ vừa LỆCH giữa các lớp.
+
+   Cách xử lý: theme-instant.js bật class `theme-switching` trên <html> đúng lúc
+   class `dark-mode` của <body> thay đổi rồi gỡ sau 2 frame → toàn bộ transition bị
+   tắt trong đúng khoảng chuyển theme. Ngoài thời điểm đó, mọi hiệu ứng hover/animation
+   vẫn giữ nguyên.
+   ============================================================ */
+
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: none !important;
+}

@@ -13,6 +13,7 @@ from app.services.vnstock_service import (
     get_dividends,
     get_exchange_chart,
     get_financials,
+    get_financial_statement_table,
     get_foreign_trading,
     get_history,
     get_index_detail,
@@ -143,6 +144,20 @@ def peers(symbol: str, limit: int = 10):
 def profit_analysis(symbol: str, quarters: int = 0):
     # quarters = 0 ⇒ trả về toàn bộ lịch sử có sẵn (dùng cho block "Phân tích lợi nhuận").
     return get_profit_analysis(symbol, quarters=quarters)
+
+
+@router.get("/{symbol}/financial-statement")
+def financial_statement(symbol: str, section: str = "balance", period: str = "quarter", periods: int = 8):
+    """Bảng BÁO CÁO TÀI CHÍNH đầy đủ của một cổ phiếu (VCI iQ insight).
+
+    - section: balance (Cân đối kế toán) | income (Kết quả kinh doanh) | cashflow (Lưu chuyển tiền tệ)
+    - period : quarter (báo cáo quý) | year (báo cáo năm)
+    - periods: số kỳ gần nhất (2..12, mặc định 8)
+
+    Trả `periods` (nhãn cột theo thứ tự thời gian) + `rows` (từng chỉ tiêu kèm nhãn tiếng
+    Việt, cấp phân cấp và mảng giá trị khớp đúng thứ tự cột; đơn vị VND).
+    """
+    return get_financial_statement_table(symbol, section=section, periods=periods, period=period)
 
 
 @router.get("/indices")

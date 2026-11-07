@@ -54,6 +54,7 @@
         .recent-trades,
         .peer-block,
         .profit-block,
+        .fin-block,
         .shareholder-block,
         .accum-block,
         .reports-block,
@@ -67,6 +68,7 @@
         body.dark-mode .recent-trades,
         body.dark-mode .peer-block,
         body.dark-mode .profit-block,
+        body.dark-mode .fin-block,
         body.dark-mode .shareholder-block,
         body.dark-mode .accum-block,
         body.dark-mode .reports-block {
@@ -2607,6 +2609,219 @@
             color: #9fb0c7;
         }
 
+        /* ----- 4.5 BÁO CÁO TÀI CHÍNH: KẾT QUẢ KINH DOANH | CÂN ĐỐI KẾ TOÁN ----- */
+        .fin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .fin-block {
+            border-radius: 16px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            /* Không fade khi đổi theme: nền khối do block-tint quyết định, fade sẽ lệch với bảng con */
+            transition: none;
+            /* Grid item: cho phép bảng cuộn ngang thay vì đẩy cột rộng ra */
+            min-width: 0;
+        }
+
+        .fin-block h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .fin-block h3 .fin-symbol {
+            color: #8a99b1;
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .fin-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .fin-range {
+            font-size: 11.5px;
+            padding: 3px 6px;
+            border: 1px solid #dbe2ec;
+            border-radius: 8px;
+            background: #fff;
+            color: #33475f;
+            cursor: pointer;
+        }
+
+        .fin-unit {
+            font-size: 10.5px;
+            color: #8a99b1;
+            margin-left: auto;
+        }
+
+        .fin-table-wrap {
+            max-height: 330px;
+            overflow: auto;
+            border-radius: 8px;
+            background: #f8faff;
+            /* Thanh cuộn mảnh màu teal — đồng bộ với block "Giao dịch gần nhất" */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 128, 128, 0.35) transparent;
+        }
+
+        .fin-table-wrap::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .fin-table-wrap::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .fin-table-wrap::-webkit-scrollbar-thumb {
+            background: rgba(0, 128, 128, 0.35);
+            border-radius: 3px;
+        }
+
+        .fin-table-wrap::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 128, 128, 0.55);
+        }
+
+        .fin-table-wrap::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+
+        .fin-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 11.5px;
+        }
+
+        .fin-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #e9eff7;
+            color: #56657c;
+            font-weight: 600;
+            text-align: right;
+            padding: 6px 8px;
+            white-space: nowrap;
+        }
+
+        .fin-table thead th.fin-name,
+        .fin-table tbody td.fin-name {
+            position: sticky;
+            left: 0;
+            text-align: left;
+            z-index: 1;
+        }
+
+        .fin-table thead th.fin-name {
+            z-index: 3;
+        }
+
+        .fin-table tbody td {
+            padding: 5px 8px;
+            border-bottom: 1px solid #eef1f5;
+            text-align: right;
+            white-space: nowrap;
+            color: #33475f;
+        }
+
+        /* Cột tên chỉ tiêu dính bên trái khi cuộn ngang nhiều kỳ */
+        .fin-table tbody td.fin-name {
+            background: #f8faff;
+            color: #4a5a72;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fin-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Chỉ tiêu tổng hợp (VCI viết HOA) → in đậm, nền nhấn nhẹ */
+        .fin-table tbody tr.fin-head td {
+            font-weight: 700;
+            background: rgba(0, 128, 128, 0.07);
+            color: #0b5f5f;
+        }
+
+        .fin-table tbody td.neg {
+            color: #d0314e;
+        }
+
+        body.dark-mode .fin-table-wrap {
+            scrollbar-color: rgba(0, 128, 128, 0.6) transparent;
+        }
+
+        body.dark-mode .fin-table-wrap::-webkit-scrollbar-thumb {
+            background: rgba(0, 128, 128, 0.6);
+        }
+
+        body.dark-mode .fin-table-wrap::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 128, 128, 0.8);
+        }
+
+        body.dark-mode .fin-range {
+            background: #0d1117;
+            border-color: #30363d;
+            color: #e6edf3;
+        }
+
+        body.dark-mode .fin-table-wrap,
+        body.dark-mode .fin-table tbody td.fin-name {
+            background: #10151c;
+        }
+
+        body.dark-mode .fin-table thead th {
+            background: #1c2128;
+            color: #9fb0c7;
+        }
+
+        body.dark-mode .fin-table tbody td {
+            border-bottom-color: #21262d;
+            color: #c9d4e2;
+        }
+
+        body.dark-mode .fin-table tbody td.fin-name {
+            color: #b8c4d4;
+        }
+
+        body.dark-mode .fin-table tbody tr.fin-head td {
+            background: rgba(0, 128, 128, 0.16);
+            color: #4dd8c4;
+        }
+
+        body.dark-mode .fin-table tbody td.neg {
+            color: #ff7b8a;
+        }
+
+        /* Đổi dark/light: TOÀN BỘ thành phần của 2 block BCTC đổi màu NGAY (không fade)
+           để khung cuộn, ô "Chỉ tiêu" dính và header không lệch màu nhau trong lúc chuyển. */
+        .fin-block,
+        .fin-range,
+        .fin-table-wrap,
+        .fin-table thead th,
+        .fin-table tbody td,
+        .fin-table tbody tr.fin-head td {
+            transition: none;
+        }
+
+        @media (max-width: 900px) {
+            .fin-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* ----- 5. PHÂN TÍCH LỢI NHUẬN ----- */
         .profit-block {
             background: #fff;
@@ -4014,9 +4229,11 @@
         }
     </style>
     <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
-    <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20261107a" />
     <!-- Biểu đồ nến: Lightweight Charts (TradingView open-source) + dữ liệu OHLCV VinaFintech -->
     <script src="/static/vendor/lightweight-charts.standalone.production.js?v=5.2.1"></script>
+
+    <link rel="stylesheet" href="/static/theme-instant.css?v=20261107a" />
 </head>
 <body>
     <div class="app-container">
@@ -4253,6 +4470,38 @@
                         </table>
                     </div>
                     <div class="rt-status" id="recentTradesStatus"></div>
+                </div>
+            </div>
+
+            <!-- 4.5 BÁO CÁO TÀI CHÍNH: Kết quả kinh doanh (trái) | Cân đối kế toán (phải) -->
+            <div class="fin-grid">
+                <div class="fin-block">
+                    <h3>Kết quả kinh doanh <span class="fin-symbol" id="incomeSymbol"></span></h3>
+                    <div class="fin-toolbar">
+                        <select class="fin-range" id="incomeRange" aria-label="Chọn kỳ báo cáo kết quả kinh doanh">
+                            <option value="4q" selected>4 quý gần nhất</option>
+                            <option value="8q">8 quý gần nhất</option>
+                            <option value="4y">4 năm gần nhất</option>
+                        </select>
+                        <span class="fin-unit">Đơn vị: tỷ đồng</span>
+                    </div>
+                    <div class="fin-table-wrap" id="incomeTable">
+                        <div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                    </div>
+                </div>
+                <div class="fin-block">
+                    <h3>Cân đối kế toán <span class="fin-symbol" id="balanceSymbol"></span></h3>
+                    <div class="fin-toolbar">
+                        <select class="fin-range" id="balanceRange" aria-label="Chọn kỳ báo cáo cân đối kế toán">
+                            <option value="4q" selected>4 quý gần nhất</option>
+                            <option value="8q">8 quý gần nhất</option>
+                            <option value="4y">4 năm gần nhất</option>
+                        </select>
+                        <span class="fin-unit">Đơn vị: tỷ đồng</span>
+                    </div>
+                    <div class="fin-table-wrap" id="balanceTable">
+                        <div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                    </div>
                 </div>
             </div>
 
@@ -4603,7 +4852,7 @@
         function apiTtl(path) {
             if (/\/quote(\?|$)/.test(path)) return 8000; // giá realtime: TTL ngắn
             if (/\/order-book|\/trades|\/foreign/.test(path)) return 25000;
-            if (/\/company-summary|\/dividends|\/reports|\/profit-analysis|\/shareholders|\/peers|\/history/.test(path)) return 300000;
+            if (/\/company-summary|\/dividends|\/reports|\/profit-analysis|\/financial-statement|\/shareholders|\/peers|\/history/.test(path)) return 300000;
             if (/\/money-flow/.test(path)) return 120000; // phiên hiện tại còn cập nhật trong ngày
             return 60000;
         }
@@ -5279,6 +5528,97 @@
                 renderPeerChart();
             });
         }
+
+        // ===== BÁO CÁO TÀI CHÍNH: KẾT QUẢ KINH DOANH | CÂN ĐỐI KẾ TOÁN =====
+        // Dữ liệu: /stocks/{symbol}/financial-statement (VCI iQ insight) — trả về toàn bộ
+        // chỉ tiêu theo đúng thứ tự báo cáo gốc, kèm nhãn tiếng Việt + cấp phân cấp.
+        const FIN_RANGES = {
+            '4q': { period: 'quarter', periods: 4 },
+            '8q': { period: 'quarter', periods: 8 },
+            '4y': { period: 'year', periods: 4 },
+        };
+        const finState = { symbol: '', income: '4q', balance: '4q' };
+        const FIN_EMPTY = {
+            income: 'Không có dữ liệu kết quả kinh doanh',
+            balance: 'Không có dữ liệu cân đối kế toán',
+        };
+
+        // BCTC trả về đơn vị VND → hiển thị tỷ đồng cho dễ đọc.
+        function formatFinValue(v) {
+            if (v === null || v === undefined) return '—';
+            const ty = Number(v) / 1e9;
+            if (!Number.isFinite(ty)) return '—';
+            if (ty === 0) return '0';
+            const abs = Math.abs(ty);
+            return formatNumber(ty, abs >= 100 ? 0 : (abs >= 10 ? 1 : 2));
+        }
+
+        function renderFinTable(container, data, emptyText) {
+            if (!container) return;
+            const periods = (data && data.periods) || [];
+            const rows = (data && data.rows) || [];
+            if (!periods.length || !rows.length) {
+                container.innerHTML = `<div class="info-empty">${emptyText}</div>`;
+                return;
+            }
+            // Kỳ mới nhất hiển thị bên trái; `row.values` xếp tăng dần theo thời gian.
+            const cols = periods.slice().reverse();
+            const lastIdx = periods.length - 1;
+            const head = '<tr><th class="fin-name">Chỉ tiêu</th>' +
+                cols.map(p => `<th>${escapeHtml(p.label)}</th>`).join('') + '</tr>';
+            const body = rows.map(row => {
+                const title = row.title_vi || row.title_en || row.field;
+                const isHead = title === title.toUpperCase();
+                const level = Math.max(1, Number(row.level) || 1);
+                const cells = cols.map((p, idx) => {
+                    const v = row.values ? row.values[lastIdx - idx] : null;
+                    const neg = (Number(v) || 0) < 0;
+                    return `<td class="${neg ? 'neg' : ''}">${formatFinValue(v)}</td>`;
+                }).join('');
+                return `<tr class="${isHead ? 'fin-head' : ''}">` +
+                    `<td class="fin-name" style="padding-left:${6 + (level - 1) * 10}px;" title="${escapeHtml(title)}">${escapeHtml(title)}</td>` +
+                    `${cells}</tr>`;
+            }).join('');
+            container.innerHTML = `<table class="fin-table"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+            container.scrollTop = 0;
+            container.scrollLeft = 0;
+        }
+
+        async function loadFinancialStatement(kind) {
+            const container = document.getElementById(kind === 'income' ? 'incomeTable' : 'balanceTable');
+            const symbol = finState.symbol;
+            if (!container || !symbol) return;
+            const conf = FIN_RANGES[finState[kind]] || FIN_RANGES['4q'];
+            const section = kind === 'income' ? 'income' : 'balance';
+            container.innerHTML = '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+            try {
+                const data = await api(`/stocks/${encodeURIComponent(symbol)}/financial-statement` +
+                    `?section=${section}&period=${conf.period}&periods=${conf.periods}`);
+                renderFinTable(container, data, FIN_EMPTY[kind]);
+            } catch (error) {
+                console.error('Failed to load financial statement:', error);
+                container.innerHTML = `<div class="info-empty">${FIN_EMPTY[kind]}</div>`;
+            }
+        }
+
+        function loadFinancialStatements(symbol) {
+            finState.symbol = (symbol || '').trim().toUpperCase();
+            ['incomeSymbol', 'balanceSymbol'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = finState.symbol ? `· ${finState.symbol}` : '';
+            });
+            loadFinancialStatement('income');
+            loadFinancialStatement('balance');
+        }
+
+        ['income', 'balance'].forEach(kind => {
+            const sel = document.getElementById(kind + 'Range');
+            if (!sel) return;
+            sel.addEventListener('change', function() {
+                finState[kind] = this.value || '4q';
+                loadFinancialStatement(kind);
+            });
+        });
 
         // ===== PHÂN TÍCH LỢI NHUẬN (biểu đồ cột theo quý, màu theo năm, đủ toàn bộ lịch sử) =====
         const PROFIT_YEAR_COLORS = ['#3498db', '#9b59b6', '#e67e22', '#2ecc71', '#e74c3c', '#1abc9c', '#f39c12', '#16a085', '#8e44ad', '#d35400', '#27ae60', '#34495e'];
@@ -6270,6 +6610,7 @@
             loadTunixChart(symbol);
             if (!isIndex) {
                 // Các panel độc lập chạy SONG SONG với quote để hiển thị sớm hơn.
+                loadFinancialStatements(symbol);
                 loadProfitAnalysis(symbol);
                 loadShareholderStructure(symbol);
                 loadReports(symbol, 'financial');
@@ -6940,5 +7281,7 @@
 
     <script src="/static/dividend-badge.js?v=20260926c"></script>
     <script src="/static/context-menu.js?v=20260928a"></script>
+
+    <script src="/static/theme-instant.js?v=20261107a"></script>
 </body>
 </html>

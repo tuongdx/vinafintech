@@ -189,12 +189,6 @@
         .tt-radar-item:last-child { border-bottom: none; }
         .tt-radar-item .rr-sym { font-weight: 700; }
         .tt-radar-item .rr-pct { float: right; font-weight: 700; }
-        .tt-radar-hot { text-align: center; padding: 8px 0 4px; }
-        .tt-radar-hot .rh-name { font-weight: 800; font-size: 14px; }
-        .tt-radar-hot .rh-pct { font-weight: 700; font-size: 15px; margin-top: 2px; }
-        .tt-radar-hot .rh-sub { font-size: 11px; color: #8a99b1; margin-top: 4px; }
-        .tt-radar-hot .rh-sym { font-weight: 700; color: inherit; cursor: pointer; }
-        .tt-radar-hot .rh-sym:hover { color: #008080; }
         .tt-radar-empty { color: #8a99b1; font-size: 12px; }
 
         /* ===== AI ===== */
@@ -358,7 +352,9 @@
             .tt-radar-grid { grid-template-columns: 1fr; }
         }
     </style>
-    <link rel="stylesheet" href="/static/block-tint.css?v=20260914h" />
+    <link rel="stylesheet" href="/static/block-tint.css?v=20261107a" />
+
+    <link rel="stylesheet" href="/static/theme-instant.css?v=20261107a" />
 </head>
 <body>
     <div class="tt-page">
@@ -850,15 +846,21 @@
                 if (!items || !items.length) return '<div class="tt-radar-empty">' + empty + '</div>';
                 return items.map(function(it) { return radarItem(it[symKey], it[pctKey]); }).join('');
             }
+            // Khối ngoại: 8 mã mua/bán ròng mạnh nhất (giá trị ròng tính theo tỷ đồng).
+            function radarForeign(items, empty) {
+                const list = (items || []).slice(0, 8);
+                if (!list.length) return '<div class="tt-radar-empty">' + empty + '</div>';
+                return list.map(function(it) {
+                    const net = Number(it.net_value) || 0;
+                    return '<div class="tt-radar-item" data-symbol="' + esc(it.symbol) + '"><span class="rr-sym">' + esc(it.symbol) + '</span><span class="rr-pct ' + (net >= 0 ? 'fc-up' : 'fc-down') + '">' + (net >= 0 ? '+' : '-') + fmt(Math.abs(net) / 1e9, 0) + ' tỷ</span></div>';
+                }).join('');
+            }
             function renderRadar(r) {
-                const hot = r.hot_sector;
+                const sell = r.foreign_sell || [];
                 const buy = r.foreign_buy || [];
                 return '<section class="tt-card tt-radar">' +
                     '<h2>VinaFintech Market Radar</h2>' +
                     '<div class="tt-radar-grid">' +
-                        '<div class="tt-radar-col"><h3>Ngành hút tiền</h3>' +
-                            (hot ? '<div class="tt-radar-hot"><div class="rh-name">' + esc(hot.name) + '</div><div class="rh-pct ' + cls(hot.avg_pct) + '">' + pct(hot.avg_pct) + '</div><div class="rh-sub">Top: ' + (hot.top_gainer ? '<span class="rh-sym" data-symbol="' + esc(hot.top_gainer) + '">' + esc(hot.top_gainer) + '</span>' : '--') + ' · ' + hot.total + ' mã</div></div>'
-                                : '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</div>' +
                         '<div class="tt-radar-col"><h3>Cổ phiếu breakout</h3>' +
                             radarList(r.breakout, 'symbol', 'percent_change', 'Không có mã breakout.') + '</div>' +
                         '<div class="tt-radar-col"><h3>Volume bất thường</h3>' +
@@ -868,9 +870,9 @@
                         '<div class="tt-radar-col"><h3>Nhóm suy yếu</h3>' +
                             radarList(r.weak, 'symbol', 'percent_change', 'Không có mã giảm.') + '</div>' +
                         '<div class="tt-radar-col"><h3>Khối ngoại mua mạnh</h3>' +
-                            (buy.map(function(it) {
-                                return '<div class="tt-radar-item" data-symbol="' + esc(it.symbol) + '"><span class="rr-sym">' + esc(it.symbol) + '</span><span class="rr-pct fc-up">+' + fmt((Number(it.net_value) || 0) / 1e9, 0) + ' tỷ</span></div>';
-                            }).join('') || '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</div>' +
+                            radarForeign(buy, 'Chưa có dữ liệu.') + '</div>' +
+                        '<div class="tt-radar-col"><h3>Khối ngoại bán mạnh</h3>' +
+                            radarForeign(sell, 'Chưa có dữ liệu.') + '</div>' +
                     '</div></section>';
             }
 
@@ -1385,9 +1387,9 @@
                     '<section class="tt-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><h2 style="margin-bottom:0;">Bản đồ thị trường</h2><div style="margin-left:auto;display:flex;align-items:center;gap:10px;"><div class="tt-map-legend" id="ttMapLegend" style="margin-bottom:0;flex-shrink:0;"></div><button id="ttMapShot" class="tt-map-btn" title="Tải ảnh bản đồ thị trường"><i class="fas fa-camera"></i></button><button id="ttMapShare" class="tt-map-btn fb" title="Chia sẻ lên Facebook"><i class="fab fa-facebook"></i></button></div></div><div id="ttMapSlot"><div class="tt-loading" style="padding:16px;"><i class="fas fa-spinner fa-spin"></i> Đang tải bản đồ...</div></div></section>';
                 main.innerHTML = renderBreadth(b) +
                     renderFlow(f) +
+                    renderRadar(radar) +
                     renderSectors(secs) +
                     '<section class="tt-card"><h2>Danh sách cổ phiếu trong VN30</h2><div class="tt-vn30-wrap" id="ttVn30Wrap"><div class="tt-vn30-empty"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div></div></section>' +
-                    renderRadar(radar) +
                     renderAi(f, b, secs, radar);
 
                 loadMainChart('1y', 0);
@@ -1506,5 +1508,7 @@
     <script src="/static/membership-gate.js?v=20260905f"></script>
     <script src="/static/context-menu.js?v=20260928a"></script>
     <script src="/static/dividend-badge.js?v=20260926c"></script>
+
+    <script src="/static/theme-instant.js?v=20261107a"></script>
 </body>
 </html>

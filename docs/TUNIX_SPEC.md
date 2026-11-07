@@ -94,7 +94,7 @@ VinaFintech/
 │       ├── chart/             # chart engine module (core, data, indicators, drawings, analysis, compare, ui)
 │       ├── vendor/            # lightweight-charts.standalone.production.js
 │       ├── tradingview/       # (để dành) Advanced Charts — chưa dùng
-│       └── Logo/ admin.js app.js header-search.js styles.css support-legal.css typography.css chart/ tradingview/ vendor/
+│       └── Logo/ admin.js app.js header-search.js theme-instant.js theme-instant.css styles.css support-legal.css typography.css chart/ tradingview/ vendor/
 ├── scripts/                   # create_superadmin.py, import_markettimes_news.py, migrate_to_render.py, push_news_to_render.py
 └── .cache/                    # cache JSON của Simplize (symbol_directory.json, symbol_summaries.json, symbol_screener.json, symbol_dividends.json, symbol_business.json)
 ```
@@ -130,7 +130,7 @@ Các bảng chính trong `app/models.py`:
 
 | Router | Nhóm endpoint chính |
 |---|---|
-| `stocks` | `/stocks/search`, `/{sym}/quote`, `/history`, `/financials`, `/insider-trades`, `/shareholders`, `/reports`, `/dividends`, `/company-summary`, `/order-book`, `/trades`, `/money-flow`, `/peers`, `/profit-analysis`, `/indices`, `/market-overview`, `/index-detail`, `/market-map`, `/realtime-board`, `/foreign-trading`, `/watchlist` |
+| `stocks` | `/stocks/search`, `/{sym}/quote`, `/history`, `/financials`, `/insider-trades`, `/shareholders`, `/reports`, `/dividends`, `/company-summary`, `/order-book`, `/trades`, `/money-flow`, `/peers`, `/profit-analysis`, `/financial-statement`, `/indices`, `/market-overview`, `/index-detail`, `/market-map`, `/realtime-board`, `/foreign-trading`, `/watchlist` |
 | `chart` | `/chart/history`, `/chart/config`, `/chart/search`, `/chart/quote`, `/chart/server-time` |
 | `ai` | `/ai/status`, `/ai/chat` (SSE) |
 | `auth` | đăng nhập/đăng ký/refresh/oauth/reset mật khẩu |
@@ -166,6 +166,7 @@ Các bảng chính trong `app/models.py`:
   - Trang **embedded** (Home.html, StockDetail.html, tin-tuc.html, tintuc.html, caidat.html, taikhoan.html, doimatkhau.html) → dựng `<iframe id="contentEmbedFrame">` (cache-bust `?v=Date.now()`), điều chỉnh chiều cao qua `postMessage` (`tunix-embed-height`).
   - Trang khác (TrungTamTroGiup, HuongDanSuDung, CauHoiThuongGap, LienHe, GopY, DieuKhoanSuDung, ChinhSachBaoMat, MienTruTrachNhiem) → `fetch` + `DOMParser` nhúng nội dung.
 - Giao tiếp parent ⇄ iframe qua `postMessage`: `tunix-switch-stock`, `tunix-open-stock`, `tunix-symbol-changed`, `tunix-embed-height`, `tunix-home-height`, `tunix-set-theme`, `tunix-open-tintuc`, `tunix-open-url`, `tunix-cat-changed`, `tunix-search-clear`, `tunix-user-updated`, `tunix-stock-modal`.
+- **Đổi theme tức thì** (`assets/theme-instant.js` + `theme-instant.css`, nhúng ở mọi trang): MutationObserver theo dõi class `dark-mode` trên `<body>`, bật class `theme-switching` trên `<html>` trong đúng lúc chuyển theme để tắt toàn bộ `transition` ⇒ nền/viền/chữ đổi màu ngay và đồng bộ giữa các lớp (không còn fade 0.3s lệch với ô sticky/header bảng). Hiệu ứng hover/animation ngoài lúc chuyển theme giữ nguyên.
 - URL đẹp: `/cophieu-{MÃ}`, `/tin-tuc`, `/{chuyên-mục}`, `/{slug}-{id}.html`.
 
 ---
@@ -179,12 +180,13 @@ Các block (tải song song, chart render sớm không chờ quote):
 3. **Biểu đồ nến** — Lightweight Charts, timeframe 1H/1D/1W/1M, chỉ báo (SMA/EMA/RSI/MACD/BB), drawings, so sánh, phân tích, export PNG, fullscreen.
 4. **Sổ lệnh** + **So sánh tương quan** (click mã → chuyển sang mã đó). Block Sổ lệnh có 2 tab: **Sổ lệnh** (giữ nguyên) và **Dòng tiền** — dòng tiền ròng **10 phiên** tính từ OHLCV (`/stocks/{symbol}/money-flow`): giá trị giao dịch (giá TB × KL) tách thành tiền vào/ra theo hệ số CLV `((C−L)−(H−C))/(H−L)`; hiển thị 3 KPI (vào / ra / ròng) + biểu đồ cột phân kỳ (xanh = vào, đỏ = ra). VCI/SSI không có lịch sử mua/bán chủ động theo phiên nên số liệu là ước lượng từ biến động giá, không phải giá trị mua/bán chủ động.
 5. **Giao dịch gần nhất** — tải dần theo cursor `before`: cuộn xuống để tự nạp thêm các lệnh khớp cũ hơn của phiên (VCI trả tối đa 100 lệnh/request nên phải phân trang). Khung bảng cao vừa đúng **14 dòng** (header 22px + 14 × 27px = 400px) để lấp kín chiều cao block.
-6. **Phân tích lợi nhuận** (biểu đồ cột theo quý, nguồn VCI).
-7. **Cơ cấu cổ đông**.
-8. **Giả định tích sản 5 năm** (DCA 5tr/tháng vs ngân hàng, ô nhập số tuỳ chỉnh).
-9. **Báo cáo** (tài chính, thường niên, phân tích, nghị quyết, bản cáo bạch).
+6. **Kết quả kinh doanh** | **Cân đối kế toán** (2 block cạnh nhau, đặt ngay trên block Phân tích lợi nhuận) — bảng BCTC đầy đủ mọi chỉ tiêu từ `/stocks/{symbol}/financial-statement` (VCI iQ): chọn 4 quý / 8 quý / 4 năm, đơn vị tỷ đồng, kỳ mới nhất bên trái, chỉ tiêu tổng hợp in đậm, cuộn trong khung.
+7. **Phân tích lợi nhuận** (biểu đồ cột theo quý, nguồn VCI).
+8. **Cơ cấu cổ đông**.
+9. **Giả định tích sản 5 năm** (DCA 5tr/tháng vs ngân hàng, ô nhập số tuỳ chỉnh).
+10. **Báo cáo** (tài chính, thường niên, phân tích, nghị quyết, bản cáo bạch).
 
-- Hỗ trợ **mã chỉ số** (VNINDEX, VN30, HNX, HNXINDEX, HNX30, UPCOM, UPINDEX, UPCOMM): ẩn các block không có dữ liệu (sổ lệnh, giao dịch gần nhất, so sánh tương quan, phân tích lợi nhuận, cơ cấu cổ đông, báo cáo, tích sản).
+- Hỗ trợ **mã chỉ số** (VNINDEX, VN30, HNX, HNXINDEX, HNX30, UPCOM, UPINDEX, UPCOMM): ẩn các block không có dữ liệu (sổ lệnh, giao dịch gần nhất, so sánh tương quan, kết quả kinh doanh/cân đối kế toán, phân tích lợi nhuận, cơ cấu cổ đông, báo cáo, tích sản).
 - **Fullscreen** (`?fs=1`): parent-driven; thoát fullscreen trả chart về chiều cao bình thường, icon nến fullscreen đúng mã đang xem, thoát từ trang không phải chi tiết thì quay lại trang trước.
 - **Dashboard fullscreen** (`.chart-bottom`): **Giả định tích sản 5 năm** · **Dòng tiền 10 phiên** (cùng nguồn `/stocks/{symbol}/money-flow`: ròng 10 phiên + cột vào/ra, có tooltip từng phiên) · **VinaF AI phân tích**. Panel Dòng tiền thay cho panel Tin tức nổi bật trước đây.
 
