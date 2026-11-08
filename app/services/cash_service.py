@@ -14,6 +14,7 @@ Làm tròn: VND = 0 chữ số thập phân (đ); USDT = 6 chữ số.
 """
 from __future__ import annotations
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models import CashTransaction, Setting
@@ -49,6 +50,38 @@ def get_balance(db: Session, user_id: int, currency: str) -> float:
 def get_balances(db: Session, user_id: int) -> dict[str, float]:
     """Số dư cả 2 quỹ: {'VND': …, 'USDT': …}."""
     return {CUR_VND: get_balance(db, user_id, CUR_VND), CUR_USDT: get_balance(db, user_id, CUR_USDT)}
+
+
+def get_profit_loss(db: Session, user_id: int) -> dict[str, float]:
+    """Lãi/lỗ từng quỹ so với số dư đầu sổ và tiền nạp/rút bên ngoài."""
+    result: dict[str, float] = {}
+    for currency in (CUR_VND, CUR_USDT):
+        first = (
+            db.query(CashTransaction.change, CashTransaction.balance_after)
+            .filter(CashTransaction.user_id == user_id, CashTransaction.currency == currency)
+            .order_by(CashTransaction.id.asc())
+            .first()
+        )
+        if first is None:
+            result[currency] = 0.0
+            continue
+
+        opening_balance = float(first.balance_after or 0) - float(first.change or 0)
+        net_external_flows = (
+            db.query(func.coalesce(func.sum(CashTransaction.change), 0.0))
+            .filter(
+                CashTransaction.user_id == user_id,
+                CashTransaction.currency == currency,
+                CashTransaction.kind.in_(("deposit", "withdraw")),
+            )
+            .scalar()
+        )
+        current_balance = get_balance(db, user_id, currency)
+        result[currency] = _round(
+            current_balance - opening_balance - float(net_external_flows or 0),
+            currency,
+        )
+    return result
 
 
 def _write(db: Session, user_id: int, currency: str, amount: float) -> float:

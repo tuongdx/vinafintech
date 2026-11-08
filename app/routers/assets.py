@@ -47,12 +47,17 @@ def _cash_payload(db: Session, user: User) -> dict:
     fx = _get_usd_vnd() or {}
     rate = fx.get("usd_vnd")
     b = cash_service.get_balances(db, user.id)
+    pnl = cash_service.get_profit_loss(db, user.id)
     vnd = round(float(b.get("VND") or 0), 0)
     usdt = round(float(b.get("USDT") or 0), 6)
     total_vnd = round(vnd + usdt * float(rate), 0) if rate else None
+    pnl_vnd = round(float(pnl.get("VND") or 0), 0)
+    pnl_usdt = round(float(pnl.get("USDT") or 0), 6)
     return {
         "vnd": vnd,
         "usdt": usdt,
+        "pnl_vnd": pnl_vnd,
+        "pnl_usdt": pnl_usdt,
         "fx_rate": float(rate) if rate else None,
         "fx_as_of": fx.get("as_of"),
         "total_vnd": total_vnd,

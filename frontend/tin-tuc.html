@@ -58,6 +58,114 @@
             grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
             gap: 16px;
         }
+        .news-grid.news-split {
+            display: flex;
+            flex-direction: column;
+        }
+        .news-grid-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 16px;
+        }
+        .news-grid-section:empty { display: none; }
+        .news-index-card {
+            grid-column: span 2;
+            justify-self: center;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(120px, 0.9fr);
+            align-items: center;
+            gap: 12px;
+            width: 98%;
+            min-width: 0;
+            min-height: 310px;
+            aspect-ratio: 2.2 / 1;
+            padding: 14px 16px;
+            overflow: hidden;
+            border: 1px solid #dcebea;
+            border-radius: 18px;
+            background: linear-gradient(120deg, #f3fbfa, #ffffff 75%);
+            box-shadow: 0 1px 3px rgba(0, 96, 96, 0.06);
+        }
+        .news-index-heading { display: flex; align-items: center; gap: 7px; }
+        .news-index-heading strong { color: #1a1f36; font-size: 13px; font-weight: 800; }
+        .news-index-heading span { color: #8a99b1; font-size: 9px; }
+        .news-index-value { margin-top: 6px; color: #1a1f36; font-size: 23px; font-weight: 800; }
+        .news-index-change { margin-top: 2px; font-size: 11px; font-weight: 700; }
+        .news-index-change.pos { color: #087c62; }
+        .news-index-change.neg { color: #c62828; }
+        .news-index-change.flat { color: #9a7200; }
+        .news-index-chart { width: 100%; height: 66px; }
+        .news-index-chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+        .news-index-chart path { fill: none; stroke: #008080; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+        .news-index-chart path.neg { stroke: #d0314e; }
+        .news-bank-terms { display: grid; grid-template-columns: 1fr; gap: 4px; align-content: center; height: auto; }
+        .news-bank-term { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 7px; border: 1px solid #e3eceb; border-radius: 7px; background: rgba(255,255,255,.7); }
+        .news-bank-term span { color: #8a99b1; font-size: 10px; white-space: nowrap; }
+        .news-bank-term strong { color: #1a1f36; font-size: 11px; white-space: nowrap; }
+        #newsBankRateMain { transition: opacity .18s ease, transform .18s ease; }
+        #newsBankRateMain.is-switching { opacity: .45; transform: translateY(3px); }
+        .news-bank-terms { transition: opacity .2s ease; }
+        .news-bank-terms.is-updating { opacity: .55; }
+        .news-bank-term { animation: bank-term-enter .24s ease both; }
+        .news-bank-term:nth-child(2) { animation-delay: .025s; }
+        .news-bank-term:nth-child(3) { animation-delay: .05s; }
+        .news-bank-term:nth-child(4) { animation-delay: .075s; }
+        .news-bank-term:nth-child(5) { animation-delay: .1s; }
+        .news-bank-term:nth-child(6) { animation-delay: .125s; }
+        .news-bank-term:nth-child(7) { animation-delay: .15s; }
+        @keyframes bank-term-enter {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #newsBankRateMain, .news-bank-terms { transition: none; }
+            .news-bank-term { animation: none; }
+        }
+        body.dark-mode .news-bank-term { background: #1c2128; border-color: #2e4545; }
+        body.dark-mode .news-bank-term strong { color: #e6edf3; }
+        body.dark-mode .news-bank-term span { color: #9aa5b1; }
+        .news-index-markets {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 8px;
+            padding-top: 9px;
+            border-top: 1px solid #e8efef;
+        }
+        .news-crypto-markets { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .news-index-market {
+            min-width: 0;
+            padding: 5px 6px;
+            border: 1px solid transparent;
+            border-radius: 7px;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .news-index-market:hover { background: #edf7f6; }
+        .news-index-market.active { border-color: #9dcac5; background: #e8f4f2; }
+        .news-index-market:focus-visible { outline: 2px solid #008080; outline-offset: 2px; }
+        .news-index-market:disabled { cursor: default; opacity: 0.65; }
+        .news-index-market-name { overflow: hidden; color: #8a99b1; font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+        .news-index-market-value { overflow: hidden; margin-top: 2px; color: #1a1f36; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+        .news-index-market-change { margin-top: 1px; font-size: 9px; font-weight: 700; white-space: nowrap; }
+        .news-index-market-change.pos { color: #087c62; }
+        .news-index-market-change.neg { color: #c62828; }
+        .news-index-market-change.flat { color: #9a7200; }
+        .news-index-empty { color: #8a99b1; font-size: 11px; }
+        body.dark-mode .news-index-card { background: linear-gradient(120deg, #172b2b, #1c2128 75%); border-color: #2e4545; }
+        body.dark-mode .news-index-heading strong,
+        body.dark-mode .news-index-value,
+        body.dark-mode .news-index-market-value { color: #e6edf3; }
+        body.dark-mode .news-index-heading span,
+        body.dark-mode .news-index-empty,
+        body.dark-mode .news-index-market-name { color: #9aa5b1; }
+        body.dark-mode .news-index-markets { border-color: #2e4545; }
+        body.dark-mode .news-index-market:hover { background: #203838; }
+        body.dark-mode .news-index-market.active { border-color: #3b7771; background: #203838; }
 
         .news-card {
             background: #ffffff;
@@ -249,7 +357,7 @@
         .market-highlight-link:hover { text-decoration: underline; }
         .mh-opportunities {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: minmax(0, 1fr);
             gap: 10px;
         }
         .mh-opportunity {
@@ -285,54 +393,6 @@
             font-weight: 800;
             text-align: center;
         }
-        .mh-fallback {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-            gap: 10px;
-        }
-        .mh-panel { min-width: 0; padding: 10px; border: 1px solid #e9edf2; border-radius: 10px; }
-        .mh-panel-title { margin-bottom: 8px; font-size: 12px; font-weight: 800; color: #1a1f36; }
-        .mh-map { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
-        .mh-map-cell {
-            min-width: 0;
-            min-height: 31px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 0;
-            border-radius: 5px;
-            color: #fff;
-            cursor: pointer;
-            line-height: 1.15;
-        }
-        .mh-map-cell:hover { filter: brightness(1.08); }
-        .mh-map-cell span { max-width: 100%; overflow: hidden; font-size: 9px; font-weight: 800; text-overflow: ellipsis; }
-        .mh-map-cell small { margin-top: 2px; font-size: 8px; }
-        .mh-map-up { background: #00a745; }
-        .mh-map-down { background: #dc3545; }
-        .mh-map-flat { background: #d6a400; }
-        .mh-radar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 10px; }
-        .mh-radar-row { min-width: 0; }
-        .mh-radar-label { margin-bottom: 4px; color: #8a99b1; font-size: 9px; font-weight: 700; }
-        .mh-radar-items { display: flex; flex-wrap: wrap; gap: 4px; }
-        .mh-chip {
-            max-width: 100%;
-            overflow: hidden;
-            padding: 3px 7px;
-            border: 0;
-            border-radius: 12px;
-            background: #eef6f5;
-            color: #087c7c;
-            cursor: pointer;
-            font: inherit;
-            font-size: 9px;
-            font-weight: 700;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .mh-chip:hover { background: #dcefed; }
-        .mh-empty { grid-column: 1 / -1; color: #8a99b1; font-size: 11px; }
         body.dark-mode .search-info {
             background: #1c2128;
             border-color: #30363d;
@@ -513,7 +573,7 @@
             grid-column: 2;
         }
 
-        /* Khối 2: 2 bài chia đôi */
+        /* Khối 2: 6 bài dạng thẻ, chia 2 cột */
         .digest-half {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -532,6 +592,98 @@
             gap: 12px;
             align-items: start;
         }
+        .digest-medium-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+            gap: 12px;
+            align-items: start;
+        }
+        .digest-medium-layout .market-highlight {
+            margin-bottom: 0;
+        }
+        .digest-market-sidebar {
+            display: grid;
+            gap: 12px;
+            align-content: start;
+        }
+        .digest-market-sidebar .market-highlight {
+            margin-bottom: 0;
+        }
+        .mh-panel-title {
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #1a1f36;
+        }
+        .mh-map {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 4px;
+        }
+        .mh-map-cell {
+            min-width: 0;
+            min-height: 34px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            line-height: 1.15;
+        }
+        .mh-map-cell:hover { filter: brightness(1.08); }
+        .mh-map-cell span { max-width: 100%; overflow: hidden; font-size: 9px; font-weight: 800; text-overflow: ellipsis; }
+        .mh-map-cell small { margin-top: 2px; font-size: 8px; }
+        .mh-map-up { background: #00a745; }
+        .mh-map-down { background: #dc3545; }
+        .mh-map-flat { background: #d6a400; }
+        .mh-radar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 8px;
+        }
+        .mh-radar-row { min-width: 0; }
+        .mh-radar-label { margin-bottom: 4px; color: #8a99b1; font-size: 9px; font-weight: 700; }
+        .mh-radar-items { display: flex; flex-wrap: wrap; gap: 4px; }
+        .mh-chip {
+            max-width: 100%;
+            overflow: hidden;
+            padding: 3px 7px;
+            border: 0;
+            border-radius: 12px;
+            background: #eef6f5;
+            color: #087c7c;
+            cursor: pointer;
+            font: inherit;
+            font-size: 9px;
+            font-weight: 700;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .mh-chip:hover { background: #dcefed; }
+        .mh-chip-negative { background: #fde8e8; color: #c62828; }
+        .mh-chip-negative:hover { background: #fbd5d5; }
+        .mh-chip-flat { background: #fff4cc; color: #9a7200; }
+        .mh-chip-flat:hover { background: #ffebad; }
+        .mh-asset-list { display: grid; gap: 8px; }
+        .mh-asset-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            min-width: 0;
+            padding-bottom: 7px;
+            border-bottom: 1px solid #eef1f5;
+        }
+        .mh-asset-row:last-child { padding-bottom: 0; border-bottom: 0; }
+        .mh-asset-name { overflow: hidden; color: #48566a; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+        .mh-asset-value { flex: 0 0 auto; color: #1a1f36; font-size: 11px; font-weight: 800; text-align: right; }
+        .mh-asset-detail { display: block; margin-top: 2px; color: #8a99b1; font-size: 9px; font-weight: 600; }
+        .mh-asset-detail.pos { color: #0b7a5c; }
+        .mh-asset-detail.neg { color: #d0314e; }
+        .mh-empty { grid-column: 1 / -1; color: #8a99b1; font-size: 11px; }
         .news-row {
             display: flex;
             align-items: center;
@@ -668,11 +820,18 @@
         body.dark-mode .market-highlight-title,
         body.dark-mode .mh-opportunity-symbol,
         body.dark-mode .mh-panel-title { color: #e6edf3; }
-        body.dark-mode .mh-opportunity,
-        body.dark-mode .mh-panel { border-color: #30363d; }
+        body.dark-mode .mh-opportunity { border-color: #30363d; }
         body.dark-mode .mh-opportunity:hover { background: #1b2229; }
         body.dark-mode .mh-opportunity-score,
         body.dark-mode .mh-chip { background: #183330; color: #4db6b6; }
+        body.dark-mode .mh-chip-negative { background: #3a2023; color: #ff7777; }
+        body.dark-mode .mh-chip-flat { background: #3a321b; color: #f0c84b; }
+        body.dark-mode .mh-asset-row { border-color: #30363d; }
+        body.dark-mode .mh-asset-name { color: #adbac7; }
+        body.dark-mode .mh-asset-value { color: #e6edf3; }
+        body.dark-mode .mh-asset-detail { color: #768390; }
+        body.dark-mode .mh-asset-detail.pos { color: #3fb68b; }
+        body.dark-mode .mh-asset-detail.neg { color: #ff7777; }
 
         /* ============================================================
                    RESPONSIVE
@@ -681,11 +840,30 @@
             .news-grid {
                 grid-template-columns: 1fr;
             }
+            .news-grid-section {
+                grid-template-columns: 1fr;
+            }
+            .news-index-card {
+                grid-column: span 1;
+                width: 100%;
+                grid-template-columns: 1fr;
+                aspect-ratio: auto;
+                min-height: 180px;
+            }
+            .news-bank-rate-card { min-height: 360px; }
+            .news-bank-rate-card .news-bank-terms { height: auto; min-height: 190px; }
+            .news-index-chart { height: 48px; }
+            .news-index-markets { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 6px; }
+            .news-crypto-markets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .digest-medium {
                 grid-template-columns: 1fr;
             }
-            .mh-opportunities { grid-template-columns: 1fr; }
-            .mh-fallback { grid-template-columns: 1fr; }
+            .digest-medium-layout {
+                grid-template-columns: 1fr;
+            }
+            .mh-map {
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+            }
         }
     </style>
 
@@ -698,7 +876,7 @@
             <button type="button" id="searchClearBtn"><i class="fas fa-times"></i> Xóa tìm kiếm</button>
         </div>
 
-        <section class="market-highlight" id="marketHighlight" hidden aria-live="polite"></section>
+        <section class="market-highlight" id="marketOpportunities" hidden aria-live="polite"></section>
 
         <div class="news-grid" id="newsGrid">
             <div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải tin tức...</div>
@@ -759,8 +937,9 @@
             var searchInfoEl = document.getElementById('searchInfo');
             var searchInfoTextEl = document.getElementById('searchInfoText');
             var searchClearBtn = document.getElementById('searchClearBtn');
-            var marketHighlightEl = document.getElementById('marketHighlight');
+            var marketOpportunitiesEl = document.getElementById('marketOpportunities');
             var marketHighlightRequest = 0;
+            var marketWidgetsRequest = 0;
 
             // ---------------- Theme (nhận từ parent index.html) ----------------
             function applyTheme(mode) {
@@ -847,23 +1026,220 @@
                 return (n > 0 ? '+' : '') + n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%';
             }
 
+            function assetNumber(value, maximumFractionDigits) {
+                var n = Number(value);
+                return Number.isFinite(n)
+                    ? n.toLocaleString('vi-VN', { maximumFractionDigits: maximumFractionDigits })
+                    : '--';
+            }
+
+            function assetRow(name, value, detail, detailClass) {
+                return '<div class="mh-asset-row"><span class="mh-asset-name">' + esc(name) +
+                    '</span><span class="mh-asset-value">' + esc(value) +
+                    (detail ? '<small class="mh-asset-detail' + (detailClass ? ' ' + detailClass : '') + '">' + esc(detail) + '</small>' : '') +
+                    '</span></div>';
+            }
+
+            function renderBankRates(container, data) {
+                var rows = Array.isArray(data) ? data.slice(0, 3) : [];
+                container.innerHTML = rows.length
+                    ? '<div class="mh-asset-list">' + rows.map(function (row) {
+                        return assetRow(row.bank_name || row.bank_code || 'Ngân hàng', assetNumber(row.interest_rate, 2) + '%/năm');
+                    }).join('') + '</div>'
+                    : '<div class="mh-empty">Chưa có dữ liệu lãi suất kỳ hạn 12 tháng.</div>';
+            }
+
+            function renderWorldGold(container, worldData, domesticData) {
+                var rows = [];
+                var items = worldData && Array.isArray(worldData.items) ? worldData.items : [];
+                var gold = items.filter(function (item) { return item && item.key === 'xau' && Number.isFinite(Number(item.price)); })[0];
+                if (gold) {
+                    var change = gold.change_24h_pct;
+                    var detailClass = change == null ? '' : Number(change) < 0 ? 'neg' : Number(change) > 0 ? 'pos' : '';
+                    var detail = change == null ? 'USD/ounce' : marketPct(change) + ' · 24 giờ';
+                    rows.push(assetRow('Vàng thế giới (XAU)', assetNumber(gold.price, 2) + ' USD/oz', detail, detailClass));
+                } else {
+                    rows.push('<div class="mh-empty">Chưa có dữ liệu giá vàng thế giới.</div>');
+                }
+                var brands = domesticData && Array.isArray(domesticData.brands) ? domesticData.brands : [];
+                var sjc = brands.filter(function (brand) { return brand && String(brand.slug).toLowerCase() === 'sjc'; })[0];
+                var product = sjc && Array.isArray(sjc.products)
+                    ? sjc.products.filter(function (item) { return item && Number.isFinite(Number(item.buy)) && Number.isFinite(Number(item.sell)); })[0]
+                    : null;
+                if (product) {
+                    rows.push(assetRow('SJC mua vào', assetNumber(product.buy, 0) + ' đ/lượng'));
+                    rows.push(assetRow('SJC bán ra', assetNumber(product.sell, 0) + ' đ/lượng'));
+                } else {
+                    rows.push('<div class="mh-empty">Chưa có dữ liệu giá vàng trong nước (SJC).</div>');
+                }
+                container.innerHTML = '<div class="mh-asset-list">' + rows.join('') + '</div>';
+            }
+
+            function renderCryptoPrices(container, data) {
+                var items = data && Array.isArray(data.items) ? data.items : [];
+                var rows = ['BTC', 'ETH', 'SOL', 'XRP'].map(function (symbol) {
+                    return items.filter(function (item) { return item && item.symbol === symbol; })[0];
+                }).filter(Boolean);
+                container.innerHTML = rows.length
+                    ? '<div class="mh-asset-list">' + rows.map(function (item) {
+                        var change = Number(item.change_pct);
+                        var detailClass = Number.isFinite(change) ? change < 0 ? 'neg' : change > 0 ? 'pos' : '' : '';
+                        var detail = Number.isFinite(change) ? marketPct(change) + ' · 24 giờ' : 'USDT';
+                        return assetRow(item.symbol, assetNumber(item.price, 4) + ' USDT', detail, detailClass);
+                    }).join('') + '</div>'
+                    : '<div class="mh-empty">Chưa có dữ liệu BTC, ETH, SOL, XRP.</div>';
+            }
+
+            function marketStockButton(symbol, label, extraClass) {
+                if (!symbol) return '';
+                return '<button type="button" class="mh-chip' + (extraClass ? ' ' + extraClass : '') + '" data-symbol="' + esc(symbol) +
+                    '" title="' + esc(label || symbol) + '">' + esc(label || symbol) + '</button>';
+            }
+
+            function bindMarketStockButtons(container) {
+                container.querySelectorAll('button[data-symbol]').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        openMarketStock(button.getAttribute('data-symbol'));
+                    });
+                });
+            }
+
             function openMarketStock(symbol) {
                 if (!symbol || !window.parent || window.parent === window) return;
                 window.parent.postMessage({ type: 'tunix-open-stock', symbol: symbol }, '*');
             }
 
-            function marketStockButton(symbol, label) {
-                if (!symbol) return '';
-                return '<button type="button" class="mh-chip" data-symbol="' + esc(symbol) +
-                    '" title="' + esc(label || symbol) + '">' + esc(label || symbol) + '</button>';
+            function radarSymbols(items, changeBySymbol) {
+                if (!Array.isArray(items) || !items.length) return '<span class="market-highlight-note">Chưa có dữ liệu</span>';
+                return items.slice(0, 5).map(function (item) {
+                    var symbol = typeof item === 'string' ? item : item && item.symbol;
+                    if (!symbol) return '';
+                    symbol = String(symbol).trim().toUpperCase();
+                    var change = item && typeof item === 'object' && item.percent_change != null
+                        ? item.percent_change : changeBySymbol[symbol];
+                    var changeValue = Number(change);
+                    var changeClass = Number.isFinite(changeValue)
+                        ? changeValue < 0 ? 'mh-chip-negative' : changeValue === 0 ? 'mh-chip-flat' : ''
+                        : '';
+                    var label = symbol + (change != null ? ' ' + marketPct(change) : '');
+                    return marketStockButton(symbol, label, changeClass);
+                }).join('') || '<span class="market-highlight-note">Chưa có dữ liệu</span>';
             }
 
-            function bindMarketStockButtons() {
-                marketHighlightEl.querySelectorAll('button[data-symbol]').forEach(function (button) {
-                    button.addEventListener('click', function () {
-                        openMarketStock(button.getAttribute('data-symbol'));
-                    });
+            function renderMarketMap(container, data) {
+                var cells = data && Array.isArray(data.cells) ? data.cells
+                    .filter(function (cell) { return cell && cell.symbol; })
+                    .sort(function (a, b) {
+                        return (Number(b.price) * Number(b.volume)) - (Number(a.price) * Number(a.volume));
+                    })
+                    .slice(0, 20) : [];
+                var mapHtml = cells.map(function (cell) {
+                    var status = cell.status;
+                    var color = status === 'up' || status === 'ceiling' ? 'mh-map-up'
+                        : status === 'down' || status === 'floor' ? 'mh-map-down' : 'mh-map-flat';
+                    return '<button type="button" class="mh-map-cell ' + color + '" data-symbol="' + esc(cell.symbol) +
+                        '" title="' + esc(cell.name || cell.symbol) + ' · ' + marketPct(cell.percent_change) + '">' +
+                        '<span>' + esc(cell.symbol) + '</span><small>' + esc(marketPct(cell.percent_change)) + '</small></button>';
+                }).filter(function (html) { return html.indexOf('data-symbol=""') === -1; }).join('');
+                container.innerHTML = mapHtml || '<div class="mh-empty">Chưa có dữ liệu bản đồ thị trường.</div>';
+                bindMarketStockButtons(container);
+            }
+
+            function renderMarketRadar(container, data, marketCells) {
+                var radar = data && data.radar ? data.radar : {};
+                var changeBySymbol = {};
+                (Array.isArray(marketCells) ? marketCells : []).forEach(function (cell) {
+                    if (cell && cell.symbol && cell.percent_change != null) {
+                        changeBySymbol[String(cell.symbol).toUpperCase()] = cell.percent_change;
+                    }
                 });
+                var hot = radar.hot_sector;
+                var hotSector = hot
+                    ? '<div class="mh-radar-row"><div class="mh-radar-label">Ngành hút tiền</div><div class="mh-radar-items">' +
+                        '<span class="market-highlight-note">' + esc(hot.name || 'Ngành nổi bật') + (hot.avg_pct != null ? ' ' + marketPct(hot.avg_pct) : '') + '</span>' +
+                        (hot.top_gainer ? marketStockButton(hot.top_gainer, 'Dẫn đầu: ' + hot.top_gainer) : '') + '</div></div>'
+                    : '';
+                container.innerHTML = hotSector +
+                    '<div class="mh-radar-row"><div class="mh-radar-label">Breakout</div><div class="mh-radar-items">' + radarSymbols(radar.breakout, changeBySymbol) + '</div></div>' +
+                    '<div class="mh-radar-row"><div class="mh-radar-label">Volume bất thường</div><div class="mh-radar-items">' + radarSymbols(radar.volume_spike, changeBySymbol) + '</div></div>' +
+                    '<div class="mh-radar-row"><div class="mh-radar-label">Khối ngoại mua ròng</div><div class="mh-radar-items">' + radarSymbols(radar.foreign_buy, changeBySymbol) + '</div></div>' +
+                    '<div class="mh-radar-row"><div class="mh-radar-label">Khối ngoại bán ròng</div><div class="mh-radar-items">' + radarSymbols(radar.foreign_sell, changeBySymbol) + '</div></div>';
+                bindMarketStockButtons(container);
+            }
+
+            async function loadDigestMarketWidgets() {
+                var requestId = ++marketWidgetsRequest;
+                var mapContainer = gridEl.querySelector('#digestMarketMap');
+                var radarContainer = gridEl.querySelector('#digestMarketRadar');
+                var bankRatesContainer = gridEl.querySelector('#digestBankRates');
+                var worldGoldContainer = gridEl.querySelector('#digestWorldGold');
+                var cryptoPricesContainer = gridEl.querySelector('#digestCryptoPrices');
+                if (!mapContainer || !radarContainer || !bankRatesContainer || !worldGoldContainer || !cryptoPricesContainer) return;
+                mapContainer.innerHTML = '<div class="info-loading">Đang tải bản đồ thị trường...</div>';
+                radarContainer.innerHTML = '<div class="info-loading">Đang tải Market Radar...</div>';
+                bankRatesContainer.innerHTML = '<div class="info-loading">Đang tải lãi suất...</div>';
+                worldGoldContainer.innerHTML = '<div class="info-loading">Đang tải giá vàng...</div>';
+                cryptoPricesContainer.innerHTML = '<div class="info-loading">Đang tải giá Crypto...</div>';
+                var responses = await Promise.allSettled([
+                    fetch('/api/stocks/market-map', { cache: 'no-store' }).then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    }),
+                    fetch('/api/stocks/market-dashboard', { cache: 'no-store' }).then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    }),
+                    fetch('/api/bank-rates/rates?term=12&channel=online&sort=rate_desc', { cache: 'no-store' }).then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    }),
+                    fetch('/api/gold/world', { cache: 'no-store' }).then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    }),
+                    fetch('/api/gold/domestic', { cache: 'no-store' }).then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    }),
+                    fetch('/api/crypto/markets', { cache: 'no-store' }).then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                ]);
+                if (requestId !== marketWidgetsRequest || !mapContainer.isConnected || !radarContainer.isConnected ||
+                    !bankRatesContainer.isConnected || !worldGoldContainer.isConnected || !cryptoPricesContainer.isConnected) return;
+                if (responses[0].status === 'fulfilled') {
+                    renderMarketMap(mapContainer, responses[0].value);
+                } else {
+                    mapContainer.innerHTML = '<div class="mh-empty">Chưa có dữ liệu bản đồ thị trường.</div>';
+                    console.warn('Không thể tải dữ liệu bản đồ thị trường:', responses[0].reason);
+                }
+                if (responses[1].status === 'fulfilled') {
+                    renderMarketRadar(radarContainer, responses[1].value,
+                        responses[0].status === 'fulfilled' ? responses[0].value.cells : []);
+                } else {
+                    renderMarketRadar(radarContainer, {});
+                    console.warn('Không thể tải dữ liệu Market Radar:', responses[1].reason);
+                }
+                [
+                    { index: 2, container: bankRatesContainer, render: renderBankRates, name: 'lãi suất ngân hàng' },
+                    { index: 5, container: cryptoPricesContainer, render: renderCryptoPrices, name: 'giá Crypto' }
+                ].forEach(function (item) {
+                    if (responses[item.index].status === 'fulfilled') {
+                        item.render(item.container, responses[item.index].value);
+                    } else {
+                        item.container.innerHTML = '<div class="mh-empty">Chưa có dữ liệu.</div>';
+                        console.warn('Không thể tải ' + item.name + ':', responses[item.index].reason);
+                    }
+                });
+                renderWorldGold(
+                    worldGoldContainer,
+                    responses[3].status === 'fulfilled' ? responses[3].value : null,
+                    responses[4].status === 'fulfilled' ? responses[4].value : null
+                );
+                if (responses[3].status === 'rejected') console.warn('Không thể tải giá vàng thế giới:', responses[3].reason);
+                if (responses[4].status === 'rejected') console.warn('Không thể tải giá vàng trong nước:', responses[4].reason);
+                notifyParentHeight();
             }
 
             function renderMarketOpportunities(items) {
@@ -880,12 +1256,11 @@
                 }).filter(function (html) { return html.indexOf('data-symbol=""') === -1; });
 
                 if (!cards.length) return false;
-                marketHighlightEl.innerHTML =
+                marketOpportunitiesEl.innerHTML =
                     '<div class="market-highlight-head"><div class="market-highlight-title">🔥 Cơ hội nổi bật hôm nay</div>' +
                     '<button type="button" class="market-highlight-link" data-market-page="true">Xem thị trường <i class="fas fa-arrow-right"></i></button></div>' +
                     '<div class="mh-opportunities">' + cards.join('') + '</div>';
-                bindMarketStockButtons();
-                marketHighlightEl.querySelectorAll('.mh-opportunity').forEach(function (card) {
+                marketOpportunitiesEl.querySelectorAll('.mh-opportunity').forEach(function (card) {
                     function open() { openMarketStock(card.getAttribute('data-symbol')); }
                     card.addEventListener('click', open);
                     card.addEventListener('keydown', function (event) {
@@ -898,102 +1273,33 @@
                 return true;
             }
 
-            function radarSymbols(items, includeChange) {
-                if (!Array.isArray(items) || !items.length) return '<span class="market-highlight-note">Chưa có dữ liệu</span>';
-                return items.slice(0, 3).map(function (item) {
-                    var symbol = typeof item === 'string' ? item : item && item.symbol;
-                    if (!symbol) return '';
-                    var label = symbol;
-                    if (includeChange && item && item.percent_change != null) label += ' ' + marketPct(item.percent_change);
-                    return marketStockButton(symbol, label);
-                }).join('') || '<span class="market-highlight-note">Chưa có dữ liệu</span>';
-            }
-
-            function renderMarketFallback(mapData, dashData) {
-                var cells = mapData.cells.slice(0, 18);
-                var mapHtml = cells.map(function (cell) {
-                    var status = cell.status;
-                    var color = status === 'up' || status === 'ceiling' ? 'mh-map-up'
-                        : status === 'down' || status === 'floor' ? 'mh-map-down' : 'mh-map-flat';
-                    return '<button type="button" class="mh-map-cell ' + color + '" data-symbol="' + esc(cell.symbol) +
-                        '" title="' + esc(cell.name || cell.symbol) + ' · ' + marketPct(cell.percent_change) + '">' +
-                        '<span>' + esc(cell.symbol) + '</span><small>' + esc(marketPct(cell.percent_change)) + '</small></button>';
-                }).join('');
-                var radar = dashData.radar || {};
-                var hot = radar.hot_sector;
-                var hotSector = hot
-                    ? '<div class="mh-radar-row"><div class="mh-radar-label">Ngành hút tiền</div><div class="mh-radar-items">' +
-                        '<span class="market-highlight-note">' + esc(hot.name || 'Ngành nổi bật') + (hot.avg_pct != null ? ' ' + marketPct(hot.avg_pct) : '') + '</span>' +
-                        (hot.top_gainer ? marketStockButton(hot.top_gainer, 'Dẫn đầu: ' + hot.top_gainer) : '') + '</div></div>'
-                    : '';
-                var radarHtml = hotSector +
-                    '<div class="mh-radar-row"><div class="mh-radar-label">Breakout</div><div class="mh-radar-items">' + radarSymbols(radar.breakout, true) + '</div></div>' +
-                    '<div class="mh-radar-row"><div class="mh-radar-label">Volume bất thường</div><div class="mh-radar-items">' + radarSymbols(radar.volume_spike, false) + '</div></div>' +
-                    '<div class="mh-radar-row"><div class="mh-radar-label">Khối ngoại mua ròng</div><div class="mh-radar-items">' + radarSymbols(radar.foreign_buy, false) + '</div></div>';
-
-                marketHighlightEl.innerHTML =
-                    '<div class="market-highlight-head"><div><div class="market-highlight-title">Bản đồ thị trường</div>' +
-                    '<div class="market-highlight-note">Các mã có thanh khoản cao trong phiên</div></div>' +
-                    '<button type="button" class="market-highlight-link" data-market-page="true">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
-                    '<div class="mh-fallback"><div class="mh-panel"><div class="mh-map">' +
-                    (mapHtml || '<div class="mh-empty">Chưa có dữ liệu bản đồ thị trường.</div>') +
-                    '</div></div><div class="mh-panel"><div class="mh-panel-title">VinaFintech Market Radar</div>' +
-                    '<div class="mh-radar">' + radarHtml + '</div></div></div>';
-                bindMarketStockButtons();
-            }
-
-            function openMarketPage() {
+            function openMarketPage(url) {
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'tunix-open-page', url: '/thi-truong' }, '*');
+                    window.parent.postMessage({ type: 'tunix-open-page', url: url || '/thi-truong' }, '*');
                 }
             }
 
             async function refreshMarketHighlight() {
                 var requestId = ++marketHighlightRequest;
-                if (currentCat || currentQ) {
-                    marketHighlightEl.hidden = true;
-                    marketHighlightEl.innerHTML = '';
-                    notifyParentHeight();
-                    return;
-                }
+                marketOpportunitiesEl.hidden = true;
+                marketOpportunitiesEl.innerHTML = '';
 
-                marketHighlightEl.hidden = true;
-                marketHighlightEl.innerHTML = '';
                 try {
-                    var response = await fetch('/api/stocks/opportunities', { cache: 'no-store' });
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    var opportunities = await response.json();
+                    var opportunitiesResponse = await fetch('/api/stocks/opportunities', { cache: 'no-store' });
+                    if (!opportunitiesResponse.ok) throw new Error('HTTP ' + opportunitiesResponse.status);
+                    var opportunities = await opportunitiesResponse.json();
                     if (requestId !== marketHighlightRequest) return;
                     if (!opportunities || opportunities.ok !== true || !Array.isArray(opportunities.items)) {
                         throw new Error('Invalid opportunities response');
                     }
-
-                    if (opportunities.items.length) {
-                        if (!renderMarketOpportunities(opportunities.items)) return;
-                    } else {
-                        var responses = await Promise.all([
-                            fetch('/api/stocks/market-map', { cache: 'no-store' }),
-                            fetch('/api/stocks/market-dashboard', { cache: 'no-store' })
-                        ]);
-                        if (!responses[0].ok || !responses[1].ok) {
-                            throw new Error('Market fallback request failed');
-                        }
-                        var fallbackData = await Promise.all([responses[0].json(), responses[1].json()]);
-                        if (requestId !== marketHighlightRequest) return;
-                        if (!fallbackData[0] || !Array.isArray(fallbackData[0].cells) ||
-                            !fallbackData[1] || !fallbackData[1].radar) {
-                            throw new Error('Invalid market fallback response');
-                        }
-                        renderMarketFallback(fallbackData[0], fallbackData[1]);
-                    }
-                    var marketLink = marketHighlightEl.querySelector('[data-market-page]');
-                    if (marketLink) marketLink.addEventListener('click', openMarketPage);
-                    marketHighlightEl.hidden = false;
+                    marketOpportunitiesEl.hidden = !renderMarketOpportunities(opportunities.items);
+                    var opportunitiesLink = marketOpportunitiesEl.querySelector('[data-market-page]');
+                    if (opportunitiesLink) opportunitiesLink.addEventListener('click', openMarketPage);
                 } catch (error) {
                     if (requestId !== marketHighlightRequest) return;
-                    marketHighlightEl.hidden = true;
-                    marketHighlightEl.innerHTML = '';
-                    console.warn('Không thể tải dữ liệu cơ hội/bản đồ thị trường:', error);
+                    marketOpportunitiesEl.hidden = true;
+                    marketOpportunitiesEl.innerHTML = '';
+                    console.warn('Không thể tải cơ hội nổi bật hôm nay:', error);
                 }
                 notifyParentHeight();
             }
@@ -1113,11 +1419,17 @@
 
             // Các trang sau: thêm bài mới vào cuối lưới tin
             function appendNews(list, limit) {
-                var before = gridEl.querySelectorAll('.news-card').length;
-                gridEl.insertAdjacentHTML('beforeend', list.map(function (item) {
+                var rest = gridEl.querySelector('.news-grid-rest');
+                if (!rest) {
+                    rest = document.createElement('div');
+                    rest.className = 'news-grid-section news-grid-rest';
+                    gridEl.appendChild(rest);
+                }
+                var before = rest.querySelectorAll('.news-card').length;
+                rest.insertAdjacentHTML('beforeend', list.map(function (item) {
                     return cardHtml(item, false);
                 }).join(''));
-                var cards = gridEl.querySelectorAll('.news-card');
+                var cards = rest.querySelectorAll('.news-card');
                 for (var i = before; i < cards.length; i++) {
                     bindCard(cards[i]);
                 }
@@ -1125,6 +1437,444 @@
                 if (list.length < limit) hasMore = false;
                 showLoadMore(hasMore);
                 notifyParentHeight();
+            }
+
+            function indexChartPath(history) {
+                var values = (Array.isArray(history) ? history : []).map(function (point) {
+                    return Number(point && point.close);
+                }).filter(Number.isFinite).slice(-30);
+                if (values.length < 2) return '';
+                var min = Math.min.apply(Math, values);
+                var range = Math.max.apply(Math, values) - min || 1;
+                return values.map(function (value, index) {
+                    var x = 4 + index * 352 / (values.length - 1);
+                    var y = 70 - (value - min) * 58 / range;
+                    return (index ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+                }).join(' ');
+            }
+
+            function loadAdditionalIndices(card, indexData) {
+                var indices = [
+                    { key: 'hnx', label: 'HNX' },
+                    { key: 'upcom', label: 'UPCOM' },
+                    { key: 'nikkei', label: 'Nikkei' },
+                    { key: 'dowjones', label: 'Dow Jones' },
+                    { key: 'nasdaq', label: 'NASDAQ' }
+                ];
+                var strip = card.querySelector('#newsIndexMarkets');
+                if (!strip) return;
+                Promise.allSettled(indices.map(function (index) {
+                    return fetch('/api/stocks/index-detail?key=' + index.key + '&period=1m', { cache: 'no-store' })
+                        .then(function (response) {
+                            if (!response.ok) throw new Error('HTTP ' + response.status);
+                            return response.json();
+                        });
+                })).then(function (results) {
+                    if (!card.isConnected) return;
+                    strip.innerHTML = results.map(function (result, index) {
+                        if (result.status !== 'fulfilled' || !result.value || !result.value.valid ||
+                            !Number.isFinite(Number(result.value.value))) {
+                            if (result.status === 'rejected') {
+                                console.warn('Không thể tải chỉ số ' + indices[index].label + ':', result.reason);
+                            }
+                            return '<button class="news-index-market" type="button" disabled><div class="news-index-market-name">' +
+                                esc(indices[index].label) + '</div><div class="news-index-empty">--</div></button>';
+                        }
+                        var data = result.value;
+                        indexData[indices[index].key] = data;
+                        var change = Number(data.change) || 0;
+                        var percent = Number(data.percent_change) || 0;
+                        var direction = change > 0 ? 'pos' : change < 0 ? 'neg' : 'flat';
+                        var changeLabel = (change > 0 ? '+' : change < 0 ? '−' : '') +
+                            Math.abs(change).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) +
+                            ' (' + (percent > 0 ? '+' : '') + percent.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%)';
+                        return '<button class="news-index-market" type="button" data-index-key="' + indices[index].key +
+                            '" aria-pressed="false"><div class="news-index-market-name">' +
+                            esc(indices[index].label) + '</div><div class="news-index-market-value">' +
+                            Number(data.value).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) +
+                            '</div><div class="news-index-market-change ' + direction + '">' + changeLabel + '</div></button>';
+                    }).join('');
+                    strip.querySelectorAll('[data-index-key]').forEach(function (button) {
+                        button.classList.toggle('active', button.getAttribute('data-index-key') === card.getAttribute('data-selected-index'));
+                        button.setAttribute('aria-pressed', button.getAttribute('data-index-key') === card.getAttribute('data-selected-index') ? 'true' : 'false');
+                    });
+                    notifyParentHeight();
+                });
+            }
+
+            function loadNewsIndexCard() {
+                var card = gridEl.querySelector('#newsIndexCard');
+                if (!card) return;
+                var indexData = {};
+                var labels = {
+                    vnindex: 'VNINDEX',
+                    hnx: 'HNX',
+                    upcom: 'UPCOM',
+                    nikkei: 'Nikkei',
+                    dowjones: 'Dow Jones',
+                    nasdaq: 'NASDAQ'
+                };
+                card.setAttribute('data-selected-index', 'vnindex');
+                card.innerHTML =
+                    '<div id="newsIndexMain"><div class="news-index-empty">Đang tải VNINDEX...</div></div>' +
+                    '<div class="news-index-chart" id="newsIndexChart"></div>' +
+                    '<div class="news-index-markets" id="newsIndexMarkets">' +
+                    '<button class="news-index-market" type="button" disabled><div class="news-index-market-name">HNX</div><div class="news-index-empty">Đang tải...</div></button>' +
+                    '<button class="news-index-market" type="button" disabled><div class="news-index-market-name">UPCOM</div><div class="news-index-empty">Đang tải...</div></button>' +
+                    '<button class="news-index-market" type="button" disabled><div class="news-index-market-name">Nikkei</div><div class="news-index-empty">Đang tải...</div></button>' +
+                    '<button class="news-index-market" type="button" disabled><div class="news-index-market-name">Dow Jones</div><div class="news-index-empty">Đang tải...</div></button>' +
+                    '<button class="news-index-market" type="button" disabled><div class="news-index-market-name">NASDAQ</div><div class="news-index-empty">Đang tải...</div></button></div>';
+                card.addEventListener('click', function (event) {
+                    var button = event.target.closest('[data-index-key]');
+                    if (!button || !card.contains(button)) return;
+                    var key = button.getAttribute('data-index-key');
+                    var data = indexData[key];
+                    if (!data) return;
+                    card.setAttribute('data-selected-index', key);
+                    renderSelectedIndex(key, data);
+                });
+                function renderSelectedIndex(key, data) {
+                    var change = Number(data.change) || 0;
+                    var percent = Number(data.percent_change) || 0;
+                    var direction = change > 0 ? 'pos' : change < 0 ? 'neg' : 'flat';
+                    var changeLabel = (change > 0 ? '+' : change < 0 ? '−' : '') +
+                        Math.abs(change).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+                        ' điểm (' + (percent > 0 ? '+' : '') +
+                        percent.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%)';
+                    var path = indexChartPath(data.history);
+                    card.querySelector('#newsIndexMain').innerHTML =
+                        '<div class="news-index-heading"><strong>' + labels[key] + '</strong>' +
+                        '<span>Chỉ số thị trường</span></div>' +
+                        '<div class="news-index-value">' + Number(data.value).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</div>' +
+                        '<div class="news-index-change ' + direction + '">' + changeLabel + '</div>';
+                    card.querySelector('#newsIndexChart').innerHTML = path
+                        ? '<svg viewBox="0 0 360 76" preserveAspectRatio="none" aria-label="Biểu đồ ' + labels[key] + ' 1 tháng"><path class="' + direction + '" d="' + path + '"></path></svg>'
+                        : '<div class="news-index-empty">Chưa có dữ liệu biểu đồ.</div>';
+                    card.querySelectorAll('.news-index-market[data-index-key]').forEach(function (button) {
+                        var selected = button.getAttribute('data-index-key') === key;
+                        button.classList.toggle('active', selected);
+                        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+                    });
+                    notifyParentHeight();
+                }
+                loadAdditionalIndices(card, indexData);
+                fetch('/api/stocks/index-detail?key=vnindex&period=1m', { cache: 'no-store' })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!card.isConnected) return;
+                        if (!data || !data.valid || !Number.isFinite(Number(data.value))) {
+                            card.querySelector('#newsIndexMain').innerHTML = '<div class="news-index-empty">Chưa có dữ liệu VNINDEX.</div>';
+                            return;
+                        }
+                        indexData.vnindex = data;
+                        if (card.getAttribute('data-selected-index') === 'vnindex') {
+                            renderSelectedIndex('vnindex', data);
+                        }
+                    })
+                    .catch(function (error) {
+                        if (!card.isConnected) return;
+                        card.querySelector('#newsIndexMain').innerHTML = '<div class="news-index-empty">Không thể tải dữ liệu VNINDEX.</div>';
+                        console.warn('Không thể tải VNINDEX:', error);
+                        notifyParentHeight();
+                    });
+            }
+
+            function loadNewsCryptoCard() {
+                var card = gridEl.querySelector('#newsCryptoCard');
+                if (!card) return;
+                var symbols = ['BTC', 'ETH', 'SOL', 'XRP'];
+                var coinData = {};
+                var labels = { BTC: 'Bitcoin', ETH: 'Ethereum', SOL: 'Solana', XRP: 'XRP' };
+                card.setAttribute('data-selected-symbol', 'BTC');
+                card.innerHTML =
+                    '<div id="newsCryptoMain"><div class="news-index-empty">Đang tải giá Crypto...</div></div>' +
+                    '<div class="news-index-chart" id="newsCryptoChart"></div>' +
+                    '<div class="news-index-markets news-crypto-markets" id="newsCryptoMarkets">' +
+                    symbols.map(function (symbol) {
+                        return '<button class="news-index-market" type="button" disabled><div class="news-index-market-name">' +
+                            symbol + '/USDT</div><div class="news-index-empty">Đang tải...</div></button>';
+                    }).join('') + '</div>';
+
+                function renderSelectedCrypto(symbol) {
+                    var item = coinData[symbol];
+                    if (!item) return;
+                    var price = Number(item.market && item.market.price);
+                    if (!Number.isFinite(price)) {
+                        var history = Array.isArray(item.history) ? item.history : [];
+                        price = history.length ? Number(history[history.length - 1].close) : NaN;
+                    }
+                    var percent = Number(item.market && item.market.change_pct);
+                    if (!Number.isFinite(percent)) {
+                        var candles = Array.isArray(item.history) ? item.history : [];
+                        var previousClose = candles.length > 1 ? Number(candles[candles.length - 2].close) : NaN;
+                        var latestClose = candles.length ? Number(candles[candles.length - 1].close) : NaN;
+                        percent = Number.isFinite(previousClose) && previousClose !== 0 && Number.isFinite(latestClose)
+                            ? (latestClose - previousClose) / previousClose * 100
+                            : NaN;
+                    }
+                    var direction = !Number.isFinite(percent) || percent === 0 ? 'flat' : percent > 0 ? 'pos' : 'neg';
+                    var precision = price >= 100 ? 2 : price >= 1 ? 3 : 4;
+                    var path = indexChartPath(item.history);
+                    card.querySelector('#newsCryptoMain').innerHTML =
+                        '<div class="news-index-heading"><strong>' + symbol + '/USDT</strong>' +
+                        '<span>' + esc(labels[symbol]) + ' · Giá theo USDT</span></div>' +
+                        '<div class="news-index-value">' + (Number.isFinite(price)
+                            ? price.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: precision }) + ' USDT'
+                            : '-- USDT') + '</div>' +
+                        '<div class="news-index-change ' + direction + '">' +
+                        (Number.isFinite(percent) ? (percent > 0 ? '+' : '') +
+                            percent.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '% · 24 giờ'
+                            : 'Chưa có biến động 24 giờ') + '</div>';
+                    card.querySelector('#newsCryptoChart').innerHTML = path
+                        ? '<svg viewBox="0 0 360 76" preserveAspectRatio="none" aria-label="Biểu đồ ' + symbol + '/USDT 30 ngày"><path class="' + direction + '" d="' + path + '"></path></svg>'
+                        : '<div class="news-index-empty">Chưa có dữ liệu biểu đồ.</div>';
+                    card.querySelectorAll('.news-index-market[data-crypto-symbol]').forEach(function (button) {
+                        var selected = button.getAttribute('data-crypto-symbol') === symbol;
+                        button.classList.toggle('active', selected);
+                        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+                    });
+                    notifyParentHeight();
+                }
+
+                card.addEventListener('click', function (event) {
+                    var button = event.target.closest('[data-crypto-symbol]');
+                    if (!button || !card.contains(button)) return;
+                    var symbol = button.getAttribute('data-crypto-symbol');
+                    if (!coinData[symbol]) return;
+                    card.setAttribute('data-selected-symbol', symbol);
+                    renderSelectedCrypto(symbol);
+                });
+
+                Promise.allSettled([
+                    fetch('/api/crypto/markets', { cache: 'no-store' }).then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    }),
+                    Promise.allSettled(symbols.map(function (symbol) {
+                        return fetch('/api/crypto/klines?symbol=' + symbol + 'USDT&interval=1d&limit=30', { cache: 'no-store' })
+                            .then(function (response) {
+                                if (!response.ok) throw new Error('HTTP ' + response.status);
+                                return response.json();
+                            });
+                    }))
+                ]).then(function (results) {
+                    if (!card.isConnected) return;
+                    var marketResult = results[0];
+                    var historyResults = results[1].status === 'fulfilled' ? results[1].value : [];
+                    if (marketResult.status === 'rejected') {
+                        console.warn('Không thể tải giá Crypto:', marketResult.reason);
+                    }
+                    if (results[1].status === 'rejected') {
+                        console.warn('Không thể tải biểu đồ Crypto:', results[1].reason);
+                    }
+                    var markets = marketResult.status === 'fulfilled' && Array.isArray(marketResult.value.items)
+                        ? marketResult.value.items
+                        : [];
+                    symbols.forEach(function (symbol, index) {
+                        var market = markets.filter(function (item) { return item && item.symbol === symbol; })[0] || null;
+                        var historyResult = historyResults[index];
+                        var historyData = historyResult && historyResult.status === 'fulfilled'
+                            ? historyResult.value
+                            : null;
+                        if (historyResult && historyResult.status === 'rejected') {
+                            console.warn('Không thể tải biểu đồ ' + symbol + '/USDT:', historyResult.reason);
+                        }
+                        coinData[symbol] = {
+                            market: market,
+                            history: historyData && Array.isArray(historyData.items) ? historyData.items : []
+                        };
+                    });
+
+                    var strip = card.querySelector('#newsCryptoMarkets');
+                    strip.innerHTML = symbols.map(function (symbol) {
+                        var item = coinData[symbol];
+                        var price = Number(item.market && item.market.price);
+                        if (!Number.isFinite(price) && item.history.length) {
+                            price = Number(item.history[item.history.length - 1].close);
+                        }
+                        if (!Number.isFinite(price)) {
+                            return '<button class="news-index-market" type="button" disabled><div class="news-index-market-name">' +
+                                symbol + '/USDT</div><div class="news-index-empty">--</div></button>';
+                        }
+                        var percent = Number(item.market && item.market.change_pct);
+                        var direction = !Number.isFinite(percent) || percent === 0 ? 'flat' : percent > 0 ? 'pos' : 'neg';
+                        var precision = price >= 100 ? 2 : price >= 1 ? 3 : 4;
+                        return '<button class="news-index-market" type="button" data-crypto-symbol="' + symbol +
+                            '" aria-pressed="' + (symbol === card.getAttribute('data-selected-symbol') ? 'true' : 'false') + '">' +
+                            '<div class="news-index-market-name">' + symbol + '/USDT</div>' +
+                            '<div class="news-index-market-value">' + price.toLocaleString('vi-VN', {
+                                minimumFractionDigits: 2, maximumFractionDigits: precision
+                            }) + '</div>' +
+                            '<div class="news-index-market-change ' + direction + '">' +
+                            (Number.isFinite(percent) ? (percent > 0 ? '+' : '') +
+                                percent.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%'
+                                : '--') + '</div></button>';
+                    }).join('');
+
+                    if (coinData.BTC.market || coinData.BTC.history.length) {
+                        renderSelectedCrypto('BTC');
+                    } else {
+                        card.querySelector('#newsCryptoMain').innerHTML = '<div class="news-index-empty">Chưa có dữ liệu BTC/USDT.</div>';
+                        card.querySelector('#newsCryptoChart').innerHTML = '';
+                        notifyParentHeight();
+                    }
+                });
+            }
+
+            function loadNewsBankRateCard() {
+                var card = gridEl.querySelector('#newsBankRateCard');
+                if (!card) return;
+                card.classList.add('news-bank-rate-card');
+                var banks = [];
+                var rateRequest = 0;
+                var terms = [1, 3, 6, 12, 18, 24, 36];
+                card.innerHTML =
+                    '<div id="newsBankRateMain"><div class="news-index-empty">Đang tải lãi suất ngân hàng...</div></div>' +
+                    '<div class="news-index-chart news-bank-terms" id="newsBankRateTerms"></div>' +
+                    '<div class="news-index-markets" id="newsBankRateMarkets">' +
+                    Array.from({ length: 5 }, function () {
+                        return '<button class="news-index-market" type="button" disabled><div class="news-index-empty">Đang tải...</div></button>';
+                    }).join('') + '</div>';
+
+                function renderSelectedBank(index) {
+                    var bank = banks[index];
+                    if (!bank) return;
+                    var requestId = ++rateRequest;
+                    card.setAttribute('data-selected-bank', String(index));
+                    var main = card.querySelector('#newsBankRateMain');
+                    var termList = card.querySelector('#newsBankRateTerms');
+                    main.classList.add('is-switching');
+                    termList.classList.add('is-updating');
+                    main.innerHTML =
+                        '<div class="news-index-heading"><strong>' + esc(bank.bank_name || bank.bank_code || 'Ngân hàng') + '</strong>' +
+                        '<span>Lãi suất online kỳ hạn 12 tháng</span></div>' +
+                        '<div class="news-index-value">' +
+                        Number(bank.interest_rate).toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) +
+                        '%<span style="font-size:13px;font-weight:600;">/năm</span></div>';
+                    requestAnimationFrame(function () {
+                        main.classList.remove('is-switching');
+                    });
+                    card.querySelectorAll('.news-index-market[data-bank-index]').forEach(function (button) {
+                        var selected = Number(button.getAttribute('data-bank-index')) === index;
+                        button.classList.toggle('active', selected);
+                        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+                    });
+                    notifyParentHeight();
+                    fetch('/api/bank-rates/rates?bank=' + encodeURIComponent(bank.bank_code) +
+                        '&channel=online&sort=rate_desc', { cache: 'no-store' })
+                        .then(function (response) {
+                            if (!response.ok) throw new Error('HTTP ' + response.status);
+                            return response.json();
+                        })
+                        .then(function (data) {
+                            if (!card.isConnected || requestId !== rateRequest) return;
+                            var byTerm = {};
+                            (Array.isArray(data) ? data : []).forEach(function (item) {
+                                var term = Number(item && item.term);
+                                var rate = Number(item && item.interest_rate);
+                                if (Number.isFinite(term) && Number.isFinite(rate) && byTerm[term] == null) {
+                                    byTerm[term] = rate;
+                                }
+                            });
+                            termList.innerHTML = terms.map(function (term) {
+                                return '<div class="news-bank-term"><span>' + term + ' tháng</span><strong>' +
+                                    (byTerm[term] == null
+                                        ? '--'
+                                        : byTerm[term].toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + '%/năm') +
+                                    '</strong></div>';
+                            }).join('');
+                            termList.classList.remove('is-updating');
+                            notifyParentHeight();
+                        })
+                        .catch(function (error) {
+                            if (!card.isConnected || requestId !== rateRequest) return;
+                            termList.innerHTML =
+                                    '<div class="news-index-empty">Không thể tải lãi suất các kỳ hạn.</div>';
+                            termList.classList.remove('is-updating');
+                            console.warn('Không thể tải lãi suất các kỳ hạn ' + bank.bank_code + ':', error);
+                            notifyParentHeight();
+                        });
+                }
+
+                card.addEventListener('click', function (event) {
+                    var button = event.target.closest('[data-bank-index]');
+                    if (!button || !card.contains(button)) return;
+                    renderSelectedBank(Number(button.getAttribute('data-bank-index')));
+                });
+
+                fetch('/api/bank-rates/rates?term=12&channel=online&sort=rate_desc', { cache: 'no-store' })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!card.isConnected) return;
+                        banks = (Array.isArray(data) ? data : []).filter(function (bank) {
+                            return bank && Number.isFinite(Number(bank.interest_rate));
+                        }).sort(function (a, b) {
+                            return Number(b.interest_rate) - Number(a.interest_rate);
+                        }).slice(0, 5);
+                        if (!banks.length) {
+                            card.querySelector('#newsBankRateMain').innerHTML =
+                                '<div class="news-index-empty">Chưa có dữ liệu lãi suất ngân hàng.</div>';
+                            card.querySelector('#newsBankRateTerms').innerHTML = '';
+                            card.querySelector('#newsBankRateMarkets').innerHTML =
+                                '<div class="news-index-empty">Chưa có dữ liệu kỳ hạn 12 tháng.</div>';
+                            return;
+                        }
+                        card.querySelector('#newsBankRateMarkets').innerHTML = banks.map(function (bank, index) {
+                            return '<button class="news-index-market" type="button" data-bank-index="' + index +
+                                '" aria-pressed="' + (index === 0 ? 'true' : 'false') + '">' +
+                                '<div class="news-index-market-name">' + esc(bank.bank_name || bank.bank_code || 'Ngân hàng') + '</div>' +
+                                '<div class="news-index-market-value">' +
+                                Number(bank.interest_rate).toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) +
+                                '%/năm</div></button>';
+                        }).join('');
+                        renderSelectedBank(0);
+                    })
+                    .catch(function (error) {
+                        if (!card.isConnected) return;
+                        card.querySelector('#newsBankRateMain').innerHTML =
+                            '<div class="news-index-empty">Không thể tải lãi suất ngân hàng.</div>';
+                        card.querySelector('#newsBankRateTerms').innerHTML = '';
+                        card.querySelector('#newsBankRateMarkets').innerHTML = '';
+                        console.warn('Không thể tải lãi suất ngân hàng:', error);
+                        notifyParentHeight();
+                    });
+            }
+
+            function renderInitialNews(data) {
+                var firstRowCount = gridCols();
+                var showIndex = currentCat === 'chung-khoan' && !currentQ;
+                var showCrypto = currentCat === 'tien-ao' && !currentQ;
+                var showBankRates = currentCat === 'ngan-hang' && !currentQ;
+                var showMarketCard = showIndex || showCrypto || showBankRates;
+                var displacedCount = showMarketCard ? Math.min(2, data.length) : 0;
+                var firstRowEnd = Math.max(firstRowCount, displacedCount);
+                var firstRow = data.slice(displacedCount, firstRowEnd);
+                var remaining = showMarketCard
+                    ? data.slice(0, displacedCount).concat(data.slice(firstRowEnd))
+                    : data.slice(firstRowCount);
+                gridEl.classList.add('news-split');
+                gridEl.innerHTML =
+                    '<div class="news-grid-section news-grid-first">' +
+                    (showIndex ? '<section class="news-index-card" id="newsIndexCard"><div class="news-index-empty">Đang tải VNINDEX...</div></section>' : '') +
+                    (showCrypto ? '<section class="news-index-card" id="newsCryptoCard"><div class="news-index-empty">Đang tải giá Crypto...</div></section>' : '') +
+                    (showBankRates ? '<section class="news-index-card" id="newsBankRateCard"><div class="news-index-empty">Đang tải lãi suất ngân hàng...</div></section>' : '') +
+                    firstRow.map(function (item, index) {
+                        return cardHtml(item, index < 4);
+                    }).join('') + '</div>' +
+                    '<div class="news-grid-section news-grid-rest">' + remaining.map(function (item, index) {
+                        return cardHtml(item, index + firstRow.length < 4);
+                    }).join('') + '</div>';
+                gridEl.querySelectorAll('.news-card').forEach(bindCard);
+                if (showIndex) loadNewsIndexCard();
+                if (showCrypto) loadNewsCryptoCard();
+                if (showBankRates) loadNewsBankRateCard();
+                return data.length;
             }
 
             // Ảnh lazy-load xong thì báo lại chiều cao
@@ -1240,7 +1990,8 @@
             // Số cột hiện tại của lưới tin
             function gridCols() {
                 try {
-                    var tc = getComputedStyle(gridEl).gridTemplateColumns;
+                    var grid = gridEl.querySelector('.news-grid-section') || gridEl;
+                    var tc = getComputedStyle(grid).gridTemplateColumns;
                     if (tc && tc !== 'none') {
                         var cols = tc.split(' ').filter(Boolean).length;
                         if (cols > 0) return cols;
@@ -1319,11 +2070,10 @@
                         return;
                     }
 
-                    // Layout: 6 bài đầu (1 bài TO + 5 bài NHỎ) → 2 bài chia đôi
-                    //         → 22 bài còn lại: danh sách 2 cột (trái / phải)
+                    // Layout: 6 bài nổi bật → 6 bài dạng thẻ → 22 bài danh sách
                     var featured = items.slice(0, 6);
-                    var halfItems = items.slice(6, 8);
-                    var mediumItems = items.slice(8, 30);
+                    var halfItems = items.slice(6, 12);
+                    var mediumItems = items.slice(12, 34);
 
                     var html = '';
                     if (featured.length) {
@@ -1336,11 +2086,33 @@
                             return digestCellHtml(n, 'half');
                         }).join('') + '</div>';
                     }
-                    if (mediumItems.length) {
-                        html += '<div class="digest-medium">' + mediumItems.map(digestRowHtml).join('') + '</div>';
-                    }
+                    html += '<div class="digest-medium-layout">' +
+                        '<div class="digest-medium">' + mediumItems.map(digestRowHtml).join('') + '</div>' +
+                        '<div class="digest-market-sidebar">' +
+                        '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">Bản đồ thị trường</div>' +
+                        '<button type="button" class="market-highlight-link" data-market-page="true">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<div class="mh-map" id="digestMarketMap"></div></section>' +
+                        '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">VinaFintech Market Radar</div>' +
+                        '<button type="button" class="market-highlight-link" data-market-page="true">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<div class="mh-radar" id="digestMarketRadar"></div></section>' +
+                        '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">Lãi suất ngân hàng</div>' +
+                        '<button type="button" class="market-highlight-link" data-market-page="/lai-ngan-hang">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<div id="digestBankRates"></div></section>' +
+                        '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">Giá vàng</div>' +
+                        '<button type="button" class="market-highlight-link" data-market-page="/gia-vang-bac">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<div id="digestWorldGold"></div></section>' +
+                        '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">Crypto</div>' +
+                        '<button type="button" class="market-highlight-link" data-market-page="/crypto">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<div id="digestCryptoPrices"></div></section>' +
+                        '</div>';
 
                     gridEl.innerHTML = html;
+                    gridEl.querySelectorAll('[data-market-page]').forEach(function (link) {
+                        link.addEventListener('click', function () {
+                            openMarketPage(link.getAttribute('data-market-page'));
+                        });
+                    });
+                    loadDigestMarketWidgets();
                     gridEl.querySelectorAll('.news-cell, .news-row').forEach(function (el) {
                         el.addEventListener('click', function (e) {
                             var id = el.getAttribute('data-id');
@@ -1390,10 +2162,7 @@
                 }
             }
 
-            // Trang đầu: hiển thị đủ số bài để lưới tin cân bằng theo màn hình.
-            // Nếu có cột phải (block "Tin được xem nhiều nhất" bên phải) → căn theo đáy block đó;
-            // nếu không (right-col đang tạm ẩn / mở trực tiếp / màn hình hẹp) → căn theo chiều cao
-            // khung nhìn để "vừa đủ cân bằng" trên mọi kích thước màn hình (không còn cố định 12 bài).
+            // Trang đầu: căn số bài theo màn hình và cột tin xem nhiều nhất nếu có.
             async function loadInitial() {
                 var target = mostViewedBottomDoc();
 
@@ -1405,54 +2174,25 @@
                 var cardH = probeCard ? probeCard.offsetHeight : 0;
                 var cols = gridCols();
 
-                var availH;
-                if (target == null) {
-                    availH = viewportAvailHeight();
-                } else {
-                    availH = target - gridTopDoc();
-                }
-                // Làm tròn tới số hàng gần nhất để lưới lấp đầy màn hình "vừa đủ cân bằng"
-                // (không bỏ trống quá nhiều phía dưới, cũng không đẩy nút "Xem thêm" khỏi màn hình).
-                var rows = Math.max(1, Math.round((availH + GRID_GAP) / (cardH + GRID_GAP)));
+                var viewportH = viewportAvailHeight();
+                var sidebarH = target == null ? 0 : target - gridTopDoc();
+                var availH = Math.max(viewportH, sidebarH);
+                var rows = Math.max(1, Math.ceil((availH + GRID_GAP) / (cardH + GRID_GAP)));
                 var count = Math.max(cols, rows * cols);
                 count = Math.max(1, Math.min(count, MAX_INIT));
 
                 var data = await fetchNews(0, count);
                 if (!data.length) { renderEmpty(); return; }
-                gridEl.innerHTML = data.map(function (item, index) {
-                    return cardHtml(item, index < 4);
-                }).join('');
-                gridEl.querySelectorAll('.news-card').forEach(bindCard);
+                var visibleCount = renderInitialNews(data);
 
                 nextOffset = data.length;
                 hasMore = data.length >= count;
                 showLoadMore(hasMore);
                 notifyParentHeight();
 
-                // An toàn: nếu nút "Xem thêm" bị đẩy quá xa khỏi khung nhìn trang cha
-                // (card thật cao hơn card đo — title dài/ngắn), bớt 1 hàng cuối để nút
-                // luôn hiển thị. Chỉ cắt khi nút trôi quá 60px dưới mép màn hình.
-                var btnEl = document.getElementById('loadMoreBtn');
-                if (btnEl && data.length > cols) {
-                    var pv = 0, fTop = 0;
-                    try { if (window.parent && window.parent !== window) pv = window.parent.innerHeight; } catch (e) {}
-                    if (!pv) pv = window.innerHeight || document.documentElement.clientHeight || 720;
-                    try { var fr = getParentIframe(); if (fr) fTop = fr.getBoundingClientRect().top; } catch (e) {}
-                    var btnBottomParent = fTop + btnEl.getBoundingClientRect().bottom;
-                    if (btnBottomParent > pv + 60) {
-                        var fewer = data.slice(0, data.length - cols);
-                        gridEl.innerHTML = fewer.map(cardHtml).join('');
-                        gridEl.querySelectorAll('.news-card').forEach(bindCard);
-                        nextOffset = fewer.length;
-                        hasMore = true;
-                        showLoadMore(hasMore);
-                        notifyParentHeight();
-                    }
-                }
-
                 // Số bài mỗi lần "Xem thêm" = đúng số bài đang hiển thị (1 màn hình cân bằng)
                 // → sau mỗi lần bấm layout vẫn giữ nguyên độ cân bằng như ban đầu.
-                balancedPage = gridEl.querySelectorAll('.news-card').length;
+                balancedPage = Math.max(1, visibleCount);
 
                 scheduleRealign();
             }
@@ -1487,7 +2227,34 @@
                     setLoadMoreLoading(false);
                     showLoadMore(hasMore);
                     notifyParentHeight();
+                    scheduleScrollLoad();
                 }
+            }
+
+            var scrollLoadFrame = null;
+            function scheduleScrollLoad() {
+                if (scrollLoadFrame != null) return;
+                scrollLoadFrame = requestAnimationFrame(function () {
+                    scrollLoadFrame = null;
+                    if (isLoadingMore || !hasMore || !loadMoreEl || loadMoreEl.style.display === 'none') return;
+
+                    var button = document.getElementById('loadMoreBtn');
+                    if (!button) return;
+                    var frame = getParentIframe();
+                    var buttonBottom;
+                    var viewportBottom;
+                    if (frame && window.parent && window.parent !== window) {
+                        buttonBottom = frame.getBoundingClientRect().top + parentScrollY() +
+                            button.getBoundingClientRect().bottom +
+                            (window.pageYOffset || document.documentElement.scrollTop || 0);
+                        viewportBottom = parentScrollY() + window.parent.innerHeight;
+                    } else {
+                        var scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+                        buttonBottom = button.getBoundingClientRect().bottom + scrollY;
+                        viewportBottom = scrollY + (window.innerHeight || document.documentElement.clientHeight || 0);
+                    }
+                    if (buttonBottom - viewportBottom <= 600) loadMore();
+                });
             }
 
             // Block cột phải tải muộn hơn (8 bài xem nhiều) → chờ rồi căn lại số bài cho khớp
@@ -1500,13 +2267,14 @@
                 alignTimer = null;
                 if (isLoadingMore) { scheduleRealign(); return; }
                 var target = mostViewedBottomDoc();
-                if (target == null) return;
                 var probeCard = gridEl.querySelector('.news-card');
                 if (!probeCard) return;
                 var cardH = probeCard.offsetHeight;
                 var cols = gridCols();
-                var availH = target - gridTopDoc();
-                var rows = Math.max(1, Math.floor((availH + GRID_GAP) / (cardH + GRID_GAP)));
+                var viewportH = viewportAvailHeight();
+                var sidebarH = target == null ? 0 : target - gridTopDoc();
+                var availH = Math.max(viewportH, sidebarH);
+                var rows = Math.max(1, Math.ceil((availH + GRID_GAP) / (cardH + GRID_GAP)));
                 var want = Math.max(cols, rows * cols);
                 var current = gridEl.querySelectorAll('.news-card').length;
                 if (want <= current || !hasMore) return;
@@ -1526,6 +2294,15 @@
                     showLoadMore(false);
                 });
             }
+
+            window.addEventListener('resize', scheduleRealign);
+            window.addEventListener('scroll', scheduleScrollLoad, { passive: true });
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.addEventListener('scroll', scheduleScrollLoad, { passive: true });
+                    window.parent.addEventListener('resize', scheduleScrollLoad);
+                }
+            } catch (e) {}
 
             // Nút "Xem thêm" — người dùng chủ động bấm để tải thêm, không tự động tải khi cuộn.
 

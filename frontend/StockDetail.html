@@ -2822,6 +2822,22 @@
             }
         }
 
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .analysis-grid .profit-block {
+            min-width: 0;
+        }
+
+        @media (max-width: 900px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* ----- 5. PHÂN TÍCH LỢI NHUẬN ----- */
         .profit-block {
             background: #fff;
@@ -2835,6 +2851,14 @@
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 6px;
+        }
+
+        .profit-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 4px;
         }
 
         .profit-legend {
@@ -2933,23 +2957,37 @@
             justify-content: flex-end;
             gap: 3px;
             flex: 1 1 auto;
-            min-width: 20px;
-            max-width: 44px;
+            min-width: 48px;
+            max-width: 76px;
             margin: 0 auto;
             height: 100%;
             position: relative;
             cursor: pointer;
         }
 
-        .profit-bar-col .bar {
-            width: 16px;
-            max-width: 70%;
+        .profit-bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            width: 100%;
+            min-height: 0;
+            flex: 1 1 0;
+        }
+
+        .profit-bars .bar {
+            width: 14px;
+            max-width: 42%;
             border-radius: 3px 3px 0 0;
             transition: filter 0.2s ease;
+            min-height: 0;
+        }
+
+        .profit-bars .bar:not(.missing) {
             min-height: 2px;
         }
 
-        .profit-bar-col:hover .bar {
+        .profit-bar-col:hover .bar:not(.missing) {
             filter: brightness(1.15);
         }
 
@@ -3009,7 +3047,7 @@
            khi canh giữa (left:50% + translateX(-50%)) tooltip của cột sát mép tràn ra
            ngoài block và bị CẮT MẤT thông tin (body/html có overflow:hidden), đồng thời
            làm biểu đồ cuộn ngang oan. Căn sát mép trong để tooltip luôn hiển thị trọn vẹn.
-           JS gắn .tt-left cho 4 cột đầu và .tt-right cho 4 cột cuối (tooltip khá rộng). */
+           JS gắn .tt-left / .tt-right cho cột đầu / cuối. */
         .peer-chart > .peer-col:first-child .tooltip,
         .profit-chart-inner > .profit-bar-col.tt-left .tooltip {
             left: 0;
@@ -4505,13 +4543,40 @@
                 </div>
             </div>
 
-            <!-- 5. PHÂN TÍCH LỢI NHUẬN -->
-            <div class="profit-block">
-                <h3>Phân tích lợi nhuận <span id="profitSymbol"></span></h3>
-                <div class="profit-legend" id="profitLegend"></div>
-                <div class="profit-hint" id="profitHint" hidden><i class="fas fa-arrows-left-right"></i> Cuộn ngang để xem toàn bộ lịch sử</div>
-                <div class="profit-chart" id="profitChart">
-                    <div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+            <!-- 5. PHÂN TÍCH LỢI NHUẬN VÀ TÀI SẢN -->
+            <div class="analysis-grid">
+                <div class="profit-block">
+                    <h3>Phân tích lợi nhuận <span id="profitSymbol"></span></h3>
+                    <div class="profit-toolbar">
+                        <select class="fin-range" id="profitRange" aria-label="Chọn kỳ phân tích lợi nhuận">
+                            <option value="4q" selected>4 quý gần nhất</option>
+                            <option value="8q">8 quý gần nhất</option>
+                            <option value="4y">4 năm gần nhất</option>
+                        </select>
+                        <span class="fin-unit">Đơn vị: tỷ đồng</span>
+                    </div>
+                    <div class="profit-legend" id="profitLegend"></div>
+                    <div class="profit-hint" id="profitHint" hidden><i class="fas fa-arrows-left-right"></i> Cuộn ngang để xem toàn bộ lịch sử</div>
+                    <div class="profit-chart" id="profitChart">
+                        <div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                    </div>
+                </div>
+
+                <div class="profit-block">
+                    <h3>Phân tích tài sản <span id="assetSymbol"></span></h3>
+                    <div class="profit-toolbar">
+                        <select class="fin-range" id="assetRange" aria-label="Chọn kỳ phân tích tài sản">
+                            <option value="4q" selected>4 quý gần nhất</option>
+                            <option value="8q">8 quý gần nhất</option>
+                            <option value="4y">4 năm gần nhất</option>
+                        </select>
+                        <span class="fin-unit">Đơn vị: tỷ đồng</span>
+                    </div>
+                    <div class="profit-legend" id="assetLegend"></div>
+                    <div class="profit-hint" id="assetHint" hidden><i class="fas fa-arrows-left-right"></i> Cuộn ngang để xem toàn bộ lịch sử</div>
+                    <div class="profit-chart" id="assetChart">
+                        <div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                    </div>
                 </div>
             </div>
 
@@ -5620,118 +5685,261 @@
             });
         });
 
-        // ===== PHÂN TÍCH LỢI NHUẬN (biểu đồ cột theo quý, màu theo năm, đủ toàn bộ lịch sử) =====
-        const PROFIT_YEAR_COLORS = ['#3498db', '#9b59b6', '#e67e22', '#2ecc71', '#e74c3c', '#1abc9c', '#f39c12', '#16a085', '#8e44ad', '#d35400', '#27ae60', '#34495e'];
-
-        // Mỗi năm một màu riêng: dùng bảng màu quen thuộc, vượt quá 12 năm thì xoay theo
-        // góc vàng (golden angle) để các năm không bị trùng màu.
-        function profitYearColor(yearIndex) {
-            if (yearIndex < PROFIT_YEAR_COLORS.length) return PROFIT_YEAR_COLORS[yearIndex];
-            return `hsl(${Math.round((yearIndex * 137.508) % 360)}, 62%, 52%)`;
-        }
-
-        function buildProfitYearColors(years) {
-            const map = new Map();
-            years.forEach((year, index) => map.set(year, profitYearColor(index)));
-            return map;
-        }
+        // ===== PHÂN TÍCH LỢI NHUẬN =====
+        const PROFIT_REVENUE_COLOR = '#3498db';
+        const PROFIT_NET_COLOR = '#2ecc71';
+        const PROFIT_LOSS_COLOR = '#e74c3c';
+        const ASSET_TOTAL_COLOR = '#3498db';
+        const ASSET_EQUITY_COLOR = '#9b59b6';
+        let profitAnalysisData = null;
 
         function formatProfitValue(value) {
-            const v = Number(value || 0);
-            if (!Number.isFinite(v) || v <= 0) return '--';
-            return formatMarketCap(v);
+            if (value === null || value === undefined || value === '') return '--';
+            const v = Number(value);
+            if (!Number.isFinite(v)) return '--';
+            if (v === 0) return '0';
+            const formatted = formatMarketCap(Math.abs(v));
+            return v < 0 ? `-${formatted}` : formatted;
         }
 
-        function renderProfitLegend(years, yearColors) {
-            const legend = document.getElementById('profitLegend');
+        function renderProfitLegend(legendId, firstLabel, secondLabel, firstColor, secondColor) {
+            const legend = document.getElementById(legendId);
             if (!legend) return;
-            legend.innerHTML = years.map(y => `
-                <span class="legend-item">
-                    <span class="legend-dot" style="background:${yearColors.get(y)};"></span>
-                    Năm ${y}
-                </span>
-            `).join('');
+            legend.innerHTML = `
+                <span class="legend-item"><span class="legend-dot" style="background:${firstColor};"></span>${firstLabel}</span>
+                <span class="legend-item"><span class="legend-dot" style="background:${secondColor};"></span>${secondLabel}</span>
+            `;
         }
 
-        function updateProfitScrollHint(scroller) {
-            const hint = document.getElementById('profitHint');
+        function profitNumber(value) {
+            if (value === null || value === undefined || value === '') return null;
+            const number = Number(value);
+            return Number.isFinite(number) ? number : null;
+        }
+
+        function profitPeriodData(quarters, range) {
+            const sorted = quarters.slice().sort((a, b) =>
+                Number(a.year) - Number(b.year) || Number(a.quarter) - Number(b.quarter)
+            );
+            if (range === '4y') {
+                const byYear = new Map();
+                sorted.forEach(q => {
+                    const year = Number(q.year);
+                    if (!Number.isFinite(year)) return;
+                    if (!byYear.has(year)) {
+                        byYear.set(year, { year, quarters: 0, revenue: [], net_profit: [] });
+                    }
+                    const row = byYear.get(year);
+                    row.quarters += 1;
+                    const revenue = profitNumber(q.revenue);
+                    const profit = profitNumber(q.net_profit);
+                    if (revenue !== null) row.revenue.push(revenue);
+                    if (profit !== null) row.net_profit.push(profit);
+                });
+                return [...byYear.values()].slice(-4).map(year => ({
+                    year: year.year,
+                    label: `${year.year} · ${year.quarters} quý`,
+                    revenue: year.revenue.length ? year.revenue.reduce((sum, value) => sum + value, 0) : null,
+                    net_profit: year.net_profit.length ? year.net_profit.reduce((sum, value) => sum + value, 0) : null,
+                }));
+            }
+            return sorted.slice(range === '8q' ? -8 : -4).map(q => ({
+                year: q.year,
+                label: `${q.label || `Q${q.quarter}`}/${q.year}`,
+                revenue: profitNumber(q.revenue),
+                net_profit: profitNumber(q.net_profit),
+            }));
+        }
+
+        function updateProfitScrollHint(scroller, hintId) {
+            const hint = document.getElementById(hintId);
             if (!hint) return;
             hint.hidden = !(scroller && scroller.scrollWidth > scroller.clientWidth + 2);
         }
 
-        function renderProfitChart(data) {
-            const chart = document.getElementById('profitChart');
-            const hint = document.getElementById('profitHint');
-            const titleSymbol = document.getElementById('profitSymbol');
-            if (titleSymbol && data && data.symbol) {
-                titleSymbol.textContent = `· ${escapeHtml(data.symbol)}`;
-            }
+        function renderPairedFinancialChart(config) {
+            const chart = document.getElementById(config.chartId);
+            const hint = document.getElementById(config.hintId);
             if (!chart) return;
-
-            const quarters = Array.isArray(data && data.quarters) ? data.quarters : [];
-            if (quarters.length === 0) {
-                chart.innerHTML = '<div class="info-empty">Không có dữ liệu lợi nhuận</div>';
+            const periods = config.periods || [];
+            if (periods.length === 0) {
+                chart.innerHTML = `<div class="info-empty">${config.emptyText}</div>`;
                 if (hint) hint.hidden = true;
                 return;
             }
+            const maxValue = Math.max(1, ...periods.flatMap(period => [
+                Math.abs(period.firstValue || 0),
+                Math.abs(period.secondValue || 0),
+            ]));
 
-            const maxProfit = Math.max(...quarters.map(q => Math.max(0, Number(q.net_profit || 0))), 1);
-            const years = [...new Set(quarters.map(q => q.year))].sort((a, b) => a - b);
-            const yearColors = buildProfitYearColors(years);
+            renderProfitLegend(
+                config.legendId,
+                config.firstLabel,
+                config.secondLabel,
+                config.firstColor,
+                config.secondColor
+            );
 
-            renderProfitLegend(years, yearColors);
-
-            chart.innerHTML = '<div class="profit-chart-scroll"><div class="profit-chart-inner">' + quarters.map((q, idx) => {
-                const val = Number(q.net_profit || 0);
-                const h = Math.max(2, Math.round((Math.max(0, val) / maxProfit) * 100));
-                const color = yearColors.get(q.year) || profitYearColor(0);
-                const profitTxt = formatProfitValue(val);
-                const revenueTxt = formatProfitValue(q.revenue);
-                const pbtTxt = formatProfitValue(q.profit_before_tax);
-                const yearStart = Number(q.quarter) === 1;
-                const labelTxt = yearStart ? String(q.year) : `Q${q.quarter}`;
-                // Tooltip rộng hơn cột ⇒ 4 cột sát mép phải/trái được căn vào trong để
-                // không tràn ra ngoài (và không tạo thanh cuộn ngang vô ích).
-                const edgeClass = idx < 4 ? ' tt-left' : (idx >= quarters.length - 4 ? ' tt-right' : '');
+            chart.innerHTML = '<div class="profit-chart-scroll"><div class="profit-chart-inner">' + periods.map((period, idx) => {
+                const firstValue = period.firstValue;
+                const secondValue = period.secondValue;
+                const firstHeight = firstValue === null ? 0 : Math.max(2, Math.round((Math.abs(firstValue) / maxValue) * 100));
+                const secondHeight = secondValue === null ? 0 : Math.max(2, Math.round((Math.abs(secondValue) / maxValue) * 100));
+                const secondColor = config.isProfit && secondValue !== null && secondValue < 0
+                    ? PROFIT_LOSS_COLOR
+                    : config.secondColor;
+                const edgeClass = idx === 0 ? ' tt-left' : (idx === periods.length - 1 ? ' tt-right' : '');
                 return `
-                    <div class="profit-bar-col${yearStart ? ' year-start' : ''}${edgeClass}" title="${escapeHtml(q.period)}">
+                    <div class="profit-bar-col${edgeClass}" title="${escapeHtml(period.label)}">
                         <div class="tooltip">
-                            <div class="tt-head">${escapeHtml(q.label)}/${q.year}</div>
-                            <div class="tt-row"><span>Lợi nhuận sau thuế</span><span class="tt-val" style="color:${color}">${profitTxt}</span></div>
-                            ${revenueTxt !== '--' ? `<div class="tt-row"><span>Doanh thu</span><span class="tt-val">${revenueTxt}</span></div>` : ''}
-                            ${pbtTxt !== '--' ? `<div class="tt-row"><span>Lợi nhuận trước thuế</span><span class="tt-val">${pbtTxt}</span></div>` : ''}
+                            <div class="tt-head">${escapeHtml(period.label)}</div>
+                            <div class="tt-row"><span>${config.firstLabel}</span><span class="tt-val" style="color:${config.firstColor}">${formatProfitValue(firstValue)}</span></div>
+                            <div class="tt-row"><span>${config.secondLabel}</span><span class="tt-val" style="color:${secondColor}">${formatProfitValue(secondValue)}</span></div>
                         </div>
-                        <div class="bar" style="height:${h}%;background:${color};"></div>
-                        <div class="label"${yearStart ? ` style="color:${color};"` : ''}>${escapeHtml(labelTxt)}</div>
+                        <div class="profit-bars">
+                            <div class="bar${firstValue === null ? ' missing' : ''}" style="height:${firstHeight}%;background:${config.firstColor};"></div>
+                            <div class="bar${secondValue === null ? ' missing' : ''}" style="height:${secondHeight}%;background:${secondColor};"></div>
+                        </div>
+                        <div class="label">${escapeHtml(config.range === '4y' ? String(period.year) : period.label)}</div>
                     </div>
                 `;
             }).join('') + '</div></div>';
 
             const scroller = chart.querySelector('.profit-chart-scroll');
-            updateProfitScrollHint(scroller);
-            // Mặc định nhìn thấy các quý mới nhất; phần lịch sử cũ hơn nằm bên trái.
-            if (scroller) scroller.scrollLeft = scroller.scrollWidth;
+            updateProfitScrollHint(scroller, config.hintId);
+        }
+
+        function renderProfitChart(data) {
+            const titleSymbol = document.getElementById('profitSymbol');
+            if (titleSymbol && data && data.symbol) titleSymbol.textContent = `· ${escapeHtml(data.symbol)}`;
+            const quarters = Array.isArray(data && data.quarters) ? data.quarters : [];
+            const range = document.getElementById('profitRange')?.value || '4q';
+            const periods = profitPeriodData(quarters, range).map(period => ({
+                ...period,
+                firstValue: period.revenue,
+                secondValue: period.net_profit,
+            }));
+            renderPairedFinancialChart({
+                chartId: 'profitChart',
+                legendId: 'profitLegend',
+                hintId: 'profitHint',
+                range,
+                periods,
+                firstLabel: 'Doanh thu',
+                secondLabel: 'Lợi nhuận sau thuế',
+                firstColor: PROFIT_REVENUE_COLOR,
+                secondColor: PROFIT_NET_COLOR,
+                isProfit: true,
+                emptyText: 'Không có dữ liệu lợi nhuận',
+            });
+        }
+
+        function normalizeFinancialTitle(value) {
+            return String(value || '').toLowerCase().replace(/đ/g, 'd')
+                .replace(/[’']/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9\s]/g, ' ').trim();
+        }
+
+        function findBalanceMetric(rows, metric) {
+            const candidates = rows.map(row => {
+                const english = normalizeFinancialTitle(row.title_en);
+                const vietnamese = normalizeFinancialTitle(row.title_vi);
+                const title = `${english} ${vietnamese}`;
+                let score = Infinity;
+                if (metric === 'assets') {
+                    if (/\btotal assets?\b/.test(english) ||
+                        /\btong (cong )?tai san\b/.test(vietnamese)) score = 0;
+                } else if (!/\bliabilit|no phai tra\b/.test(title)) {
+                    if (/\btotal (shareholders? )?equity\b/.test(english) ||
+                        /\btotal owners? equity\b/.test(english) ||
+                        /\btong von chu so huu\b/.test(vietnamese)) score = 0;
+                    else if (/\bshareholders? equity\b/.test(english) ||
+                        /\bowners? equity\b/.test(english) ||
+                        /\bequity attributable to\b/.test(english) ||
+                        /\bvon chu so huu\b/.test(vietnamese)) score = 1;
+                }
+                return { row, score };
+            }).filter(candidate => Number.isFinite(candidate.score));
+            candidates.sort((a, b) => a.score - b.score);
+            return candidates[0]?.row || null;
+        }
+
+        function renderAssetChart(data) {
+            const titleSymbol = document.getElementById('assetSymbol');
+            if (titleSymbol && data && data.symbol) titleSymbol.textContent = `· ${data.symbol}`;
+            const periods = Array.isArray(data && data.periods) ? data.periods : [];
+            const rows = Array.isArray(data && data.rows) ? data.rows : [];
+            const assets = findBalanceMetric(rows, 'assets');
+            const equity = findBalanceMetric(rows, 'equity');
+            const chartPeriods = assets && equity ? periods.map((period, index) => ({
+                label: period.label,
+                year: Number(String(period.period || '').slice(0, 4)),
+                firstValue: profitNumber(assets.values && assets.values[index]),
+                secondValue: profitNumber(equity.values && equity.values[index]),
+            })) : [];
+            renderPairedFinancialChart({
+                chartId: 'assetChart',
+                legendId: 'assetLegend',
+                hintId: 'assetHint',
+                range: document.getElementById('assetRange')?.value || '4q',
+                periods: chartPeriods,
+                firstLabel: 'Tổng tài sản',
+                secondLabel: 'Vốn chủ sở hữu',
+                firstColor: ASSET_TOTAL_COLOR,
+                secondColor: ASSET_EQUITY_COLOR,
+                emptyText: 'Không có dữ liệu tài sản',
+            });
+        }
+
+        async function loadAssetAnalysis(symbol) {
+            const chart = document.getElementById('assetChart');
+            const hint = document.getElementById('assetHint');
+            const rangeEl = document.getElementById('assetRange');
+            if (!chart || !rangeEl) return;
+            if (hint) hint.hidden = true;
+            assetAnalysisSymbol = symbol;
+            const range = rangeEl.value || '4q';
+            const titleSymbol = document.getElementById('assetSymbol');
+            if (titleSymbol) titleSymbol.textContent = `· ${symbol}`;
+            chart.innerHTML = '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+            try {
+                const conf = FIN_RANGES[range] || FIN_RANGES['4q'];
+                const data = await api(`/stocks/${encodeURIComponent(symbol)}/financial-statement` +
+                    `?section=balance&period=${conf.period}&periods=${conf.periods}`);
+                if (assetAnalysisSymbol !== symbol || rangeEl.value !== range) return;
+                renderAssetChart(data);
+            } catch (error) {
+                console.error('Failed to load asset analysis:', error);
+                if (assetAnalysisSymbol === symbol && rangeEl.value === range) {
+                    chart.innerHTML = '<div class="info-empty">Không có dữ liệu tài sản</div>';
+                }
+            }
         }
 
         // Đổi kích thước cửa sổ ⇒ bật/tắt gợi ý "cuộn ngang" cho khớp với độ rộng mới.
         const profitChartEl = document.getElementById('profitChart');
         if (profitChartEl && window.ResizeObserver) {
             const profitResizeObserver = new ResizeObserver(() => {
-                updateProfitScrollHint(profitChartEl.querySelector('.profit-chart-scroll'));
+                updateProfitScrollHint(profitChartEl.querySelector('.profit-chart-scroll'), 'profitHint');
+                const assetChartEl = document.getElementById('assetChart');
+                updateProfitScrollHint(assetChartEl && assetChartEl.querySelector('.profit-chart-scroll'), 'assetHint');
             });
             profitResizeObserver.observe(profitChartEl);
+            const assetChartEl = document.getElementById('assetChart');
+            if (assetChartEl) profitResizeObserver.observe(assetChartEl);
         }
 
         async function loadProfitAnalysis(symbol) {
             const chart = document.getElementById('profitChart');
             const hint = document.getElementById('profitHint');
             if (hint) hint.hidden = true;
+            profitAnalysisData = null;
             if (chart) {
                 chart.innerHTML = '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
             }
             try {
-                // Không truyền quarters ⇒ lấy TOÀN BỘ lịch sử VCI có (thường từ 2018).
                 const data = await api(`/stocks/${encodeURIComponent(symbol)}/profit-analysis`);
+                profitAnalysisData = data;
                 renderProfitChart(data);
             } catch (error) {
                 console.error('Failed to load profit analysis:', error);
@@ -5739,6 +5947,21 @@
                     chart.innerHTML = '<div class="info-empty">Không có dữ liệu lợi nhuận</div>';
                 }
             }
+        }
+
+        let assetAnalysisSymbol = '';
+
+        const profitRangeEl = document.getElementById('profitRange');
+        if (profitRangeEl) {
+            profitRangeEl.addEventListener('change', () => renderProfitChart(profitAnalysisData));
+        }
+
+        const assetRangeEl = document.getElementById('assetRange');
+        if (assetRangeEl) {
+            assetRangeEl.addEventListener('change', () => {
+                const symbol = finState.symbol;
+                if (symbol) loadAssetAnalysis(symbol);
+            });
         }
 
         // ===== CƠ CẤU CỔ ĐÔNG =====
@@ -6612,6 +6835,7 @@
                 // Các panel độc lập chạy SONG SONG với quote để hiển thị sớm hơn.
                 loadFinancialStatements(symbol);
                 loadProfitAnalysis(symbol);
+                loadAssetAnalysis(symbol);
                 loadShareholderStructure(symbol);
                 loadReports(symbol, 'financial');
                 scheduleReportsAutoRefresh();   // tự nạp lại block Báo cáo khi qua mốc 12h trưa (giờ VN)

@@ -218,6 +218,14 @@
         .cash-bal .cash-cur { display: block; font-size: 11px; color: #8a99b1; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
         .cash-bal b { font-size: 17px; color: #16324f; }
         .cash-bal small { display: block; font-size: 11.5px; color: #00a08a; margin-top: 2px; }
+        .cash-summary-row { display: flex; align-items: stretch; gap: 16px; }
+        .cash-pnl { box-sizing: border-box; flex: 1 1 0; min-width: 0; margin: 0 0 14px; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f7fafb; }
+        .cash-summary-row .pf-stock-form { box-sizing: border-box; flex: 1 1 0; min-width: 0; margin: 0 0 14px; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f7fafb; }
+        .cash-pnl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+        .cash-pnl-head span { color: #5b6b81; font-size: 12px; font-weight: 700; }
+        .cash-pnl-head b { font-size: 16px; }
+        .cash-pnl-details { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; color: #5b6b81; font-size: 11px; }
+        .cash-pnl-note { display: block; margin-top: 4px; color: #8a99b1; font-size: 10.5px; }
         .cash-cur-seg { display: inline-flex; background: #eef1f5; border-radius: 10px; padding: 3px; gap: 2px; }
         .cash-cur-btn { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; color: #5b6b81; cursor: pointer; }
         .cash-cur-btn.active { background: #008080; color: #fff; }
@@ -229,6 +237,16 @@
         .cash-table th.center, .cash-table td.center { text-align: center; }
         body.dark-mode .cash-bal { background: #161b22; border-color: #2b333e; }
         body.dark-mode .cash-bal b { color: #e6edf3; }
+        body.dark-mode .cash-pnl,
+        body.dark-mode .cash-summary-row .pf-stock-form { background: #161b22; border-color: #2b333e; }
+        body.dark-mode .cash-pnl-head span,
+        body.dark-mode .cash-pnl-details { color: #adbac7; }
+        body.dark-mode .cash-pnl-note { color: #768390; }
+        @media (max-width: 760px) {
+            .cash-summary-row { flex-direction: column; gap: 0; }
+            .cash-pnl,
+            .cash-summary-row .pf-stock-form { flex-basis: auto; width: 100%; }
+        }
         body.dark-mode .cash-cur-seg { background: #1c2128; }
         body.dark-mode .cash-cur-btn { color: #9fb0c3; }
         body.dark-mode .cash-cur-btn.active { background: #00a08a; }
@@ -1202,6 +1220,8 @@
             let cashVnd = 0;        // quỹ VND (đ)
             let cashUsdt = 0;       // quỹ USDT/USDC (gộp chung, 1:1)
             let cashFxRate = null;  // tỷ giá USD/VND để quy đổi
+            let cashPnlVnd = 0;
+            let cashPnlUsdt = 0;
             let cashCur = 'VND';    // quỹ đang chọn khi Nạp/Rút
             function cashTotalVnd() {
                 if (cashFxRate > 0) return Math.round(cashVnd + cashUsdt * cashFxRate);
@@ -1226,6 +1246,8 @@
                 if (!d) return;
                 if (typeof d.vnd === 'number') cashVnd = Number(d.vnd) || 0;
                 if (typeof d.usdt === 'number') cashUsdt = Number(d.usdt) || 0;
+                if (typeof d.pnl_vnd === 'number') cashPnlVnd = Number(d.pnl_vnd) || 0;
+                if (typeof d.pnl_usdt === 'number') cashPnlUsdt = Number(d.pnl_usdt) || 0;
                 if (d.fx_rate > 0) cashFxRate = Number(d.fx_rate);
                 if (!cryptoFx && cashFxRate > 0) cryptoFx = { usd_vnd: cashFxRate };
             }
@@ -1238,12 +1260,31 @@
             function moneyOf(cur, v) {
                 return (cur === 'USDT' || cur === 'USDC') ? fmtDec(v) + ' USDT' : fmtMoney(v) + ' đ';
             }
+            function signedCashPnl(cur, value) {
+                const amount = Number(value) || 0;
+                return (amount >= 0 ? '+' : '−') + moneyOf(cur, Math.abs(amount));
+            }
             function fmtUsdtVnd(usdt) {
                 return (cashFxRate > 0) ? '≈ ' + fmtMoney(Number(usdt || 0) * cashFxRate) + ' đ' : '';
             }
             function applyCashUI() {
                 const tEl = document.getElementById('cashTotalLbl');
                 if (tEl) tEl.textContent = fmtMoney(cashTotalVnd()) + ' đ';
+                const pnlTotalEl = document.getElementById('cashPnlTotalLbl');
+                const pnlTotal = cashPnlVnd + (cashFxRate > 0 ? cashPnlUsdt * cashFxRate : 0);
+                if (pnlTotalEl) {
+                    pnlTotalEl.textContent = signedCashPnl('VND', pnlTotal);
+                    pnlTotalEl.className = pnlTotal >= 0 ? 'pos' : 'neg';
+                }
+                const pnlVndEl = document.getElementById('cashPnlVndLbl');
+                if (pnlVndEl) pnlVndEl.textContent = 'VND: ' + signedCashPnl('VND', cashPnlVnd);
+                const pnlUsdtEl = document.getElementById('cashPnlUsdtLbl');
+                if (pnlUsdtEl) pnlUsdtEl.textContent = 'USDT: ' + signedCashPnl('USDT', cashPnlUsdt) +
+                    (cashFxRate > 0 ? ' (' + signedCashPnl('VND', cashPnlUsdt * cashFxRate) + ')' : '');
+                const pnlTitleEl = document.getElementById('cashPnlTitle');
+                if (pnlTitleEl) pnlTitleEl.textContent = cashFxRate > 0
+                    ? 'Lãi/lỗ tiền mặt quy VND'
+                    : 'Lãi/lỗ quỹ VND';
                 const vEl = document.getElementById('cashVndLbl');
                 if (vEl) vEl.textContent = fmtMoney(cashVnd) + ' đ';
                 const uEl = document.getElementById('cashUsdtLbl');
@@ -1340,6 +1381,14 @@
                         '<div class="cash-bal"><span class="cash-cur">VND</span><b id="cashVndLbl">' + fmtMoney(cashVnd) + ' đ</b></div>' +
                         '<div class="cash-bal"><span class="cash-cur">USDT / USDC</span><b id="cashUsdtLbl">' + fmtDec(cashUsdt) + ' USDT</b><small id="cashUsdtVndLbl"' + (cashFxRate > 0 ? '' : ' style="display:none;"') + '>' + fmtUsdtVnd(cashUsdt) + '</small></div>' +
                     '</div>' +
+                    '<div class="cash-summary-row"><div class="cash-pnl">' +
+                        '<div class="cash-pnl-head"><span id="cashPnlTitle">' + (cashFxRate > 0 ? 'Lãi/lỗ tiền mặt quy VND' : 'Lãi/lỗ quỹ VND') + '</span><b id="cashPnlTotalLbl" class="' + (cashPnlVnd + (cashFxRate > 0 ? cashPnlUsdt * cashFxRate : 0) >= 0 ? 'pos' : 'neg') + '">' +
+                            signedCashPnl('VND', cashPnlVnd + (cashFxRate > 0 ? cashPnlUsdt * cashFxRate : 0)) + '</b></div>' +
+                        '<div class="cash-pnl-details" id="cashPnlDetails">' +
+                            '<span id="cashPnlVndLbl">VND: ' + signedCashPnl('VND', cashPnlVnd) + '</span>' +
+                            '<span id="cashPnlUsdtLbl">USDT: ' + signedCashPnl('USDT', cashPnlUsdt) + (cashFxRate > 0 ? ' (' + signedCashPnl('VND', cashPnlUsdt * cashFxRate) + ')' : '') + '</span>' +
+                        '</div>' +
+                    '</div>' +
                     '<div class="pf-stock-form">' +
                         '<div class="pf-form-head">Nạp / Rút tiền mặt</div>' +
                         '<div class="pf-form-row">' +
@@ -1358,7 +1407,7 @@
                             : 'Quỹ VND đang có: ' + fmtMoney(cashVnd) + ' đ') + '</div>' +
                         '<div class="pf-cash-msg" id="paCashMsg" style="display:none;"></div>' +
                         (DEMO ? '<div class="pf-form-hint" style="margin-top:10px;">🔒 Đang xem dữ liệu mẫu. <a href="/Login" style="color:#008080;font-weight:600;">Đăng nhập</a> để quản lý tài sản thật.</div>' : '') +
-                    '</div>' +
+                    '</div></div>' +
                     '<div id="cashHistory" class="cash-history" style="display:none;"></div>' +
                 '</div>';
             }
