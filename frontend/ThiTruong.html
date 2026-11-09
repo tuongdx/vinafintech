@@ -858,7 +858,7 @@
             function renderRadar(r) {
                 const sell = r.foreign_sell || [];
                 const buy = r.foreign_buy || [];
-                return '<section class="tt-card tt-radar">' +
+                return '<section class="tt-card tt-radar" id="ttMarketRadarCard">' +
                     '<h2>VinaFintech Market Radar</h2>' +
                     '<div class="tt-radar-grid">' +
                         '<div class="tt-radar-col"><h3>Cổ phiếu breakout</h3>' +
@@ -874,6 +874,19 @@
                         '<div class="tt-radar-col"><h3>Khối ngoại bán mạnh</h3>' +
                             radarForeign(sell, 'Chưa có dữ liệu.') + '</div>' +
                     '</div></section>';
+            }
+            function focusMarketSection(focus, attempts) {
+                const targetId = {
+                    'market-map': 'ttMarketMapCard',
+                    'market-radar': 'ttMarketRadarCard'
+                }[focus];
+                if (!targetId) return;
+                const target = document.getElementById(targetId);
+                if (!target) {
+                    if (attempts < 30) setTimeout(function () { focusMarketSection(focus, attempts + 1); }, 100);
+                    return;
+                }
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
 
             // ---------- AI analysis ----------
@@ -1384,7 +1397,7 @@
 
                 const top = document.getElementById('ttTop');
                 if (top) top.innerHTML = ttHeroHtml(fmtUpd(dash.as_of)) + mainChartHtml() +
-                    '<section class="tt-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><h2 style="margin-bottom:0;">Bản đồ thị trường</h2><div style="margin-left:auto;display:flex;align-items:center;gap:10px;"><div class="tt-map-legend" id="ttMapLegend" style="margin-bottom:0;flex-shrink:0;"></div><button id="ttMapShot" class="tt-map-btn" title="Tải ảnh bản đồ thị trường"><i class="fas fa-camera"></i></button><button id="ttMapShare" class="tt-map-btn fb" title="Chia sẻ lên Facebook"><i class="fab fa-facebook"></i></button></div></div><div id="ttMapSlot"><div class="tt-loading" style="padding:16px;"><i class="fas fa-spinner fa-spin"></i> Đang tải bản đồ...</div></div></section>';
+                    '<section class="tt-card" id="ttMarketMapCard"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><h2 style="margin-bottom:0;">Bản đồ thị trường</h2><div style="margin-left:auto;display:flex;align-items:center;gap:10px;"><div class="tt-map-legend" id="ttMapLegend" style="margin-bottom:0;flex-shrink:0;"></div><button id="ttMapShot" class="tt-map-btn" title="Tải ảnh bản đồ thị trường"><i class="fas fa-camera"></i></button><button id="ttMapShare" class="tt-map-btn fb" title="Chia sẻ lên Facebook"><i class="fab fa-facebook"></i></button></div></div><div id="ttMapSlot"><div class="tt-loading" style="padding:16px;"><i class="fas fa-spinner fa-spin"></i> Đang tải bản đồ...</div></div></section>';
                 main.innerHTML = renderBreadth(b) +
                     renderFlow(f) +
                     renderRadar(radar) +
@@ -1395,6 +1408,7 @@
                 loadMainChart('1y', 0);
                 loadMarketMap();
                 loadVn30();
+                focusMarketSection(new URLSearchParams(window.location.search).get('focus'), 0);
 
                 // Sidebar: sự kiện + tin nổi bật + ảnh hưởng
                 side.innerHTML = '<div class="tt-loading" style="padding:20px;"><i class="fas fa-spinner fa-spin"></i></div>';

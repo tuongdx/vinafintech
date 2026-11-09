@@ -1486,7 +1486,7 @@
                 if (!cards.length) return false;
                 marketOpportunitiesEl.innerHTML =
                     '<div class="market-highlight-head"><div class="market-highlight-title">🔥 Cơ hội nổi bật hôm nay</div>' +
-                    '<button type="button" class="market-highlight-link" data-market-page="true">Xem thị trường <i class="fas fa-arrow-right"></i></button></div>' +
+                    '<button type="button" class="market-highlight-link" data-market-page="/kham-pha">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
                     '<div class="mh-opportunities">' + cards.join('') + '</div>';
                 marketOpportunitiesEl.querySelectorAll('.mh-opportunity').forEach(function (card) {
                     function open() { openMarketStock(card.getAttribute('data-symbol')); }
@@ -1531,7 +1531,9 @@
                     marketHighlightHasOpportunities = renderMarketOpportunities(opportunities.items);
                     marketOpportunitiesEl.hidden = true;
                     var opportunitiesLink = marketOpportunitiesEl.querySelector('[data-market-page]');
-                    if (opportunitiesLink) opportunitiesLink.addEventListener('click', openMarketPage);
+                    if (opportunitiesLink) opportunitiesLink.addEventListener('click', function () {
+                        openMarketPage(opportunitiesLink.getAttribute('data-market-page'));
+                    });
                     marketHighlightLoaded = true;
                     mountMarketOpportunityInDigest();
                 } catch (error) {
@@ -2708,10 +2710,10 @@
                         '<div class="digest-medium">' + mediumItems.map(digestRowHtml).join('') + '</div>' +
                         '<div class="digest-market-sidebar">' +
                         '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">Bản đồ thị trường</div>' +
-                        '<button type="button" class="market-highlight-link" data-market-page="true">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<button type="button" class="market-highlight-link" data-market-page="/thi-truong?focus=market-map">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
                         '<div class="mh-map" id="digestMarketMap"></div></section>' +
                         '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">VinaFintech Market Radar</div>' +
-                        '<button type="button" class="market-highlight-link" data-market-page="true">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<button type="button" class="market-highlight-link" data-market-page="/thi-truong?focus=market-radar">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
                         '<div class="mh-radar" id="digestMarketRadar"></div></section>' +
                         '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">Lãi suất ngân hàng</div>' +
                         '<button type="button" class="market-highlight-link" data-market-page="/lai-ngan-hang">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +

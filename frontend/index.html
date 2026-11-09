@@ -4618,7 +4618,25 @@
                 window.scrollTo(0, entry.scrollY); // quay lại đúng chỗ đang đọc
             }
             entry.viewed = true;
+            requestMarketSectionFocus(entry);
             return true;
+        }
+
+        function requestMarketSectionFocus(entry, attempts) {
+            if (!entry || !entry.loaded || entry.key !== activeFrameKey) return;
+            const focus = new URL(entry.frame.src, window.location.origin).searchParams.get('focus');
+            if (focus !== 'market-map' && focus !== 'market-radar') return;
+            setTimeout(function () {
+                if (entry.key !== activeFrameKey || !entry.loaded) return;
+                const targetId = focus === 'market-map' ? 'ttMarketMapCard' : 'ttMarketRadarCard';
+                const target = entry.frame.contentDocument.getElementById(targetId);
+                if (!target) {
+                    if ((attempts || 0) < 60) requestMarketSectionFocus(entry, (attempts || 0) + 1);
+                    return;
+                }
+                const targetTop = entry.frame.getBoundingClientRect().top + target.getBoundingClientRect().top;
+                window.scrollTo({ top: window.scrollY + targetTop, behavior: 'smooth' });
+            }, 100);
         }
 
         // Ẩn toàn bộ iframe (vẫn giữ nguyên trong DOM + cache) trước khi hiện nội dung HTML tĩnh.
@@ -4696,6 +4714,7 @@
             entry.frame.style.height = Math.max(560, Math.ceil(entry.height || 560)) + 'px';
             if (typeof syncEmbeddedContentTheme === 'function') syncEmbeddedContentTheme(isDarkMode ? 'dark' : 'light');
             try { entry.frame.contentWindow.scrollTo(0, 0); } catch (e) {}
+            requestMarketSectionFocus(entry);
             finishNavProgress();
             if (typeof syncScrollbarCompensation === 'function') syncScrollbarCompensation();
         }
