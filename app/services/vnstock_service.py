@@ -5534,6 +5534,58 @@ def get_stock_screener_page() -> dict[str, Any]:
     return payload
 
 
+def get_top_stocks_by_sector(sector: str, limit: int = 5) -> list[dict[str, Any]]:
+    """Return stocks in a sector ordered by market capitalization."""
+    sector_slug = str(sector or "").strip().lower()
+    if not sector_slug:
+        return []
+
+    summary_map = _read_symbol_summary_cache_file() or {}
+    stocks: list[dict[str, Any]] = []
+    for row in _get_screener_dataset():
+        symbol = str(row.get("ticker") or "").strip().upper()
+        exchange = str(row.get("stockExchange") or "").strip().upper()
+        if not symbol or exchange not in ("HOSE", "HNX", "UPCOM"):
+            continue
+
+        sector_key, sector_name, industry_key, industry_name = _override_sector_fields(symbol, row)
+        market_cap = _to_float(row.get("marketCapVnd"))
+        price = _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
+        volume = int(_to_float(row.get("volume")))
+        summary = summary_map.get(symbol) or {}
+        matches_sector = (
+            industry_key == "tai-chinh-ngan-hang"
+            if sector_slug == "ngan-hang"
+            else industry_key == "chung-khoan-va-ngan-hang-dau-tu"
+            if sector_slug == "chung-khoan"
+            else sector_key == sector_slug
+        )
+        if not matches_sector or market_cap <= 0:
+            continue
+
+        stocks.append({
+            "symbol": symbol,
+            "name": str(row.get("companyNameVi") or symbol),
+            "exchange": exchange,
+            "sector": sector_slug,
+            "sectorName": "Ngân hàng" if sector_slug == "ngan-hang" else sector_name,
+            "industry": industry_key,
+            "industryName": industry_name,
+            "price": round(price, 2),
+            "percent_change": round(_to_float(row.get("pricePctChgIntraDay")), 2),
+            "market_cap": market_cap,
+            "volume": volume,
+            "liquidity": volume * price,
+            "pe_ratio": _to_float(row.get("peRatio")),
+            "pb_ratio": _to_float(row.get("pbRatio")),
+            "roe": _to_float(summary.get("roe")),
+            "roa": _to_float(summary.get("roa")),
+        })
+
+    stocks.sort(key=lambda stock: stock["market_cap"], reverse=True)
+    return stocks[:max(1, min(int(limit), 20))]
+
+
 # ---------------------------------------------------------------------------
 # XẾP HẠNG VinaFintech (block "Xếp hạng VinaFintech" — trang "Khám phá")
 # ---------------------------------------------------------------------------

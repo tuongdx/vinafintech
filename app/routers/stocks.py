@@ -33,6 +33,7 @@ from app.services.vnstock_service import (
     get_stock_discover_page,
     get_stock_fundamentals,
     get_stock_lists,
+    get_top_stocks_by_sector,
     get_stock_rankings_live,
     get_stock_screener_page,
     get_top_stocks,
@@ -222,6 +223,12 @@ def stock_lists():
 def stock_screener():
     """Toàn bộ screener kèm điểm VinaFintech + nhóm 'Cổ phiếu nổi bật' cho trang Cổ phiếu."""
     return get_stock_screener_page()
+
+
+@router.get("/top-by-sector")
+def top_by_sector(sector: str, limit: int = 5):
+    """Cổ phiếu vốn hóa lớn nhất theo nhóm ngành."""
+    return get_top_stocks_by_sector(sector, limit=limit)
 
 
 @router.get("/upcoming-dividends")

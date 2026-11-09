@@ -68,6 +68,66 @@
             gap: 16px;
         }
         .news-grid-section:empty { display: none; }
+        .news-bank-layout {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .news-market-layout {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .news-bank-row,
+        .news-market-row,
+        .news-international-row {
+            display: grid;
+            grid-template-columns: minmax(0, calc(40% - 9.6px)) minmax(0, calc(60% - 6.4px));
+            align-items: stretch;
+            gap: 16px;
+        }
+        .news-market-row { grid-column: 1 / -1; }
+        .news-international-row { grid-column: 1 / -1; }
+        .news-bank-row > .news-index-card,
+        .news-market-row > #newsSecuritiesStocksCard {
+            grid-column: auto;
+            width: 100%;
+            justify-self: center;
+            min-height: 245px;
+            aspect-ratio: 2.6 / 1;
+            grid-template-columns: minmax(0, 1fr) minmax(100px, 0.8fr);
+            gap: 8px;
+            padding: 10px 12px;
+        }
+        .news-market-row > #newsIndexCard { grid-column: auto; width: 100%; }
+        .news-international-row > #newsInternationalIndicesCard {
+            grid-column: auto;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(100px, 0.9fr);
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            min-height: 310px;
+            aspect-ratio: auto;
+        }
+        .news-international-row #newsInternationalIndices { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+        .news-international-row #newsInternationalMain { transform: translateY(-26px); }
+        .news-international-row #newsInternationalChart { transform: translateY(-33px); }
+        .news-international-row #newsInternationalIndices { transform: translateY(28px); }
+        .news-bank-row > #newsBankStocksCard,
+        .news-bank-row > #newsBankRateCard { grid-column: auto; }
+        .news-market-row > #newsSecuritiesStocksCard .news-index-chart { height: 48px; }
+        .news-bank-row .news-index-market { padding: 4px; }
+        .news-bank-row .news-bank-term { padding: 2px 5px; }
+        .news-bank-articles {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-content: start;
+            gap: 16px;
+            min-width: 0;
+        }
         .news-index-card {
             grid-column: span 2;
             justify-self: center;
@@ -86,6 +146,19 @@
             background: linear-gradient(120deg, #f3fbfa, #ffffff 75%);
             box-shadow: 0 1px 3px rgba(0, 96, 96, 0.06);
         }
+        .news-international-indices {
+            grid-column: span 2;
+            justify-self: center;
+            display: grid;
+            align-content: center;
+            width: 98%;
+            min-height: 310px;
+            aspect-ratio: 2.2 / 1;
+        }
+        .news-international-indices .news-index-heading { margin-bottom: 10px; }
+        .news-international-indices .news-index-markets { padding-top: 10px; }
+        #newsBankStocksCard,
+        #newsBankRateCard { grid-column: 1 / span 2; }
         .news-index-heading { display: flex; align-items: center; gap: 7px; }
         .news-index-heading strong { color: #1a1f36; font-size: 13px; font-weight: 800; }
         .news-index-heading span { color: #8a99b1; font-size: 9px; }
@@ -155,14 +228,39 @@
         .news-index-market-change.pos { color: #087c62; }
         .news-index-market-change.neg { color: #c62828; }
         .news-index-market-change.flat { color: #9a7200; }
+        .news-sector-markets .news-index-market-symbol { color: #1a1f36; font-size: 11px; font-weight: 800; }
+        .news-sector-markets { align-items: start; }
+        .news-sector-markets .news-index-market {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+        }
+        .news-sector-selected .news-index-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
+        .news-sector-selected .news-index-heading strong { font-size: 15px; }
+        .news-sector-selected .news-index-heading span { font-size: 11px; }
+        .news-sector-stats {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            width: 100%;
+        }
+        .news-sector-stat { min-width: 0; padding: 7px 9px; border: 1px solid #e3eceb; border-radius: 8px; }
+        .news-sector-stat-label { color: #8a99b1; font-size: 10px; }
+        .news-sector-stat-value { margin-top: 2px; color: #1a1f36; font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
         .news-index-empty { color: #8a99b1; font-size: 11px; }
         body.dark-mode .news-index-card { background: linear-gradient(120deg, #172b2b, #1c2128 75%); border-color: #2e4545; }
         body.dark-mode .news-index-heading strong,
         body.dark-mode .news-index-value,
+        body.dark-mode .news-sector-markets .news-index-market-symbol,
+        body.dark-mode .news-sector-stat-value,
         body.dark-mode .news-index-market-value { color: #e6edf3; }
         body.dark-mode .news-index-heading span,
         body.dark-mode .news-index-empty,
         body.dark-mode .news-index-market-name { color: #9aa5b1; }
+        body.dark-mode .news-sector-stat { border-color: #2e4545; }
+        body.dark-mode .news-sector-stat-label { color: #9aa5b1; }
         body.dark-mode .news-index-markets { border-color: #2e4545; }
         body.dark-mode .news-index-market:hover { background: #203838; }
         body.dark-mode .news-index-market.active { border-color: #3b7771; background: #203838; }
@@ -558,7 +656,7 @@
             gap: 28px;
         }
 
-        /* Khối 1: 1 bài TO bên trái + 5 bài NHỎ bên cạnh (vừa khít chiều cao) */
+        /* Khối 1: 1 bài TO + 3 bài nhỏ và block cơ hội cao cùng chiều cao */
         .digest-featured {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -571,6 +669,88 @@
         }
         .digest-featured .news-cell.small {
             grid-column: 2;
+        }
+        .digest-featured .news-cell-opportunity {
+            grid-row: span 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin-bottom: 0;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #e5e9f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            color: #1a1f36;
+            cursor: default;
+        }
+        .digest-featured .news-cell-opportunity:hover {
+            transform: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .digest-featured .news-cell-opportunity .market-highlight-head {
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+        .digest-featured .news-cell-opportunity .market-highlight-title { font-size: 11px; }
+        .digest-featured .news-cell-opportunity .market-highlight-link { font-size: 9px; }
+        .digest-featured .news-cell-opportunity .mh-opportunities {
+            grid-template-columns: minmax(0, 1fr);
+            align-items: stretch;
+            gap: 4px;
+        }
+        .digest-featured .news-cell-opportunity .mh-opportunity {
+            flex-direction: row;
+            align-items: center;
+            gap: 3px;
+            min-width: 0;
+            padding: 4px 5px;
+            background: #fff;
+            border-radius: 6px;
+        }
+        .digest-featured .news-cell-opportunity .mh-opportunity > div:first-child {
+            min-width: 0;
+        }
+        .digest-featured .news-cell-opportunity .mh-opportunity-symbol { font-size: 10px; }
+        .digest-featured .news-cell-opportunity .mh-opportunity-name {
+            font-size: 8px;
+            line-height: 1.2;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+        .digest-featured .news-cell-opportunity .mh-opportunity-change { font-size: 9px; }
+        .digest-featured .news-cell-opportunity .mh-opportunity-score {
+            min-width: 18px;
+            padding: 2px;
+            font-size: 8px;
+        }
+        .digest-featured .news-cell-opportunity .mh-opportunity-metrics {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 2px;
+            color: #64748b;
+            font-size: 7px;
+            line-height: 1.2;
+        }
+        .digest-featured .news-cell-opportunity .mh-opportunity-metrics span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+        body.dark-mode .digest-featured .news-cell-opportunity {
+            background: #161b22;
+            border-color: #30363d;
+            color: #e6edf3;
+        }
+        body.dark-mode .digest-featured .news-cell-opportunity .mh-opportunity {
+            background: #161b22;
+        }
+        body.dark-mode .digest-featured .news-cell-opportunity .mh-opportunity-metrics {
+            color: #adbac7;
+        }
+        .digest-opportunity-loading {
+            align-self: center;
+            color: #8a99b1;
+            font-size: 11px;
         }
 
         /* Khối 2: 6 bài dạng thẻ, chia 2 cột */
@@ -843,6 +1023,14 @@
             .news-grid-section {
                 grid-template-columns: 1fr;
             }
+            .news-bank-row,
+            .news-market-row,
+            .news-international-row { grid-template-columns: 1fr; }
+            .news-international-row > #newsInternationalIndicesCard {
+                grid-template-columns: 1fr;
+                min-height: 180px;
+            }
+            .news-bank-articles { grid-template-columns: 1fr; }
             .news-index-card {
                 grid-column: span 1;
                 width: 100%;
@@ -850,9 +1038,12 @@
                 aspect-ratio: auto;
                 min-height: 180px;
             }
-            .news-bank-rate-card { min-height: 360px; }
-            .news-bank-rate-card .news-bank-terms { height: auto; min-height: 190px; }
+            #newsBankStocksCard,
+            #newsBankRateCard { grid-column: 1 / -1; }
+            .news-bank-rate-card { min-height: 280px; }
+            .news-bank-rate-card .news-bank-terms { height: auto; min-height: 150px; }
             .news-index-chart { height: 48px; }
+            .news-sector-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .news-index-markets { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 6px; }
             .news-crypto-markets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .digest-medium {
@@ -918,7 +1109,6 @@
                 'chung-khoan', 'ngan-hang', 'bat-dong-san', 'doanh-nghiep',
                 'dong-tien-thong-minh', 'tai-chinh-quoc-te', 'cong-nghe', 'tien-ao',
             ];
-
             var PAGE_SIZE = 12;  // số bài mỗi lần nạp khi phân trang (cuộn)
             var balancedPage = PAGE_SIZE; // số bài mỗi lần "Xem thêm" = đúng 1 màn hình cân bằng như lần nạp đầu (set trong loadInitial)
             var MAX_INIT = 50;   // giới hạn bài hiển thị ban đầu (backend tối đa 50)
@@ -939,6 +1129,8 @@
             var searchClearBtn = document.getElementById('searchClearBtn');
             var marketOpportunitiesEl = document.getElementById('marketOpportunities');
             var marketHighlightRequest = 0;
+            var marketHighlightLoaded = false;
+            var marketHighlightHasOpportunities = false;
             var marketWidgetsRequest = 0;
 
             // ---------------- Theme (nhận từ parent index.html) ----------------
@@ -1243,15 +1435,51 @@
             }
 
             function renderMarketOpportunities(items) {
-                var cards = items.slice(0, 3).map(function (item) {
+                var cards = items.slice(0, 4).map(function (item) {
                     var symbol = String(item.symbol || '').trim().toUpperCase();
                     var changeClass = Number(item.percent_change) < 0 ? 'neg' : 'pos';
                     var score = Number(item.opportunity_score != null ? item.opportunity_score : item.score);
+                    function hasNumber(value) {
+                        return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+                    }
+                    var resistance = Number(item.resistance_60);
+                    var resistanceDistance = Number(item.resistance_distance_pct);
+                    var volume = Number(item.volume);
+                    var volumeRatio = Number(item.volume_ratio);
+                    var price = Number(item.price);
+                    var rsi = Number(item.rsi);
+                    var ma20 = Number(item.ma20);
+                    var ma50 = Number(item.ma50);
+                    var resistanceStatus = item.is_breakout
+                        ? 'Đã vượt'
+                        : hasNumber(item.resistance_distance_pct) && resistanceDistance >= -2 ? 'Sát' : 'Dưới';
+                    var resistanceText = hasNumber(item.resistance_60)
+                        ? resistanceStatus + ' ' + assetNumber(resistance, 2) +
+                            (hasNumber(item.resistance_distance_pct)
+                                ? ' (' + (resistanceDistance > 0 ? '+' : '') + assetNumber(resistanceDistance, 2) + '%)'
+                                : '')
+                        : 'Chưa có dữ liệu';
+                    var volumeText = hasNumber(item.volume)
+                        ? new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(volume) + ' cp'
+                        : '--';
+                    var ma20Text = hasNumber(item.ma20)
+                        ? (Number.isFinite(price) && price >= ma20 ? 'trên' : 'dưới') + ' ' + assetNumber(ma20, 2)
+                        : '--';
+                    var ma50Text = hasNumber(item.ma50)
+                        ? (Number.isFinite(price) && price >= ma50 ? 'trên' : 'dưới') + ' ' + assetNumber(ma50, 2)
+                        : '--';
                     return '<div class="mh-opportunity" role="button" tabindex="0" data-symbol="' + esc(symbol) + '">' +
                         '<div><div class="mh-opportunity-symbol">' + esc(symbol) + '</div>' +
                         '<div class="mh-opportunity-name">' + esc(item.name || symbol) + '</div></div>' +
                         '<span class="mh-opportunity-change ' + changeClass + '">' + marketPct(item.percent_change) + '</span>' +
                         (Number.isFinite(score) ? '<span class="mh-opportunity-score">' + esc(Math.round(score)) + '</span>' : '') +
+                        '<div class="mh-opportunity-metrics">' +
+                        '<span>Kháng cự 60 phiên: ' + esc(resistanceText) + '</span>' +
+                        '<span>Khối lượng: ' + esc(volumeText) + (hasNumber(item.volume_ratio) ? ' · ' + esc(assetNumber(volumeRatio, 2)) + '× TB20' : '') + '</span>' +
+                        '<span>Dòng tiền 5 phiên: ' + (item.flow_positive_5d ? 'cải thiện' : 'chưa xác nhận') + '</span>' +
+                        '<span>RSI14: ' + (hasNumber(item.rsi) ? esc(assetNumber(rsi, 1)) : '--') +
+                            ' · MA20: ' + esc(ma20Text) + ' · MA50: ' + esc(ma50Text) + '</span>' +
+                        '</div>' +
                         '</div>';
                 }).filter(function (html) { return html.indexOf('data-symbol=""') === -1; });
 
@@ -1281,8 +1509,16 @@
 
             async function refreshMarketHighlight() {
                 var requestId = ++marketHighlightRequest;
+                marketHighlightLoaded = false;
+                marketHighlightHasOpportunities = false;
                 marketOpportunitiesEl.hidden = true;
                 marketOpportunitiesEl.innerHTML = '';
+                if (currentQ || DIGEST_MENUS.indexOf(currentCat) !== -1) {
+                    marketHighlightLoaded = true;
+                    mountMarketOpportunityInDigest();
+                    notifyParentHeight();
+                    return;
+                }
 
                 try {
                     var opportunitiesResponse = await fetch('/api/stocks/opportunities', { cache: 'no-store' });
@@ -1292,16 +1528,41 @@
                     if (!opportunities || opportunities.ok !== true || !Array.isArray(opportunities.items)) {
                         throw new Error('Invalid opportunities response');
                     }
-                    marketOpportunitiesEl.hidden = !renderMarketOpportunities(opportunities.items);
+                    marketHighlightHasOpportunities = renderMarketOpportunities(opportunities.items);
+                    marketOpportunitiesEl.hidden = true;
                     var opportunitiesLink = marketOpportunitiesEl.querySelector('[data-market-page]');
                     if (opportunitiesLink) opportunitiesLink.addEventListener('click', openMarketPage);
+                    marketHighlightLoaded = true;
+                    mountMarketOpportunityInDigest();
                 } catch (error) {
                     if (requestId !== marketHighlightRequest) return;
                     marketOpportunitiesEl.hidden = true;
                     marketOpportunitiesEl.innerHTML = '';
+                    marketHighlightHasOpportunities = false;
+                    marketHighlightLoaded = true;
+                    mountMarketOpportunityInDigest();
                     console.warn('Không thể tải cơ hội nổi bật hôm nay:', error);
                 }
                 notifyParentHeight();
+            }
+
+            function resetMarketOpportunityPlacement() {
+                if (marketOpportunitiesEl.parentNode !== gridEl.parentNode) {
+                    gridEl.parentNode.insertBefore(marketOpportunitiesEl, gridEl);
+                }
+                marketOpportunitiesEl.classList.remove('news-cell', 'small', 'news-cell-opportunity');
+            }
+
+            function mountMarketOpportunityInDigest() {
+                var slot = document.getElementById('digestOpportunitySlot');
+                if (!slot || !marketHighlightLoaded) return;
+                if (!marketHighlightHasOpportunities) {
+                    slot.remove();
+                    return;
+                }
+                marketOpportunitiesEl.hidden = false;
+                marketOpportunitiesEl.classList.add('news-cell', 'small', 'news-cell-opportunity');
+                slot.replaceWith(marketOpportunitiesEl);
             }
 
             // ---------------- Chọn chuyên mục (điều khiển từ header index.html) ----------------
@@ -1499,6 +1760,107 @@
                         button.setAttribute('aria-pressed', button.getAttribute('data-index-key') === card.getAttribute('data-selected-index') ? 'true' : 'false');
                     });
                     notifyParentHeight();
+                });
+            }
+
+            function loadInternationalIndicesCard() {
+                var card = gridEl.querySelector('#newsInternationalIndicesCard');
+                if (!card) return;
+                var indices = [
+                    { key: 'dowjones', label: 'Dow Jones' },
+                    { key: 'sp500', label: 'S&P 500' },
+                    { key: 'nasdaq', label: 'NASDAQ' },
+                    { key: 'nikkei', label: 'Nikkei' },
+                    { key: 'sgx', label: 'SGX' }
+                ];
+                var indexData = {};
+                var labels = {};
+                indices.forEach(function (index) { labels[index.key] = index.label; });
+                card.setAttribute('data-selected-index', 'dowjones');
+                card.innerHTML =
+                    '<div id="newsInternationalMain"><div class="news-index-heading"><strong>Dow Jones</strong>' +
+                    '<span>Chỉ số thị trường</span></div><div class="news-index-empty">Đang tải dữ liệu...</div></div>' +
+                    '<div class="news-index-chart" id="newsInternationalChart"></div>' +
+                    '<div class="news-index-markets" id="newsInternationalIndices">' +
+                    indices.map(function (index) {
+                        return '<button class="news-index-market" type="button" disabled><div class="news-index-market-name">' +
+                            esc(index.label) + '</div><div class="news-index-empty">Đang tải...</div></button>';
+                    }).join('') + '</div>';
+                var strip = card.querySelector('#newsInternationalIndices');
+
+                function renderSelectedIndex(key, data) {
+                    if (!data || !Number.isFinite(Number(data.value))) return;
+                    var change = Number(data.change) || 0;
+                    var percent = Number(data.percent_change) || 0;
+                    var direction = change > 0 ? 'pos' : change < 0 ? 'neg' : 'flat';
+                    var changeLabel = (change > 0 ? '+' : change < 0 ? '−' : '') +
+                        Math.abs(change).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+                        ' điểm (' + (percent > 0 ? '+' : '') +
+                        percent.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%)';
+                    var chartPath = indexChartPath(data.history);
+                    card.querySelector('#newsInternationalMain').innerHTML =
+                        '<div class="news-index-heading"><strong>' + esc(labels[key]) +
+                        '</strong><span>Chỉ số thị trường</span></div>' +
+                        '<div class="news-index-value">' +
+                        Number(data.value).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</div>' +
+                        '<div class="news-index-change ' + direction + '">' + changeLabel + '</div>';
+                    card.querySelector('#newsInternationalChart').innerHTML = chartPath
+                        ? '<svg viewBox="0 0 360 76" preserveAspectRatio="none" aria-label="Biểu đồ ' +
+                            esc(labels[key]) + ' 1 tháng"><path class="' + direction + '" d="' + chartPath + '"></path></svg>'
+                        : '<div class="news-index-empty">Chưa có dữ liệu biểu đồ.</div>';
+                    card.querySelectorAll('#newsInternationalIndices [data-index-key]').forEach(function (button) {
+                        var selected = button.getAttribute('data-index-key') === key;
+                        button.classList.toggle('active', selected);
+                        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+                    });
+                    notifyParentHeight();
+                }
+
+                card.addEventListener('click', function (event) {
+                    var button = event.target.closest('[data-index-key]');
+                    if (!button || !card.contains(button)) return;
+                    var key = button.getAttribute('data-index-key');
+                    if (!indexData[key]) return;
+                    card.setAttribute('data-selected-index', key);
+                    renderSelectedIndex(key, indexData[key]);
+                });
+
+                Promise.allSettled(indices.map(function (index) {
+                    return fetch('/api/stocks/index-detail?key=' + index.key + '&period=1m', { cache: 'no-store' })
+                        .then(function (response) {
+                            if (!response.ok) throw new Error('HTTP ' + response.status);
+                            return response.json();
+                        });
+                })).then(function (results) {
+                    if (!card.isConnected) return;
+                    strip.innerHTML = results.map(function (result, index) {
+                        if (result.status !== 'fulfilled' || !result.value || !result.value.valid ||
+                            !Number.isFinite(Number(result.value.value))) {
+                            if (result.status === 'rejected') {
+                                console.warn('Không thể tải chỉ số ' + indices[index].label + ':', result.reason);
+                            }
+                            return '<button class="news-index-market" type="button" disabled><div class="news-index-market-name">' +
+                                esc(indices[index].label) + '</div><div class="news-index-empty">Chưa có dữ liệu</div></button>';
+                        }
+                        var data = result.value;
+                        indexData[indices[index].key] = data;
+                        var change = Number(data.change) || 0;
+                        var percent = Number(data.percent_change) || 0;
+                        var direction = change > 0 ? 'pos' : change < 0 ? 'neg' : 'flat';
+                        var changeLabel = (change > 0 ? '+' : change < 0 ? '−' : '') +
+                            Math.abs(change).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) +
+                            ' (' + (percent > 0 ? '+' : '') +
+                            percent.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%)';
+                        return '<button class="news-index-market" type="button" data-index-key="' +
+                            indices[index].key + '" aria-pressed="false"><div class="news-index-market-name">' +
+                            esc(indices[index].label) + '</div><div class="news-index-market-value">' +
+                            Number(data.value).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) +
+                            '</div><div class="news-index-market-change ' + direction + '">' + changeLabel + '</div></button>';
+                    }).join('');
+                    var selectedKey = card.getAttribute('data-selected-index');
+                    if (indexData[selectedKey]) renderSelectedIndex(selectedKey, indexData[selectedKey]);
+                    else card.querySelector('#newsInternationalMain').innerHTML =
+                        '<div class="news-index-empty">Không thể tải dữ liệu chỉ số.</div>';
                 });
             }
 
@@ -1846,34 +2208,289 @@
                     });
             }
 
+            function loadSectorStocksCard(cardId, sectorSlug, sectorName) {
+                var card = gridEl.querySelector('#' + cardId);
+                if (!card) return;
+                var stocks = [];
+                var requestId = 0;
+                function section(suffix) {
+                    return card.querySelector('#' + cardId + suffix);
+                }
+                card.innerHTML =
+                    '<div class="news-sector-selected" id="' + cardId + 'Main"><div class="news-index-empty">Đang tải cổ phiếu ngành ' + esc(sectorName) + '...</div></div>' +
+                    '<div class="news-index-chart" id="' + cardId + 'Chart"></div>' +
+                    '<div class="news-sector-stats" id="' + cardId + 'Stats"></div>' +
+                    '<div class="news-index-markets news-sector-markets" id="' + cardId + 'Markets">' +
+                    Array.from({ length: 5 }, function () {
+                        return '<button class="news-index-market" type="button" disabled><div class="news-index-empty">Đang tải...</div></button>';
+                    }).join('') + '</div>';
+
+                function renderStock(stock) {
+                    if (!stock) return;
+                    var symbol = String(stock.symbol || '').toUpperCase();
+                    var price = Number(stock.price);
+                    var change = Number(stock.percent_change);
+                    var direction = change > 0 ? 'pos' : change < 0 ? 'neg' : 'flat';
+                    var marketCap = Number(stock.market_cap);
+                    function metric(value, digits, suffix) {
+                        var number = Number(value);
+                        return Number.isFinite(number) && number !== 0
+                            ? number.toLocaleString('vi-VN', { maximumFractionDigits: digits }) + (suffix || '')
+                            : '--';
+                    }
+                    function compactVolume(value) {
+                        var number = Number(value);
+                        return Number.isFinite(number) && number > 0
+                            ? new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(number) + ' cp'
+                            : '--';
+                    }
+                    var marketCapText = marketCap >= 1e12
+                        ? (marketCap / 1e12).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' nghìn tỷ'
+                        : (marketCap / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' tỷ';
+                    section('Main').innerHTML =
+                        '<div class="news-index-heading"><strong>' + esc(symbol) + '</strong>' +
+                        '<span>' + esc(stock.name || symbol) + '</span></div>' +
+                        '<div class="news-index-value">' + (Number.isFinite(price)
+                            ? price.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : '--') + '</div>' +
+                        '<div class="news-index-change ' + direction + '">' +
+                        (Number.isFinite(change) ? (change > 0 ? '+' : '') +
+                            change.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '% · trong ngày · Vốn hóa ' + marketCapText
+                            : 'Chưa có biến động trong ngày') + '</div>';
+                    section('Chart').innerHTML =
+                        '<div class="news-index-empty"><i class="fas fa-spinner fa-spin"></i> Đang tải biểu đồ ' + esc(symbol) + '...</div>';
+                    var stats = section('Stats');
+                    stats.innerHTML = [
+                        ['P/B', metric(stock.pb_ratio, 2)],
+                        ['P/E', metric(stock.pe_ratio, 2)],
+                        ['ROE', metric(stock.roe, 2, '%')],
+                        ['ROA', metric(stock.roa, 2, '%')],
+                        ['Khối lượng mua', 'Đang tải...'],
+                        ['Khối lượng bán', 'Đang tải...'],
+                        ['Thanh khoản', metric(Number(stock.liquidity) / 1e9, 1, ' tỷ')],
+                        ['Ròng 10 phiên', 'Đang tải...']
+                    ].map(function (item) {
+                        return '<div class="news-sector-stat"><div class="news-sector-stat-label">' +
+                            item[0] + '</div><div class="news-sector-stat-value">' + item[1] + '</div></div>';
+                    }).join('');
+                    card.querySelectorAll('.news-index-market[data-symbol]').forEach(function (button) {
+                        var selected = button.getAttribute('data-symbol') === symbol;
+                        button.classList.toggle('active', selected);
+                        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+                    });
+                    notifyParentHeight();
+
+                    var currentRequest = ++requestId;
+                    var orderBookRequest = currentRequest;
+                    fetch('/api/stocks/' + encodeURIComponent(symbol) + '/quote', { cache: 'no-store' })
+                        .then(function (response) {
+                            if (!response.ok) throw new Error('HTTP ' + response.status);
+                            return response.json();
+                        })
+                        .then(function (quote) {
+                            if (!card.isConnected || currentRequest !== requestId) return;
+                            var values = stats.querySelectorAll('.news-sector-stat-value');
+                            values[0].textContent = metric(quote.pb, 2);
+                            values[1].textContent = metric(quote.pe, 2);
+                            values[2].textContent = metric(quote.roe, 2, '%');
+                            values[3].textContent = metric(quote.roa, 2, '%');
+                            values[6].textContent = metric(Number(quote.value) / 1e9, 1, ' tỷ');
+                            notifyParentHeight();
+                        })
+                        .catch(function (error) {
+                            if (!card.isConnected || currentRequest !== requestId) return;
+                            console.warn('Không thể tải chỉ số cơ bản ' + symbol + ':', error);
+                        });
+
+                    fetch('/api/stocks/' + encodeURIComponent(symbol) + '/order-book', { cache: 'no-store' })
+                        .then(function (response) {
+                            if (!response.ok) throw new Error('HTTP ' + response.status);
+                            return response.json();
+                        })
+                        .then(function (orderBook) {
+                            if (!card.isConnected || orderBookRequest !== requestId) return;
+                            var buyVolume = (Array.isArray(orderBook.bids) ? orderBook.bids : [])
+                                .reduce(function (total, level) { return total + Number(level.volume || 0); }, 0);
+                            var sellVolume = (Array.isArray(orderBook.asks) ? orderBook.asks : [])
+                                .reduce(function (total, level) { return total + Number(level.volume || 0); }, 0);
+                            var values = stats.querySelectorAll('.news-sector-stat-value');
+                            values[4].textContent = compactVolume(buyVolume);
+                            values[5].textContent = compactVolume(sellVolume);
+                            notifyParentHeight();
+                        })
+                        .catch(function (error) {
+                            if (!card.isConnected || orderBookRequest !== requestId) return;
+                            var values = stats.querySelectorAll('.news-sector-stat-value');
+                            values[4].textContent = '--';
+                            values[5].textContent = '--';
+                            console.warn('Không thể tải sổ lệnh ' + symbol + ':', error);
+                            notifyParentHeight();
+                        });
+
+                    fetch('/api/stocks/' + encodeURIComponent(symbol) + '/money-flow?sessions=10', { cache: 'no-store' })
+                        .then(function (response) {
+                            if (!response.ok) throw new Error('HTTP ' + response.status);
+                            return response.json();
+                        })
+                        .then(function (flow) {
+                            if (!card.isConnected || currentRequest !== requestId) return;
+                            var values = stats.querySelectorAll('.news-sector-stat-value');
+                            values[7].textContent = metric(Number(flow.summary && flow.summary.net) / 1e9, 1, ' tỷ');
+                            notifyParentHeight();
+                        })
+                        .catch(function (error) {
+                            if (!card.isConnected || currentRequest !== requestId) return;
+                            var values = stats.querySelectorAll('.news-sector-stat-value');
+                            values[7].textContent = '--';
+                            console.warn('Không thể tải dòng tiền ròng 10 phiên ' + symbol + ':', error);
+                            notifyParentHeight();
+                        });
+
+                    fetch('/api/stocks/' + encodeURIComponent(symbol) + '/history?interval=1d&period=1m', { cache: 'no-store' })
+                        .then(function (response) {
+                            if (!response.ok) throw new Error('HTTP ' + response.status);
+                            return response.json();
+                        })
+                        .then(function (history) {
+                            if (!card.isConnected || currentRequest !== requestId) return;
+                            var path = indexChartPath(history);
+                            section('Chart').innerHTML = path
+                                ? '<svg viewBox="0 0 360 76" preserveAspectRatio="none" aria-label="Biểu đồ ' +
+                                    esc(symbol) + ' 1 tháng"><path class="' + direction + '" d="' + path + '"></path></svg>'
+                                : '<div class="news-index-empty">Chưa có dữ liệu biểu đồ.</div>';
+                            notifyParentHeight();
+                        })
+                        .catch(function (error) {
+                            if (!card.isConnected || currentRequest !== requestId) return;
+                            section('Chart').innerHTML =
+                                '<div class="news-index-empty">Không thể tải biểu đồ ' + esc(symbol) + '.</div>';
+                            console.warn('Không thể tải biểu đồ cổ phiếu ' + symbol + ':', error);
+                            notifyParentHeight();
+                        });
+                }
+
+                card.addEventListener('click', function (event) {
+                    var button = event.target.closest('.news-index-market[data-symbol]');
+                    if (!button || !card.contains(button)) return;
+                    var stock = stocks.find(function (item) { return item.symbol === button.getAttribute('data-symbol'); });
+                    if (stock) renderStock(stock);
+                });
+
+                fetch('/api/stocks/top-by-sector?sector=' + encodeURIComponent(sectorSlug) + '&limit=5', { cache: 'no-store' })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!card.isConnected) return;
+                        stocks = Array.isArray(data) ? data : [];
+                        var strip = section('Markets');
+                        if (!stocks.length) {
+                            section('Main').innerHTML =
+                                '<div class="news-index-empty">Chưa có dữ liệu cổ phiếu ngành ' + esc(sectorName) + '.</div>';
+                            section('Chart').innerHTML = '';
+                            strip.innerHTML = '';
+                            notifyParentHeight();
+                            return;
+                        }
+                        strip.innerHTML = stocks.map(function (stock, index) {
+                            var cap = Number(stock.market_cap);
+                            var capText = cap >= 1e12
+                                ? (cap / 1e12).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' nghìn tỷ'
+                                : (cap / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' tỷ';
+                            return '<button class="news-index-market" type="button" data-symbol="' +
+                                esc(stock.symbol) + '" aria-pressed="' + (index === 0 ? 'true' : 'false') + '">' +
+                                '<div class="news-index-market-symbol">' + esc(stock.symbol) + '</div>' +
+                                '<div class="news-index-market-value">' + capText + '</div></button>';
+                        }).join('');
+                        renderStock(stocks[0]);
+                    })
+                    .catch(function (error) {
+                        if (!card.isConnected) return;
+                        section('Main').innerHTML =
+                            '<div class="news-index-empty">Không thể tải cổ phiếu ngành ' + esc(sectorName) + '.</div>';
+                        section('Chart').innerHTML = '';
+                        section('Markets').innerHTML = '';
+                        console.warn('Không thể tải cổ phiếu ngành ' + sectorName + ':', error);
+                        notifyParentHeight();
+                    });
+            }
+
             function renderInitialNews(data) {
                 var firstRowCount = gridCols();
                 var showIndex = currentCat === 'chung-khoan' && !currentQ;
+                var showInternationalIndices = currentCat === 'tai-chinh-quoc-te' && !currentQ;
                 var showCrypto = currentCat === 'tien-ao' && !currentQ;
                 var showBankRates = currentCat === 'ngan-hang' && !currentQ;
-                var showMarketCard = showIndex || showCrypto || showBankRates;
-                var displacedCount = showMarketCard ? Math.min(2, data.length) : 0;
+                var showSecuritiesStocks = currentCat === 'chung-khoan' && !currentQ;
+                var showRealEstate = currentCat === 'bat-dong-san' && !currentQ;
+                var showTechnology = currentCat === 'cong-nghe' && !currentQ;
+                var showBankStocks = currentCat === 'ngan-hang' && !currentQ;
+                var showMarketCard = showIndex || showInternationalIndices || showCrypto || showBankRates || showBankStocks || showSecuritiesStocks || showRealEstate || showTechnology;
+                var bankSideNewsCount = showBankStocks ? Math.min(6, data.length) : 0;
+                var securitiesSideNewsCount = showSecuritiesStocks ? Math.min(6, data.length) : 0;
+                var indexSideNewsCount = showIndex ? Math.min(3, data.length) : 0;
+                var internationalSideNewsCount = showInternationalIndices ? Math.min(3, data.length) : 0;
+                var displacedCount = showBankStocks || showIndex || showInternationalIndices ? 0 : showMarketCard ? Math.min(2, data.length) : 0;
                 var firstRowEnd = Math.max(firstRowCount, displacedCount);
-                var firstRow = data.slice(displacedCount, firstRowEnd);
-                var remaining = showMarketCard
-                    ? data.slice(0, displacedCount).concat(data.slice(firstRowEnd))
-                    : data.slice(firstRowCount);
+                var firstRow = showBankStocks || showIndex || showInternationalIndices ? [] : data.slice(displacedCount, firstRowEnd);
+                var remaining = showBankStocks
+                    ? data.slice(bankSideNewsCount)
+                    : showIndex
+                        ? data.slice(securitiesSideNewsCount)
+                        : showInternationalIndices
+                            ? data.slice(internationalSideNewsCount)
+                    : showMarketCard
+                        ? data.slice(0, displacedCount).concat(data.slice(firstRowEnd))
+                        : data.slice(firstRowCount);
                 gridEl.classList.add('news-split');
                 gridEl.innerHTML =
                     '<div class="news-grid-section news-grid-first">' +
-                    (showIndex ? '<section class="news-index-card" id="newsIndexCard"><div class="news-index-empty">Đang tải VNINDEX...</div></section>' : '') +
+                    (showInternationalIndices ? '<div class="news-international-row">' +
+                        '<section class="news-index-card news-international-indices" id="newsInternationalIndicesCard"><div class="news-index-empty">Đang tải chỉ số quốc tế...</div></section>' +
+                        '<div class="news-bank-articles">' + data.slice(0, internationalSideNewsCount).map(function (item, index) {
+                            return cardHtml(item, index < 3);
+                        }).join('') + '</div></div>' : '') +
+                    (showIndex ? '<div class="news-market-layout">' +
+                        '<div class="news-market-row"><section class="news-index-card" id="newsIndexCard"><div class="news-index-empty">Đang tải VNINDEX...</div></section>' +
+                        '<div class="news-bank-articles">' + data.slice(0, indexSideNewsCount).map(function (item, index) {
+                            return cardHtml(item, index < 3);
+                        }).join('') + '</div></div>' +
+                        '<div class="news-market-row"><section class="news-index-card" id="newsSecuritiesStocksCard"><div class="news-index-empty">Đang tải cổ phiếu ngành chứng khoán...</div></section>' +
+                        '<div class="news-bank-articles">' + data.slice(3, 6).map(function (item, index) {
+                            return cardHtml(item, index + 3 < 4);
+                        }).join('') + '</div></div></div>' : '') +
                     (showCrypto ? '<section class="news-index-card" id="newsCryptoCard"><div class="news-index-empty">Đang tải giá Crypto...</div></section>' : '') +
-                    (showBankRates ? '<section class="news-index-card" id="newsBankRateCard"><div class="news-index-empty">Đang tải lãi suất ngân hàng...</div></section>' : '') +
+                    (showBankStocks ? '<div class="news-bank-layout">' +
+                        '<div class="news-bank-row"><section class="news-index-card" id="newsBankStocksCard"><div class="news-index-empty">Đang tải cổ phiếu ngân hàng...</div></section>' +
+                        '<div class="news-bank-articles">' + data.slice(0, 3).map(function (item, index) {
+                            return cardHtml(item, index < 4);
+                        }).join('') + '</div></div>' +
+                        '<div class="news-bank-row"><section class="news-index-card" id="newsBankRateCard"><div class="news-index-empty">Đang tải lãi suất ngân hàng...</div></section>' +
+                        '<div class="news-bank-articles">' + data.slice(3, 6).map(function (item, index) {
+                            return cardHtml(item, index + 3 < 4);
+                        }).join('') + '</div></div></div>' : '') +
+                    (showRealEstate ? '<section class="news-index-card" id="newsRealEstateCard"><div class="news-index-empty">Đang tải cổ phiếu bất động sản...</div></section>' : '') +
+                    (showTechnology ? '<section class="news-index-card" id="newsTechnologyCard"><div class="news-index-empty">Đang tải cổ phiếu công nghệ...</div></section>' : '') +
                     firstRow.map(function (item, index) {
                         return cardHtml(item, index < 4);
                     }).join('') + '</div>' +
                     '<div class="news-grid-section news-grid-rest">' + remaining.map(function (item, index) {
-                        return cardHtml(item, index + firstRow.length < 4);
+                        var eagerOffset = showBankStocks ? bankSideNewsCount
+                            : showIndex ? securitiesSideNewsCount
+                            : showInternationalIndices ? internationalSideNewsCount
+                            : firstRow.length;
+                        return cardHtml(item, index + eagerOffset < 4);
                     }).join('') + '</div>';
                 gridEl.querySelectorAll('.news-card').forEach(bindCard);
                 if (showIndex) loadNewsIndexCard();
+                if (showInternationalIndices) loadInternationalIndicesCard();
+                if (showSecuritiesStocks) loadSectorStocksCard('newsSecuritiesStocksCard', 'chung-khoan', 'chứng khoán');
                 if (showCrypto) loadNewsCryptoCard();
+                if (showBankStocks) loadSectorStocksCard('newsBankStocksCard', 'ngan-hang', 'ngân hàng');
                 if (showBankRates) loadNewsBankRateCard();
+                if (showRealEstate) loadSectorStocksCard('newsRealEstateCard', 'bat-dong-san', 'bất động sản');
+                if (showTechnology) loadSectorStocksCard('newsTechnologyCard', 'cong-nghe', 'công nghệ');
                 return data.length;
             }
 
@@ -2070,16 +2687,17 @@
                         return;
                     }
 
-                    // Layout: 6 bài nổi bật → 6 bài dạng thẻ → 22 bài danh sách
-                    var featured = items.slice(0, 6);
-                    var halfItems = items.slice(6, 12);
+                    // Layout: 4 bài + cơ hội nổi bật → 8 bài dạng thẻ → 22 bài danh sách
+                    var featured = items.slice(0, 4);
+                    var halfItems = items.slice(4, 12);
                     var mediumItems = items.slice(12, 34);
 
                     var html = '';
                     if (featured.length) {
                         html += '<div class="digest-featured">' + featured.map(function (n, i) {
                             return digestCellHtml(n, i === 0 ? 'big' : 'small');
-                        }).join('') + '</div>';
+                        }).join('') + '<div class="news-cell small" id="digestOpportunitySlot">' +
+                            '<div class="digest-opportunity-loading">Đang tải cơ hội...</div></div></div>';
                     }
                     if (halfItems.length) {
                         html += '<div class="digest-half">' + halfItems.map(function (n) {
@@ -2107,13 +2725,15 @@
                         '</div>';
 
                     gridEl.innerHTML = html;
+                    mountMarketOpportunityInDigest();
                     gridEl.querySelectorAll('[data-market-page]').forEach(function (link) {
+                        if (marketOpportunitiesEl.contains(link)) return;
                         link.addEventListener('click', function () {
                             openMarketPage(link.getAttribute('data-market-page'));
                         });
                     });
                     loadDigestMarketWidgets();
-                    gridEl.querySelectorAll('.news-cell, .news-row').forEach(function (el) {
+                    gridEl.querySelectorAll('.news-cell:not(.news-cell-opportunity), .news-row').forEach(function (el) {
                         el.addEventListener('click', function (e) {
                             var id = el.getAttribute('data-id');
                             var slug = el.getAttribute('data-slug');
@@ -2138,6 +2758,7 @@
 
             // Nạp lại từ đầu (chuyển chuyên mục / xóa tìm kiếm / lần mở đầu)
             async function loadNews() {
+                resetMarketOpportunityPlacement();
                 refreshMarketHighlight();
                 nextOffset = 0;
                 hasMore = true;
@@ -2180,6 +2801,9 @@
                 var rows = Math.max(1, Math.ceil((availH + GRID_GAP) / (cardH + GRID_GAP)));
                 var count = Math.max(cols, rows * cols);
                 count = Math.max(1, Math.min(count, MAX_INIT));
+                if (currentCat === 'ngan-hang' && !currentQ) count = Math.max(count, 6);
+                if (currentCat === 'chung-khoan' && !currentQ) count = Math.max(count, 6);
+                if (currentCat === 'tai-chinh-quoc-te' && !currentQ) count = Math.max(count, 3);
 
                 var data = await fetchNews(0, count);
                 if (!data.length) { renderEmpty(); return; }

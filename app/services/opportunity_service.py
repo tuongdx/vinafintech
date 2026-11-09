@@ -249,6 +249,7 @@ def _score_one(
     volume = _numbers(row.get("volume"))
     vol_ma20 = sum(vols[-21:-1]) / max(1, len(vols[-21:-1]))
     vr20 = round(volume / vol_ma20, 2) if vol_ma20 > 0 else 0.0
+    flow_positive_5d = _flow_recent_positive(price, vols)
     sector_name = str(row.get("sectorName") or "").strip()
 
     ma20 = _ma(closes, 20)
@@ -289,7 +290,7 @@ def _score_one(
     if pct_day > 0 and vr20 > 1.05:
         flow += 5
         f_reasons.append("giá tăng cùng volume")
-    if pct_day > 0 and _flow_recent_positive(price, vols):
+    if pct_day > 0 and flow_positive_5d:
         flow += 5
         f_reasons.append("dòng tiền 5 phiên cải thiện")
     if breakout_flag and vr20 >= 1.2:  # breakout kèm volume xác nhận
@@ -421,7 +422,7 @@ def _score_one(
         _add(True, f"Khối lượng gấp {vr20:.1f} lần trung bình 20 phiên")
     elif vr20 >= 1.2:
         _add(True, f"Khối lượng cao hơn TB20 {vr20:.1f} lần")
-    if _flow_recent_positive(price, vols):
+    if flow_positive_5d:
         _add(True, "Dòng tiền 5 phiên gần nhất cải thiện")
     if rsi is not None and 50 <= rsi <= 70:
         _add(True, f"RSI {rsi:.0f} — động lượng tích cực")
@@ -443,6 +444,12 @@ def _score_one(
         "market_cap": _numbers(row.get("market_cap")),
         "volume": int(volume),
         "volume_ratio": vr20,
+        "ma20": round(ma20, 2) if ma20 is not None else None,
+        "ma50": round(ma50, 2) if ma50 is not None else None,
+        "resistance_60": round(resist_60, 2) if resist_60 > 0 else None,
+        "resistance_distance_pct": round((price / resist_60 - 1) * 100, 2) if resist_60 > 0 else None,
+        "is_breakout": is_breakout,
+        "flow_positive_5d": flow_positive_5d,
         "rsi": round(rsi, 1) if rsi is not None else None,
         "trend_status": ("Tăng" if price > (ma20 or 0) else "Đi ngang") if ma20 else "N/A",
         "sector_name": sector_name,
