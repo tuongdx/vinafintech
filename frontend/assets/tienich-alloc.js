@@ -9,7 +9,7 @@
  */
 (function () {
     'use strict';
-    const Calc = window.TuniXCalc;
+    const Calc = window.VinaFintechCalc;
     if (!Calc || window.__tiAllocLoaded) return;
     if (!document.getElementById('panelAlloc')) return; // không ở trang Tiện ích → thoát
     window.__tiAllocLoaded = true;
@@ -276,7 +276,7 @@
     calcBtn.addEventListener('click', function () { calculate(); });
 
     // Cho phép trang khác (nếu cần) gọi lại tính toán, và báo chiều cao cho shell khi mở panel.
-    window.TuniXAlloc = {
+    window.VinaFintechAlloc = {
         recalc: function () { calculate(); },
         setSymbols: function (list) {
             state.symbols = Calc.normalizeSymbols(list);
@@ -295,7 +295,7 @@
             if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
             window.__lastSentH = height;
             if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
             }
         } catch (e) { }
     }

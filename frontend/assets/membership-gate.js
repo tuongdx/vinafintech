@@ -1,6 +1,6 @@
 /* VinaFintech Membership Gate — trạng thái gói + hộp thoại mở gói + helper khóa UI.
  * Dùng chung cho: Quản lý tài sản, Thị trường, VinaF AI...
- * Load như script thường (không module) → window.TuniXMembership.
+ * Load như script thường (không module) → window.VinaFintechMembership.
  */
 (function () {
   'use strict';
@@ -81,7 +81,7 @@
   }
 
   function authHeaders(extra) {
-    var token = localStorage.getItem('tunix_access_token') || '';
+    var token = localStorage.getItem('vinafintech_access_token') || '';
     var h = { 'Content-Type': 'application/json' };
     if (token) h.Authorization = 'Bearer ' + token;
     if (extra) Object.assign(h, extra);
@@ -112,7 +112,7 @@
 
     ensure: function () {
       if (this.promise) return this.promise;
-      var token = localStorage.getItem('tunix_access_token');
+      var token = localStorage.getItem('vinafintech_access_token');
       var self = this;
       this.promise = Promise.all([
         token
@@ -132,12 +132,12 @@
 
     isMember: function () { return !!(this.data && this.data.active); },
 
-    isLoggedIn: function () { return !!localStorage.getItem('tunix_access_token'); },
+    isLoggedIn: function () { return !!localStorage.getItem('vinafintech_access_token'); },
 
     /* Chưa đăng nhập → mở trang Đăng nhập (nếu đang chạy trong iframe thì báo shell mở). */
     goLogin: function () {
       if (window.parent && window.parent !== window) {
-        window.parent.postMessage({ type: 'tunix-go-login' }, '*');
+        window.parent.postMessage({ type: 'vinafintech-go-login' }, '*');
       } else {
         window.location.href = '/Login';
       }
@@ -190,7 +190,7 @@
         '<div class="tg-lock-title">' + (opts.title || 'Tính năng dành cho Hội viên') + '</div>' +
         '<div class="tg-lock-desc">' + (opts.desc || 'Mở gói hội viên để dùng tính năng này.') + '</div>' +
         '</div>' +
-        '<button type="button" class="tg-upg-btn" onclick="window.TuniXMembership.openUpgrade()"><i class="fas fa-crown"></i> Nâng cấp</button>' +
+        '<button type="button" class="tg-upg-btn" onclick="window.VinaFintechMembership.openUpgrade()"><i class="fas fa-crown"></i> Nâng cấp</button>' +
         '</div>';
     },
 
@@ -464,7 +464,7 @@
       var logged = this.isLoggedIn();
       var label = logged ? (small ? 'Mở khóa' : 'Mở khóa Hội viên') : (small ? 'Đăng nhập' : 'Đăng nhập');
       var icon = logged ? 'fa-crown' : 'fa-right-to-bracket';
-      var action = logged ? 'window.TuniXMembership.openUpgrade()' : 'window.TuniXMembership.goLogin()';
+      var action = logged ? 'window.VinaFintechMembership.openUpgrade()' : 'window.VinaFintechMembership.goLogin()';
       container.innerHTML = '<div class="tg-blur-body">' + inner + '</div>' +
         '<div class="tg-blur-veil"><button type="button" class="tg-upg-btn" style="' + btnStyle + '" onclick="' + action + '"><i class="fas ' + icon + '"></i> ' + label + '</button></div>';
     },
@@ -475,6 +475,6 @@
     }
   };
 
-  window.TuniXMembership = M;
+  window.VinaFintechMembership = M;
   injectCss();
 })();

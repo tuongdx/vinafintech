@@ -18,7 +18,7 @@ import { computeConfluence } from '../analysis/confluence.js';
 import { INDICATOR_DEFS } from '../indicators/indicatorConfig.js';
 import { AccumulationPanel, isIndexSymbol } from './accumulationPanel.js?v=20261006a';
 
-const LAYOUT_KEY = 'tunix.fsLayout.v1';
+const LAYOUT_KEY = 'vinafintech.fsLayout.v1';
 
 // Nhãn ngắn cho từng chỉ báo (sidebar) — giữ gọn, chuyên nghiệp.
 const SHORT_LABELS = {
@@ -705,13 +705,13 @@ export class FullscreenWorkspace {
     // mở lại biểu đồ toàn màn hình hiển thị NGAY và không tốn thêm lượt hỏi AI.
     _aiCacheKey(sym) {
         const day = new Date().toISOString().slice(0, 10);
-        return 'tunix_ai_tech_' + String(sym || '').toUpperCase() + '_' + day;
+        return 'vinafintech_ai_tech_' + String(sym || '').toUpperCase() + '_' + day;
     }
 
     // Báo cho trang chi tiết biết phân tích VinaF AI đã xong (mọi nhánh: ok / lỗi / chưa đăng nhập)
-    // → StockDetail chuyển tiếp thành `tunix-chart-fs-ready` cho shell để gỡ lớp "Đang mở…".
+    // → StockDetail chuyển tiếp thành `vinafintech-chart-fs-ready` cho shell để gỡ lớp "Đang mở…".
     _signalAiDone() {
-        try { document.dispatchEvent(new CustomEvent('tunix-chart-ai-done', { detail: { symbol: this.symbol } })); } catch (e) { /* ignore */ }
+        try { document.dispatchEvent(new CustomEvent('vinafintech-chart-ai-done', { detail: { symbol: this.symbol } })); } catch (e) { /* ignore */ }
     }
 
     async _loadAI() {
@@ -725,7 +725,7 @@ export class FullscreenWorkspace {
             this._signalAiDone();
             return;
         }
-        const token = localStorage.getItem('tunix_access_token');
+        const token = localStorage.getItem('vinafintech_access_token');
         if (!token) {
             this._ai = { status: 'login' };
             this._renderAI();
@@ -781,7 +781,7 @@ export class FullscreenWorkspace {
     // Nút "Đăng nhập" khi chưa đăng nhập → điều hướng đến form đăng nhập.
     _openLogin() {
         if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ type: 'tunix-go-login' }, '*');
+            window.parent.postMessage({ type: 'vinafintech-go-login' }, '*');
         } else {
             window.location.href = '/Login';
         }

@@ -5357,7 +5357,7 @@ def get_market_dashboard() -> dict[str, Any]:
 _SCORE_RISK_ADJUST = {"low": 0, "medium": -3, "high": -6, "extreme": -9}
 
 
-def _compute_tunix_score(row: dict[str, Any]) -> int:
+def _compute_vinafintech_score(row: dict[str, Any]) -> int:
     growth = _to_float(row.get("growthPoint"))
     perf = _to_float(row.get("passPerformancePoint"))
     fh = _to_float(row.get("financialHealthPoint"))
@@ -5428,7 +5428,7 @@ def get_stock_screener_page() -> dict[str, Any]:
                 ),
             },
         }
-        item["score"] = _compute_tunix_score(row)
+        item["score"] = _compute_vinafintech_score(row)
         if symbol in _SECTOR_OVERRIDES:
             item["sector_override"] = True
         stocks.append(item)
@@ -5662,7 +5662,7 @@ def _rank_live_quotes(symbols: list[str]) -> dict[str, dict[str, Any]]:
     return out
 
 
-def _build_tunix_rankings(stocks: list[dict[str, Any]], quote_loader=None) -> list[dict[str, Any]]:
+def _build_vinafintech_rankings(stocks: list[dict[str, Any]], quote_loader=None) -> list[dict[str, Any]]:
     """Dựng 5 bảng xếp hạng VinaFintech từ danh sách cổ phiếu (screener).
 
     `quote_loader`: hàm nhận list mã → dict bảng giá realtime. Khi truyền vào, giá và
@@ -5754,7 +5754,7 @@ def get_stock_rankings_live() -> dict[str, Any]:
     "Xếp hạng VinaFintech" ở trang "Khám phá" (nhẹ hơn nhiều so với stock-discover:
     không dựng featured / chiến lược / bản đồ cơ hội)."""
     stocks = _get_rank_screener_stocks()
-    rankings = _build_tunix_rankings(stocks, quote_loader=_rank_live_quotes)
+    rankings = _build_vinafintech_rankings(stocks, quote_loader=_rank_live_quotes)
     rows = [row for rk in rankings for row in rk["rows"]]
     live_rows = sum(1 for row in rows if row.get("realtime"))
     updated_at = datetime.now(_VN_TZ).isoformat()
@@ -5993,7 +5993,7 @@ def get_stock_discover_page() -> dict[str, Any]:
     # ---- 4. Xếp hạng VinaFintech (5 bảng × 8 dòng) ----
     # Lần load đầu lấy theo snapshot screener (nhanh, đã cache); block này sau đó tự
     # làm mới REALTIME qua /api/stocks/stock-rankings (giá + % thay đổi theo bảng giá).
-    rankings = _build_tunix_rankings(stocks)
+    rankings = _build_vinafintech_rankings(stocks)
 
     # Thời điểm cập nhật dữ liệu: lấy từ market dashboard (VNINDEX) — screener không có as_of.
     try:

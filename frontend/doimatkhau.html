@@ -93,7 +93,7 @@
     <script>
         (function() {
             const body = document.getElementById('passBody');
-            const TOKEN_KEY = 'tunix_access_token';
+            const TOKEN_KEY = 'vinafintech_access_token';
 
             function loggedIn() { return !!localStorage.getItem(TOKEN_KEY); }
             function authHeaders() {
@@ -178,13 +178,13 @@
                     if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
                     window.__lastSentH = height;
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'tunix-embed-height', height }, '*');
+                        window.parent.postMessage({ type: 'vinafintech-embed-height', height }, '*');
                     }
                 } catch (e) {}
             }
             window.addEventListener('message', function(event) {
                 const data = event.data;
-                if (!data || data.type !== 'tunix-theme') return;
+                if (!data || data.type !== 'vinafintech-theme') return;
                 const mode = data.mode === 'dark' ? 'dark' : 'light';
                 localStorage.setItem('theme', mode);
                 applyEmbedTheme(mode);

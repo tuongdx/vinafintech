@@ -31,7 +31,7 @@ from app.services.signal_engine import market_regime, risk, scoring, state_machi
 from app.services.signal_engine.ai.ensemble import EnsembleModel
 from app.services.signal_engine.strategies import evaluate_all
 
-logger = logging.getLogger("tunix.signal.engine")
+logger = logging.getLogger("vinafintech.signal.engine")
 
 _SNAPSHOT_CACHE_PREFIX = "signal-snapshot:"
 _MARKET_CACHE_KEY = "signal-market-snapshot"

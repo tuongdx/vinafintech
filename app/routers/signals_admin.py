@@ -26,7 +26,7 @@ from app.services.signal_engine import engine as engine_module
 from app.services.signal_engine import model_performance
 from app.services.signal_engine import backtest as backtest_module
 
-logger = logging.getLogger("tunix.signal.api")
+logger = logging.getLogger("vinafintech.signal.api")
 
 router = APIRouter(prefix="/signals", tags=["signals"])
 

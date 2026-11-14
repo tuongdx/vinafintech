@@ -769,8 +769,8 @@
             function parseNextUrl() {
                 const p = new URLSearchParams(window.location.search);
                 if (p.get('next')) return p.get('next');
-                const saved = localStorage.getItem('tunix_next');
-                localStorage.removeItem('tunix_next');
+                const saved = localStorage.getItem('vinafintech_next');
+                localStorage.removeItem('vinafintech_next');
                 return saved || '/';
             }
 
@@ -782,7 +782,7 @@
                 if (oauth !== 'success' && !oauthError) return;
 
                 const result = {
-                    type: 'tunix-oauth-result',
+                    type: 'vinafintech-oauth-result',
                     oauth: oauth,
                     error: oauthError,
                     access_token: params.get('access_token'),
@@ -800,14 +800,14 @@
                 if (oauth === 'success') {
                     const at = result.access_token;
                     if (at) {
-                        localStorage.setItem('tunix_access_token', at);
-                        if (result.refresh_token) localStorage.setItem('tunix_refresh_token', result.refresh_token);
+                        localStorage.setItem('vinafintech_access_token', at);
+                        if (result.refresh_token) localStorage.setItem('vinafintech_refresh_token', result.refresh_token);
                         const next = result.next;
                         // Chờ /me lưu user vào cache TRƯỚC khi redirect để menu account hiển thị đúng ngay lần đầu
                         fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + at } })
                             .then(r => (r.ok ? r.json() : null))
                             .then(u => {
-                                if (u) localStorage.setItem('tunix_user', JSON.stringify(u));
+                                if (u) localStorage.setItem('vinafintech_user', JSON.stringify(u));
                                 window.location.href = next;
                             })
                             .catch(() => { window.location.href = next; });
@@ -925,9 +925,9 @@
                             }
                             throw new Error(data.detail || 'Đăng nhập thất bại. Vui lòng thử lại.');
                         }
-                        localStorage.setItem('tunix_access_token', data.access_token);
-                        localStorage.setItem('tunix_refresh_token', data.refresh_token);
-                        localStorage.setItem('tunix_user', JSON.stringify(data.user));
+                        localStorage.setItem('vinafintech_access_token', data.access_token);
+                        localStorage.setItem('vinafintech_refresh_token', data.refresh_token);
+                        localStorage.setItem('vinafintech_user', JSON.stringify(data.user));
                         // Tick "Ghi nhớ" → lưu email + mật khẩu cho lần đăng nhập sau;
                         // bỏ tick → xoá thông tin đã lưu trước đó.
                         if (remember) {
@@ -959,17 +959,17 @@
             // Parent nhận kết quả từ popup qua postMessage (đã chống CSRF bằng state ở backend)
             window.addEventListener('message', function(event) {
                 const d = event.data;
-                if (!d || d.type !== 'tunix-oauth-result') return;
+                if (!d || d.type !== 'vinafintech-oauth-result') return;
                 setGoogleLoading(false);
                 if (d.oauth === 'success' && d.access_token) {
-                    localStorage.setItem('tunix_access_token', d.access_token);
-                    if (d.refresh_token) localStorage.setItem('tunix_refresh_token', d.refresh_token);
+                    localStorage.setItem('vinafintech_access_token', d.access_token);
+                    if (d.refresh_token) localStorage.setItem('vinafintech_refresh_token', d.refresh_token);
                     const next = d.next || '/';
                     // Chờ /me lưu user TRƯỚC khi redirect → menu account hiển thị đúng như đăng nhập thường
                     fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + d.access_token } })
                         .then(r => (r.ok ? r.json() : null))
                         .then(u => {
-                            if (u) localStorage.setItem('tunix_user', JSON.stringify(u));
+                            if (u) localStorage.setItem('vinafintech_user', JSON.stringify(u));
                             showMessage('✅ Đăng nhập Google thành công!', 'success');
                             window.location.href = next;
                         })
@@ -991,7 +991,7 @@
 
             // Mở cửa sổ popup Google Account Chooser → consent screen → trả code về backend
             function openGooglePopup() {
-                const next = new URLSearchParams(window.location.search).get('next') || localStorage.getItem('tunix_next') || '/';
+                const next = new URLSearchParams(window.location.search).get('next') || localStorage.getItem('vinafintech_next') || '/';
                 setGoogleLoading(true);
                 const popup = window.open(
                     '/api/auth/oauth/google/authorize?next=' + encodeURIComponent(next) + '&popup=1',
@@ -1036,8 +1036,8 @@
             // - Form có autocomplete="username"/"current-password" để trình quản lý mật khẩu
             //   của trình duyệt (Chrome/Edge) cũng có thể tự lưu.
             // ============================================================
-            const SAVED_LOGIN_KEY = 'tunix_saved_login';
-            const SAVED_LOGIN_XOR = 'TuniX-LoginRemember-2026';
+            const SAVED_LOGIN_KEY = 'vinafintech_saved_login';
+            const SAVED_LOGIN_XOR = 'VinaFintech-LoginRemember-2026';
             function obfuscateText(text) {
                 let out = '';
                 for (let i = 0; i < text.length; i++) {

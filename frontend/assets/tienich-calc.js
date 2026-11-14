@@ -1,6 +1,6 @@
 /**
  * VinaFintech — "Tiện ích": các hàm tính toán thuần (không phụ thuộc DOM) để dễ kiểm thử.
- * Dùng chung cho trình duyệt (window.TuniXCalc) và Node (module.exports).
+ * Dùng chung cho trình duyệt (window.VinaFintechCalc) và Node (module.exports).
  *
  * Tool 1 — Giá điều chỉnh cổ phiếu (corporate actions)
  * Tool 2 — Lợi nhuận tiền gửi (deposit)
@@ -406,6 +406,6 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = api;
     } else {
-        root.TuniXCalc = api;
+        root.VinaFintechCalc = api;
     }
 })(typeof self !== 'undefined' ? self : this);

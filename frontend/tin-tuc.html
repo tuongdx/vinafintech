@@ -1167,14 +1167,14 @@
             window.addEventListener('message', function (event) {
                 var data = event.data;
                 if (!data) return;
-                if (data.type === 'tunix-theme') {
+                if (data.type === 'vinafintech-theme') {
                     try { localStorage.setItem('theme', data.mode === 'dark' ? 'dark' : 'light'); } catch (e) {}
                     applyTheme(data.mode);
                     notifyParentHeight();
                     return;
                 }
                 // Chọn chuyên mục từ header index.html
-                if (data.type === 'tunix-select-cat' && typeof data.cat === 'string') {
+                if (data.type === 'vinafintech-select-cat' && typeof data.cat === 'string') {
                     selectCategory(data.cat);
                 }
             });
@@ -1189,7 +1189,7 @@
                     if (Math.abs(height - lastSentHeight) < 2) return;
                     lastSentHeight = height;
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                        window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
                     }
                 } catch (e) {}
             }
@@ -1320,7 +1320,7 @@
 
             function openMarketStock(symbol) {
                 if (!symbol || !window.parent || window.parent === window) return;
-                window.parent.postMessage({ type: 'tunix-open-stock', symbol: symbol }, '*');
+                window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: symbol }, '*');
             }
 
             function radarSymbols(items, changeBySymbol) {
@@ -1525,7 +1525,7 @@
 
             function openMarketPage(url) {
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'tunix-open-page', url: url || '/thi-truong' }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-open-page', url: url || '/thi-truong' }, '*');
                 }
             }
 
@@ -1592,7 +1592,7 @@
             // ---------------- Chọn chuyên mục (điều khiển từ header index.html) ----------------
             function notifyParentCat() {
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'tunix-cat-changed', cat: currentCat }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-cat-changed', cat: currentCat }, '*');
                 }
             }
 
@@ -1614,7 +1614,7 @@
                 loadNews();
                 // Báo parent xóa ô tìm kiếm trên header
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'tunix-search-clear' }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-search-clear' }, '*');
                 }
             }
 
@@ -1683,7 +1683,7 @@
                     if (!id) return;
                     if (e && e.preventDefault) e.preventDefault();
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug }, '*');
+                        window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(id), slug: slug }, '*');
                     }
                 });
             }
@@ -2764,7 +2764,7 @@
                             if (!id) return;
                             if (e && e.preventDefault) e.preventDefault();
                             if (window.parent && window.parent !== window) {
-                                window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug }, '*');
+                                window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(id), slug: slug }, '*');
                             }
                         });
                     });

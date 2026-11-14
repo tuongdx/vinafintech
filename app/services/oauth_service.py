@@ -14,7 +14,7 @@ from urllib.request import Request, urlopen
 
 from app.core.config import settings
 
-logger = logging.getLogger("tunix.oauth")
+logger = logging.getLogger("vinafintech.oauth")
 
 _PROVIDERS = {"google"}
 

@@ -4716,16 +4716,16 @@
         let currentQuote = null;
         // Biểu đồ nến: VinaFintech Chart Engine (Lightweight Charts, modular) — dữ liệu OHLCV từ VinaFintech
         let currentTimeframe = '1D';   // 1H, 1D, 1W, 1M
-        let tunixChart = null;
-        let tunixChartModulePromise = null;
+        let vinafintechChart = null;
+        let vinafintechChartModulePromise = null;
         // Version của khối chart engine — BẮT BUỘC bump khi sửa file trong /static/chart/
         // (module import không có query sẽ bị HTTP cache 1 giờ; thêm ?v= để lần tải sau lấy bản mới).
         const CHART_ASSET_VER = '20261027b';
-        function getTunixChartModule() {
-            if (!tunixChartModulePromise) {
-                tunixChartModulePromise = import('/static/chart/stockDetailChart.js?v=' + CHART_ASSET_VER);
+        function getVinaFintechChartModule() {
+            if (!vinafintechChartModulePromise) {
+                vinafintechChartModulePromise = import('/static/chart/stockDetailChart.js?v=' + CHART_ASSET_VER);
             }
-            return tunixChartModulePromise;
+            return vinafintechChartModulePromise;
         }
 
         function formatNumber(value, decimals = 0) {
@@ -4813,7 +4813,7 @@
         }
         function exitParentFullscreen() {
             // Nhờ shell thoát (shell là bên đã bật fullscreen)…
-            try { window.parent.postMessage({ type: 'tunix-exit-fullscreen' }, '*'); } catch (e) { /* ignore */ }
+            try { window.parent.postMessage({ type: 'vinafintech-exit-fullscreen' }, '*'); } catch (e) { /* ignore */ }
             // …đồng thời gọi trực tiếp (cùng origin) để chắc chắn chạy cả khi message bị chặn.
             try {
                 const pd = window.parent.document;
@@ -4823,7 +4823,7 @@
         }
 
         // ---- Báo cho SHELL biết workspace biểu đồ đã dựng xong (dữ liệu + phân tích VinaF AI) ----
-        // Shell giữ lớp "Đang mở biểu đồ phân tích kỹ thuật…" cho tới khi nhận `tunix-chart-fs-ready` ⇒
+        // Shell giữ lớp "Đang mở biểu đồ phân tích kỹ thuật…" cho tới khi nhận `vinafintech-chart-fs-ready` ⇒
         // bấm MỘT lần là vào thẳng màn hình hoàn chỉnh. Trước đây shell gỡ lớp chờ ngay khi iframe load,
         // nên bảng TUNIAI còn "Đang cập nhật…" (VinaF AI mất ~7s) → người dùng phải thoát ra bấm lại.
         let chartFsDataReady = false, chartFsAiDone = false, chartFsReadyPosted = false;
@@ -4831,11 +4831,11 @@
             if (!window.parent || window.parent === window) return;
             try { window.parent.postMessage(msg, '*'); } catch (e) { /* ignore */ }
         }
-        function postChartFsProgress(step) { postToParent({ type: 'tunix-chart-fs-progress', step: step }); }
+        function postChartFsProgress(step) { postToParent({ type: 'vinafintech-chart-fs-progress', step: step }); }
         function tryPostChartFsReady() {
             if (!chartFsDataReady || !chartFsAiDone || chartFsReadyPosted) return;
             chartFsReadyPosted = true;
-            postToParent({ type: 'tunix-chart-fs-ready' });
+            postToParent({ type: 'vinafintech-chart-fs-ready' });
         }
         function markChartFsDataReady() {
             if (chartFsDataReady) return;
@@ -4843,12 +4843,12 @@
             postChartFsProgress('ai');     // dữ liệu xong → còn chờ VinaF AI
             tryPostChartFsReady();
         }
-        document.addEventListener('tunix-chart-ai-done', function () {
+        document.addEventListener('vinafintech-chart-ai-done', function () {
             chartFsAiDone = true;
             tryPostChartFsReady();
         });
         // DỰ PHÒNG: nếu module chart còn bản cũ trong cache trình duyệt (chưa bắn sự kiện
-        // `tunix-chart-ai-done`) thì theo dõi DOM bảng TUNIAI — hết "Đang cập nhật…" là coi như xong.
+        // `vinafintech-chart-ai-done`) thì theo dõi DOM bảng TUNIAI — hết "Đang cập nhật…" là coi như xong.
         if (getFsFromQuery()) {
             let aiWatchTries = 0;
             const aiWatch = setInterval(function () {
@@ -4857,7 +4857,7 @@
                 const txt = el ? (el.innerText || '').trim() : '';
                 if (txt && !/Đang cập nhật/.test(txt)) {
                     clearInterval(aiWatch);
-                    document.dispatchEvent(new CustomEvent('tunix-chart-ai-done'));
+                    document.dispatchEvent(new CustomEvent('vinafintech-chart-ai-done'));
                     return;
                 }
                 if (aiWatchTries > 150) clearInterval(aiWatch);   // tối đa ~60s
@@ -4866,8 +4866,8 @@
         // Shell hỏi trạng thái (mở lại biểu đồ đã xem) → trả lời ngay để lớp chờ tắt tức thì.
         window.addEventListener('message', function (e) {
             const d = e.data;
-            if (!d || d.type !== 'tunix-chart-fs-status') return;
-            if (chartFsDataReady && chartFsAiDone) postToParent({ type: 'tunix-chart-fs-ready' });
+            if (!d || d.type !== 'vinafintech-chart-fs-status') return;
+            if (chartFsDataReady && chartFsAiDone) postToParent({ type: 'vinafintech-chart-fs-ready' });
             else postChartFsProgress(chartFsDataReady ? 'ai' : 'load');
         });
         // Bắt ở pha capture → chặn handler của chart engine (tránh nó tự request fullscreen lồng nhau).
@@ -4888,12 +4888,12 @@
                 document.body.classList.toggle('chart-fullscreen', isFs);
                 syncChartFsBtn(isFs);
                 // Nút toàn màn hình trong chart phải đổi thành icon THOÁT toàn màn hình (và ngược lại).
-                if (tunixChart && typeof tunixChart.refreshFullscreen === 'function') tunixChart.refreshFullscreen();
+                if (vinafintechChart && typeof vinafintechChart.refreshFullscreen === 'function') vinafintechChart.refreshFullscreen();
                 // Thoát fullscreen (parent-driven, icon nến ở header) → trả chart về chiều cao bình
                 // thường. Không làm thì placeholder giữ nguyên chiều cao lúc fullscreen
                 // (baseChartHeight ghi nhận sai) → biểu đồ "to hơn bình thường" sau khi thoát.
-                if (!isFs && tunixChart && typeof tunixChart.resetChartHeight === 'function') {
-                    tunixChart.resetChartHeight();
+                if (!isFs && vinafintechChart && typeof vinafintechChart.resetChartHeight === 'function') {
+                    vinafintechChart.resetChartHeight();
                 }
             };
             window.parent.document.addEventListener('fullscreenchange', syncParentFs);
@@ -4916,7 +4916,7 @@
                     clearInterval(t);
                     return;
                 }
-                const fs = window.__tunixChartDebug && window.__tunixChartDebug.fullscreen;
+                const fs = window.__vinafintechChartDebug && window.__vinafintechChartDebug.fullscreen;
                 if (fs && fs.isSupported()) {
                     if (!fs.isActive()) fs.toggle();
                     // Fullscreen API đã vào nhưng đôi khi sự kiện fullscreenchange bị bỏ lỡ
@@ -5005,20 +5005,20 @@
         // PHASE 1 — Chart Core. Toàn bộ OHLCV lấy từ VinaFintech (backend /api/chart/history).
         // Timeframe hỗ trợ: 1D/1W/1M (dữ liệu VinaFintech daily) — không giả lập intraday.
 
-        function destroyTunixChart() {
-            if (tunixChart) {
-                try { tunixChart.destroy(); } catch (e) {}
-                tunixChart = null;
+        function destroyVinaFintechChart() {
+            if (vinafintechChart) {
+                try { vinafintechChart.destroy(); } catch (e) {}
+                vinafintechChart = null;
             }
         }
 
-        async function loadTunixChart(symbol) {
+        async function loadVinaFintechChart(symbol) {
             const container = document.getElementById('lwcChartContainer');
             if (!container) return;
             try {
-                const mod = await getTunixChartModule();
-                if (!tunixChart) {
-                    tunixChart = mod.createStockDetailChart({
+                const mod = await getVinaFintechChartModule();
+                if (!vinafintechChart) {
+                    vinafintechChart = mod.createStockDetailChart({
                         container: container,
                         placeholderEl: document.getElementById('chartPlaceholder'),
                         toolbarEl: document.getElementById('chartToolbar'),
@@ -5043,7 +5043,7 @@
                         onTimeframeChange: function (tf) { setChartTimeframe(tf); },
                     });
                 }
-                await tunixChart.load(symbol);
+                await vinafintechChart.load(symbol);
                 // Chart (và nút .fs-btn) vừa được tạo → đồng bộ icon theo trạng thái fullscreen hiện tại.
                 syncChartFsBtn(parentFullscreenOwnsFrame());
             } catch (e) {
@@ -5062,10 +5062,10 @@
                 const labels = { '1D': 'Ngày', '1W': 'Tuần', '1M': 'Tháng', '1H': 'Giờ' };
                 btn.innerHTML = (labels[tf] || 'Ngày') + ' <i class="fa-solid fa-chevron-down"></i>';
             }
-            if (tunixChart) {
-                tunixChart.setTimeframe(tf);
+            if (vinafintechChart) {
+                vinafintechChart.setTimeframe(tf);
             } else {
-                loadTunixChart((currentQuote && currentQuote.symbol) || getSymbolFromQuery());
+                loadVinaFintechChart((currentQuote && currentQuote.symbol) || getSymbolFromQuery());
             }
         }
 
@@ -5585,7 +5585,7 @@
             }
             try {
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                 } else {
                     window.location.href = `/cophieu-${sym}`;
                 }
@@ -6240,11 +6240,11 @@
             const url = slug ? ('/' + slug + '-' + id + '.html') : ('/tintuc?id=' + id);
             // Trang chi tiết cổ phiếu có thể nằm SÂU trong iframe (shell → CoPhieu.html → StockDetail):
             // gửi thẳng lên window.top (shell) vì iframe cha trung gian KHÔNG chuyển tiếp message này.
-            // Shell nhận 'tunix-open-tintuc' → mở trang chi tiết bài viết trong vùng nội dung.
+            // Shell nhận 'vinafintech-open-tintuc' → mở trang chi tiết bài viết trong vùng nội dung.
             const topWin = window.top;
             if (topWin && topWin !== window) {
                 try {
-                    topWin.postMessage({ type: 'tunix-open-tintuc', id: id, slug: slug || '' }, '*');
+                    topWin.postMessage({ type: 'vinafintech-open-tintuc', id: id, slug: slug || '' }, '*');
                     return;
                 } catch (e) { /* ignore → điều hướng trực tiếp bên dưới */ }
             }
@@ -6368,16 +6368,16 @@
         }
 
         // ===== DANH SÁCH THEO DÕI (favorites) — theo dõi theo tài khoản =====
-        const FAVORITES_KEY = 'tunix_favorites';
+        const FAVORITES_KEY = 'vinafintech_favorites';
 
         function isLoggedIn() {
-            return !!localStorage.getItem('tunix_access_token');
+            return !!localStorage.getItem('vinafintech_access_token');
         }
 
         // Phiên còn hiệu lực? (có token VÀ token chưa hết hạn — tránh hiện block riêng tư
         // cho token cũ còn sót trong localStorage).
         function hasValidSession() {
-            const token = localStorage.getItem('tunix_access_token');
+            const token = localStorage.getItem('vinafintech_access_token');
             if (!token) return false;
             try {
                 const payload = JSON.parse(atob(String(token).split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
@@ -6457,7 +6457,7 @@
             if (!isLoggedIn()) return;
             try {
                 const res = await fetch('/api/watchlist', {
-                    headers: { Authorization: 'Bearer ' + localStorage.getItem('tunix_access_token') }
+                    headers: { Authorization: 'Bearer ' + localStorage.getItem('vinafintech_access_token') }
                 });
                 if (!res.ok) return;
                 const list = await res.json();
@@ -6474,7 +6474,7 @@
                 showFavToast('🔒 Vui lòng đăng nhập để theo dõi cổ phiếu');
                 return;
             }
-            const token = localStorage.getItem('tunix_access_token');
+            const token = localStorage.getItem('vinafintech_access_token');
             const H = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
             const list = getFavorites();
             const idx = list.indexOf(s);
@@ -6489,7 +6489,7 @@
                     showFavToast(`Đã thêm ${s} vào danh sách theo dõi ❤️`);
                     // Báo trang cha cập nhật thông báo
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'tunix-notify' }, '*');
+                        window.parent.postMessage({ type: 'vinafintech-notify' }, '*');
                     }
                 }
                 saveFavorites(list);
@@ -6531,7 +6531,7 @@
         function showInfoModal(title, bodyHtml) {
             if (isEmbedded) {
                 try {
-                    window.parent.postMessage({ type: 'tunix-stock-modal', title, bodyHtml }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-stock-modal', title, bodyHtml }, '*');
                     return;
                 } catch (e) {
                     console.error('Failed to send modal to parent:', e);
@@ -6596,7 +6596,7 @@
             // Hiển thị NGAY khi click: mở modal kèm spinner (không chờ API trả về)
             showInfoModal(title, '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>');
             // Cache nhanh theo mã: click lại lần sau hiển thị tức thì
-            const cacheKey = 'tunix.dividends.v1.' + symbol;
+            const cacheKey = 'vinafintech.dividends.v1.' + symbol;
             let cachedHtml = null;
             try { cachedHtml = sessionStorage.getItem(cacheKey); } catch (e) { /* ignore */ }
             if (cachedHtml) {
@@ -6682,7 +6682,7 @@
             const sym = String(symbol || '').trim().toUpperCase();
             if (!sym || isIndexSymbol(sym)) return;
             const jobs = [];
-            const divKey = 'tunix.dividends.v1.' + sym;
+            const divKey = 'vinafintech.dividends.v1.' + sym;
             let cached = null;
             try { cached = sessionStorage.getItem(divKey); } catch (e) { /* ignore */ }
             if (!cached) {
@@ -6696,7 +6696,7 @@
                         .catch(() => { /* bỏ qua: click vẫn có loading/error bình thường */ })
                 );
             }
-            const sumKey = 'tunix.company-summary.v1.' + sym;
+            const sumKey = 'vinafintech.company-summary.v1.' + sym;
             try { cached = sessionStorage.getItem(sumKey); } catch (e) { /* ignore */ }
             if (!cached) {
                 jobs.push(
@@ -6718,7 +6718,7 @@
             // Hiển thị NGAY khi click: mở modal kèm spinner (không chờ API trả về)
             showInfoModal(title, '<div class="info-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>');
             // Cache nhanh theo mã: click lại lần sau hiển thị tức thì
-            const cacheKey = 'tunix.company-summary.v1.' + symbol;
+            const cacheKey = 'vinafintech.company-summary.v1.' + symbol;
             let cachedHtml = null;
             try { cachedHtml = sessionStorage.getItem(cacheKey); } catch (e) { /* ignore */ }
             if (cachedHtml) {
@@ -6796,7 +6796,7 @@
 
         // Toàn màn hình: hiển thị chart "không có dữ liệu" + thông báo (không thoát fullscreen).
         function showChartNoData(message) {
-            if (tunixChart) { try { tunixChart.destroy(); } catch (e) { /* ignore */ } tunixChart = null; }
+            if (vinafintechChart) { try { vinafintechChart.destroy(); } catch (e) { /* ignore */ } vinafintechChart = null; }
             // destroy() gỡ class chart-fullscreen (qua destroyFullscreen) — nếu vẫn đang
             // fullscreen thì giữ lại layout toàn màn hình cho khối chart.
             if (document.fullscreenElement || document.webkitFullscreenElement) {
@@ -6826,12 +6826,12 @@
             await loadStockDetail(sym);
             // Báo parent mã đã đổi (để icon nến ở header fullscreen đúng mã mới, kể cả khi đổi mã trong fullscreen).
             if (window.parent && window.parent !== window) {
-                try { window.parent.postMessage({ type: 'tunix-symbol-changed', symbol: sym }, '*'); } catch (e) { /* ignore */ }
+                try { window.parent.postMessage({ type: 'vinafintech-symbol-changed', symbol: sym }, '*'); } catch (e) { /* ignore */ }
             }
         }
 
         // Đổi mã cổ phiếu NGAY TRONG TRANG (không reload iframe/trang) — parent gửi
-        // tunix-switch-stock khi người dùng tìm cổ phiếu khác từ header khi đang ở trang chi tiết.
+        // vinafintech-switch-stock khi người dùng tìm cổ phiếu khác từ header khi đang ở trang chi tiết.
         async function switchSymbol(sym) {
             const input = document.getElementById('chartSymbolInput');
             if (input) input.value = sym;
@@ -6850,7 +6850,7 @@
             // Vẽ chart NGAY (chỉ cần symbol) — không chờ quote (quote có thể chậm 1-30s lần đầu).
             const titleInput = document.getElementById('chartSymbolInput');
             if (titleInput) titleInput.value = symbol;
-            loadTunixChart(symbol);
+            loadVinaFintechChart(symbol);
             if (!isIndex) {
                 // Các panel độc lập chạy SONG SONG với quote để hiển thị sớm hơn.
                 loadFinancialStatements(symbol);
@@ -6893,7 +6893,7 @@
                 const stockDivBadge = document.getElementById('stockDivBadge');
                 if (stockDivBadge) {
                     stockDivBadge.setAttribute('data-div', String(quote.symbol || symbol || '').toUpperCase());
-                    if (window.TuniXDiv && window.TuniXDiv.sweep) window.TuniXDiv.sweep();
+                    if (window.VinaFintechDiv && window.VinaFintechDiv.sweep) window.VinaFintechDiv.sweep();
                 }
                 updateFavoriteBtn(quote.symbol || symbol);
                 if (stockExchange) stockExchange.textContent = quote.exchange || '--';
@@ -6947,7 +6947,7 @@
             }
             lastSentHeight = height;
             if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'tunix-embed-height', height }, '*');
+                window.parent.postMessage({ type: 'vinafintech-embed-height', height }, '*');
             }
         }
 
@@ -7016,7 +7016,7 @@
                 if (sym === cur) return;
                 try {
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                        window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                     } else {
                         window.location.href = `/cophieu-${sym}`;
                     }
@@ -7028,21 +7028,21 @@
 
         // Lắng nghe sự kiện từ parent: đổi mã cổ phiếu ngay trong trang (tìm mã khác từ header).
         window.addEventListener('message', function(event) {
-            if (event.data && event.data.type === 'tunix-switch-stock' && event.data.symbol) {
+            if (event.data && event.data.type === 'vinafintech-switch-stock' && event.data.symbol) {
                 switchSymbol(event.data.symbol);
                 return;
             }
-            if (event.data && (event.data.type === 'toggleTheme' || event.data.type === 'tunix-theme')) {
-                const shouldUseDark = event.data.type === 'tunix-theme' ? event.data.mode === 'dark' : Boolean(event.data.isDark);
+            if (event.data && (event.data.type === 'toggleTheme' || event.data.type === 'vinafintech-theme')) {
+                const shouldUseDark = event.data.type === 'vinafintech-theme' ? event.data.mode === 'dark' : Boolean(event.data.isDark);
                 if (shouldUseDark) {
                     document.body.classList.add('dark-mode');
                 } else {
                     document.body.classList.remove('dark-mode');
                 }
-                if (tunixChart) {
-                    tunixChart.setTheme(shouldUseDark ? 'dark' : 'light');
+                if (vinafintechChart) {
+                    vinafintechChart.setTheme(shouldUseDark ? 'dark' : 'light');
                 } else if (currentQuote) {
-                    loadTunixChart(currentQuote.symbol || getSymbolFromQuery());
+                    loadVinaFintechChart(currentQuote.symbol || getSymbolFromQuery());
                 }
                 notifyParentHeight();
             }
@@ -7068,10 +7068,10 @@
         ];
 
         // Thuật toán tích sản DÙNG CHUNG với panel fullscreen — 1 nguồn duy nhất:
-        // /static/accumulationCalc.js (window.TuniXAccum). Sửa thuật toán ở ĐÚNG 1 CHỖ ĐÓ.
-        const ACCUM_MONTHS = TuniXAccum.MONTHS;
-        const buildAccumMonthlyPrices = TuniXAccum.buildMonthlyPrices;
-        const computeAccumSeries = TuniXAccum.computeSeries;
+        // /static/accumulationCalc.js (window.VinaFintechAccum). Sửa thuật toán ở ĐÚNG 1 CHỖ ĐÓ.
+        const ACCUM_MONTHS = VinaFintechAccum.MONTHS;
+        const buildAccumMonthlyPrices = VinaFintechAccum.buildMonthlyPrices;
+        const computeAccumSeries = VinaFintechAccum.computeSeries;
 
         // Chiều cao biểu đồ khớp với nửa phải: nhiều/ít/không có đợt cổ tức → nửa phải cao thấp
         // khác nhau nên tính lại mỗi lần render:

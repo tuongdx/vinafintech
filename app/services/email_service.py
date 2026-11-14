@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 
 from app.core.config import settings
 
-logger = logging.getLogger("tunix.email")
+logger = logging.getLogger("vinafintech.email")
 
 
 def send_email(to_email: str, subject: str, html_body: str) -> bool:

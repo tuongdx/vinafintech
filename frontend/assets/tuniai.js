@@ -18,7 +18,7 @@
             const WAITING_HTML = '<span class="ta-wait"><i class="fas fa-spinner fa-spin"></i> Xin chờ chút để VinaF AI xử lý thông tin...</span>';
 
             // ---------- Quản lý hội thoại (đồng bộ server theo tài khoản) ----------
-            const CONV_KEY = 'tunix_ai_conversations';
+            const CONV_KEY = 'vinafintech_ai_conversations';
             const API_CONV = '/api/ai/conversations';
             const msgsEl = document.getElementById('taMessages');
             const historyEl = document.getElementById('taHistory');
@@ -27,7 +27,7 @@
             let currentId = null;
             let busy = false;
 
-            function loggedIn() { return !!localStorage.getItem('tunix_access_token'); }
+            function loggedIn() { return !!localStorage.getItem('vinafintech_access_token'); }
 
             // ---------- Trang bị khóa (yêu cầu đăng nhập) ----------
             function showLocked() {
@@ -49,7 +49,7 @@
             function authHeaders() {
                 return {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + (localStorage.getItem('tunix_access_token') || '')
+                    'Authorization': 'Bearer ' + (localStorage.getItem('vinafintech_access_token') || '')
                 };
             }
 
@@ -57,7 +57,7 @@
             async function serverFetch(url, opts) {
                 let res = await fetch(url, opts);
                 if (res.status === 401) {
-                    const refresh = localStorage.getItem('tunix_refresh_token');
+                    const refresh = localStorage.getItem('vinafintech_refresh_token');
                     if (refresh) {
                         try {
                             const rr = await fetch('/api/auth/refresh-token', {
@@ -67,9 +67,9 @@
                             });
                             const d = await rr.json();
                             if (d.access_token) {
-                                localStorage.setItem('tunix_access_token', d.access_token);
-                                if (d.refresh_token) localStorage.setItem('tunix_refresh_token', d.refresh_token);
-                                if (d.user) localStorage.setItem('tunix_user', JSON.stringify(d.user));
+                                localStorage.setItem('vinafintech_access_token', d.access_token);
+                                if (d.refresh_token) localStorage.setItem('vinafintech_refresh_token', d.refresh_token);
+                                if (d.user) localStorage.setItem('vinafintech_user', JSON.stringify(d.user));
                                 opts = Object.assign({}, opts, { headers: authHeaders() });
                                 res = await fetch(url, opts);
                             }
@@ -837,12 +837,12 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('tunix_access_token') || '')
+                        'Authorization': 'Bearer ' + (localStorage.getItem('vinafintech_access_token') || '')
                     },
                     body: JSON.stringify({ messages: msgs, stream: true })
                 });
                 if (res.status === 401 && !retried) {
-                    const refresh = localStorage.getItem('tunix_refresh_token');
+                    const refresh = localStorage.getItem('vinafintech_refresh_token');
                     if (refresh) {
                         try {
                             const rr = await fetch('/api/auth/refresh-token', {
@@ -852,16 +852,16 @@
                             });
                             const d = await rr.json();
                             if (d.access_token) {
-                                localStorage.setItem('tunix_access_token', d.access_token);
-                                if (d.refresh_token) localStorage.setItem('tunix_refresh_token', d.refresh_token);
-                                if (d.user) localStorage.setItem('tunix_user', JSON.stringify(d.user));
+                                localStorage.setItem('vinafintech_access_token', d.access_token);
+                                if (d.refresh_token) localStorage.setItem('vinafintech_refresh_token', d.refresh_token);
+                                if (d.user) localStorage.setItem('vinafintech_user', JSON.stringify(d.user));
                                 return fetchChat(true);
                             }
                         } catch (e) {}
                     }
-                    localStorage.removeItem('tunix_access_token');
-                    localStorage.removeItem('tunix_refresh_token');
-                    localStorage.removeItem('tunix_user');
+                    localStorage.removeItem('vinafintech_access_token');
+                    localStorage.removeItem('vinafintech_refresh_token');
+                    localStorage.removeItem('vinafintech_user');
                 }
                 return res;
             }
@@ -875,7 +875,7 @@
                     // Hết lượt hỏi VinaF AI miễn phí → tin nhắn ngắn + mở DIALOG nổi trên khung chat.
                     if (res.status === 403 && /hết lượt|VinaF AI miễn phí/i.test(detail)) {
                         bubble.innerHTML = escChat('Bạn đã dùng hết lượt hỏi VinaF AI miễn phí trong tháng này.');
-                        if (window.TuniXMembership && window.TuniXMembership.showQuotaDialog) window.TuniXMembership.showQuotaDialog();
+                        if (window.VinaFintechMembership && window.VinaFintechMembership.showQuotaDialog) window.VinaFintechMembership.showQuotaDialog();
                         return '';
                     }
                     bubble.innerHTML = escChat(detail);
@@ -966,9 +966,9 @@
             // Nhận câu hỏi từ nơi khác (chart, Home, KhamPha...) qua sessionStorage → tự gửi
             function consumePendingPrompt() {
                 try {
-                    const p = sessionStorage.getItem('tunix_ai_prompt');
+                    const p = sessionStorage.getItem('vinafintech_ai_prompt');
                     if (p && loggedIn()) {
-                        sessionStorage.removeItem('tunix_ai_prompt');
+                        sessionStorage.removeItem('vinafintech_ai_prompt');
                         setTimeout(function() { sendAi(p); }, 300);
                     }
                 } catch (e) {}
@@ -1091,13 +1091,13 @@
                     if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
                     window.__lastSentH = height;
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                        window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
                     }
                 } catch (e) {}
             }
             window.addEventListener('message', function(event) {
                 const data = event.data;
-                if (!data || data.type !== 'tunix-theme') return;
+                if (!data || data.type !== 'vinafintech-theme') return;
                 const mode = data.mode === 'dark' ? 'dark' : 'light';
                 localStorage.setItem('theme', mode);
                 applyEmbedTheme(mode);

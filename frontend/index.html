@@ -3167,7 +3167,7 @@
     <!-- ===== VinaF AI Chat Widget (Phase 1) ===== -->
     <style>
         /* Dead: widget chat nổi đã được gỡ bỏ (2026-08-26h) — chỉ giữ lại để tránh xung đột nếu tái sử dụng.
-           Các selector #tunixAiFab/#tunixAiPanel/.ai-* không còn được dùng trong HTML. */
+           Các selector #vinafintechAiFab/#vinafintechAiPanel/.ai-* không còn được dùng trong HTML. */
         /* (removed) */
     </style>
     <script src="/static/header-search.js?v=20260926a"></script>
@@ -3334,7 +3334,7 @@
         }
 
         function syncEmbeddedContentTheme(mode) {
-            const msg = { type: 'tunix-theme', mode };
+            const msg = { type: 'vinafintech-theme', mode };
             const frame = document.getElementById('contentEmbedFrame');
             if (frame && frame.contentWindow) frame.contentWindow.postMessage(msg, '*');
             // Đồng bộ luôn các iframe đang cache (đang ẩn) để khi quay lại không bị lệch theme
@@ -3433,8 +3433,8 @@
             // Cập nhật hash để chia sẻ/gh bookmark được, nhưng không tạo entry mới (tránh popstate).
             try { history.replaceState(history.state, '', href); } catch (err) {}
         }, false);
-        window.tunixGoBackInApp = goBackInApp;
-        window.tunixGoForwardInApp = goForwardInApp;
+        window.vinafintechGoBackInApp = goBackInApp;
+        window.vinafintechGoForwardInApp = goForwardInApp;
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
@@ -3502,7 +3502,7 @@
             if (!fs && isStockDetailEmbedded()) {
                 const frame = document.getElementById('contentEmbedFrame');
                 if (frame && frame.contentWindow) {
-                    frame.contentWindow.postMessage({ type: 'tunix-switch-stock', symbol: normalized }, '*');
+                    frame.contentWindow.postMessage({ type: 'vinafintech-switch-stock', symbol: normalized }, '*');
                 }
                 window.history.replaceState({}, '', prettyUrl);
                 if (typeof updateRightColumnForStock === 'function') {
@@ -3553,7 +3553,7 @@
             showChartFsPending('Đang tải dữ liệu biểu đồ…');
             requestFsOn(frameHostEl());
             // Iframe đã tải sẵn (mở lại mã vừa xem) → hỏi trạng thái để lớp chờ tắt ngay lập tức.
-            if (entry && entry.loaded) { try { entry.frame.contentWindow.postMessage({ type: 'tunix-chart-fs-status' }, '*'); } catch (e) { /* ignore */ } }
+            if (entry && entry.loaded) { try { entry.frame.contentWindow.postMessage({ type: 'vinafintech-chart-fs-status' }, '*'); } catch (e) { /* ignore */ } }
         }
         // Lớp "Đang mở biểu đồ…" — tự tắt khi trang con báo sẵn sàng; có trần thời gian để không bao giờ treo.
         let chartFsPendingTimer = null;
@@ -3721,8 +3721,8 @@
 
         // ---------- View bên trong trang Crypto (danh sách ⇄ chi tiết coin) ----------
         // Iframe Crypto TỰ đổi view khi nhấp 1 coin nên key iframe KHÔNG đổi (vẫn là /crypto) ⇒ shell không
-        // thể biết iframe đang ở view nào. Phải gửi 'tunix-crypto-goto' để iframe tự chuyển view (giống cơ chế
-        // 'tunix-co-phieu-goto' của trang Cổ phiếu).
+        // thể biết iframe đang ở view nào. Phải gửi 'vinafintech-crypto-goto' để iframe tự chuyển view (giống cơ chế
+        // 'vinafintech-co-phieu-goto' của trang Cổ phiếu).
         function cryptoFrameEntry() {
             const direct = frameCache.get(CRYPTO_KEY);
             if (direct) return direct;
@@ -3734,7 +3734,7 @@
         function postCryptoView(entry, symbol) {
             if (!entry) return;
             const sym = symbol ? String(symbol).trim().toUpperCase() : null;
-            try { entry.frame.contentWindow.postMessage({ type: 'tunix-crypto-goto', symbol: sym }, '*'); }
+            try { entry.frame.contentWindow.postMessage({ type: 'vinafintech-crypto-goto', symbol: sym }, '*'); }
             catch (e) { /* ignore */ }
         }
         // Đặt view mong muốn cho iframe Crypto (null = danh sách). Iframe CHƯA tải xong thì lưu lại để gửi bù
@@ -3776,12 +3776,12 @@
         }
         window.openGiaVangBacPage = openGiaVangBacPage;
         // Cache URL cấp ngành theo mã (trong phiên) — click lần sau không phải chờ tra.
-        window.__tunixStockUrlCache = window.__tunixStockUrlCache || {};
+        window.__vinafintechStockUrlCache = window.__vinafintechStockUrlCache || {};
         let openStockSeq = 0;
 
         // Tra URL đẹp cấp ngành của 1 mã: /api/stocks/search trả kèm sector/industry.
         function resolveStockPrettyUrl(sym) {
-            const cache = window.__tunixStockUrlCache;
+            const cache = window.__vinafintechStockUrlCache;
             if (Object.prototype.hasOwnProperty.call(cache, sym)) {
                 return Promise.resolve(cache[sym]);
             }
@@ -3861,10 +3861,10 @@
             if (sep) sep.style.display = show ? '' : 'none';
         }
         function applySignalNav() {
-            const token = localStorage.getItem('tunix_access_token');
+            const token = localStorage.getItem('vinafintech_access_token');
             if (!token) { signalNavToggle(false); return; }
             let user = null;
-            try { user = JSON.parse(localStorage.getItem('tunix_user') || 'null'); } catch (e) { user = null; }
+            try { user = JSON.parse(localStorage.getItem('vinafintech_user') || 'null'); } catch (e) { user = null; }
             signalNavToggle(signalNavAllowed(user));
             // Admin có thể VỪA bật quyền cho tài khoản này → đối chiếu lại /me 1 lần mỗi lần tải trang.
             if (window.__signalNavRefreshed) return;
@@ -3873,7 +3873,7 @@
                 .then(function (r) { return r.ok ? r.json() : null; })
                 .then(function (fresh) {
                     if (!fresh) return;
-                    try { localStorage.setItem('tunix_user', JSON.stringify(fresh)); } catch (e) { /* ignore */ }
+                    try { localStorage.setItem('vinafintech_user', JSON.stringify(fresh)); } catch (e) { /* ignore */ }
                     signalNavToggle(signalNavAllowed(fresh));
                 })
                 .catch(function () { /* giữ nguyên trạng thái suy ra từ cache */ });
@@ -4095,7 +4095,7 @@
                 }
                 function tiSend(tool) {
                     const f = document.getElementById('contentEmbedFrame');
-                    if (f && f.contentWindow) { try { f.contentWindow.postMessage({ type: 'tunix-ti-tool', tool: tool }, '*'); } catch (e) {} }
+                    if (f && f.contentWindow) { try { f.contentWindow.postMessage({ type: 'vinafintech-ti-tool', tool: tool }, '*'); } catch (e) {} }
                 }
                 function tiGo(tool) {
                     const path = window.tiPathFromTool ? window.tiPathFromTool(tool) : ('/tien-ich?tool=' + tool);
@@ -4146,7 +4146,7 @@
                 }
                 function qltsSend(tab) {
                     const f = document.getElementById('contentEmbedFrame');
-                    if (f && f.contentWindow) { try { f.contentWindow.postMessage({ type: 'tunix-qlts-tab', tab: tab }, '*'); } catch (e) {} }
+                    if (f && f.contentWindow) { try { f.contentWindow.postMessage({ type: 'vinafintech-qlts-tab', tab: tab }, '*'); } catch (e) {} }
                 }
                 function qltsGo(tab) {
                     const path = window.qltsPathFromTab ? window.qltsPathFromTab(tab) : ('/quan-ly-tai-san?tab=' + tab);
@@ -4214,7 +4214,7 @@
 
         // ---- XỬ LÝ DUY NHẤT cho "mở biểu đồ phân tích kỹ thuật toàn màn hình" ----
         // Dùng cho CẢ icon nến ở header VÀ nút mở rộng trong block biểu đồ ở trang Thị trường
-        // (Thị trường gọi TRỰC TIẾP window.parent.tunixChartFullscreenRequest) ⇒ chỉ có MỘT code path,
+        // (Thị trường gọi TRỰC TIẾP window.parent.vinafintechChartFullscreenRequest) ⇒ chỉ có MỘT code path,
         // không thể lệch hành vi giữa hai chỗ.
         //   - Đang ở trang chi tiết cổ phiếu → fullscreen ĐÚNG mã đang xem.
         //   - Nơi khác → fullscreen mã truyền vào (header: VNINDEX; block: chỉ số đang xem ở block).
@@ -4230,7 +4230,7 @@
             fsReturnState = { page: lastLoadedPage, url: location.href };
             openChartFullscreen(fallback);
         }
-        window.tunixChartFullscreenRequest = requestChartFullscreen;
+        window.vinafintechChartFullscreenRequest = requestChartFullscreen;
 
         const chartFullscreenLink = document.getElementById('chartFullscreenLink');
         if (chartFullscreenLink) {
@@ -4311,7 +4311,7 @@
                     const frame = document.getElementById('contentEmbedFrame');
                     if (frame && frame.src && frame.src.indexOf('tin-tuc') !== -1) {
                         // Đang ở trang tin tức → báo iframe chọn chuyên mục
-                        frame.contentWindow.postMessage({ type: 'tunix-select-cat', cat: slug }, '*');
+                        frame.contentWindow.postMessage({ type: 'vinafintech-select-cat', cat: slug }, '*');
                     } else {
                         // Ở bài viết/trang khác → mở trang tin tức với chuyên mục đã chọn
                         const q = slug ? '?cat=' + encodeURIComponent(slug) : '';
@@ -4445,7 +4445,7 @@
         // Trước đây mỗi view là 1 key (?ind=…, ?ind=…&stock=…) ⇒ tồn tại nhiều iframe CÙNG tài liệu,
         // mà iframe lại tự đổi view bên trong (breadcrumb / nhấp mã) ⇒ iframe “bẩn”: nội dung không
         // còn khớp key của nó. Hệ quả: về trang chủ rồi bấm lại 1 mã → URL đúng nhưng màn hình vẫn là
-        // danh sách ngành. Nay view bên trong do SHELL điều khiển qua postMessage 'tunix-co-phieu-goto'.
+        // danh sách ngành. Nay view bên trong do SHELL điều khiển qua postMessage 'vinafintech-co-phieu-goto'.
         const CO_PHIEU_KEY = '/CoPhieu';
         // Trang Crypto: cũng dùng MỘT iframe duy nhất cho mọi view (danh sách / chi tiết coin) — nếu để key
         // kèm ?symbol=… thì mỗi lần deep-link rồi Back sẽ sinh thêm 1 iframe Crypto nữa (2 iframe = gọi API
@@ -4507,7 +4507,7 @@
         function postCoPhieuView(entry, view) {
             if (!entry || !view) return;
             try {
-                entry.frame.contentWindow.postMessage({ type: 'tunix-co-phieu-goto', path: view.path || [], stock: view.stock || null }, '*');
+                entry.frame.contentWindow.postMessage({ type: 'vinafintech-co-phieu-goto', path: view.path || [], stock: view.stock || null }, '*');
             } catch (e) {}
         }
         // Đặt view mong muốn cho iframe Cổ phiếu: gửi ngay nếu iframe đã load, chờ load nếu chưa.
@@ -4729,7 +4729,7 @@
             return found;
         }
 
-        // Ghi nhớ chuyên mục tin tức mà MỖI iframe đã báo (tunix-cat-changed / tunix-article-cat).
+        // Ghi nhớ chuyên mục tin tức mà MỖI iframe đã báo (vinafintech-cat-changed / vinafintech-article-cat).
         // Frame nằm trong cache không chạy lại script khi được hiện lại ⇒ activateFrame() cần
         // giá trị này để khôi phục đúng tab danh mục đang active trên header.
         function rememberFrameCat(source, cat) {
@@ -4741,7 +4741,7 @@
 
         // Bỏ qua message từ iframe đang ẩn/prewarm (không cho chúng điều khiển shell).
         // NGOẠI LỆ — frame ĐANG CHỜ HIỆN (pendingFrameKey): iframe mới chỉ được activate ở sự kiện
-        // `load`, nhưng trang bài viết gửi 'tunix-article-cat' NGAY khi fetch xong (thường xong
+        // `load`, nhưng trang bài viết gửi 'vinafintech-article-cat' NGAY khi fetch xong (thường xong
         // TRƯỚC `load`) ⇒ nếu chặn thì header mất focus chuyên mục — đúng lỗi "bài thì có focus,
         // bài thì không". Frame pending là frame người dùng vừa yêu cầu nên message của nó là hợp lệ.
         function isFromHiddenFrame(source) {
@@ -4759,7 +4759,7 @@
             // Trang đang hiện đã nạp xong → hỏi xem đã "sẵn sàng" chưa (dữ liệu + VinaF AI) để tắt lớp chờ.
             const ov = document.getElementById('chartFsPending');
             if (key === activeFrameKey && ov && ov.style.display !== 'none') {
-                try { entry.frame.contentWindow.postMessage({ type: 'tunix-chart-fs-status' }, '*'); } catch (e) { /* ignore */ }
+                try { entry.frame.contentWindow.postMessage({ type: 'vinafintech-chart-fs-status' }, '*'); } catch (e) { /* ignore */ }
             }
             // Trang Cổ phiếu: view mong muốn được đặt trong lúc iframe CHƯA load xong → gửi bù ngay bây giờ
             // (gửi trước khi trang con đăng ký listener 'message' sẽ bị mất).
@@ -5458,11 +5458,11 @@
             if (!data) return;
             // iframe đang ẩn/prewarm không được điều khiển shell (chỉ frame đang xem mới có quyền).
             if (isFromHiddenFrame(event.source)) return;
-            if (data.type === 'tunix-go-back') {
+            if (data.type === 'vinafintech-go-back') {
                 goBackInApp();
                 return;
             }
-            if (data.type === 'tunix-qlts-nav' && data.slug) {
+            if (data.type === 'vinafintech-qlts-nav' && data.slug) {
                 // Trang Quản lý tài sản báo "bấm button chuyển mục" → CHỈ cập nhật URL đẹp
                 // (iframe đã tự đổi mục, KHÔNG loadContent để không nạp lại trang).
                 if (/^\/quan-ly-tai-san(?:\/|$)/.test(window.location.pathname)) {
@@ -5470,7 +5470,7 @@
                 }
                 return;
             }
-            if (data.type === 'tunix-ti-nav' && (data.tool === 'adj' || data.tool === 'dep' || data.tool === 'ex' || data.tool === 'alloc')) {
+            if (data.type === 'vinafintech-ti-nav' && (data.tool === 'adj' || data.tool === 'dep' || data.tool === 'ex' || data.tool === 'alloc')) {
                 // Trang Tiện ích báo bấm chip đổi công cụ → cập nhật URL đẹp /tien-ich/{slug} (không reload iframe).
                 if (/^\/tien-ich(?:\/|$)/.test(window.location.pathname)) {
                     const p = window.tiPathFromTool ? window.tiPathFromTool(data.tool) : ('/tien-ich?tool=' + data.tool);
@@ -5478,28 +5478,28 @@
                 }
                 return;
             }
-            if (data.type === 'tunix-go-forward') {
+            if (data.type === 'vinafintech-go-forward') {
                 goForwardInApp();
                 return;
             }
-            if (data.type === 'tunix-set-theme') {
+            if (data.type === 'vinafintech-set-theme') {
                 applyTheme(data.mode === 'dark' ? 'dark' : 'light');
                 return;
             }
-            if (data.type === 'tunix-open-tintuc' && data.id) {
+            if (data.type === 'vinafintech-open-tintuc' && data.id) {
                 openTintuc(data.id, data.slug);
                 return;
             }
-            if (data.type === 'tunix-ai-open') {
+            if (data.type === 'vinafintech-ai-open') {
                 // Từ chart/Home/KhamPha: chuyển sang trang VinaF AI và gửi sẵn câu hỏi (không còn khung chat nổi).
                 const prompt = String(data.prompt || '').trim();
                 const sym = String(data.symbol || '').trim().toUpperCase();
                 const p = prompt || (sym ? ('Phân tích cổ phiếu ' + sym + ' (xu hướng, hỗ trợ/kháng cự, chỉ báo RSI/MACD).') : '');
-                if (p) { try { sessionStorage.setItem('tunix_ai_prompt', p); } catch (e) {} }
+                if (p) { try { sessionStorage.setItem('vinafintech_ai_prompt', p); } catch (e) {} }
                 openTuniAiPage();
                 return;
             }
-            if (data.type === 'tunix-open-stock' && data.symbol) {
+            if (data.type === 'vinafintech-open-stock' && data.symbol) {
                 // Click cổ phiếu từ bất kỳ trang list → hiển thị nhúng + breadcrumb ngành trong trang Cổ phiếu
                 if (typeof window.openCoPhieuStock === 'function') {
                     window.openCoPhieuStock(data.symbol);
@@ -5508,23 +5508,23 @@
                 }
                 return;
             }
-            if (data.type === 'tunix-open-chart-fullscreen') {
+            if (data.type === 'vinafintech-open-chart-fullscreen') {
                 // Nút mở rộng trong block biểu đồ (trang Thị trường) — chỉ là ĐƯỜNG DỰ PHÒNG khi iframe
                 // không gọi được hàm trực tiếp (khác origin). Bình thường Thị trường gọi thẳng
-                // `window.parent.tunixChartFullscreenRequest(sym)` ⇒ dùng CHÍNH xử lý của icon nến ở header.
+                // `window.parent.vinafintechChartFullscreenRequest(sym)` ⇒ dùng CHÍNH xử lý của icon nến ở header.
                 requestChartFullscreen(data.symbol);
                 return;
             }
-            if (data.type === 'tunix-chart-fs-ready') {
+            if (data.type === 'vinafintech-chart-fs-ready') {
                 // Trang biểu đồ báo đã dựng xong (dữ liệu + phân tích VinaF AI) → gỡ lớp "Đang mở…".
                 hideChartFsPending();
                 return;
             }
-            if (data.type === 'tunix-chart-fs-progress') {
+            if (data.type === 'vinafintech-chart-fs-progress') {
                 setChartFsPendingNote(data.step === 'ai' ? 'Đang tải dữ liệu phân tích VinaF AI…' : 'Đang tải dữ liệu biểu đồ…');
                 return;
             }
-            if (data.type === 'tunix-exit-fullscreen') {
+            if (data.type === 'vinafintech-exit-fullscreen') {
                 // Nút "thoát toàn màn hình" của biểu đồ (trong iframe) → thoát y như nhấn Esc / nút X
                 // của trình duyệt; handler fullscreenchange bên dưới sẽ tự đưa về trang trước đó.
                 const exitFn = document.exitFullscreen || document.webkitExitFullscreen;
@@ -5536,12 +5536,12 @@
                 }
                 return;
             }
-            if (data.type === 'tunix-open-crypto' && data.symbol) {
+            if (data.type === 'vinafintech-open-crypto' && data.symbol) {
                 // Click mã crypto từ trang khác (vd Trung tâm cảnh báo) → mở trang Crypto + chi tiết coin
                 openCryptoPage(data.symbol);
                 return;
             }
-            if (data.type === 'tunix-crypto-symbol') {
+            if (data.type === 'vinafintech-crypto-symbol') {
                 // Trang Crypto (iframe) báo coin đang mở → URL đẹp /crypto/{MÃ} (null = về /crypto).
                 const cSym = String(data.symbol || '').trim().toUpperCase();
                 // Ghi nhớ view của iframe Crypto để lần sau biết nó đang ở đâu (tránh khôi phục nhầm view cũ).
@@ -5550,18 +5550,18 @@
                 pushCryptoHistory(cSym ? '/crypto/' + encodeURIComponent(cSym) : '/crypto', !!cSym);
                 return;
             }
-            if (data.type === 'tunix-symbol-changed' && data.symbol) {
+            if (data.type === 'vinafintech-symbol-changed' && data.symbol) {
                 // iframe StockDetail báo đổi mã NGAY TRONG TRANG (vd đổi mã khi fullscreen)
                 // → đồng bộ mã hiện tại để icon nến fullscreen đúng mã.
                 currentChartSymbol = String(data.symbol).trim().toUpperCase();
                 return;
             }
-            if (data.type === 'tunix-open-url' && data.url) {
+            if (data.type === 'vinafintech-open-url' && data.url) {
                 // Mở link ngoài (VD: Nguồn bài viết) từ parent — tránh popup blocker chặn _blank trong iframe
                 window.open(data.url, '_blank', 'noopener');
                 return;
             }
-            if (data.type === 'tunix-open-page' && data.url) {
+            if (data.type === 'vinafintech-open-page' && data.url) {
                 // Link nội bộ từ trang nhúng (VD: Home → /quan-ly-tai-san): điều hướng qua shell như menu chính.
                 // Chuẩn hoá route shell → file nhúng trực tiếp để không lồng shell 2 lần.
                 const u = String(data.url).split('#')[0];
@@ -5570,12 +5570,12 @@
                 window.history.replaceState({}, '', u);
                 return;
             }
-            if (data.type === 'tunix-go-login') {
+            if (data.type === 'vinafintech-go-login') {
                 // Chart fullscreen workspace: bấm "Đăng nhập" → về form đăng nhập (cùng tab).
                 window.location.href = '/Login';
                 return;
             }
-            if (data.type === 'tunix-cat-changed' && typeof data.cat === 'string') {
+            if (data.type === 'vinafintech-cat-changed' && typeof data.cat === 'string') {
                 // Trang tin tức báo chuyên mục đang chọn → highlight tab trên header
                 rememberFrameCat(event.source, data.cat);
                 setHeaderCat(data.cat);
@@ -5588,20 +5588,20 @@
                 }
                 return;
             }
-            if (data.type === 'tunix-article-cat') {
+            if (data.type === 'vinafintech-article-cat') {
                 // Trang chi tiết bài viết báo chuyên mục của bài → focus đúng tab danh mục trên header.
-                // KHÁC 'tunix-cat-changed': không đổi URL (đang ở URL bài viết /{slug}-{id}.html).
+                // KHÁC 'vinafintech-cat-changed': không đổi URL (đang ở URL bài viết /{slug}-{id}.html).
                 const articleCat = typeof data.cat === 'string' ? data.cat : '';
                 rememberFrameCat(event.source, articleCat);
                 setHeaderCat(articleCat);
                 return;
             }
-            if (data.type === 'tunix-search-clear') {
+            if (data.type === 'vinafintech-search-clear') {
                 // Trang tin tức báo đã xóa tìm kiếm → xóa ô tìm kiếm trên header
                 if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
                 return;
             }
-            if (data.type === 'tunix-co-phieu-nav' && data.url) {
+            if (data.type === 'vinafintech-co-phieu-nav' && data.url) {
                 // Trang Cổ phiếu báo điều hướng CẤP CON trong cùng iframe (screener ⇄ ngành ⇄ chi tiết mã).
                 // 1) Ghi nhớ view iframe đang hiển thị → lần sau activate lại KHÔNG hiện nhầm view cũ
                 //    (lỗi: về trang chủ rồi bấm lại 1 mã, URL đúng mà màn hình vẫn là danh sách ngành).
@@ -5612,7 +5612,7 @@
                 scrollPageToTop();
                 return;
             }
-            if (data.type !== 'tunix-home-height' && data.type !== 'tunix-embed-height') return;
+            if (data.type !== 'vinafintech-home-height' && data.type !== 'vinafintech-embed-height') return;
             if (typeof data.height !== 'number' || data.height <= 0) return;
             const safeHeight = Math.max(560, Math.ceil(data.height));
             const senderKey = findFrameKeyByWindow(event.source);
@@ -5797,7 +5797,7 @@
         }
 
         function handleStockModalMessage(data) {
-            if (!data || data.type !== 'tunix-stock-modal') return;
+            if (!data || data.type !== 'vinafintech-stock-modal') return;
             if (fsModalTitle) fsModalTitle.textContent = data.title || 'Thông tin';
             if (fsModalBody) fsModalBody.innerHTML = data.bodyHtml || '';
             openFsModal();
@@ -5920,7 +5920,7 @@
             if (!userMenu || !dropdown) return;
 
             function cachedUser() {
-                try { return JSON.parse(localStorage.getItem('tunix_user') || 'null'); } catch (e) { return null; }
+                try { return JSON.parse(localStorage.getItem('vinafintech_user') || 'null'); } catch (e) { return null; }
             }
             const ADMIN_ROLES = ['super-admin', 'admin', 'content-manager', 'editor', 'support'];
 
@@ -5931,7 +5931,7 @@
             window.refreshAccessToken = async function() {
                 if (_refreshPromise) return _refreshPromise;
                 _refreshPromise = (async function() {
-                    const refresh = localStorage.getItem('tunix_refresh_token');
+                    const refresh = localStorage.getItem('vinafintech_refresh_token');
                     if (!refresh) return false;
                     try {
                         const res = await fetch('/api/auth/refresh-token', {
@@ -5942,9 +5942,9 @@
                         if (!res.ok) return false;
                         const data = await res.json();
                         if (!data.access_token) return false;
-                        localStorage.setItem('tunix_access_token', data.access_token);
-                        if (data.refresh_token) localStorage.setItem('tunix_refresh_token', data.refresh_token);
-                        if (data.user) localStorage.setItem('tunix_user', JSON.stringify(data.user));
+                        localStorage.setItem('vinafintech_access_token', data.access_token);
+                        if (data.refresh_token) localStorage.setItem('vinafintech_refresh_token', data.refresh_token);
+                        if (data.user) localStorage.setItem('vinafintech_user', JSON.stringify(data.user));
                         return true;
                     } catch (e) { return false; }
                 })().finally(function() { _refreshPromise = null; });
@@ -5954,14 +5954,14 @@
             // Cookie chỉ để server xác thực khi mở trực tiếp trang /QuanTri.
             // Token vẫn lưu chính trong localStorage; cookie chỉ là "vé" đi kèm khi điều hướng.
             function setAdminCookie() {
-                const token = localStorage.getItem('tunix_access_token');
+                const token = localStorage.getItem('vinafintech_access_token');
                 if (!token) { clearAdminCookie(); return; }
                 const d = new Date();
                 d.setTime(d.getTime() + 60 * 60 * 1000); // 1 giờ, khớp access token mặc định
-                document.cookie = 'tunix_admin_token=' + encodeURIComponent(token) + '; path=/; SameSite=Lax; expires=' + d.toUTCString();
+                document.cookie = 'vinafintech_admin_token=' + encodeURIComponent(token) + '; path=/; SameSite=Lax; expires=' + d.toUTCString();
             }
             function clearAdminCookie() {
-                document.cookie = 'tunix_admin_token=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                document.cookie = 'vinafintech_admin_token=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT';
             }
 
             function closeDropdown() { dropdown.style.display = 'none'; }
@@ -5975,7 +5975,7 @@
                 const old = menu.querySelector('.user-crown');
                 if (old) old.remove();
                 menu.style.position = 'relative';
-                const token = localStorage.getItem('tunix_access_token');
+                const token = localStorage.getItem('vinafintech_access_token');
                 if (!token) return; // chưa đăng nhập → không vương miện
                 function show(meta) {
                     if (!(meta && meta.active)) return; // chưa đăng ký / không còn hạn → không vương miện
@@ -5996,7 +5996,7 @@
             // Cập nhật lại menu khi người dùng đổi ảnh đại diện / thông tin (từ trang tài khoản)
             window.addEventListener('message', function(event) {
                 const data = event.data;
-                if (data && data.type === 'tunix-user-updated') {
+                if (data && data.type === 'vinafintech-user-updated') {
                     if (isFromHiddenFrame(event.source)) return;
                     renderMenu();
                 }
@@ -6008,7 +6008,7 @@
                 const text = document.getElementById('bannerText');
                 const title = document.getElementById('bannerTitle');
                 const icon = document.getElementById('bannerIcon');
-                const loggedIn = !!localStorage.getItem('tunix_access_token');
+                const loggedIn = !!localStorage.getItem('vinafintech_access_token');
                 if (loggedIn) {
                     if (icon) icon.innerHTML = '<i class="fas fa-robot" style="color:#fff;"></i>';
                     if (title) title.textContent = 'VinaFintech mới cho ra mắt VinaF AI';
@@ -6035,7 +6035,7 @@
 
             function renderMenu() {
                 const user = cachedUser();
-                const hasToken = !!localStorage.getItem('tunix_access_token');
+                const hasToken = !!localStorage.getItem('vinafintech_access_token');
                 updateBanner();
                 // Menu "Tín hiệu" chỉ hiện với tài khoản đã đăng nhập VÀ được cấp quyền
                 if (typeof window.applySignalNav === 'function') window.applySignalNav();
@@ -6043,7 +6043,7 @@
                 // tự nạp /me để menu account hiển thị đúng như đăng nhập bình thường
                 if (!user && hasToken) {
                     fetch('/api/auth/me', {
-                        headers: { Authorization: 'Bearer ' + localStorage.getItem('tunix_access_token') }
+                        headers: { Authorization: 'Bearer ' + localStorage.getItem('vinafintech_access_token') }
                     })
                         .then(function(r) {
                             if (r.ok) return r.json();
@@ -6053,7 +6053,7 @@
                                 return window.refreshAccessToken().then(function(refreshed) {
                                     if (!refreshed) return null;
                                     return fetch('/api/auth/me', {
-                                        headers: { Authorization: 'Bearer ' + localStorage.getItem('tunix_access_token') }
+                                        headers: { Authorization: 'Bearer ' + localStorage.getItem('vinafintech_access_token') }
                                     }).then(function(r2) { return r2.ok ? r2.json() : null; });
                                 });
                             }
@@ -6061,13 +6061,13 @@
                         })
                         .then(function(u) {
                             if (u) {
-                                localStorage.setItem('tunix_user', JSON.stringify(u));
+                                localStorage.setItem('vinafintech_user', JSON.stringify(u));
                                 renderMenu();
                             } else {
                                 // Refresh thất bại → phiên thật sự hết hạn → xoá và render chưa đăng nhập
-                                localStorage.removeItem('tunix_access_token');
-                                localStorage.removeItem('tunix_refresh_token');
-                                localStorage.removeItem('tunix_user');
+                                localStorage.removeItem('vinafintech_access_token');
+                                localStorage.removeItem('vinafintech_refresh_token');
+                                localStorage.removeItem('vinafintech_user');
                                 renderMenu();
                             }
                         })
@@ -6123,8 +6123,8 @@
                             }
                         } else if (act === 'member') {
                             // Mục "Hội viên": đăng ký hội viên / xem thông tin gói.
-                            if (window.TuniXMembership) {
-                                window.TuniXMembership.openMembershipCenter();
+                            if (window.VinaFintechMembership) {
+                                window.VinaFintechMembership.openMembershipCenter();
                             } else if (window.loadContent) {
                                 window.loadContent('/frontend/taikhoan.html');
                             }
@@ -6133,17 +6133,17 @@
                             window.location.href = '/QuanTri';
                         }
                         else if (act === 'logout') {
-                            const refresh = localStorage.getItem('tunix_refresh_token');
-                            const token = localStorage.getItem('tunix_access_token');
+                            const refresh = localStorage.getItem('vinafintech_refresh_token');
+                            const token = localStorage.getItem('vinafintech_access_token');
                             fetch('/api/auth/logout', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json', Authorization: token ? 'Bearer ' + token : '' },
                                 body: JSON.stringify({ refresh_token: refresh || null })
                             }).catch(function() {});
-                            localStorage.removeItem('tunix_access_token');
-                            localStorage.removeItem('tunix_refresh_token');
-                            localStorage.removeItem('tunix_user');
-                            localStorage.removeItem('tunix_favorites');
+                            localStorage.removeItem('vinafintech_access_token');
+                            localStorage.removeItem('vinafintech_refresh_token');
+                            localStorage.removeItem('vinafintech_user');
+                            localStorage.removeItem('vinafintech_favorites');
                             _memberMeta = null;
                             clearAdminCookie();
                             window.location.href = '/';
@@ -6162,7 +6162,7 @@
             // nếu access token hết hạn nhưng còn refresh token (30 ngày khi tick "Nhớ đăng nhập")
             // → tự refresh để giữ phiên, thay vì đăng xuất.
             function tokenExpired(skewMs) {
-                const t = localStorage.getItem('tunix_access_token');
+                const t = localStorage.getItem('vinafintech_access_token');
                 if (!t) return true;
                 try {
                     const b64 = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -6173,9 +6173,9 @@
                 } catch (e) { return false; }
             }
             function ensureFreshAuth() {
-                if (!localStorage.getItem('tunix_refresh_token')) return;
+                if (!localStorage.getItem('vinafintech_refresh_token')) return;
                 // Access token còn hạn → không cần refresh
-                if (localStorage.getItem('tunix_access_token') && !tokenExpired()) return;
+                if (localStorage.getItem('vinafintech_access_token') && !tokenExpired()) return;
                 if (window.refreshAccessToken) {
                     window.refreshAccessToken().then(function() { renderMenu(); });
                 }
@@ -6185,8 +6185,8 @@
             // được làm mới định kỳ. Refresh sớm 15 phút trước khi hết hạn để các trang con
             // (iframe) luôn nhận được token còn hiệu lực, tránh 401 bất ngờ.
             function keepSessionFresh() {
-                if (!localStorage.getItem('tunix_refresh_token')) return;
-                if (localStorage.getItem('tunix_access_token') && !tokenExpired(15 * 60 * 1000)) return;
+                if (!localStorage.getItem('vinafintech_refresh_token')) return;
+                if (localStorage.getItem('vinafintech_access_token') && !tokenExpired(15 * 60 * 1000)) return;
                 if (window.refreshAccessToken) {
                     window.refreshAccessToken().then(function(ok) { if (ok) renderMenu(); });
                 }
@@ -6196,7 +6196,7 @@
             });
             window.addEventListener('focus', keepSessionFresh);
             setInterval(keepSessionFresh, 20 * 60 * 1000);
-            if (localStorage.getItem('tunix_refresh_token')) {
+            if (localStorage.getItem('vinafintech_refresh_token')) {
                 ensureFreshAuth();
             }
         })();
@@ -6265,7 +6265,7 @@
             let unreadTotal = 0;
             let activeType = 'stock';
 
-            function loggedIn() { return !!localStorage.getItem('tunix_access_token'); }
+            function loggedIn() { return !!localStorage.getItem('vinafintech_access_token'); }
 
             function esc(s) {
                 return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -6333,7 +6333,7 @@
                         if (!loggedIn()) return;
                         fetch('/api/notifications/read-all', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + localStorage.getItem('tunix_access_token') },
+                            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + localStorage.getItem('vinafintech_access_token') },
                             body: JSON.stringify({ type: activeType })
                         }).then(function(res) { return res.json(); }).then(function(d) {
                             const count = d.count || 0;
@@ -6361,7 +6361,7 @@
                                 setBadge();
                                 fetch('/api/notifications/' + id + '/read', {
                                     method: 'POST',
-                                    headers: { Authorization: 'Bearer ' + localStorage.getItem('tunix_access_token') }
+                                    headers: { Authorization: 'Bearer ' + localStorage.getItem('vinafintech_access_token') }
                                 }).catch(function() {});
                             }
                         }
@@ -6381,7 +6381,7 @@
                                 (el.querySelector('.ni-title') ? el.querySelector('.ni-title').textContent.trim() : '');
                             const body = title.replace(/^[A-Za-z0-9.]+:\s*/, '').trim();
                             const question = 'Tại sao ' + symbol + (body ? ' ' + body : '') + '?';
-                            try { sessionStorage.setItem('tunix_ai_prompt', question); } catch (e) {}
+                            try { sessionStorage.setItem('vinafintech_ai_prompt', question); } catch (e) {}
                             openTuniAiPage();
                         } else if (link && window.loadContent) {
                             // Chuẩn hoá route shell (VD /quan-ly-tai-san) → file nhúng trực tiếp, tránh "trang trong trang".
@@ -6401,7 +6401,7 @@
                 if (!loggedIn()) { allItems = []; unreadTotal = 0; setBadge(); render(); return; }
                 try {
                     const res = await fetch('/api/notifications', {
-                        headers: { Authorization: 'Bearer ' + localStorage.getItem('tunix_access_token') }
+                        headers: { Authorization: 'Bearer ' + localStorage.getItem('vinafintech_access_token') }
                     });
                     if (!res.ok) { allItems = []; unreadTotal = 0; setBadge(); render(); return; }
                     const data = await res.json();
@@ -6431,7 +6431,7 @@
             // Cập nhật khi người dùng theo dõi cổ phiếu ở StockDetail (iframe)
             window.addEventListener('message', function(event) {
                 const data = event.data;
-                if (data && data.type === 'tunix-notify') {
+                if (data && data.type === 'vinafintech-notify') {
                     if (isFromHiddenFrame(event.source)) return;
                     loadNotifications();
                 }

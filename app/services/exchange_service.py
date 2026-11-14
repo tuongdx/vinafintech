@@ -28,7 +28,7 @@ import httpx
 
 from app.core.config import settings
 
-logger = logging.getLogger("tunix.exchange")
+logger = logging.getLogger("vinafintech.exchange")
 
 # Danh sách tiền tệ mặc định (đã chốt) — thứ tự hiển thị. digits dùng cho UI, flag = mã quốc gia 2 ký tự
 # (flagcdn: vn/us/jp/kr/cn/sg/eu/gb/tw/au).

@@ -26,7 +26,7 @@ from app.models import (
     SignalStrategy,
 )
 
-logger = logging.getLogger("tunix.signal.repository")
+logger = logging.getLogger("vinafintech.signal.repository")
 
 _ACTIVE_STATES = ("CONFIRMED", "ACTIVE", "WEAKENING")
 _CLOSED_STATES = ("EXIT", "INVALIDATED")

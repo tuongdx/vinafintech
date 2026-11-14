@@ -264,7 +264,7 @@ def stock_discover():
             data["market_status"] = opp.get("market")
     except Exception as exc:  # không làm hỏng trang nếu engine lỗi
         import logging
-        logging.getLogger("tunix.opportunity").warning("stock-discover: bỏ qua engine opportunity: %s", exc)
+        logging.getLogger("vinafintech.opportunity").warning("stock-discover: bỏ qua engine opportunity: %s", exc)
     return data
 
 

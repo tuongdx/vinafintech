@@ -37,7 +37,7 @@ from app.models import (
     User,
 )
 
-logger = logging.getLogger("tunix.admin_log")
+logger = logging.getLogger("vinafintech.admin_log")
 
 # Vai trò được coi là "người dùng trang quản trị" (thao tác sẽ được ghi nhật ký)
 _ADMIN_ROLES = {"super-admin", "admin", "content-manager", "editor", "support"}

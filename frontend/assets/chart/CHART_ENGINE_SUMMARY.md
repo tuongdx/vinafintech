@@ -65,8 +65,8 @@ frontend/assets/chart/
 ```
 
 **Luồng dữ liệu:** `DataProvider` (API) → `ChartState` → `ChartEngine.setData` → các engine vẽ overlay.
-**Theme:** `body.dark-mode` + postMessage `{type:'tunix-theme', mode}`.
-**Chiều cao nhúng:** postMessage `{type:'tunix-embed-height', height}`.
+**Theme:** `body.dark-mode` + postMessage `{type:'vinafintech-theme', mode}`.
+**Chiều cao nhúng:** postMessage `{type:'vinafintech-embed-height', height}`.
 
 ---
 
@@ -125,18 +125,18 @@ frontend/assets/chart/
 
 | Key | Nội dung |
 |-----|----------|
-| `tunix.drawings.v1` | Bản vẽ (theo symbol + timeframe) |
-| `tunix.indicators.v1` | Chỉ báo đang bật + cài đặt |
-| `tunix.analysis.v1` | S/R · VP · Confluence · Market Breadth |
-| `tunix.compare.v1` | `{ mode, symbols }` so sánh |
-| `tunix.layout.v1` | Stretch factor các pane |
-| `tunix.settings.v1` | Cài đặt hiển thị (grid/magnet/legend/sync/volume/toolbar) |
+| `vinafintech.drawings.v1` | Bản vẽ (theo symbol + timeframe) |
+| `vinafintech.indicators.v1` | Chỉ báo đang bật + cài đặt |
+| `vinafintech.analysis.v1` | S/R · VP · Confluence · Market Breadth |
+| `vinafintech.compare.v1` | `{ mode, symbols }` so sánh |
+| `vinafintech.layout.v1` | Stretch factor các pane |
+| `vinafintech.settings.v1` | Cài đặt hiển thị (grid/magnet/legend/sync/volume/toolbar) |
 
 ---
 
 ## 6. Debug hook
 
-`window.__tunixChartDebug` gồm: `engine, indicatorEngine, drawingEngine, drawingManager,
+`window.__vinafintechChartDebug` gồm: `engine, indicatorEngine, drawingEngine, drawingManager,
 analysisEngine, marketBreadth, comparisonEngine, exportPNG, crosshairSync, hotkeys, fullscreen,
 settingsPanel, lastPriceLine`.
 
@@ -169,6 +169,6 @@ settingsPanel, lastPriceLine`.
 
 1. Chạy backend: uvicorn trên cổng 8000 (venv `c:/4.Deverlop/1.Python/VinaFintech/.venv`).
 2. Mở `http://localhost:8000/cophieu-FPT` (hoặc `cophieu-DXG`).
-3. Mở DevTools console, gõ `window.__tunixChartDebug` để kiểm tra các module.
+3. Mở DevTools console, gõ `window.__vinafintechChartDebug` để kiểm tra các module.
 4. Kiểm tra nhanh: bật chỉ báo RSI/MACD (sub-pane), hover để xem crosshair sync, `?` để mở bảng phím tắt,
    nút Cài đặt để bật/tắt hiển thị, nút toàn màn hình, Shift+←/→ điều hướng nến.

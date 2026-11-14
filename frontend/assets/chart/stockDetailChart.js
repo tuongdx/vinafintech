@@ -210,10 +210,10 @@ export function createStockDetailChart(options) {
         });
         historyLoader.start();
         historyLoader.schedule();
-        if (window && window.__tunixChartDebug) {
-            window.__tunixChartDebug.historyLoader = historyLoader;
-            window.__tunixChartDebug.provider = provider;
-            window.__tunixChartDebug.debug = false; // bật true để xem log lazy-load
+        if (window && window.__vinafintechChartDebug) {
+            window.__vinafintechChartDebug.historyLoader = historyLoader;
+            window.__vinafintechChartDebug.provider = provider;
+            window.__vinafintechChartDebug.debug = false; // bật true để xem log lazy-load
         }
     }
 
@@ -283,7 +283,7 @@ export function createStockDetailChart(options) {
             crosshairSync = new CrosshairSync({ chartEngine: engine, indicatorEngine });
         }
         crosshairSync.create(); // idempotent
-        if (window && window.__tunixChartDebug) window.__tunixChartDebug.crosshairSync = crosshairSync;
+        if (window && window.__vinafintechChartDebug) window.__vinafintechChartDebug.crosshairSync = crosshairSync;
     }
 
     function destroyCrosshairSync() {
@@ -378,7 +378,7 @@ export function createStockDetailChart(options) {
             });
         }
         hotkeys.create(); // idempotent
-        if (window && window.__tunixChartDebug) window.__tunixChartDebug.hotkeys = hotkeys;
+        if (window && window.__vinafintechChartDebug) window.__vinafintechChartDebug.hotkeys = hotkeys;
     }
 
     function destroyHotkeys() {
@@ -446,7 +446,7 @@ export function createStockDetailChart(options) {
             fsManager.create();
         }
         refreshFsBtn(fsManager.isFullscreen());
-        if (window && window.__tunixChartDebug) window.__tunixChartDebug.fullscreen = fsManager;
+        if (window && window.__vinafintechChartDebug) window.__vinafintechChartDebug.fullscreen = fsManager;
     }
 
     function destroyFullscreen() {
@@ -511,7 +511,7 @@ export function createStockDetailChart(options) {
             settingsEl.appendChild(settingsPanel.create());
             for (const key of Object.keys(saved)) applySetting(key, saved[key]);
         }
-        if (window && window.__tunixChartDebug) window.__tunixChartDebug.settingsPanel = settingsPanel;
+        if (window && window.__vinafintechChartDebug) window.__vinafintechChartDebug.settingsPanel = settingsPanel;
     }
 
     function destroySettings() {
@@ -526,7 +526,7 @@ export function createStockDetailChart(options) {
         }
         lastPriceLine.create(); // idempotent
         lastPriceLine.update();
-        if (window && window.__tunixChartDebug) window.__tunixChartDebug.lastPriceLine = lastPriceLine;
+        if (window && window.__vinafintechChartDebug) window.__vinafintechChartDebug.lastPriceLine = lastPriceLine;
     }
 
     function destroyLastPriceLine() {
@@ -546,7 +546,7 @@ export function createStockDetailChart(options) {
             });
         }
         positionLine.ensure(state.getSymbol());
-        if (window && window.__tunixChartDebug) window.__tunixChartDebug.positionLine = positionLine;
+        if (window && window.__vinafintechChartDebug) window.__vinafintechChartDebug.positionLine = positionLine;
     }
 
     function destroyPositionLine() {
@@ -557,7 +557,7 @@ export function createStockDetailChart(options) {
     function resetChart() {
         // 1) Xoá mọi thiết lập đã lưu (drawings/indicators/analysis/compare/layout/settings)
         try {
-            for (const k of Object.keys(localStorage)) if (k.indexOf('tunix.') === 0) localStorage.removeItem(k);
+            for (const k of Object.keys(localStorage)) if (k.indexOf('vinafintech.') === 0) localStorage.removeItem(k);
         } catch (e) { /* ignore */ }
 
         // 2) Xoá drawings
@@ -706,12 +706,12 @@ export function createStockDetailChart(options) {
                 refreshCompareChips();
             })();
         }
-        if (window) window.__tunixChartDebug.comparisonEngine = comparisonEngine;
+        if (window) window.__vinafintechChartDebug.comparisonEngine = comparisonEngine;
     }
 
     // Nút xuất ảnh PNG (PHASE 7).
     function ensureExport() {
-        if (window && window.__tunixChartDebug) window.__tunixChartDebug.exportPNG = exportChartPNG;
+        if (window && window.__vinafintechChartDebug) window.__vinafintechChartDebug.exportPNG = exportChartPNG;
         if (!exportEl || exportBtn) return;
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -788,7 +788,7 @@ export function createStockDetailChart(options) {
             if (indicatorPanel) indicatorPanel.refresh();
             applyLayoutStretch();
         }
-        if (window) window.__tunixChartDebug = { engine, indicatorEngine, drawingEngine, drawingManager, analysisEngine };
+        if (window) window.__vinafintechChartDebug = { engine, indicatorEngine, drawingEngine, drawingManager, analysisEngine };
     }
 
     // Tạo hệ thống phân tích S/R + Volume Profile (PHASE 4).
@@ -827,8 +827,8 @@ export function createStockDetailChart(options) {
             if (analysisPanel) analysisPanel.refresh();
             persistAnalysis();
         }
-        if (window) window.__tunixChartDebug.analysisEngine = analysisEngine;
-        if (window) window.__tunixChartDebug.marketBreadth = marketBreadth;
+        if (window) window.__vinafintechChartDebug.analysisEngine = analysisEngine;
+        if (window) window.__vinafintechChartDebug.marketBreadth = marketBreadth;
     }
 
     // Tạo (hoặc gắn lại) hệ thống drawing sau khi engine render sẵn sàng.
@@ -930,7 +930,7 @@ export function createStockDetailChart(options) {
                         try { fsManager.toggle(); } catch (e) { /* ignore */ }
                     }
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'tunix-ai-open', symbol: symbol || '' }, '*');
+                        window.parent.postMessage({ type: 'vinafintech-ai-open', symbol: symbol || '' }, '*');
                     }
                 },
             });

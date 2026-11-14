@@ -18,7 +18,7 @@
     'use strict';
 
     const API = '/api/stocks/upcoming-dividends';
-    const STYLE_ID = 'tunixDivBadgeCss';
+    const STYLE_ID = 'vinafintechDivBadgeCss';
     const MAX_PER_BATCH = 150;
     const MAX_BATCHES = 4;
     const FAIL_RETRY_MS = 60000;
@@ -155,7 +155,7 @@
         } catch (e) { /* trình duyệt cũ: vẫn chạy sweep lúc tải trang */ }
     }
 
-    window.TuniXDiv = { paint: paint, sweep: sweep, load: load, badgeHtml: badgeHtml, data: data, rateText: rateText };
+    window.VinaFintechDiv = { paint: paint, sweep: sweep, load: load, badgeHtml: badgeHtml, data: data, rateText: rateText };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);

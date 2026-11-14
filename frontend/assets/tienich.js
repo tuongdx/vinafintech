@@ -1,6 +1,6 @@
 /* VinaFintech — Tiện ích: logic giao diện (phụ thuộc tiênich-calc.js). */
 (function () {
-    const Calc = window.TuniXCalc;
+    const Calc = window.VinaFintechCalc;
     if (!Calc) { return; }
     if (window.__tiLoaded) return;
     window.__tiLoaded = true;
@@ -87,7 +87,7 @@
             showTool(t);
             // Báo shell đổi công cụ → cập nhật link URL đẹp /tien-ich/{slug} (không reload iframe).
             if (window.parent && window.parent !== window) {
-                try { window.parent.postMessage({ type: 'tunix-ti-nav', tool: t }, '*'); } catch (e) {}
+                try { window.parent.postMessage({ type: 'vinafintech-ti-nav', tool: t }, '*'); } catch (e) {}
             }
         });
     });
@@ -377,7 +377,7 @@
             if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
             window.__lastSentH = height;
             if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
             }
         } catch (e) {}
     }
@@ -385,11 +385,11 @@
         const data = event.data;
         if (!data) return;
         // Shell báo đổi công cụ (đã mở sẵn trang Tiện ích) → hiển thị đúng màn hình.
-        if (data.type === 'tunix-ti-tool' && (data.tool === 'adj' || data.tool === 'dep' || data.tool === 'ex' || data.tool === 'alloc')) {
+        if (data.type === 'vinafintech-ti-tool' && (data.tool === 'adj' || data.tool === 'dep' || data.tool === 'ex' || data.tool === 'alloc')) {
             showTool(data.tool);
             return;
         }
-        if (data.type !== 'tunix-theme') return;
+        if (data.type !== 'vinafintech-theme') return;
         const mode = data.mode === 'dark' ? 'dark' : 'light';
         localStorage.setItem('theme', mode);
         applyEmbedTheme(mode);

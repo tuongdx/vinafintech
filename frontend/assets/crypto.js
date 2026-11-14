@@ -57,7 +57,7 @@
         var path = code ? '/crypto/' + encodeURIComponent(code) : '/crypto';
         try {
             if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'tunix-crypto-symbol', symbol: code || null }, '*');
+                window.parent.postMessage({ type: 'vinafintech-crypto-symbol', symbol: code || null }, '*');
             } else if (window.location.pathname !== path) {
                 window.history.replaceState({}, '', path);
             }
@@ -215,7 +215,7 @@
 
     /* ===== Nạp thêm khi cuộn (infinite scroll) =====
        Trang này được nhúng trong iframe mà shell kéo CAO BẰNG NỘI DUNG
-       (index.html: 'tunix-embed-height') ⇒ iframe KHÔNG tự cuộn, thanh cuộn nằm ở TRANG CHA.
+       (index.html: 'vinafintech-embed-height') ⇒ iframe KHÔNG tự cuộn, thanh cuộn nằm ở TRANG CHA.
        Vì vậy KHÔNG thể dùng window.innerHeight bên trong iframe (lúc đó nó = toàn bộ
        chiều cao nội dung ⇒ mọi thứ luôn “trong tầm nhìn” và sẽ nạp hết ngay lập tức),
        phải quy đổi vị trí sang khung nhìn của trang cha qua window.frameElement. */
@@ -286,10 +286,10 @@
     }
 
     /* Shell yêu cầu đổi view khi KHÔNG nạp lại trang (Back/Forward, deep-link khi iframe đã tải sẵn):
-       { type:'tunix-crypto-goto', symbol: 'BTC' | null }  → mở chi tiết coin / về danh sách. */
+       { type:'vinafintech-crypto-goto', symbol: 'BTC' | null }  → mở chi tiết coin / về danh sách. */
     window.addEventListener('message', function (ev) {
         var d = ev.data;
-        if (!d || d.type !== 'tunix-crypto-goto') return;
+        if (!d || d.type !== 'vinafintech-crypto-goto') return;
         var sym = String(d.symbol || '').trim().toUpperCase();
         if (!sym) { state.sym = null; showList(); return; }
         if (!findItem(sym)) { state.pendingSym = sym; return; }   // chờ danh sách thị trường tải xong
@@ -557,7 +557,7 @@
         if (!id) return;
         if (window.parent && window.parent !== window) {
             // Nhúng trong shell → để shell mở trang bài viết (giữ URL đẹp + thanh header).
-            window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug || '' }, '*');
+            window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(id), slug: slug || '' }, '*');
         } else {
             window.location.href = slug ? ('/' + slug + '-' + id + '.html') : ('/tintuc?id=' + id);
         }
@@ -1137,10 +1137,10 @@
             else renderOhlcv(lwcLastBar);
         });
         lwcChart = chart;
-        // Hook gỡ lỗi (như window.__tunixChartDebug của engine cổ phiếu). Dùng GETTER cho bộ đệm
+        // Hook gỡ lỗi (như window.__vinafintechChartDebug của engine cổ phiếu). Dùng GETTER cho bộ đệm
         // lịch sử vì `crHist` được GÁN LẠI mỗi lần đổi mã/kỳ (không phải cùng một object).
         try {
-            window.__tunixCryptoChartDebug = {
+            window.__vinafintechCryptoChartDebug = {
                 chart: chart, candle: lwcCandle, vol: lwcVol,
                 getHist: function () { return crHist; }
             };
@@ -1223,7 +1223,7 @@
     var CR_POS_TTL = 60000;   // cache kết quả 60s/mã
 
     function crToken() {
-        try { return localStorage.getItem('tunix_access_token') || ''; } catch (e) { return ''; }
+        try { return localStorage.getItem('vinafintech_access_token') || ''; } catch (e) { return ''; }
     }
     function crPosFmt(n, d) {
         var v = Number(n) || 0;
@@ -1387,7 +1387,7 @@
         var newsAll = $('crNewsAll');
         if (newsAll) newsAll.addEventListener('click', function () {
             if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'tunix-open-page', url: '/tien-ao' }, '*');
+                window.parent.postMessage({ type: 'vinafintech-open-page', url: '/tien-ao' }, '*');
             } else {
                 window.location.href = '/tien-ao';
             }
@@ -1405,13 +1405,13 @@
             if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
             window.__lastSentH = height;
             if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
             }
         } catch (e) {}
     }
     window.addEventListener('message', function (event) {
         var data = event.data;
-        if (!data || data.type !== 'tunix-theme') return;
+        if (!data || data.type !== 'vinafintech-theme') return;
         var mode = data.mode === 'dark' ? 'dark' : 'light';
         localStorage.setItem('theme', mode);
         applyEmbedTheme(mode);

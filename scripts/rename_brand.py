@@ -1,6 +1,6 @@
-"""One-off: đổi tên thương hiệu trong dữ liệu DB.
+"""One-off: đổi tên thương hiệu cũ còn sót trong dữ liệu DB.
 
-- TuniX  → VinaFintech
+- LEGACY_BRAND (brand cũ) → VinaFintech
 - TuniAI → VinaF AI
 
 Chạy local (SQLite):
@@ -15,7 +15,7 @@ Chạy trên production (PostgreSQL Render):
 Tùy chọn: `--include-history` cập nhật cả lịch sử chat AI (ai_conversations).
 Mặc định KHÔNG sửa lịch sử chat và audit log.
 
-Lưu ý: chỉ thay đúng chữ hoa "TuniX"/"TuniAI"; không đụng tới domain
+Lưu ý: chỉ thay đúng chữ hoa của brand cũ và "TuniAI"; không đụng tới domain
 "tunix.vn" hay email "support@tunix.vn".
 """
 import os
@@ -32,36 +32,43 @@ from app.db import engine
 DRY_RUN = "--dry-run" in sys.argv
 INCLUDE_HISTORY = "--include-history" in sys.argv
 
+# Brand cũ nằm trong DỮ LIỆU DB (không phải định danh trong source) — phải giữ
+# nguyên chuỗi cũ thì script mới còn tác dụng với DB production chưa migrate.
+LEGACY_BRAND = "TuniX"
+BRAND = "VinaFintech"
+LEGACY_AI = "TuniAI"
+AI_BRAND = "VinaF AI"
+
 # Thứ tự: TuniAI trước để không ảnh hưởng lẫn nhau (2 chuỗi không chồng nhau,
 # nhưng giữ thứ tự rõ ràng).
 UPDATES = [
     (
         "faqs",
-        "UPDATE faqs SET question = REPLACE(question, 'TuniX', 'VinaFintech'), "
-        "answer = REPLACE(answer, 'TuniX', 'VinaFintech') "
-        "WHERE question LIKE '%TuniX%' OR answer LIKE '%TuniX%'",
+        f"UPDATE faqs SET question = REPLACE(question, '{LEGACY_BRAND}', '{BRAND}'), "
+        f"answer = REPLACE(answer, '{LEGACY_BRAND}', '{BRAND}') "
+        f"WHERE question LIKE '%{LEGACY_BRAND}%' OR answer LIKE '%{LEGACY_BRAND}%'",
     ),
     (
         "faqs",
-        "UPDATE faqs SET question = REPLACE(question, 'TuniAI', 'VinaF AI'), "
-        "answer = REPLACE(answer, 'TuniAI', 'VinaF AI') "
-        "WHERE question LIKE '%TuniAI%' OR answer LIKE '%TuniAI%'",
+        f"UPDATE faqs SET question = REPLACE(question, '{LEGACY_AI}', '{AI_BRAND}'), "
+        f"answer = REPLACE(answer, '{LEGACY_AI}', '{AI_BRAND}') "
+        f"WHERE question LIKE '%{LEGACY_AI}%' OR answer LIKE '%{LEGACY_AI}%'",
     ),
     (
         "news",
-        "UPDATE news SET author_name = REPLACE(author_name, 'TuniX', 'VinaFintech') "
-        "WHERE author_name LIKE '%TuniX%'",
+        f"UPDATE news SET author_name = REPLACE(author_name, '{LEGACY_BRAND}', '{BRAND}') "
+        f"WHERE author_name LIKE '%{LEGACY_BRAND}%'",
     ),
     (
         "features",
-        "UPDATE features SET name = REPLACE(name, 'TuniAI', 'VinaF AI'), "
-        "description = REPLACE(description, 'TuniAI', 'VinaF AI') "
-        "WHERE name LIKE '%TuniAI%' OR description LIKE '%TuniAI%'",
+        f"UPDATE features SET name = REPLACE(name, '{LEGACY_AI}', '{AI_BRAND}'), "
+        f"description = REPLACE(description, '{LEGACY_AI}', '{AI_BRAND}') "
+        f"WHERE name LIKE '%{LEGACY_AI}%' OR description LIKE '%{LEGACY_AI}%'",
     ),
     (
         "settings",
-        "UPDATE settings SET value = 'VinaFintech' "
-        "WHERE key = 'site_name' AND value = 'TuniX'",
+        f"UPDATE settings SET value = '{BRAND}' "
+        f"WHERE key = 'site_name' AND value = '{LEGACY_BRAND}'",
     ),
 ]
 
@@ -69,15 +76,15 @@ if INCLUDE_HISTORY:
     UPDATES.extend([
         (
             "ai_conversations",
-            "UPDATE ai_conversations SET title = REPLACE(title, 'TuniX', 'VinaFintech'), "
-            "messages = REPLACE(messages, 'TuniX', 'VinaFintech') "
-            "WHERE title LIKE '%TuniX%' OR messages LIKE '%TuniX%'",
+            f"UPDATE ai_conversations SET title = REPLACE(title, '{LEGACY_BRAND}', '{BRAND}'), "
+            f"messages = REPLACE(messages, '{LEGACY_BRAND}', '{BRAND}') "
+            f"WHERE title LIKE '%{LEGACY_BRAND}%' OR messages LIKE '%{LEGACY_BRAND}%'",
         ),
         (
             "ai_conversations",
-            "UPDATE ai_conversations SET title = REPLACE(title, 'TuniAI', 'VinaF AI'), "
-            "messages = REPLACE(messages, 'TuniAI', 'VinaF AI') "
-            "WHERE title LIKE '%TuniAI%' OR messages LIKE '%TuniAI%'",
+            f"UPDATE ai_conversations SET title = REPLACE(title, '{LEGACY_AI}', '{AI_BRAND}'), "
+            f"messages = REPLACE(messages, '{LEGACY_AI}', '{AI_BRAND}') "
+            f"WHERE title LIKE '%{LEGACY_AI}%' OR messages LIKE '%{LEGACY_AI}%'",
         ),
     ])
 
@@ -111,7 +118,7 @@ def exact_remaining(conn) -> list[tuple[str, int]]:
         for row in rows:
             for value in row:
                 text_value = "" if value is None else str(value)
-                if "TuniX" in text_value or "TuniAI" in text_value:
+                if LEGACY_BRAND in text_value or LEGACY_AI in text_value:
                     count += 1
                     break
         if count:

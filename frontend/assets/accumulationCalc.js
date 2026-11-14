@@ -6,7 +6,7 @@
  *      "Biểu đồ phân tích kỹ thuật" FULLSCREEN (Bottom Dashboard của chart engine)
  *
  * ⚠️ SỬA THUẬT TOÁN Ở ĐÚNG FILE NÀY — cả 2 màn hình tự động đổi theo (tránh lệch kết quả).
- * ⚠️ File nạp như <script> CỔ ĐIỂN và gắn vào window.TuniXAccum, vì StockDetail.html dùng script
+ * ⚠️ File nạp như <script> CỔ ĐIỂN và gắn vào window.VinaFintechAccum, vì StockDetail.html dùng script
  *    inline cổ điển còn panel fullscreen là ES module (module đọc được biến global).
  *
  * Mô hình: mỗi tháng góp `monthly` VND → 3 đường:
@@ -286,7 +286,7 @@
         return { capital, bank, stock, contributions, dividendEvents };
     }
 
-    window.TuniXAccum = {
+    window.VinaFintechAccum = {
         MONTHS: MONTHS,
         BANK_RATE: BANK_RATE,
         monthKey: monthKey,

@@ -851,7 +851,7 @@
                     wrap.querySelectorAll('.tt-vn30-row').forEach(function(row) {
                         row.addEventListener('click', function() {
                             const sym = row.getAttribute('data-symbol');
-                            if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                            if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                         });
                     });
                 } catch (e) {
@@ -1126,7 +1126,7 @@
                     slot.querySelectorAll('.tt-map-tile').forEach(function(el) {
                         el.addEventListener('click', function() {
                             const sym = el.getAttribute('data-symbol');
-                            if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                            if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                         });
                     });
                     bindMapTips(slot);
@@ -1226,12 +1226,12 @@
                     it.addEventListener('click', function() {
                         const nid = it.getAttribute('data-news');
                         if (nid) {
-                            if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(nid), slug: '' }, '*');
+                            if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(nid), slug: '' }, '*');
                             return;
                         }
                         const sym = it.getAttribute('data-symbol');
                         if (sym && window.parent && window.parent !== window) {
-                            window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                            window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                         }
                     });
                 });
@@ -1340,39 +1340,39 @@
                             return;
                         }
                         const sym = el.getAttribute('data-symbol');
-                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                     });
                 });
                 main.querySelectorAll('.tt-radar-item[data-symbol]').forEach(function(el) {
                     el.addEventListener('click', function() {
                         const sym = el.getAttribute('data-symbol');
-                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                     });
                 });
                 main.querySelectorAll('.ai-sym[data-symbol]').forEach(function(el) {
                     el.addEventListener('click', function() {
                         const sym = el.getAttribute('data-symbol');
-                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                     });
                 });
                 main.querySelectorAll('.rh-sym[data-symbol]').forEach(function(el) {
                     el.addEventListener('click', function() {
                         const sym = el.getAttribute('data-symbol');
-                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                     });
                 });
                 side.querySelectorAll('[data-symbol]').forEach(function(el) {
                     el.addEventListener('click', function(e) {
                         e.stopPropagation();
                         const sym = el.getAttribute('data-symbol');
-                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                     });
                 });
                 side.querySelectorAll('[data-news]').forEach(function(el) {
                     el.addEventListener('click', function() {
                         const id = el.getAttribute('data-news');
                         const slug = el.getAttribute('data-slug') || '';
-                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug }, '*');
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(id), slug: slug }, '*');
                     });
                 });
                 const periods = document.getElementById('ttPeriods');
@@ -1465,13 +1465,13 @@
                     if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
                     window.__lastSentH = height;
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                        window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
                     }
                 } catch (e) {}
             }
             window.addEventListener('message', function(event) {
                 const data = event.data;
-                if (!data || data.type !== 'tunix-theme') return;
+                if (!data || data.type !== 'vinafintech-theme') return;
                 const mode = data.mode === 'dark' ? 'dark' : 'light';
                 localStorage.setItem('theme', mode);
                 applyEmbedTheme(mode);
@@ -1503,19 +1503,19 @@
                 return key === 'vnindex' ? 'VNINDEX' : key === 'hnx' ? 'HNXINDEX' : key === 'upcom' ? 'UPINDEX' : 'VN30';
             }
             // Nút fullscreen trong block biểu đồ → dùng ĐÚNG xử lý của icon nến ở header.
-            // Gọi thẳng hàm mà shell dùng cho icon nến (`window.parent.tunixChartFullscreenRequest`) nên
+            // Gọi thẳng hàm mà shell dùng cho icon nến (`window.parent.vinafintechChartFullscreenRequest`) nên
             // hai chỗ chỉ có MỘT code path: nạp trang chi tiết kèm ?fs=1 + bật fullscreen, thoát thì quay lại
             // đúng trang Thị trường. Chỉ khi không gọi được trực tiếp (khác origin) mới postMessage dự phòng.
             function openChartFullscreen() {
                 const sym = indexSymbolOf(chartKey);
                 if (window.parent && window.parent !== window) {
                     try {
-                        if (typeof window.parent.tunixChartFullscreenRequest === 'function') {
-                            window.parent.tunixChartFullscreenRequest(sym);
+                        if (typeof window.parent.vinafintechChartFullscreenRequest === 'function') {
+                            window.parent.vinafintechChartFullscreenRequest(sym);
                             return;
                         }
                     } catch (e) { /* khác origin → dùng postMessage bên dưới */ }
-                    window.parent.postMessage({ type: 'tunix-open-chart-fullscreen', symbol: sym }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-open-chart-fullscreen', symbol: sym }, '*');
                 } else {
                     window.location.href = '/cophieu-' + encodeURIComponent(sym) + '?fs=1';
                 }

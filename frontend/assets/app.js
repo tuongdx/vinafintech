@@ -1,17 +1,17 @@
 const API_BASE = "/api";
 
-const TOKEN_KEY = "tunix_access_token";
-const REFRESH_KEY = "tunix_refresh_token";
-const USER_KEY = "tunix_user";
+const TOKEN_KEY = "vinafintech_access_token";
+const REFRESH_KEY = "vinafintech_refresh_token";
+const USER_KEY = "vinafintech_user";
 
 function applyTheme() {
-  const mode = localStorage.getItem("tunix_theme") || "light";
+  const mode = localStorage.getItem("vinafintech_theme") || "light";
   document.body.classList.toggle("dark", mode === "dark");
 }
 
 function toggleTheme() {
-  const current = localStorage.getItem("tunix_theme") || "light";
-  localStorage.setItem("tunix_theme", current === "light" ? "dark" : "light");
+  const current = localStorage.getItem("vinafintech_theme") || "light";
+  localStorage.setItem("vinafintech_theme", current === "light" ? "dark" : "light");
   applyTheme();
 }
 

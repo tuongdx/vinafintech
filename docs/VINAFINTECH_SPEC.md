@@ -163,9 +163,9 @@ Các bảng chính trong `app/models.py`:
 
 - `index.html` là shell: header (logo, tìm kiếm, icon nến fullscreen, thông báo, theme, tài khoản), nav tin tức, **VinaF AI chat widget** (SSE), footer.
 - `loadContent(page)`:
-  - Trang **embedded** (Home.html, StockDetail.html, tin-tuc.html, tintuc.html, caidat.html, taikhoan.html, doimatkhau.html) → dựng `<iframe id="contentEmbedFrame">` (cache-bust `?v=Date.now()`), điều chỉnh chiều cao qua `postMessage` (`tunix-embed-height`).
+  - Trang **embedded** (Home.html, StockDetail.html, tin-tuc.html, tintuc.html, caidat.html, taikhoan.html, doimatkhau.html) → dựng `<iframe id="contentEmbedFrame">` (cache-bust `?v=Date.now()`), điều chỉnh chiều cao qua `postMessage` (`vinafintech-embed-height`).
   - Trang khác (TrungTamTroGiup, HuongDanSuDung, CauHoiThuongGap, LienHe, GopY, DieuKhoanSuDung, ChinhSachBaoMat, MienTruTrachNhiem) → `fetch` + `DOMParser` nhúng nội dung.
-- Giao tiếp parent ⇄ iframe qua `postMessage`: `tunix-switch-stock`, `tunix-open-stock`, `tunix-symbol-changed`, `tunix-embed-height`, `tunix-home-height`, `tunix-set-theme`, `tunix-open-tintuc`, `tunix-open-url`, `tunix-cat-changed`, `tunix-search-clear`, `tunix-user-updated`, `tunix-stock-modal`.
+- Giao tiếp parent ⇄ iframe qua `postMessage`: `vinafintech-switch-stock`, `vinafintech-open-stock`, `vinafintech-symbol-changed`, `vinafintech-embed-height`, `vinafintech-home-height`, `vinafintech-set-theme`, `vinafintech-open-tintuc`, `vinafintech-open-url`, `vinafintech-cat-changed`, `vinafintech-search-clear`, `vinafintech-user-updated`, `vinafintech-stock-modal`.
 - **Đổi theme tức thì** (`assets/theme-instant.js` + `theme-instant.css`, nhúng ở mọi trang): MutationObserver theo dõi class `dark-mode` trên `<body>`, bật class `theme-switching` trên `<html>` trong đúng lúc chuyển theme để tắt toàn bộ `transition` ⇒ nền/viền/chữ đổi màu ngay và đồng bộ giữa các lớp (không còn fade 0.3s lệch với ô sticky/header bảng). Hiệu ứng hover/animation ngoài lúc chuyển theme giữ nguyên.
 - URL đẹp: `/cophieu-{MÃ}`, `/tin-tuc`, `/{chuyên-mục}`, `/{slug}-{id}.html`.
 

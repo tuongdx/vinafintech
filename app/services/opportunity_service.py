@@ -23,7 +23,7 @@ from typing import Any, Callable
 
 from app.services import vnstock_service as vns
 
-logger = logging.getLogger("tunix.opportunity")
+logger = logging.getLogger("vinafintech.opportunity")
 
 # ---------------- Cấu hình ----------------
 _CACHE_TTL_SECONDS = 600          # kết quả tươi trong 10 phút

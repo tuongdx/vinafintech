@@ -431,7 +431,7 @@
     }
     function openNewsArticle(id, slug) {
         if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ type: 'tunix-open-tintuc', id: Number(id), slug: slug || '' }, '*');
+            window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(id), slug: slug || '' }, '*');
             return;
         }
         window.location.href = slug ? '/' + slug + '-' + id + '.html' : '/tintuc?id=' + encodeURIComponent(id);
@@ -512,13 +512,13 @@
             if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
             window.__lastSentH = height;
             if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
             }
         } catch (e) {}
     }
     window.addEventListener('message', function (event) {
         var data = event.data;
-        if (!data || data.type !== 'tunix-theme') return;
+        if (!data || data.type !== 'vinafintech-theme') return;
         var mode = data.mode === 'dark' ? 'dark' : 'light';
         localStorage.setItem('theme', mode);
         applyEmbedTheme(mode);

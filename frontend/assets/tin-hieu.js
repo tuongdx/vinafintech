@@ -207,13 +207,13 @@
     }
 
     // ---------------- Xác thực ----------------
-    function token() { return localStorage.getItem('tunix_access_token') || ''; }
+    function token() { return localStorage.getItem('vinafintech_access_token') || ''; }
 
     function refreshSession() {
         if (window.parent && window.parent !== window && typeof window.parent.refreshAccessToken === 'function') {
             try { return Promise.resolve(window.parent.refreshAccessToken()); } catch (e) { /* fallback bên dưới */ }
         }
-        var refresh = localStorage.getItem('tunix_refresh_token');
+        var refresh = localStorage.getItem('vinafintech_refresh_token');
         if (!refresh) return Promise.resolve(false);
         return fetch('/api/auth/refresh-token', {
             method: 'POST',
@@ -221,9 +221,9 @@
             body: JSON.stringify({ refresh_token: refresh })
         }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
             if (!d || !d.access_token) return false;
-            localStorage.setItem('tunix_access_token', d.access_token);
-            if (d.refresh_token) localStorage.setItem('tunix_refresh_token', d.refresh_token);
-            if (d.user) localStorage.setItem('tunix_user', JSON.stringify(d.user));
+            localStorage.setItem('vinafintech_access_token', d.access_token);
+            if (d.refresh_token) localStorage.setItem('vinafintech_refresh_token', d.refresh_token);
+            if (d.user) localStorage.setItem('vinafintech_user', JSON.stringify(d.user));
             return true;
         }).catch(function () { return false; });
     }
@@ -874,7 +874,7 @@
             })
             .then(function (u) {
                 if (u === 'expired') { showLocked('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'); return; }
-                if (u) localStorage.setItem('tunix_user', JSON.stringify(u));
+                if (u) localStorage.setItem('vinafintech_user', JSON.stringify(u));
                 var allowed = u && (u.signal_access === true || u.role === 'super-admin' || u.role === 'admin');
                 if (!allowed) {
                     showLocked('Tài khoản của bạn chưa được cấp quyền dùng tính năng Tín hiệu.');
@@ -899,13 +899,13 @@
             if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
             window.__lastSentH = height;
             if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
             }
         } catch (e) { /* ignore */ }
     }
     window.addEventListener('message', function (event) {
         var data = event.data;
-        if (!data || data.type !== 'tunix-theme') return;
+        if (!data || data.type !== 'vinafintech-theme') return;
         var mode = data.mode === 'dark' ? 'dark' : 'light';
         localStorage.setItem('theme', mode);
         applyEmbedTheme(mode);

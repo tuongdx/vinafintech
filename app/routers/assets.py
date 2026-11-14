@@ -31,7 +31,7 @@ from app.services import cash_service
 from app.services import dividend_adjust
 from app.services.gold_service import _get_usd_vnd
 
-logger = logging.getLogger("tunix.assets")
+logger = logging.getLogger("vinafintech.assets")
 router = APIRouter(prefix="/assets", tags=["assets"])
 
 _CLASSES = {"crypto", "deposit", "gold"}

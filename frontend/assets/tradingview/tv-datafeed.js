@@ -1,12 +1,12 @@
 /**
- * TuniXDatafeed — TradingView Advanced Charts Datafeed.
+ * VinaFintechDatafeed — TradingView Advanced Charts Datafeed.
  *
  * Kết nối TradingView Advanced Charts (charting_library) với dữ liệu VinaFintech:
  *
  *   TradingView Advanced Charts
  *        |  (Datafeed API)
  *        v
- *   TuniXDatafeed (file này)
+ *   VinaFintechDatafeed (file này)
  *        |  (fetch /api/chart/*)
  *        v
  *   VinaFintech Backend (FastAPI -> chart_service -> vnstock_service -> Simplize)
@@ -60,7 +60,7 @@
     });
   }
 
-  function TuniXDatafeed(options) {
+  function VinaFintechDatafeed(options) {
     options = options || {};
     this._apiBase = options.apiBase || API_BASE;
     this._realtimeEnabled = options.realtimeEnabled === true;
@@ -71,7 +71,7 @@
   // ---------------------------------------------------------------------------
   // onReady: cấu hình chart (chỉ báo, timeframe, sàn...)
   // ---------------------------------------------------------------------------
-  TuniXDatafeed.prototype.onReady = function (callback) {
+  VinaFintechDatafeed.prototype.onReady = function (callback) {
     var self = this;
     fetchJson('/config', {}).then(function (config) {
       self._config = config || {};
@@ -100,7 +100,7 @@
   // ---------------------------------------------------------------------------
   // searchSymbols: tìm mã cổ phiếu (dữ liệu VinaFintech qua /api/chart/search)
   // ---------------------------------------------------------------------------
-  TuniXDatafeed.prototype.searchSymbols = function (userInput, exchange, symbolType, onResult) {
+  VinaFintechDatafeed.prototype.searchSymbols = function (userInput, exchange, symbolType, onResult) {
     var query = String(userInput || '').trim();
     if (!query) {
       if (typeof onResult === 'function') onResult([]);
@@ -116,7 +116,7 @@
   // ---------------------------------------------------------------------------
   // resolveSymbol: lấy metadata symbol từ VinaFintech (/api/chart/symbols)
   // ---------------------------------------------------------------------------
-  TuniXDatafeed.prototype.resolveSymbol = function (symbolName, onSymbolResolvedCallback, onResolveErrorCallback) {
+  VinaFintechDatafeed.prototype.resolveSymbol = function (symbolName, onSymbolResolvedCallback, onResolveErrorCallback) {
     fetchJson('/symbols', { symbol: symbolName }).then(function (info) {
       if (!info || info.valid === false) {
         if (typeof onResolveErrorCallback === 'function') {
@@ -158,7 +158,7 @@
   // getBars: lấy OHLCV theo resolution + from/to (phân trang lịch sử)
   // Hỗ trợ cả 2 dạng gọi: legacy (from, to) và periodParams (countback).
   // ---------------------------------------------------------------------------
-  TuniXDatafeed.prototype.getBars = function (symbolInfo, resolution, periodParams, onHistoryCallback, onErrorCallback, firstDataRequest) {
+  VinaFintechDatafeed.prototype.getBars = function (symbolInfo, resolution, periodParams, onHistoryCallback, onErrorCallback, firstDataRequest) {
     var from, to, countback;
 
     // Dạng 1 (mới): getBars(symbolInfo, resolution, periodParams, ...)
@@ -251,7 +251,7 @@
     };
   }
 
-  TuniXDatafeed.prototype.subscribeBars = function (symbolInfo, resolution, onRealtimeCallback, subscriberUID, onResetCacheNeededCallback) {
+  VinaFintechDatafeed.prototype.subscribeBars = function (symbolInfo, resolution, onRealtimeCallback, subscriberUID, onResetCacheNeededCallback) {
     var self = this;
     var symbol = (symbolInfo && (symbolInfo.ticker || symbolInfo.name)) || '';
     this._realtimeSubs[subscriberUID] = { symbol: symbol, resolution: resolution, callback: onRealtimeCallback };
@@ -272,7 +272,7 @@
     this._realtimeTimer[subscriberUID] = setInterval(update, REALTIME_POLL_MS);
   };
 
-  TuniXDatafeed.prototype.unsubscribeBars = function (subscriberUID) {
+  VinaFintechDatafeed.prototype.unsubscribeBars = function (subscriberUID) {
     delete this._realtimeSubs[subscriberUID];
     if (this._realtimeTimer[subscriberUID]) {
       clearInterval(this._realtimeTimer[subscriberUID]);
@@ -283,7 +283,7 @@
   // ---------------------------------------------------------------------------
   // getServerTime: đồng bộ thời gian server (giờ Việt Nam qua backend)
   // ---------------------------------------------------------------------------
-  TuniXDatafeed.prototype.getServerTime = function (callback) {
+  VinaFintechDatafeed.prototype.getServerTime = function (callback) {
     fetchJson('/time', {}).then(function (data) {
       if (typeof callback === 'function') callback(data && data.serverTime ? data.serverTime : Math.floor(Date.now() / 1000));
     }).catch(function () {
@@ -292,8 +292,8 @@
   };
 
   // Cho phép widget tự do đổi mã (compare/đổi symbol) — search từ VinaFintech
-  TuniXDatafeed.prototype.supportsSymbolSearch = true;
+  VinaFintechDatafeed.prototype.supportsSymbolSearch = true;
 
-  global.TuniXDatafeed = TuniXDatafeed;
-  global.TradingViewDatafeed = TuniXDatafeed; // alias tương thích
+  global.VinaFintechDatafeed = VinaFintechDatafeed;
+  global.TradingViewDatafeed = VinaFintechDatafeed; // alias tương thích
 })(window);

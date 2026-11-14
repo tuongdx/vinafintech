@@ -25,8 +25,8 @@ liệu OHLCV lấy từ **VinaFintech** qua backend `/api/chart/history`.
 frontend/assets/
 ├── vendor/lightweight-charts.standalone.production.js   # thư viện đang dùng (v5.2.1)
 └── tradingview/
-    ├── tv-datafeed.js                 # TuniXDatafeed — Datafeed Advanced Charts (để dành)
-    ├── tv-chart.js                    # TuniXTradingViewChart — component Advanced Charts (để dành)
+    ├── tv-datafeed.js                 # VinaFintechDatafeed — Datafeed Advanced Charts (để dành)
+    ├── tv-chart.js                    # VinaFintechTradingViewChart — component Advanced Charts (để dành)
     └── charting_library/              # (placeholder) đặt thư viện cấp phép tại đây
         └── README.md                  # hướng dẫn cài thư viện
 ```
@@ -39,7 +39,7 @@ VinaFintech (Simplize adapter -> OHLCV daily)
 /api/chart/*  (FastAPI: config, symbols, history, search, quote, time)
         ↓
 StockDetail.html (Lightweight Charts — đang chạy)
-   hoặc  TuniXDatafeed -> TradingView Advanced Charts (khi có charting_library)
+   hoặc  VinaFintechDatafeed -> TradingView Advanced Charts (khi có charting_library)
         ↓
 frontend StockDetail.html
 ```

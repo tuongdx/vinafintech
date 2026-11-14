@@ -23,7 +23,7 @@ from app.services import portfolio_performance as pps
 from app.services import vnstock_service as vns
 from app.services.alert_service import alert_service
 
-logger = logging.getLogger("tunix.portfolio")
+logger = logging.getLogger("vinafintech.portfolio")
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
 

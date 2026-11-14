@@ -122,10 +122,10 @@
             renderDomestic(d);
             notifyHeight();
         }).catch(function (e) {
-            msg.innerHTML = '<div class="gv-msg err"><i class="fas fa-exclamation-triangle"></i> Không tải được giá vàng trong nước.<br><button type="button" class="gv-retry" onclick="window.tunixReloadDomestic()"><i class="fas fa-sync-alt"></i> Thử lại</button></div>';
+            msg.innerHTML = '<div class="gv-msg err"><i class="fas fa-exclamation-triangle"></i> Không tải được giá vàng trong nước.<br><button type="button" class="gv-retry" onclick="window.vinafintechReloadDomestic()"><i class="fas fa-sync-alt"></i> Thử lại</button></div>';
         });
     }
-    window.tunixReloadDomestic = function () { loadDomestic(false); };
+    window.vinafintechReloadDomestic = function () { loadDomestic(false); };
 
     // ================= 2) Giá thế giới + 4) So sánh =================
     function byKey(items, k) {
@@ -210,10 +210,10 @@
             renderWorld(d);
             notifyHeight();
         }).catch(function () {
-            msg.innerHTML = '<div class="gv-msg err"><i class="fas fa-exclamation-triangle"></i> Không tải được giá vàng/bạc thế giới.<br><button type="button" class="gv-retry" onclick="window.tunixReloadWorld()"><i class="fas fa-sync-alt"></i> Thử lại</button></div>';
+            msg.innerHTML = '<div class="gv-msg err"><i class="fas fa-exclamation-triangle"></i> Không tải được giá vàng/bạc thế giới.<br><button type="button" class="gv-retry" onclick="window.vinafintechReloadWorld()"><i class="fas fa-sync-alt"></i> Thử lại</button></div>';
         });
     }
-    window.tunixReloadWorld = function () { loadWorld(false); };
+    window.vinafintechReloadWorld = function () { loadWorld(false); };
 
     // ================= 3) Biểu đồ vàng thế giới =================
     var CHART_W = 780, CHART_H = 340, CH_PAD = { l: 70, r: 14, t: 16, b: 28 };
@@ -227,10 +227,10 @@
             drawChart(d);
             notifyHeight();
         }).catch(function () {
-            msg.innerHTML = '<div class="gv-msg err"><i class="fas fa-exclamation-triangle"></i> Không tải được biểu đồ.<br><button type="button" class="gv-retry" onclick="window.tunixReloadChart()"><i class="fas fa-sync-alt"></i> Thử lại</button></div>';
+            msg.innerHTML = '<div class="gv-msg err"><i class="fas fa-exclamation-triangle"></i> Không tải được biểu đồ.<br><button type="button" class="gv-retry" onclick="window.vinafintechReloadChart()"><i class="fas fa-sync-alt"></i> Thử lại</button></div>';
         });
     }
-    window.tunixReloadChart = function () { loadChart(false); };
+    window.vinafintechReloadChart = function () { loadChart(false); };
 
     function fmtAxisT(t, period) {
         var d = new Date(t);
@@ -361,13 +361,13 @@
             if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
             window.__lastSentH = height;
             if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
             }
         } catch (e) {}
     }
     window.addEventListener('message', function (event) {
         var data = event.data;
-        if (!data || data.type !== 'tunix-theme') return;
+        if (!data || data.type !== 'vinafintech-theme') return;
         var mode = data.mode === 'dark' ? 'dark' : 'light';
         localStorage.setItem('theme', mode);
         applyEmbedTheme(mode);

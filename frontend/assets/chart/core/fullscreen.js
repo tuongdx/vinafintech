@@ -67,7 +67,7 @@ export class FullscreenManager {
             // Đang ở chế độ parent fullscreen (iframe này hoặc khung chứa nó) → thoát đúng như
             // nhấn Esc / nút X của trình duyệt: nhờ shell thoát (shell là bên đã bật fullscreen),
             // đồng thời gọi trực tiếp (cùng origin) để chắc chắn chạy cả khi message bị chặn.
-            try { window.parent.postMessage({ type: 'tunix-exit-fullscreen' }, '*'); } catch (e) { /* ignore */ }
+            try { window.parent.postMessage({ type: 'vinafintech-exit-fullscreen' }, '*'); } catch (e) { /* ignore */ }
             try {
                 const pd = window.parent.document;
                 const exit = pd.exitFullscreen || pd.webkitExitFullscreen;

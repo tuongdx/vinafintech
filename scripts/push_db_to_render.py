@@ -1,4 +1,4 @@
-"""Đẩy TOÀN BỘ database local (tunix.db - SQLite) lên PostgreSQL của Render.
+"""Đẩy TOÀN BỘ database local (vinafintech.db - SQLite) lên PostgreSQL của Render.
 
 Khác `migrate_to_render.py` (bản cũ chỉ chuyển 11 bảng và tự bỏ qua nếu DB đích
 đã có user), script này:
@@ -28,7 +28,7 @@ CÁCH DÙNG
   Xem trước (không cần URL): py scripts/push_db_to_render.py --dry-run
 
   LƯU Ý: dùng interpreter CÓ sqlalchemy + psycopg2 — venv của workspace KHÔNG có, nên chạy bằng
-  `py` (Python toàn cục) hoặc `.venv` của workspace 2.TuniX-Product.
+  `py` (Python toàn cục) hoặc `.venv` của workspace 2.VinaFintech-Product.
 """
 
 from __future__ import annotations
@@ -57,7 +57,7 @@ from sqlalchemy.exc import InterfaceError, OperationalError  # noqa: E402
 from app.db import Base  # noqa: E402
 from app import models  # noqa: F401,E402  (import để đăng ký toàn bộ model)
 
-SOURCE_SQLITE = ROOT / "tunix.db"
+SOURCE_SQLITE = ROOT / "vinafintech.db"
 CHUNK_SIZE = 200
 _SKIP_TABLES = {"sqlite_sequence", "spatial_ref_sys"}
 

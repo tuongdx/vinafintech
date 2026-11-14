@@ -7,7 +7,7 @@
    lệch nhau; hiệu ứng hover/animation ngoài lúc chuyển theme không bị ảnh hưởng.
 
    Dùng MutationObserver nên mọi nơi toggle theme (nút header, message
-   `tunix-theme`/`toggleTheme` từ shell gửi vào iframe, hay localStorage lúc tải
+   `vinafintech-theme`/`toggleTheme` từ shell gửi vào iframe, hay localStorage lúc tải
    trang) đều được áp dụng mà không phải sửa code từng trang.
    ============================================================ */
 (function () {

@@ -1,9 +1,9 @@
 /**
- * TuniXTradingViewChart — Component bọc TradingView Advanced Charts (charting_library).
+ * VinaFintechTradingViewChart — Component bọc TradingView Advanced Charts (charting_library).
  *
  * Nhiệm vụ:
  *   - Kiểm tra & nạp thư viện charting_library (đặt tại /static/tradingview/charting_library/).
- *   - Tạo widget TradingView với datafeed VinaFintech (TuniXDatafeed).
+ *   - Tạo widget TradingView với datafeed VinaFintech (VinaFintechDatafeed).
  *   - Đồng bộ theme (dark/light), đổi symbol, đổi timeframe, visible range.
  *   - Lưu/khôi phục layout chart (saveChartLayout/loadChartLayout — abstraction,
  *     hiện lưu localStorage; sau này đổi sang lưu database VinaFintech khi có user account).
@@ -19,7 +19,7 @@
 
   var LIBRARY_PATH = '/static/tradingview/charting_library/';
   var LIBRARY_SCRIPT = LIBRARY_PATH + 'charting_library.min.js';
-  var LAYOUT_STORAGE_PREFIX = 'tunix_tv_layout_'; // key = prefix + SYMBOL
+  var LAYOUT_STORAGE_PREFIX = 'vinafintech_tv_layout_'; // key = prefix + SYMBOL
 
   // ---------------------------------------------------------------------------
   // Storage adapter cho layout chart (saveChartLayout / loadChartLayout)
@@ -96,14 +96,14 @@
   // ---------------------------------------------------------------------------
   // Component chính
   // ---------------------------------------------------------------------------
-  function TuniXTradingViewChart(container, options) {
+  function VinaFintechTradingViewChart(container, options) {
     options = options || {};
     this._container = typeof container === 'string' ? document.getElementById(container) : container;
     this._options = options;
     this._symbol = String(options.symbol || 'VCB').toUpperCase();
     this._interval = options.interval || '1D';
     this._theme = options.theme === 'dark' ? 'dark' : 'light';
-    this._datafeed = options.datafeed || (global.TuniXDatafeed ? new global.TuniXDatafeed() : null);
+    this._datafeed = options.datafeed || (global.VinaFintechDatafeed ? new global.VinaFintechDatafeed() : null);
     this._widget = null;
     this._ready = false;
     this._destroyed = false;
@@ -114,7 +114,7 @@
   }
 
   // Đồng bộ theme với website VinaFintech
-  TuniXTradingViewChart.prototype.setTheme = function (mode) {
+  VinaFintechTradingViewChart.prototype.setTheme = function (mode) {
     var theme = mode === 'dark' ? 'dark' : 'light';
     this._theme = theme;
     if (this._widget && typeof this._widget.changeTheme === 'function') {
@@ -126,12 +126,12 @@
     }
   };
 
-  TuniXTradingViewChart.prototype.getTheme = function () {
+  VinaFintechTradingViewChart.prototype.getTheme = function () {
     return this._theme;
   };
 
   // Đổi symbol (VinaFintech gọi khi người dùng đổi mã trên giao diện)
-  TuniXTradingViewChart.prototype.setSymbol = function (symbol, interval, callback) {
+  VinaFintechTradingViewChart.prototype.setSymbol = function (symbol, interval, callback) {
     var self = this;
     var normalized = String(symbol || '').toUpperCase();
     if (!normalized) return;
@@ -152,7 +152,7 @@
   };
 
   // Đổi timeframe (resolution)
-  TuniXTradingViewChart.prototype.setResolution = function (resolution, callback) {
+  VinaFintechTradingViewChart.prototype.setResolution = function (resolution, callback) {
     this._interval = String(resolution || '1D').toUpperCase();
     if (this._widget && typeof this._widget.setResolution === 'function') {
       try {
@@ -168,7 +168,7 @@
   };
 
   // Đặt khoảng thời gian hiển thị (dùng cho các nút kỳ hạn 1W/1M/3M/... của VinaFintech)
-  TuniXTradingViewChart.prototype.setVisibleRange = function (from, to) {
+  VinaFintechTradingViewChart.prototype.setVisibleRange = function (from, to) {
     if (this._widget && typeof this._widget.chart === 'function') {
       try {
         var chart = this._widget.chart();
@@ -183,7 +183,7 @@
   };
 
   // Hiển thị toàn bộ dữ liệu đã tải (dùng cho kỳ hạn ALL)
-  TuniXTradingViewChart.prototype.fitContent = function () {
+  VinaFintechTradingViewChart.prototype.fitContent = function () {
     if (this._widget && typeof this._widget.chart === 'function') {
       try {
         var chart = this._widget.chart();
@@ -194,15 +194,15 @@
     }
   };
 
-  TuniXTradingViewChart.prototype.getInterval = function () {
+  VinaFintechTradingViewChart.prototype.getInterval = function () {
     return this._interval;
   };
 
-  TuniXTradingViewChart.prototype.getWidget = function () {
+  VinaFintechTradingViewChart.prototype.getWidget = function () {
     return this._widget;
   };
 
-  TuniXTradingViewChart.prototype.isReady = function () {
+  VinaFintechTradingViewChart.prototype.isReady = function () {
     return this._ready && !!this._widget;
   };
 
@@ -211,7 +211,7 @@
   // Hiện lưu localStorage theo mã cổ phiếu. Để lưu database VinaFintech sau này,
   // thay nội dung layoutStorage.save/load bằng API (xem chú thích ở trên).
   // ---------------------------------------------------------------------------
-  TuniXTradingViewChart.prototype.saveChartLayout = function (callback) {
+  VinaFintechTradingViewChart.prototype.saveChartLayout = function (callback) {
     var self = this;
     if (!this._widget || typeof this._widget.save !== 'function') {
       if (typeof callback === 'function') callback(null);
@@ -227,18 +227,18 @@
     }
   };
 
-  TuniXTradingViewChart.prototype.loadChartLayout = function () {
+  VinaFintechTradingViewChart.prototype.loadChartLayout = function () {
     return layoutStorage.load(this._symbol);
   };
 
-  TuniXTradingViewChart.prototype.clearChartLayout = function () {
+  VinaFintechTradingViewChart.prototype.clearChartLayout = function () {
     layoutStorage.clear(this._symbol);
   };
 
   // ---------------------------------------------------------------------------
   // Khởi tạo
   // ---------------------------------------------------------------------------
-  TuniXTradingViewChart.prototype.init = function () {
+  VinaFintechTradingViewChart.prototype.init = function () {
     var self = this;
     var container = this._container;
     if (!container) {
@@ -247,7 +247,7 @@
     }
 
     if (!this._datafeed) {
-      this._fail('TuniXDatafeed chưa được nạp (thiếu /static/tradingview/tv-datafeed.js)');
+      this._fail('VinaFintechDatafeed chưa được nạp (thiếu /static/tradingview/tv-datafeed.js)');
       return;
     }
 
@@ -268,7 +268,7 @@
     });
   };
 
-  TuniXTradingViewChart.prototype._fail = function (message) {
+  VinaFintechTradingViewChart.prototype._fail = function (message) {
     if (this._destroyed) return;
     var code = message;
     if (typeof this.onError === 'function') {
@@ -276,14 +276,14 @@
     }
   };
 
-  TuniXTradingViewChart.prototype._friendlyMessage = function (code) {
+  VinaFintechTradingViewChart.prototype._friendlyMessage = function (code) {
     if (code === 'LIBRARY_MISSING') {
       return 'Thư viện TradingView Advanced Charts chưa được cài đặt.';
     }
     return String(code || '');
   };
 
-  TuniXTradingViewChart.prototype._createWidget = function () {
+  VinaFintechTradingViewChart.prototype._createWidget = function () {
     var self = this;
     var container = this._container;
     if (!container) return;
@@ -378,7 +378,7 @@
   // ---------------------------------------------------------------------------
   // Hủy chart (khi chuyển nguồn hiển thị / đổi trang)
   // ---------------------------------------------------------------------------
-  TuniXTradingViewChart.prototype.destroy = function () {
+  VinaFintechTradingViewChart.prototype.destroy = function () {
     this._destroyed = true;
     this._ready = false;
 
@@ -405,6 +405,6 @@
   };
 
   // API cấp cao
-  global.TuniXTradingViewChart = TuniXTradingViewChart;
-  global.TuniXChartLayoutStorage = layoutStorage;
+  global.VinaFintechTradingViewChart = VinaFintechTradingViewChart;
+  global.VinaFintechChartLayoutStorage = layoutStorage;
 })(window);

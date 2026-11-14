@@ -422,13 +422,13 @@
             function fmtNum(v, d) { const n = Number(v) || 0; return n.toLocaleString('vi-VN', { minimumFractionDigits: d == null ? 2 : d, maximumFractionDigits: d == null ? 2 : d }); }
             function pct(v) { const n = Number(v) || 0; if (!n) return '0%'; return (n >= 0 ? '+' : '') + n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%'; }
             function cls(v) { return Number(v) >= 0 ? 'pos' : 'neg'; }
-            function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-stock', symbol: sym }, '*'); }
-            function openNews(id, slug) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-tintuc', id: id, slug: slug }, '*'); }
-            function sendAi(p) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-ai-open', prompt: p }, '*'); }
+            function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*'); }
+            function openNews(id, slug) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: id, slug: slug }, '*'); }
+            function sendAi(p) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-ai-open', prompt: p }, '*'); }
             // Điều hướng trang nội bộ: nhúng trong shell → báo parent (đi qua menu chính), ngoài shell → đổi URL.
             function openPage(url) {
                 if (!url) return;
-                if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-open-page', url: url }, '*');
+                if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-page', url: url }, '*');
                 else window.location.href = url;
             }
             // Chip NGÀNH của Market Radar → mở trang Cổ phiếu theo ngành: /co-phieu/nganh/{sector}
@@ -443,7 +443,7 @@
                 if (href.charAt(0) !== '/') return;
                 e.preventDefault();
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'tunix-open-page', url: href }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-open-page', url: href }, '*');
                 } else {
                     window.location.href = href;
                 }
@@ -833,7 +833,7 @@
             // ---------- Portfolio widget ----------
             function goLogin() {
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'tunix-go-login' }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-go-login' }, '*');
                 } else {
                     window.location.href = '/Login';
                 }
@@ -856,10 +856,10 @@
                 // Ưu tiên hàm dùng chung của shell (tránh 2 nơi refresh song song → refresh token bị thu hồi).
                 try {
                     if (window.parent && window.parent !== window && typeof window.parent.refreshAccessToken === 'function') {
-                        if (await window.parent.refreshAccessToken()) return localStorage.getItem('tunix_access_token');
+                        if (await window.parent.refreshAccessToken()) return localStorage.getItem('vinafintech_access_token');
                     }
                 } catch (e) { /* ignore */ }
-                const rt = localStorage.getItem('tunix_refresh_token');
+                const rt = localStorage.getItem('vinafintech_refresh_token');
                 if (!rt) return null;
                 try {
                     const res = await fetch('/api/auth/refresh-token', {
@@ -870,16 +870,16 @@
                     if (!res.ok) return null;
                     const d = await res.json();
                     if (!d.access_token) return null;
-                    localStorage.setItem('tunix_access_token', d.access_token);
-                    if (d.refresh_token) localStorage.setItem('tunix_refresh_token', d.refresh_token);
-                    if (d.user) localStorage.setItem('tunix_user', JSON.stringify(d.user));
+                    localStorage.setItem('vinafintech_access_token', d.access_token);
+                    if (d.refresh_token) localStorage.setItem('vinafintech_refresh_token', d.refresh_token);
+                    if (d.user) localStorage.setItem('vinafintech_user', JSON.stringify(d.user));
                     return d.access_token;
                 } catch (e) { return null; }
             }
             // Gọi /api/portfolio: tự refresh khi token hết hạn hoặc gặp 401/403 rồi thử lại 1 lần.
             async function fetchPortfolioAuth() {
-                let token = localStorage.getItem('tunix_access_token') || '';
-                if (token && tokenExpired(token) && localStorage.getItem('tunix_refresh_token')) {
+                let token = localStorage.getItem('vinafintech_access_token') || '';
+                if (token && tokenExpired(token) && localStorage.getItem('vinafintech_refresh_token')) {
                     const fresh = await refreshSession();
                     if (fresh) token = fresh;
                 }
@@ -895,7 +895,7 @@
             }
             function renderPortfolio() {
                 const el = document.getElementById('ovPortBody');
-                const token = localStorage.getItem('tunix_access_token');
+                const token = localStorage.getItem('vinafintech_access_token');
                 const load = function(list) {
                     if (!list || !list.length) {
                         // Đã đăng nhập nhưng chưa có cổ phiếu → data rỗng + nút Xem chi tiết danh mục.
@@ -1000,7 +1000,7 @@
                 { key: 'nasdaq', label: 'NASDAQ' }
             ];
             const INDEX_DEFAULT = ['vnindex', 'vn30', 'hnx', 'hnx30'];
-            const INDEX_STORE = 'tunix_home_indices';
+            const INDEX_STORE = 'vinafintech_home_indices';
             const INDEX_MAIN = { vnindex: 1, vn30: 1, hnx: 1, upcom: 1 };
             let indicesMap = {};
             function getSelection() {
@@ -1313,12 +1313,12 @@
                     if (!height || height <= 0) return;
                     if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
                     window.__lastSentH = height;
-                    if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                    if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
                 } catch (e) {}
             }
             window.addEventListener('message', function(event) {
                 const data = event.data;
-                if (!data || data.type !== 'tunix-theme') return;
+                if (!data || data.type !== 'vinafintech-theme') return;
                 const mode = data.mode === 'dark' ? 'dark' : 'light';
                 localStorage.setItem('theme', mode);
                 applyEmbedTheme(mode);

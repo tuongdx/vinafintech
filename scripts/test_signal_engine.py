@@ -10,8 +10,8 @@ Bao gồm:
 
 Test HTTP cần: server đang chạy ở http://127.0.0.1:8000 và tài khoản admin/member.
 Đặt biến môi trường để đổi tài khoản:
-    TUNIX_TEST_ADMIN_EMAIL / TUNIX_TEST_ADMIN_PASSWORD
-    TUNIX_TEST_MEMBER_EMAIL / TUNIX_TEST_MEMBER_PASSWORD
+    VINAFINTECH_TEST_ADMIN_EMAIL / VINAFINTECH_TEST_ADMIN_PASSWORD
+    VINAFINTECH_TEST_MEMBER_EMAIL / VINAFINTECH_TEST_MEMBER_PASSWORD
 """
 from __future__ import annotations
 
@@ -394,8 +394,8 @@ def _ensure_member_credentials(base: str) -> tuple[str, str] | None:
 
     Ưu tiên ENV; nếu không có thì tạo tài khoản TẠM trong DB local rồi DỌN SẠCH sau test.
     """
-    email = os.environ.get("TUNIX_TEST_MEMBER_EMAIL", "")
-    password = os.environ.get("TUNIX_TEST_MEMBER_PASSWORD", "")
+    email = os.environ.get("VINAFINTECH_TEST_MEMBER_EMAIL", "")
+    password = os.environ.get("VINAFINTECH_TEST_MEMBER_PASSWORD", "")
     if email and password:
         return email, password
     if "127.0.0.1" not in base and "localhost" not in base:
@@ -471,9 +471,9 @@ def test_http() -> None:
     section("6. HTTP — Permission (ADMIN 200 / USER 403) + leakage")
     import httpx
 
-    base = os.environ.get("TUNIX_BASE_URL", "http://127.0.0.1:8000")
-    admin_email = os.environ.get("TUNIX_TEST_ADMIN_EMAIL", "admin@tunix.vn")
-    admin_pass = os.environ.get("TUNIX_TEST_ADMIN_PASSWORD", "Taniku@1710")
+    base = os.environ.get("VINAFINTECH_BASE_URL", "http://127.0.0.1:8000")
+    admin_email = os.environ.get("VINAFINTECH_TEST_ADMIN_EMAIL", "admin@tunix.vn")
+    admin_pass = os.environ.get("VINAFINTECH_TEST_ADMIN_PASSWORD", "Taniku@1710")
     member_creds = _ensure_member_credentials(base)
     member_email, member_pass = member_creds if member_creds else ("", "")
 

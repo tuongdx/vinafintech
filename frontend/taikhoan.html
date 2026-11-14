@@ -110,7 +110,7 @@
     <script>
         (function() {
             const body = document.getElementById('profileBody');
-            const TOKEN_KEY = 'tunix_access_token';
+            const TOKEN_KEY = 'vinafintech_access_token';
             let pendingAvatar = null;
 
             function loggedIn() { return !!localStorage.getItem(TOKEN_KEY); }
@@ -202,12 +202,12 @@
                             toast('❌ ' + d); return;
                         }
                         const updated = await res.json();
-                        localStorage.setItem('tunix_user', JSON.stringify(updated));
+                        localStorage.setItem('vinafintech_user', JSON.stringify(updated));
                         pendingAvatar = null;
                         toast('✅ Đã lưu thông tin');
                         // Báo trang cha cập nhật avatar ở menu/header
                         if (window.parent && window.parent !== window) {
-                            window.parent.postMessage({ type: 'tunix-user-updated' }, '*');
+                            window.parent.postMessage({ type: 'vinafintech-user-updated' }, '*');
                         }
                     } catch (e) {
                         toast('❌ Lưu thất bại.');
@@ -238,13 +238,13 @@
                     if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
                     window.__lastSentH = height;
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'tunix-embed-height', height }, '*');
+                        window.parent.postMessage({ type: 'vinafintech-embed-height', height }, '*');
                     }
                 } catch (e) {}
             }
             window.addEventListener('message', function(event) {
                 const data = event.data;
-                if (!data || data.type !== 'tunix-theme') return;
+                if (!data || data.type !== 'vinafintech-theme') return;
                 const mode = data.mode === 'dark' ? 'dark' : 'light';
                 localStorage.setItem('theme', mode);
                 applyEmbedTheme(mode);

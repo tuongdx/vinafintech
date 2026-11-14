@@ -292,17 +292,17 @@
                         const role = data.user && data.user.role;
                         if (!ADMIN_ROLES.includes(role)) {
                             // Đã đăng nhập nhưng không phải admin → không vào /admin
-                            localStorage.removeItem('tunix_access_token');
-                            localStorage.removeItem('tunix_refresh_token');
+                            localStorage.removeItem('vinafintech_access_token');
+                            localStorage.removeItem('vinafintech_refresh_token');
                             throw new Error('Tài khoản này không có quyền truy cập khu vực quản trị.');
                         }
-                        localStorage.setItem('tunix_access_token', data.access_token);
-                        localStorage.setItem('tunix_refresh_token', data.refresh_token);
-                        localStorage.setItem('tunix_user', JSON.stringify(data.user));
+                        localStorage.setItem('vinafintech_access_token', data.access_token);
+                        localStorage.setItem('vinafintech_refresh_token', data.refresh_token);
+                        localStorage.setItem('vinafintech_user', JSON.stringify(data.user));
                         // Set cookie để server cho phép mở trang /QuanTri khi chuyển hướng
                         const adminCookieExp = new Date();
                         adminCookieExp.setTime(adminCookieExp.getTime() + 60 * 60 * 1000);
-                        document.cookie = 'tunix_admin_token=' + encodeURIComponent(data.access_token) + '; path=/; SameSite=Lax; expires=' + adminCookieExp.toUTCString();
+                        document.cookie = 'vinafintech_admin_token=' + encodeURIComponent(data.access_token) + '; path=/; SameSite=Lax; expires=' + adminCookieExp.toUTCString();
                         showMessage('✅ Đăng nhập quản trị thành công!', 'success');
                         setTimeout(() => { window.location.href = '/QuanTri'; }, 600);
                     })

@@ -7,12 +7,12 @@
  */
 
 export const STORAGE_KEYS = {
-    drawings: 'tunix.drawings.v1',
-    indicators: 'tunix.indicators.v1',
-    analysis: 'tunix.analysis.v1',
-    compare: 'tunix.compare.v1',
-    layout: 'tunix.layout.v1',
-    settings: 'tunix.settings.v1',
+    drawings: 'vinafintech.drawings.v1',
+    indicators: 'vinafintech.indicators.v1',
+    analysis: 'vinafintech.analysis.v1',
+    compare: 'vinafintech.compare.v1',
+    layout: 'vinafintech.layout.v1',
+    settings: 'vinafintech.settings.v1',
 };
 
 export function storageGet(key, fallback = null) {

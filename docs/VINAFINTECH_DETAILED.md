@@ -2,7 +2,7 @@
 
 > Phiên bản: 1.0 · Cập nhật: 2026-08-16
 > Tài liệu này đi sâu vào từng module: cấu hình, cơ sở dữ liệu, API, nguồn dữ liệu, cache, frontend, VinaF AI, chart engine và deploy.
-> Bản tổng quan ngắn gọn xem tại `docs/TUNIX_SPEC.md`.
+> Bản tổng quan ngắn gọn xem tại `docs/VINAFINTECH_SPEC.md`.
 
 ---
 
@@ -56,7 +56,7 @@
 ```
 mở /cophieu-{MÃ}
   │
-  ├─ (ngay) loadTunixChart(symbol)        → vẽ chart, không chờ quote
+  ├─ (ngay) loadVinaFintechChart(symbol)        → vẽ chart, không chờ quote
   ├─ (song song) loadProfitAnalysis / Shareholders / Reports / Accumulation
   │              loadOrderBook / RecentTrades / PeerComparison
   └─ (chờ) quote  → renderMetrics + header (giá, %, cập nhật favorite)
@@ -71,7 +71,7 @@ mở /cophieu-{MÃ}
 | Biến | Mặc định | Mô tả |
 |---|---|---|
 | `APP_NAME` / `APP_ENV` / `API_PREFIX` | VinaFintech API / development / `/api` | định danh |
-| `DATABASE_URL` | `sqlite:///./tunix.db` | prod dùng Postgres Render |
+| `DATABASE_URL` | `sqlite:///./vinafintech.db` | prod dùng Postgres Render |
 | `SECRET_KEY`, `ALGORITHM` | change_me / HS256 | JWT |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | 60 | access token |
 | `REFRESH_TOKEN_EXPIRE_MINUTES` | 52560000 (~100 năm) | refresh token — phiên "nhớ" tới khi đăng xuất |
@@ -219,27 +219,27 @@ mở /cophieu-{MÃ}
 ### 6.1 `loadContent(page)` — 2 nhánh
 - **Embedded** (Home, StockDetail, tin-tuc, caidat, taikhoan, doimatkhau, tintuc):
   - Tạo `<iframe id="contentEmbedFrame" src="{page}?v={Date.now()}" allow="fullscreen">`.
-  - Theo dõi `tunix-home-height` / `tunix-embed-height` để set chiều cao iframe.
+  - Theo dõi `vinafintech-home-height` / `vinafintech-embed-height` để set chiều cao iframe.
 - **Fetch** (trang hỗ trợ/legal): `fetch(page?v={cacheBust})` → `DOMParser` → lấy `.dashboard` hoặc body.
 
 ### 6.2 Giao thức postMessage (parent ⇄ iframe)
 | Message | Hướng | Ý nghĩa |
 |---|---|---|
-| `tunix-embed-height` / `tunix-home-height` | iframe → parent | cập nhật chiều cao iframe |
-| `tunix-switch-stock` | parent → iframe | đổi mã ngay trong trang (không reload) |
-| `tunix-open-stock` | iframe → parent | yêu cầu mở mã (in-place) |
-| `tunix-symbol-changed` | iframe → parent | báo mã đã đổi (vd đổi mã khi fullscreen) |
-| `tunix-set-theme` | iframe → parent | đồng bộ dark/light |
-| `tunix-open-tintuc` / `tunix-open-url` | iframe → parent | mở bài tin / link ngoài |
-| `tunix-cat-changed` / `tunix-search-clear` | iframe → parent | đồng bộ nav tin tức |
-| `tunix-user-updated` | iframe → parent | render lại menu user |
-| `tunix-stock-modal` | iframe → parent | mở modal trong shell |
+| `vinafintech-embed-height` / `vinafintech-home-height` | iframe → parent | cập nhật chiều cao iframe |
+| `vinafintech-switch-stock` | parent → iframe | đổi mã ngay trong trang (không reload) |
+| `vinafintech-open-stock` | iframe → parent | yêu cầu mở mã (in-place) |
+| `vinafintech-symbol-changed` | iframe → parent | báo mã đã đổi (vd đổi mã khi fullscreen) |
+| `vinafintech-set-theme` | iframe → parent | đồng bộ dark/light |
+| `vinafintech-open-tintuc` / `vinafintech-open-url` | iframe → parent | mở bài tin / link ngoài |
+| `vinafintech-cat-changed` / `vinafintech-search-clear` | iframe → parent | đồng bộ nav tin tức |
+| `vinafintech-user-updated` | iframe → parent | render lại menu user |
+| `vinafintech-stock-modal` | iframe → parent | mở modal trong shell |
 
 ### 6.3 Fullscreen chart (icon nến)
 1. Click icon → `openStockDetailInIndex(sym, true)` → `loadContent('/StockDetail?symbol=X&fs=1')`.
 2. **Parent** gọi `frame.requestFullscreen()` **trong cử chỉ click** (có user activation) → 1 click vào fullscreen mọi trình duyệt.
 3. Iframe nhận `?fs=1`: thêm sớm class `chart-fullscreen` + `syncParentFs` (nghe parent fullscreenchange) + `maybeAutoFullscreen` (chỉ 1 lần).
-4. Thoát: `syncParentFs` gỡ class + `tunixChart.resetChartHeight()` (trả placeholder về 480px).
+4. Thoát: `syncParentFs` gỡ class + `vinafintechChart.resetChartHeight()` (trả placeholder về 480px).
 5. Icon nến fullscreen **đúng mã đang xem** ở trang chi tiết; thoát fullscreen mở từ trang khác thì **quay lại trang trước** (`fsReturnState` + `restorePreviousPage`).
 
 ---
@@ -329,4 +329,4 @@ breadth:  { up, down, flat }   (best-effort, tốn kém)
 | 2026-08-16 | Tối ưu tốc độ (quote song song, frontend tải song song) + dọn dẹp source |
 | 2026-08-16 | **VinaF AI market ticker**: endpoint market-insight, tool `get_market_flow`, nhận định dòng tiền + VNINDEX + lời khuyên NĐT, chỉ hiện trang chủ, cập nhật 5 phút |
 | 2026-08-21 | **Gỡ bỏ VinaF AI market ticker** (dòng chữ chạy dưới header): xoá endpoint `/api/ai/market-insight`, frontend ticker; giữ tool `get_market_flow` cho chat |
-| 2026-08-16 | Tài liệu: `docs/TUNIX_SPEC.md` (tổng quan) + `docs/TUNIX_DETAILED.md` (chi tiết — tài liệu này) |
+| 2026-08-16 | Tài liệu: `docs/VINAFINTECH_SPEC.md` (tổng quan) + `docs/VINAFINTECH_DETAILED.md` (chi tiết — tài liệu này) |

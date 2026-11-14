@@ -20,7 +20,7 @@ from app.services.signal_engine import indicators as ind
 from app.services.signal_engine.ai.ensemble import EnsembleModel
 from app.services.signal_engine.strategies import STRATEGIES
 
-logger = logging.getLogger("tunix.signal.backtest")
+logger = logging.getLogger("vinafintech.signal.backtest")
 
 _STRATEGY_BY_NAME = {m.NAME: m for m in STRATEGIES}
 

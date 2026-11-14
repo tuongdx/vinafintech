@@ -312,7 +312,7 @@
             function hideTip() { if (tipEl) tipEl.style.display = 'none'; }
             let currentPath = parseIndPath();
             let currentStock = parseStockParam();
-            // View do SHELL chỉ định qua postMessage 'tunix-co-phieu-goto'. Iframe này được dùng CHUNG cho
+            // View do SHELL chỉ định qua postMessage 'vinafintech-co-phieu-goto'. Iframe này được dùng CHUNG cho
             // mọi view (screener / ngành / chi tiết mã), nên khi quay lại/tới một mốc lịch sử thì shell là
             // bên quyết định phải hiển thị view nào — không thể tin vào ?ind/?stock trên src của iframe.
             let viewOverride = null;
@@ -368,7 +368,7 @@
                 if (!currentStock) return;
                 const url = stockUrl(currentStock);
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'tunix-co-phieu-nav', url: url }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-co-phieu-nav', url: url }, '*');
                 }
                 render();
                 notifyParentHeight();
@@ -495,7 +495,7 @@
                 currentStock = null;
                 const url = '/co-phieu' + (path.length ? '/' + path.join('/') : '');
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'tunix-co-phieu-nav', url: url }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-co-phieu-nav', url: url }, '*');
                 }
                 render();
                 notifyParentHeight();
@@ -561,14 +561,14 @@
                 // Báo URL phân cấp đầy đủ (ngành/ngành con/MÃ) để shell cập nhật thanh địa chỉ,
                 // đặc biệt khi vào từ trang chủ / ô tìm kiếm (mới chỉ có ?stock=, chưa có đường ngành).
                 if (window.parent && window.parent !== window && currentStock) {
-                    window.parent.postMessage({ type: 'tunix-co-phieu-nav', url: stockUrl(currentStock) }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-co-phieu-nav', url: stockUrl(currentStock) }, '*');
                 }
                 // Đồng bộ theme cho StockDetail mới ngay khi iframe load xong (đặc biệt khi đổi mã trong dark mode)
                 const f = document.getElementById('cpStockFrame');
                 if (f) {
                     f.addEventListener('load', function() {
                         const mode = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
-                        if (f.contentWindow) f.contentWindow.postMessage({ type: 'tunix-theme', mode: mode }, '*');
+                        if (f.contentWindow) f.contentWindow.postMessage({ type: 'vinafintech-theme', mode: mode }, '*');
                     });
                 }
                 setTimeout(notifyParentHeight, 60);
@@ -730,7 +730,7 @@
             }
 
             function renderNotable() {
-                const gate = window.TuniXMembership;
+                const gate = window.VinaFintechMembership;
                 // Chờ trạng thái block (features) tải xong để quyết định MỞ/KHOÁ (chỉ chờ 1 lần — tránh loop khi guest).
                 if (gate && gate.features === null && !window.__memberChecked) {
                     window.__memberChecked = true;
@@ -835,7 +835,7 @@
                     if (Math.abs(height - (window.__lastSentH || 0)) < 2) return;
                     window.__lastSentH = height;
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'tunix-embed-height', height: height }, '*');
+                        window.parent.postMessage({ type: 'vinafintech-embed-height', height: height }, '*');
                     }
                 } catch (e) {}
             }
@@ -843,18 +843,18 @@
                 const data = event.data;
                 if (!data || !data.type) return;
                 // Theme từ parent index.html → áp dụng + chuyển tiếp xuống StockDetail nhúng
-                if (data.type === 'tunix-theme') {
+                if (data.type === 'vinafintech-theme') {
                     const mode = data.mode === 'dark' ? 'dark' : 'light';
                     localStorage.setItem('theme', mode);
                     applyEmbedTheme(mode);
                     const f = document.getElementById('cpStockFrame');
-                    if (f && f.contentWindow) f.contentWindow.postMessage({ type: 'tunix-theme', mode: mode }, '*');
+                    if (f && f.contentWindow) f.contentWindow.postMessage({ type: 'vinafintech-theme', mode: mode }, '*');
                     setTimeout(notifyParentHeight, 50);
                     return;
                 }
                 // Shell yêu cầu hiển thị ĐÚNG view theo URL hiện tại (back/forward, hoặc mở lại chi tiết
                 // 1 mã trong khi iframe đang ở view khác). Ghi nhớ override để load() không ghi đè lại.
-                if (data.type === 'tunix-co-phieu-goto') {
+                if (data.type === 'vinafintech-co-phieu-goto') {
                     const p = Array.isArray(data.path) ? data.path.filter(Boolean).map(String) : [];
                     const st = data.stock ? String(data.stock).trim().toUpperCase() : null;
                     viewOverride = { path: p, stock: st };
@@ -865,7 +865,7 @@
                 // Message từ StockDetail nhúng (iframe con)
                 const frame = document.getElementById('cpStockFrame');
                 if (frame && frame.contentWindow && event.source === frame.contentWindow) {
-                    if (data.type === 'tunix-embed-height' && typeof data.height === 'number' && data.height > 0) {
+                    if (data.type === 'vinafintech-embed-height' && typeof data.height === 'number' && data.height > 0) {
                         // Gộp các height update liên tiếp (nhiều panel load song song) — chỉ resize
                         // khi ổn định để tránh giật từng nấc, kết hợp transition mượt ở CSS.
                         clearTimeout(frame._hT);
@@ -878,28 +878,28 @@
                         }, 40);
                         return;
                     }
-                    if (data.type === 'tunix-stock-modal') {
+                    if (data.type === 'vinafintech-stock-modal') {
                         // StockDetail con yêu cầu mở modal (Lịch sử cổ tức / Tóm tắt doanh nghiệp)
                         // → FORWARD lên shell index.html để hiển thị modal toàn màn hình.
                         if (window.parent && window.parent !== window) {
-                            window.parent.postMessage({ type: 'tunix-stock-modal', title: data.title, bodyHtml: data.bodyHtml }, '*');
+                            window.parent.postMessage({ type: 'vinafintech-stock-modal', title: data.title, bodyHtml: data.bodyHtml }, '*');
                         }
                         return;
                     }
-                    if (data.type === 'tunix-open-stock' && data.symbol) {
+                    if (data.type === 'vinafintech-open-stock' && data.symbol) {
                         currentStock = String(data.symbol).trim().toUpperCase();
                         const url = stockUrl(currentStock);
                         if (window.parent && window.parent !== window) {
-                            window.parent.postMessage({ type: 'tunix-co-phieu-nav', url: url }, '*');
+                            window.parent.postMessage({ type: 'vinafintech-co-phieu-nav', url: url }, '*');
                         }
                         renderStockDetail();
                         return;
                     }
-                    if (data.type === 'tunix-symbol-changed' && data.symbol) {
+                    if (data.type === 'vinafintech-symbol-changed' && data.symbol) {
                         currentStock = String(data.symbol).trim().toUpperCase();
                         const url = stockUrl(currentStock);
                         if (window.parent && window.parent !== window) {
-                            window.parent.postMessage({ type: 'tunix-co-phieu-nav', url: url }, '*');
+                            window.parent.postMessage({ type: 'vinafintech-co-phieu-nav', url: url }, '*');
                         }
                         const last = screenerEl.querySelector('.cb-item.cb-current');
                         if (last) last.textContent = currentStock;

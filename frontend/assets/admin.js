@@ -6,7 +6,7 @@ async function loadUsers() {
     const res = await fetch("/api/users", {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("tunix_access_token") || ""}`,
+        Authorization: `Bearer ${localStorage.getItem("vinafintech_access_token") || ""}`,
       },
     });
     if (!res.ok) throw new Error("Cannot load users");

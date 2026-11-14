@@ -892,9 +892,9 @@
                         })
                             .then(function(res) { return res.ok ? res.json() : Promise.reject(new Error('login')); })
                             .then(function(auth) {
-                                localStorage.setItem('tunix_access_token', auth.access_token);
-                                if (auth.refresh_token) localStorage.setItem('tunix_refresh_token', auth.refresh_token);
-                                if (auth.user) localStorage.setItem('tunix_user', JSON.stringify(auth.user));
+                                localStorage.setItem('vinafintech_access_token', auth.access_token);
+                                if (auth.refresh_token) localStorage.setItem('vinafintech_refresh_token', auth.refresh_token);
+                                if (auth.user) localStorage.setItem('vinafintech_user', JSON.stringify(auth.user));
                                 showMessage('✅ Đăng ký thành công! Đang vào VinaFintech…', 'success');
                                 setTimeout(function() { window.location.href = '/'; }, 700);
                             })

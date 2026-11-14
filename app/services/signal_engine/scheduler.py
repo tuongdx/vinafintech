@@ -34,7 +34,7 @@ from typing import Any
 from app.services.news_time import now_vn
 from app.services.signal_engine import config as cfg_module
 
-logger = logging.getLogger("tunix.signal.scheduler")
+logger = logging.getLogger("vinafintech.signal.scheduler")
 
 # Khoá cache giữ tóm tắt lần quét gần nhất (cache tiến trình của vnstock_service).
 _LAST_RUN_KEY = "signal-scan-last-run"

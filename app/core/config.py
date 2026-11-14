@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     api_prefix: str = "/api"
 
-    database_url: str = "sqlite:///./tunix.db"
+    database_url: str = "sqlite:///./vinafintech.db"
     secret_key: str = "change_me_in_production"
     algorithm: str = "HS256"
 

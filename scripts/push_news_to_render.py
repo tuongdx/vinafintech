@@ -22,7 +22,7 @@ from sqlalchemy.orm import sessionmaker
 from app import models as m
 from app.db import Base
 
-SOURCE_SQLITE = os.environ.get("SOURCE_SQLITE", "tunix.db")
+SOURCE_SQLITE = os.environ.get("SOURCE_SQLITE", "vinafintech.db")
 TARGET_URL = os.environ.get("TARGET_DATABASE_URL") or (sys.argv[1] if len(sys.argv) > 1 else "")
 
 

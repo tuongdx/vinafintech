@@ -57,7 +57,7 @@ def _resolve_admin(request: Request) -> User | None:
     if auth_header and auth_header.lower().startswith("bearer "):
         token = auth_header[7:].strip()
     if not token:
-        token = request.cookies.get("tunix_admin_token")
+        token = request.cookies.get("vinafintech_admin_token")
     if not token:
         return None
 
@@ -92,7 +92,7 @@ async def protect_admin_pages(request: Request, call_next):
 # Hiệu năng: Cache-Control cho asset tĩnh + API công khai ổn định,
 # và log thời gian phản hồi mỗi request (phục vụ performance monitoring).
 # ============================================================
-_perf_logger = logging.getLogger("tunix.perf")
+_perf_logger = logging.getLogger("vinafintech.perf")
 
 
 def _stable_api_max_age(path: str) -> int | None:

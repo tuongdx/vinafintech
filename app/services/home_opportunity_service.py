@@ -35,7 +35,7 @@ from app.core.config import settings
 from app.services import news_time
 from app.services import vnstock_service as vns
 
-logger = logging.getLogger("tunix.home_opportunities")
+logger = logging.getLogger("vinafintech.home_opportunities")
 
 # 3 nhóm hiển thị ở block "Cơ hội mới" — khớp `renderOpps()` trong Home.html.
 HOME_STRATEGY_KEYS = ("growth", "value", "cash_flow")

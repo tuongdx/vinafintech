@@ -1,4 +1,4 @@
-"""Migrate dữ liệu từ SQLite local (tunix.db) lên Render PostgreSQL.
+"""Migrate dữ liệu từ SQLite local (vinafintech.db) lên Render PostgreSQL.
 
 Cách dùng (chạy 1 lần):
   1. Lấy "External Database URL" của Tunix-test1-db trên Render Dashboard
@@ -22,7 +22,7 @@ from sqlalchemy.orm import sessionmaker
 from app.db import Base
 from app import models as m
 
-SOURCE_SQLITE = os.environ.get("SOURCE_SQLITE", "tunix.db")
+SOURCE_SQLITE = os.environ.get("SOURCE_SQLITE", "vinafintech.db")
 TARGET_URL = os.environ.get("TARGET_DATABASE_URL") or (sys.argv[1] if len(sys.argv) > 1 else "")
 
 

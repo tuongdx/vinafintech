@@ -26,7 +26,7 @@ from app.services.support_resistance import SupportResistanceService
 
 # Người dùng đang chat (per-request context) để tool đọc đúng danh mục của user đó.
 _current_user_id: contextvars.ContextVar[int | None] = contextvars.ContextVar(
-    "tunix_ai_user_id", default=None
+    "vinafintech_ai_user_id", default=None
 )
 
 # ---------------------------------------------------------------------------

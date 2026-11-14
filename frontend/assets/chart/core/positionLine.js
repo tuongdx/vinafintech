@@ -12,7 +12,7 @@
  * Dữ liệu lấy từ GET /api/portfolio/position/{symbol} và cache trong RAM 60s.
  */
 const TTL_MS = 60000;
-const TOKEN_KEY = 'tunix_access_token';
+const TOKEN_KEY = 'vinafintech_access_token';
 
 export class PositionLine {
     /**

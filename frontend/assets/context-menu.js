@@ -3,8 +3,8 @@
  * ==================================================================
  * ⚠️ MẶC ĐỊNH TẮT (user chốt 2026-09-28): website dùng MENU NGẦM ĐỊNH CỦA TRÌNH DUYỆT.
  * File này chỉ còn là thư viện tuỳ chọn — KHÔNG tự gắn listener khi nạp nữa.
- * Bật lại: đặt `window.TUNIX_CONTEXT_MENU_AUTO = true` TRƯỚC thẻ <script> này,
- * hoặc gọi `window.TuniXContextMenu.install()` sau khi trang đã tải.
+ * Bật lại: đặt `window.VINAFINTECH_CONTEXT_MENU_AUTO = true` TRƯỚC thẻ <script> này,
+ * hoặc gọi `window.VinaFintechContextMenu.install()` sau khi trang đã tải.
  *
  * (Bản gốc) Thay menu chuột phải MẶC ĐỊNH của trình duyệt bằng menu của VinaFintech, hiển thị tại vị trí
  * con trỏ, giao diện kiểu Chrome (light + dark-mode), logic theo NGỮ CẢNH click.
@@ -40,20 +40,20 @@
  *   <script src="/static/context-menu.js?v=20260928a"></script>
  *
  * API mở rộng cho từng trang (giữ tương thích bản cũ):
- *   window.TuniXContextMenu.register(rule, factory)
+ *   window.VinaFintechContextMenu.register(rule, factory)
  *     rule(target, event) -> boolean
  *     factory(target, event) -> [item | {divider:true}]
- *   window.TuniXContextMenu.open(items, x, y) / .close()
- *   window.TuniXContextMenu.detectContext(event) / .buildContextMenu(ctx)
- *   window.TuniXContextMenu.actions / .utils / .config / .version
+ *   window.VinaFintechContextMenu.open(items, x, y) / .close()
+ *   window.VinaFintechContextMenu.detectContext(event) / .buildContextMenu(ctx)
+ *   window.VinaFintechContextMenu.actions / .utils / .config / .version
  */
 (function () {
     'use strict';
 
     var VERSION = '20260928a';
-    var STYLE_ID = 'tunix-ctx-style';
-    var TOAST_ID = 'tunix-ctx-toast';
-    var MENU_CLASS = 'tunix-ctx';
+    var STYLE_ID = 'vinafintech-ctx-style';
+    var TOAST_ID = 'vinafintech-ctx-toast';
+    var MENU_CLASS = 'vinafintech-ctx';
     var Z_INDEX = 2147483000;
 
     /* ══════════════════════════════════════════════════════════════════
@@ -173,7 +173,7 @@
                 var url = URL.createObjectURL(blob);
                 var a = document.createElement('a');
                 a.href = url;
-                a.download = filename || 'tunix-download';
+                a.download = filename || 'vinafintech-download';
                 a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
@@ -189,7 +189,7 @@
             fetch(url, { credentials: 'same-origin' })
                 .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
                 .then(function (blob) {
-                    downloadBlob(blob, blob.type || 'application/octet-stream', filename || 'tunix-file');
+                    downloadBlob(blob, blob.type || 'application/octet-stream', filename || 'vinafintech-file');
                     toast('Đã tải xuống');
                 })
                 .catch(function () {
@@ -239,7 +239,7 @@
                     el.id = TOAST_ID;
                     document.body.appendChild(el);
                 }
-                el.className = 'tunix-ctx-toast' + (ok === false ? ' is-warn' : '');
+                el.className = 'vinafintech-ctx-toast' + (ok === false ? ' is-warn' : '');
                 el.innerHTML = '<i class="fa-solid ' + (ok === false ? 'fa-triangle-exclamation' : 'fa-circle-check') + '"></i><span>' + esc(msg) + '</span>';
                 el.classList.add('show');
                 if (toastTimer) clearTimeout(toastTimer);
@@ -265,65 +265,65 @@
      * 2) CSS — tự tiêm (light + dark mode), giống Chrome
      * ══════════════════════════════════════════════════════════════════ */
     var CSS = [
-        '.tunix-ctx{position:fixed;z-index:' + Z_INDEX + ';width:300px;min-width:240px;max-width:300px;',
+        '.vinafintech-ctx{position:fixed;z-index:' + Z_INDEX + ';width:300px;min-width:240px;max-width:300px;',
         '  padding:6px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;',
         '  box-shadow:0 10px 34px rgba(15,23,42,.18),0 2px 8px rgba(15,23,42,.08);',
         '  font-family:\'Inter\',-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;',
         '  font-size:13.5px;line-height:1.35;color:#1f2937;box-sizing:border-box;',
         '  user-select:none;-webkit-user-select:none;overflow-y:auto;overflow-x:hidden;',
-        '  animation:tunix-ctx-in .12s ease-out;transform-origin:top left;}',
-        '@keyframes tunix-ctx-in{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}',
-        '.tunix-ctx:focus{outline:none;}',
+        '  animation:vinafintech-ctx-in .12s ease-out;transform-origin:top left;}',
+        '@keyframes vinafintech-ctx-in{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}',
+        '.vinafintech-ctx:focus{outline:none;}',
         /* Chiều cao/kích thước CỐ ĐỊNH → vị trí menu không lệch khi font/icon load muộn */
-        '.tunix-ctx-item{display:flex;align-items:center;gap:11px;width:100%;height:34px;padding:0 10px;',
+        '.vinafintech-ctx-item{display:flex;align-items:center;gap:11px;width:100%;height:34px;padding:0 10px;',
         '  border:0;background:transparent;color:inherit;border-radius:7px;cursor:pointer;',
         '  text-align:left;font:inherit;white-space:nowrap;box-sizing:border-box;}',
-        '.tunix-ctx-item i{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;',
+        '.vinafintech-ctx-item i{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;',
         '  font-size:13px;color:#64748b;flex:none;}',
-        '.tunix-ctx-item .tunix-ctx-label{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
-        '.tunix-ctx-item:hover,.tunix-ctx-item.is-active{background:#f0f4f8;color:#008080;}',
-        '.tunix-ctx-item:hover i,.tunix-ctx-item.is-active i{color:#008080;}',
-        '.tunix-ctx-item.is-disabled{opacity:.42;cursor:default;}',
-        '.tunix-ctx-item.is-disabled:hover{background:transparent;color:inherit;}',
-        '.tunix-ctx-item.is-disabled:hover i{color:#64748b;}',
-        '.tunix-ctx-kbd{margin-left:auto;padding:0 6px;height:18px;line-height:16px;font-size:11px;color:#94a3b8;flex:none;',
+        '.vinafintech-ctx-item .vinafintech-ctx-label{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+        '.vinafintech-ctx-item:hover,.vinafintech-ctx-item.is-active{background:#f0f4f8;color:#008080;}',
+        '.vinafintech-ctx-item:hover i,.vinafintech-ctx-item.is-active i{color:#008080;}',
+        '.vinafintech-ctx-item.is-disabled{opacity:.42;cursor:default;}',
+        '.vinafintech-ctx-item.is-disabled:hover{background:transparent;color:inherit;}',
+        '.vinafintech-ctx-item.is-disabled:hover i{color:#64748b;}',
+        '.vinafintech-ctx-kbd{margin-left:auto;padding:0 6px;height:18px;line-height:16px;font-size:11px;color:#94a3b8;flex:none;',
         '  border:1px solid #e2e8f0;border-radius:5px;background:#f8fafc;font-variant-numeric:tabular-nums;}',
-        '.tunix-ctx-sep{height:1px;background:#e8edf3;margin:5px 6px;}',
-        '.tunix-ctx-note{padding:4px 10px 2px;font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;}',
+        '.vinafintech-ctx-sep{height:1px;background:#e8edf3;margin:5px 6px;}',
+        '.vinafintech-ctx-note{padding:4px 10px 2px;font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;}',
         /* Toast */
-        '.tunix-ctx-toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:' + (Z_INDEX + 10) + ';',
+        '.vinafintech-ctx-toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:' + (Z_INDEX + 10) + ';',
         '  display:flex;align-items:center;gap:8px;max-width:82vw;padding:10px 16px;border-radius:10px;',
         '  background:#0f172a;color:#fff;font:600 12.5px \'Inter\',system-ui,sans-serif;',
         '  box-shadow:0 10px 30px rgba(15,23,42,.3);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;}',
-        '.tunix-ctx-toast.show{opacity:1;transform:translate(-50%,0);}',
-        '.tunix-ctx-toast i{color:#5fd6cf;}',
-        '.tunix-ctx-toast.is-warn{background:#7a3b12;}',
-        '.tunix-ctx-toast.is-warn i{color:#ffd28a;}',
+        '.vinafintech-ctx-toast.show{opacity:1;transform:translate(-50%,0);}',
+        '.vinafintech-ctx-toast i{color:#5fd6cf;}',
+        '.vinafintech-ctx-toast.is-warn{background:#7a3b12;}',
+        '.vinafintech-ctx-toast.is-warn i{color:#ffd28a;}',
         /* Modal QR */
-        '.tunix-ctx-modal{position:fixed;inset:0;z-index:' + (Z_INDEX + 20) + ';display:flex;align-items:center;justify-content:center;',
+        '.vinafintech-ctx-modal{position:fixed;inset:0;z-index:' + (Z_INDEX + 20) + ';display:flex;align-items:center;justify-content:center;',
         '  background:rgba(15,23,42,.5);backdrop-filter:blur(2px);padding:16px;}',
-        '.tunix-ctx-modal-card{background:#fff;color:#1f2937;border-radius:14px;padding:18px;max-width:330px;width:100%;',
+        '.vinafintech-ctx-modal-card{background:#fff;color:#1f2937;border-radius:14px;padding:18px;max-width:330px;width:100%;',
         '  box-shadow:0 18px 50px rgba(15,23,42,.35);text-align:center;font-family:\'Inter\',system-ui,sans-serif;}',
-        '.tunix-ctx-modal-card h3{margin:0 0 4px;font-size:15px;}',
-        '.tunix-ctx-modal-card p{margin:0 0 12px;font-size:12px;color:#64748b;word-break:break-all;}',
-        '.tunix-ctx-modal-card img{width:240px;height:240px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;}',
-        '.tunix-ctx-modal-actions{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;}',
-        '.tunix-ctx-btn{border:1px solid #dbe4ec;background:#fff;color:#1f2937;border-radius:8px;padding:8px 14px;',
+        '.vinafintech-ctx-modal-card h3{margin:0 0 4px;font-size:15px;}',
+        '.vinafintech-ctx-modal-card p{margin:0 0 12px;font-size:12px;color:#64748b;word-break:break-all;}',
+        '.vinafintech-ctx-modal-card img{width:240px;height:240px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;}',
+        '.vinafintech-ctx-modal-actions{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;}',
+        '.vinafintech-ctx-btn{border:1px solid #dbe4ec;background:#fff;color:#1f2937;border-radius:8px;padding:8px 14px;',
         '  font:600 12.5px inherit;cursor:pointer;}',
-        '.tunix-ctx-btn.primary{background:#008080;border-color:#008080;color:#fff;}',
-        '.tunix-ctx-btn:hover{filter:brightness(.97);}',
+        '.vinafintech-ctx-btn.primary{background:#008080;border-color:#008080;color:#fff;}',
+        '.vinafintech-ctx-btn:hover{filter:brightness(.97);}',
         /* Dark mode */
-        'body.dark-mode .tunix-ctx{background:#161b22;border-color:#30363d;color:#e6edf3;box-shadow:0 12px 40px rgba(0,0,0,.55);}',
-        'body.dark-mode .tunix-ctx-item i{color:#8b949e;}',
-        'body.dark-mode .tunix-ctx-item:hover,body.dark-mode .tunix-ctx-item.is-active{background:#21262d;color:#58a6ff;}',
-        'body.dark-mode .tunix-ctx-item:hover i,body.dark-mode .tunix-ctx-item.is-active i{color:#58a6ff;}',
-        'body.dark-mode .tunix-ctx-kbd{color:#6e7681;border-color:#30363d;background:#21262d;}',
-        'body.dark-mode .tunix-ctx-sep{background:#30363d;}',
-        'body.dark-mode .tunix-ctx-note{color:#6e7681;}',
-        'body.dark-mode .tunix-ctx-modal-card{background:#161b22;color:#e6edf3;border:1px solid #30363d;}',
-        'body.dark-mode .tunix-ctx-modal-card p{color:#8b949e;}',
-        'body.dark-mode .tunix-ctx-btn{background:#21262d;border-color:#30363d;color:#e6edf3;}',
-        'body.dark-mode .tunix-ctx-btn.primary{background:#008080;border-color:#008080;color:#fff;}'
+        'body.dark-mode .vinafintech-ctx{background:#161b22;border-color:#30363d;color:#e6edf3;box-shadow:0 12px 40px rgba(0,0,0,.55);}',
+        'body.dark-mode .vinafintech-ctx-item i{color:#8b949e;}',
+        'body.dark-mode .vinafintech-ctx-item:hover,body.dark-mode .vinafintech-ctx-item.is-active{background:#21262d;color:#58a6ff;}',
+        'body.dark-mode .vinafintech-ctx-item:hover i,body.dark-mode .vinafintech-ctx-item.is-active i{color:#58a6ff;}',
+        'body.dark-mode .vinafintech-ctx-kbd{color:#6e7681;border-color:#30363d;background:#21262d;}',
+        'body.dark-mode .vinafintech-ctx-sep{background:#30363d;}',
+        'body.dark-mode .vinafintech-ctx-note{color:#6e7681;}',
+        'body.dark-mode .vinafintech-ctx-modal-card{background:#161b22;color:#e6edf3;border:1px solid #30363d;}',
+        'body.dark-mode .vinafintech-ctx-modal-card p{color:#8b949e;}',
+        'body.dark-mode .vinafintech-ctx-btn{background:#21262d;border-color:#30363d;color:#e6edf3;}',
+        'body.dark-mode .vinafintech-ctx-btn.primary{background:#008080;border-color:#008080;color:#fff;}'
     ].join('\n');
 
     function ensureStyle() {
@@ -423,16 +423,16 @@
         }
         // Nhúng trong shell → nhờ shell chuyển trang + gửi câu hỏi
         if (window.self !== window.top) {
-            try { window.parent.postMessage({ type: 'tunix-ai-open', prompt: prompt, context: aiContext(ctx, kind) }, '*'); return; } catch (err) { /* ignore */ }
+            try { window.parent.postMessage({ type: 'vinafintech-ai-open', prompt: prompt, context: aiContext(ctx, kind) }, '*'); return; } catch (err) { /* ignore */ }
         }
         // Có API điều hướng của shell
         if (typeof window.openVinaFAiPage === 'function') {
-            try { sessionStorage.setItem('tunix_ai_prompt', prompt); } catch (err) { /* ignore */ }
+            try { sessionStorage.setItem('vinafintech_ai_prompt', prompt); } catch (err) { /* ignore */ }
             window.openVinaFAiPage();
             return;
         }
         // Trang độc lập: lưu prompt rồi sang trang /vinafai
-        try { sessionStorage.setItem('tunix_ai_prompt', prompt); } catch (err) { /* ignore */ }
+        try { sessionStorage.setItem('vinafintech_ai_prompt', prompt); } catch (err) { /* ignore */ }
         location.href = '/vinafai';
     }
 
@@ -479,7 +479,7 @@
         var slug = String(document.title || 'VinaFintech').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').toLowerCase();
         var d = new Date();
         var stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
-        return 'tunix-' + (slug || 'page').slice(0, 60) + '-' + stamp + '.html';
+        return 'vinafintech-' + (slug || 'page').slice(0, 60) + '-' + stamp + '.html';
     }
 
     function mediaSrc(el) {
@@ -677,9 +677,9 @@
 
     function goBackPage() {
         if (window.self !== window.top) {
-            try { window.parent.postMessage({ type: 'tunix-go-back' }, '*'); return; } catch (e) { /* ignore */ }
+            try { window.parent.postMessage({ type: 'vinafintech-go-back' }, '*'); return; } catch (e) { /* ignore */ }
         }
-        if (typeof window.tunixGoBackInApp === 'function') { window.tunixGoBackInApp(); return; }
+        if (typeof window.vinafintechGoBackInApp === 'function') { window.vinafintechGoBackInApp(); return; }
         try {
             var ref = document.referrer || '';
             if (ref && (new URL(ref)).origin === location.origin) { history.back(); return; }
@@ -689,9 +689,9 @@
 
     function goForwardPage() {
         if (window.self !== window.top) {
-            try { window.parent.postMessage({ type: 'tunix-go-forward' }, '*'); return; } catch (e) { /* ignore */ }
+            try { window.parent.postMessage({ type: 'vinafintech-go-forward' }, '*'); return; } catch (e) { /* ignore */ }
         }
-        if (typeof window.tunixGoForwardInApp === 'function') { window.tunixGoForwardInApp(); return; }
+        if (typeof window.vinafintechGoForwardInApp === 'function') { window.vinafintechGoForwardInApp(); return; }
         history.forward();
     }
 
@@ -721,8 +721,8 @@
         try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (err) { /* ignore */ }
         var mode = dark ? 'dark' : 'light';
         try {
-            window.postMessage({ type: 'tunix-set-theme', mode: mode }, '*');
-            window.postMessage({ type: 'tunix-theme', mode: mode }, '*');
+            window.postMessage({ type: 'vinafintech-set-theme', mode: mode }, '*');
+            window.postMessage({ type: 'vinafintech-theme', mode: mode }, '*');
         } catch (err) { /* ignore */ }
         var t = document.getElementById('themeToggle');
         if (t) t.className = dark ? 'fas fa-sun theme-toggle' : 'fas fa-moon theme-toggle';
@@ -736,17 +736,17 @@
         closeQrModal();
         var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=480x480&margin=8&data=' + encodeURIComponent(url);
         var wrap = document.createElement('div');
-        wrap.className = 'tunix-ctx-modal';
+        wrap.className = 'vinafintech-ctx-modal';
         wrap.setAttribute('role', 'dialog');
         wrap.setAttribute('aria-modal', 'true');
         wrap.innerHTML =
-            '<div class="tunix-ctx-modal-card">' +
+            '<div class="vinafintech-ctx-modal-card">' +
                 '<h3>Mã QR cho trang này</h3>' +
                 '<p>' + esc(utils.shortText(url, 120)) + '</p>' +
                 '<img alt="Mã QR của trang" src="' + esc(qrSrc) + '" />' +
-                '<div class="tunix-ctx-modal-actions">' +
-                    '<button type="button" class="tunix-ctx-btn primary" data-qr-copy><i class="fa-solid fa-copy"></i> Sao chép địa chỉ</button>' +
-                    '<button type="button" class="tunix-ctx-btn" data-qr-close>Đóng</button>' +
+                '<div class="vinafintech-ctx-modal-actions">' +
+                    '<button type="button" class="vinafintech-ctx-btn primary" data-qr-copy><i class="fa-solid fa-copy"></i> Sao chép địa chỉ</button>' +
+                    '<button type="button" class="vinafintech-ctx-btn" data-qr-close>Đóng</button>' +
                 '</div>' +
             '</div>';
         document.body.appendChild(wrap);
@@ -957,7 +957,7 @@
 
     function ContextMenuSeparator() {
         var sep = document.createElement('div');
-        sep.className = 'tunix-ctx-sep';
+        sep.className = 'vinafintech-ctx-sep';
         sep.setAttribute('role', 'separator');
         return sep;
     }
@@ -965,14 +965,14 @@
     function ContextMenuItem(item, onActivate) {
         var btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'tunix-ctx-item' + (item.disabled ? ' is-disabled' : '');
+        btn.className = 'vinafintech-ctx-item' + (item.disabled ? ' is-disabled' : '');
         btn.setAttribute('role', 'menuitem');
         btn.setAttribute('tabindex', '-1');
         if (item.disabled) btn.setAttribute('aria-disabled', 'true');
         if (item.hint) btn.title = item.hint;
         btn.innerHTML = '<i class="fa-solid ' + esc(item.icon || 'fa-circle') + '" aria-hidden="true"></i>' +
-            '<span class="tunix-ctx-label">' + esc(item.label) + '</span>' +
-            (item.shortcut ? '<span class="tunix-ctx-kbd">' + esc(item.shortcut) + '</span>' : '');
+            '<span class="vinafintech-ctx-label">' + esc(item.label) + '</span>' +
+            (item.shortcut ? '<span class="vinafintech-ctx-kbd">' + esc(item.shortcut) + '</span>' : '');
         if (!item.disabled) {
             itemEls.push(btn);                       // đăng ký để điều hướng bằng bàn phím
             btn.addEventListener('click', function (ev) {
@@ -1102,7 +1102,7 @@
         if (e.defaultPrevented) return;
         // Chuột phải trên chính menu/modal của VinaFintech → không mở menu mới
         var t = e.target;
-        if (t && t.closest && (t.closest('.' + MENU_CLASS) || t.closest('.tunix-ctx-modal'))) {
+        if (t && t.closest && (t.closest('.' + MENU_CLASS) || t.closest('.vinafintech-ctx-modal'))) {
             e.preventDefault();
             return;
         }
@@ -1198,7 +1198,7 @@
     /* ══════════════════════════════════════════════════════════════════
      * 8) API công khai + khởi tạo
      * ══════════════════════════════════════════════════════════════════ */
-    window.TuniXContextMenu = {
+    window.VinaFintechContextMenu = {
         version: VERSION,
         install: useContextMenu,
         uninstall: uninstall,
@@ -1219,7 +1219,7 @@
     };
 
     // ⚠️ KHÔNG tự bật: mặc định dùng menu ngầm định của TRÌNH DUYỆT (user chốt 2026-09-28).
-    // Bật lại menu VinaFintech bằng `window.TUNIX_CONTEXT_MENU_AUTO = true` (đặt trước khi nạp file)
-    // hoặc `window.TuniXContextMenu.install()` sau khi trang đã tải.
-    if (window.TUNIX_CONTEXT_MENU_AUTO === true) useContextMenu();
+    // Bật lại menu VinaFintech bằng `window.VINAFINTECH_CONTEXT_MENU_AUTO = true` (đặt trước khi nạp file)
+    // hoặc `window.VinaFintechContextMenu.install()` sau khi trang đã tải.
+    if (window.VINAFINTECH_CONTEXT_MENU_AUTO === true) useContextMenu();
 })();

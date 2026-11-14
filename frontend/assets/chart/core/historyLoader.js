@@ -24,7 +24,7 @@
  * < ~30% visible span. Dừng (#3): cache.earliest <= earliestBound, HOẶC request
  * không thêm nến cũ nào (EMPTY-STOP) → đánh dấu complete, tránh lặp trống vô hạn.
  *
- * Log debug: bật bằng window.__tunixChartDebug.debug = true (development).
+ * Log debug: bật bằng window.__vinafintechChartDebug.debug = true (development).
  */
 export class HistoryLoader {
     /**
@@ -164,7 +164,7 @@ export class HistoryLoader {
 
     _log(...args) {
         try {
-            if (window && window.__tunixChartDebug && window.__tunixChartDebug.debug) {
+            if (window && window.__vinafintechChartDebug && window.__vinafintechChartDebug.debug) {
                 console.log.apply(console, ['[Chart]'].concat(args));
             }
         } catch (e) { /* ignore */ }

@@ -15,7 +15,7 @@ from app.services.signal_engine import config as cfg_module
 from app.services.signal_engine import indicators as ind
 from app.services.signal_engine import wavelet as wav
 
-logger = logging.getLogger("tunix.signal.features")
+logger = logging.getLogger("vinafintech.signal.features")
 
 STATUS_OK = "OK"
 STATUS_INSUFFICIENT_DATA = "INSUFFICIENT_DATA"

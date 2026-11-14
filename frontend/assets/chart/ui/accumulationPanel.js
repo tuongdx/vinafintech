@@ -4,7 +4,7 @@
  *
  * ⚠️ THUẬT TOÁN KHÔNG NẰM Ở ĐÂY. Panel dùng CHUNG đúng một nguồn với block
  * "Giả định tích sản <MÃ> 5 năm" của trang chi tiết cổ phiếu:
- *     window.TuniXAccum  ←  /static/accumulationCalc.js
+ *     window.VinaFintechAccum  ←  /static/accumulationCalc.js
  *       - buildMonthlyPrices(history)                 (dữ liệu: GET /api/stocks/{sym}/history?period=5y)
  *       - computeSeries(months, dividends, monthly)   (dữ liệu: GET /api/stocks/{sym}/dividends)
  * Nhờ vậy 2 màn hình luôn ra CÙNG kết quả (trước đây panel tự parse cổ tức bản rút gọn
@@ -12,7 +12,7 @@
  *
  * File này CHỈ lo phần HIỂN THỊ trong panel (chart SVG nhỏ + summary 3 dòng).
  */
-const ACC = (typeof window !== 'undefined') ? window.TuniXAccum : null;
+const ACC = (typeof window !== 'undefined') ? window.VinaFintechAccum : null;
 
 const LINES = [
     { key: 'capital', label: 'Vốn góp', color: '#94a3b8' },

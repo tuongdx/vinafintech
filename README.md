@@ -58,7 +58,7 @@ Service du lieu nam tai app/services/vnstock_service.py (adapter Simplize).
 
 ## 6) Doi ten thuong hieu trong DB (mot lan)
 
-- TuniX -> VinaFintech, TuniAI -> VinaF AI (chi sua du lieu hien thi: FAQ, ten tac gia bai viet, features, site_name).
+- VinaFintech -> VinaFintech, TuniAI -> VinaF AI (chi sua du lieu hien thi: FAQ, ten tac gia bai viet, features, site_name).
 
 ```
 python scripts/rename_brand.py --dry-run
