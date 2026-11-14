@@ -2700,10 +2700,10 @@
             color: #f87171;
         }
     </style>
-    <link rel="stylesheet" href="/static/typography.css?v=20260913i" />
+    <link rel="stylesheet" href="/static/typography.css?v=20261115a" />
     <link rel="stylesheet" href="/static/support-legal.css?v=8" />
 
-    <link rel="stylesheet" href="/static/theme-instant.css?v=20261107a" />
+    <link rel="stylesheet" href="/static/theme-instant.css?v=20261115a" />
 </head>
 <body>
     <!-- SEO-H1 -->
@@ -3142,7 +3142,7 @@
            Các selector #vinafintechAiFab/#vinafintechAiPanel/.ai-* không còn được dùng trong HTML. */
         /* (removed) */
     </style>
-    <script src="/static/header-search.js?v=20260926a"></script>
+    <script src="/static/header-search.js?v=20261115a"></script>
     <script>
         const PAGE_FILE_MAP = {
             TrungTamTroGiup: '/frontend/TrungTamTroGiup.html',
@@ -3410,7 +3410,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20261020a';
+        const CACHE_VERSION = '20261115a';
         // Slug URL đẹp cho các section Quản lý tài sản
         window.__QLTS_SLUGS = {
             overview: 'phan-tich-tai-san',
@@ -3434,6 +3434,41 @@
         window.__TI_SLUG_TO_TOOL = {};
         Object.keys(window.__TI_SLUGS).forEach(function(k) { window.__TI_SLUG_TO_TOOL[window.__TI_SLUGS[k]] = k; });
         window.tiPathFromTool = function(tool) { return '/tien-ich/' + (window.__TI_SLUGS[tool] || 'gia-dieu-chinh-co-phieu'); };
+
+        // Cập nhật <title>/meta khi điều hướng phía client mà KHÔNG nạp lại shell
+        // (vd bấm chip đổi công cụ Tiện ích: nội dung + URL đổi ngay, nhưng document.title
+        // vẫn là của trang trước → tab/thẻ chia sẻ hiển thị sai). Meta lấy từ server để
+        // không phải chép lại nội dung SEO ở client.
+        let shellMetaSeq = 0;
+        function setMetaContent(attr, key, value) {
+            if (!value) return;
+            let el = document.head.querySelector('meta[' + attr + '="' + key + '"]');
+            if (!el) {
+                el = document.createElement('meta');
+                el.setAttribute(attr, key);
+                document.head.appendChild(el);
+            }
+            el.setAttribute('content', value);
+        }
+        window.applyShellMeta = function applyShellMeta(path) {
+            const seq = ++shellMetaSeq;
+            fetch('/api/seo/meta?path=' + encodeURIComponent(path), { headers: { Accept: 'application/json' } })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (m) {
+                    if (!m || seq !== shellMetaSeq || !m.title) return;
+                    document.title = m.title;
+                    setMetaContent('name', 'description', m.description);
+                    setMetaContent('property', 'og:title', m.title);
+                    setMetaContent('property', 'og:description', m.description);
+                    setMetaContent('property', 'og:url', m.canonical);
+                    setMetaContent('name', 'twitter:title', m.title);
+                    setMetaContent('name', 'twitter:description', m.description);
+                    setMetaContent('name', 'robots', m.robots);
+                    const canonical = document.head.querySelector('link[rel="canonical"]');
+                    if (canonical && m.canonical) canonical.setAttribute('href', m.canonical);
+                })
+                .catch(function () { /* lỗi mạng → giữ meta cũ, không ảnh hưởng nội dung */ });
+        };
 
         // Chặn trình duyệt tự khôi phục vị trí cuộn cũ khi chuyển trang (luôn về đầu trang).
         if ('scrollRestoration' in history) {
@@ -4078,6 +4113,7 @@
                         loadContent('/frontend/tienich.html?tool=' + tool);
                         window.history.replaceState({}, '', path);
                     }
+                    if (typeof window.applyShellMeta === 'function') window.applyShellMeta(path);
                 }
                 mmTiWrap.addEventListener('click', function(e) {
                     const it = e.target.closest('.mm-sub-item');
@@ -5446,7 +5482,10 @@
                 // Trang Tiện ích báo bấm chip đổi công cụ → cập nhật URL đẹp /tien-ich/{slug} (không reload iframe).
                 if (/^\/tien-ich(?:\/|$)/.test(window.location.pathname)) {
                     const p = window.tiPathFromTool ? window.tiPathFromTool(data.tool) : ('/tien-ich?tool=' + data.tool);
-                    if (window.location.pathname !== p) window.history.replaceState({}, '', p);
+                    if (window.location.pathname !== p) {
+                        window.history.replaceState({}, '', p);
+                        if (typeof window.applyShellMeta === 'function') window.applyShellMeta(p);
+                    }
                 }
                 return;
             }
@@ -6415,10 +6454,10 @@
         })();
     </script>
 
-    <script src="/static/membership-gate.js?v=20260905f"></script>
-    <script src="/static/context-menu.js?v=20260928a"></script>
+    <script src="/static/membership-gate.js?v=20261115a"></script>
+    <script src="/static/context-menu.js?v=20261115a"></script>
 </body>
 
-    <script src="/static/theme-instant.js?v=20261107a"></script>
+    <script src="/static/theme-instant.js?v=20261115a"></script>
 </body>
 </html>

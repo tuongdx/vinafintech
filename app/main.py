@@ -298,6 +298,20 @@ def _index_response(path: str) -> Response:
     )
 
 
+@app.get("/api/seo/meta")
+def api_seo_meta(path: str = "/") -> dict:
+    """Meta của shell cho 1 path — dùng khi điều hướng phía client không nạp lại trang
+    (vd bấm chip đổi công cụ Tiện ích) để cập nhật title/description/canonical."""
+    meta = seo_service.build_shell_meta(path)
+    return {
+        "path": path,
+        "title": meta.get("title", ""),
+        "description": meta.get("description", ""),
+        "canonical": meta.get("canonical", ""),
+        "robots": meta.get("robots", ""),
+    }
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     ensure_schema()
