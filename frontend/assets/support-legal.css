@@ -176,7 +176,23 @@
   justify-content: center;
 }
 
+/* Icon mạng xã hội nằm ngay dưới địa chỉ văn phòng (trang Liên hệ) */
+#dynamicContent .contact-social {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
 
+#dynamicContent .contact-social a {
+  color: #6b7a8f;
+  font-size: 18px;
+  transition: color 0.2s;
+}
+
+#dynamicContent .contact-social a:hover {
+  color: #008080;
+}
 
 #dynamicContent .category-card:hover,
 #dynamicContent .contact-card:hover,
@@ -642,6 +658,14 @@ body.dark-mode #dynamicContent .search-hint {
 body.dark-mode #dynamicContent .icon-circle,
 body.dark-mode #dynamicContent .step-number {
   background: #21262d;
+  color: #008080;
+}
+
+body.dark-mode #dynamicContent .contact-social a {
+  color: #8b949e;
+}
+
+body.dark-mode #dynamicContent .contact-social a:hover {
   color: #008080;
 }
 
