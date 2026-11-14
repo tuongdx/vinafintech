@@ -9,7 +9,7 @@ import logging
 import secrets
 import time
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from app.core.config import settings
@@ -18,7 +18,7 @@ logger = logging.getLogger("tunix.oauth")
 
 _PROVIDERS = {"google"}
 
-# state -> {next, created_at}; in-memory (single process) — note trong report.
+# state -> {next, redirect_uri, created_at}; in-memory (single process) — note trong report.
 _STATE_STORE: dict[str, dict[str, Any]] = {}
 _STATE_TTL_SECONDS = 600  # 10 phút
 
@@ -30,25 +30,109 @@ def _clean_state() -> None:
         _STATE_STORE.pop(k, None)
 
 
-def store_state(next_url: str | None) -> str:
+def store_state(next_url: str | None, redirect_uri: str | None = None) -> str:
     _clean_state()
     state = secrets.token_urlsafe(24)
-    _STATE_STORE[state] = {"next": next_url or "/", "created_at": time.time()}
+    _STATE_STORE[state] = {
+        "next": next_url or "/",
+        "redirect_uri": redirect_uri or "",
+        "created_at": time.time(),
+    }
     return state
 
 
-def consume_state(state: str | None) -> str | None:
+def consume_state(state: str | None) -> dict[str, Any] | None:
     if not state:
         return None
     _clean_state()
-    item = _STATE_STORE.pop(state, None)
-    return item["next"] if item else None
+    return _STATE_STORE.pop(state, None)
 
 
-def _client_config(provider: str) -> tuple[str, str, str] | None:
+def request_origin(request: Any) -> str:
+    """Origin công khai mà trình duyệt đang dùng (đúng cả khi chạy sau proxy/HTTPS)."""
+    headers = request.headers
+    proto = (headers.get("x-forwarded-proto") or request.url.scheme).split(",")[0].strip()
+    host = (headers.get("x-forwarded-host") or headers.get("host") or request.url.netloc).split(",")[0].strip()
+    return f"{proto}://{host}".rstrip("/")
+
+
+def _origin_for_request(request: Any) -> str:
+    """Origin của request, nâng lên https nếu domain đã khai báo trong .env dùng https.
+
+    Trường hợp proxy không chuyển ``X-Forwarded-Proto``: request vẫn thấy ``http``
+    trong khi domain thật chạy ``https`` → nếu giữ ``http`` thì Google báo
+    ``redirect_uri_mismatch``.
+    """
+    origin = request_origin(request)
+    parsed = urlparse(origin)
+    configured = (settings.frontend_url or "").strip() or (settings.google_redirect_uri or "").strip()
+    configured_parsed = urlparse(configured) if configured else None
+    if (
+        configured_parsed
+        and configured_parsed.scheme == "https"
+        and parsed.scheme == "http"
+        and configured_parsed.netloc.lower() == parsed.netloc.lower()
+    ):
+        return f"https://{parsed.netloc}"
+    return origin
+
+
+def _same_endpoint(a: str, b: str) -> bool:
+    ua, ub = urlparse(a), urlparse(b)
+    return (ua.scheme.lower(), ua.netloc.lower(), ua.path.rstrip("/")) == (
+        ub.scheme.lower(),
+        ub.netloc.lower(),
+        ub.path.rstrip("/"),
+    )
+
+
+def callback_url(provider: str, request: Any) -> str:
+    """``redirect_uri`` gửi Google — phải TRÙNG KHỚP Authorized redirect URI ở Console.
+
+    Ưu tiên biến môi trường, nhưng nếu biến đó còn trỏ domain/path cũ (ví dụ
+    ``https://tunix.onrender.com`` trong khi website đã chạy ở ``https://tunix.vn``)
+    thì dùng host thật của request. Nếu không, Google sẽ redirect popup sang domain
+    không tồn tại ⇒ trình duyệt hiện "Not Found".
+    """
+    derived = f"{_origin_for_request(request)}{settings.api_prefix}/auth/oauth/{provider}/callback"
+    configured = (settings.google_redirect_uri or "").strip() if provider == "google" else ""
+    if not configured or _same_endpoint(configured, derived):
+        return derived
+    logger.warning(
+        "OAuth redirect_uri cấu hình (%s) không khớp domain/đường dẫn thật (%s) — dùng giá trị thật. "
+        "Cần khai báo %s trong Google Cloud Console → Authorized redirect URIs.",
+        configured,
+        derived,
+        derived,
+    )
+    return derived
+
+
+def public_base_url(request: Any) -> str:
+    """URL gốc website dùng cho redirect sau khi đăng nhập.
+
+    Giống ``callback_url``: nếu ``FRONTEND_URL`` trỏ sai host so với domain đang
+    chạy thì dùng domain thật để không đẩy người dùng sang một trang "Not Found".
+    """
+    origin = _origin_for_request(request)
+    configured = (settings.frontend_url or "").strip().rstrip("/")
+    if not configured:
+        return origin
+    if configured.lower() == origin.lower():
+        return configured
+    logger.warning(
+        "FRONTEND_URL (%s) không khớp host đang chạy (%s) — dùng host thật cho OAuth.",
+        configured,
+        origin,
+    )
+    return origin
+
+
+def _client_config(provider: str) -> tuple[str, str] | None:
+    """Trả (client_id, client_secret). ``redirect_uri`` suy ra theo request hiện tại."""
     if provider == "google":
-        if settings.google_client_id and settings.google_client_secret and settings.google_redirect_uri:
-            return settings.google_client_id, settings.google_client_secret, settings.google_redirect_uri
+        if settings.google_client_id and settings.google_client_secret:
+            return settings.google_client_id, settings.google_client_secret
     return None
 
 
@@ -56,14 +140,14 @@ def is_configured(provider: str) -> bool:
     return _client_config(provider) is not None
 
 
-def authorize_url(provider: str, state: str) -> str:
+def authorize_url(provider: str, state: str, redirect_uri: str) -> str:
     if provider == "google":
         return (
             "https://accounts.google.com/o/oauth2/v2/auth?"
             + urlencode(
                 {
                     "client_id": settings.google_client_id,
-                    "redirect_uri": settings.google_redirect_uri,
+                    "redirect_uri": redirect_uri,
                     "response_type": "code",
                     "scope": "openid email profile",
                     "state": state,
@@ -82,8 +166,8 @@ def _http(url: str, data: bytes | None = None, headers: dict[str, str] | None = 
         return json.loads(resp.read().decode("utf-8"))
 
 
-def _google_exchange_code(code: str) -> dict[str, Any]:
-    client_id, client_secret, redirect_uri = _client_config("google")  # type: ignore[misc]
+def _google_exchange_code(code: str, redirect_uri: str) -> dict[str, Any]:
+    client_id, client_secret = _client_config("google")  # type: ignore[misc]
     body = urlencode(
         {
             "code": code,
@@ -113,9 +197,9 @@ def _google_exchange_code(code: str) -> dict[str, Any]:
     }
 
 
-def exchange_code(provider: str, code: str) -> dict[str, Any]:
+def exchange_code(provider: str, code: str, redirect_uri: str) -> dict[str, Any]:
     if provider == "google":
-        return _google_exchange_code(code)
+        return _google_exchange_code(code, redirect_uri)
     raise ValueError(f"Unsupported provider: {provider}")
 
 

@@ -2,20 +2,22 @@ import gc
 import logging
 import re
 import time
+import unicodedata
 from pathlib import Path
+from xml.sax.saxutils import escape as xml_escape
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.security import decode_token
 from app.db import SessionLocal
 from app.db_schema import ensure_schema
-from app.models import RoleEnum, User
-from app.services import admin_log
+from app.models import News, NewsStatusEnum, RoleEnum, User
+from app.services import admin_log, prerender_service, seo_service
 from app.routers import ai, alerts, asset_events, assets, auth, bank_rates, chart, contact, crypto, crypto_signals, crypto_watchlist, dashboard, exchange, faqs, features, feedback, gold, logs, membership, news, notifications, plans, portfolio, signal_public, signals_admin, stock_signals, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
@@ -158,6 +160,12 @@ async def cache_and_timing(request: Request, call_next):
 
     if request.method == "GET" and response.status_code == 200:
         path = request.url.path
+        # File HTML nội dung nhúng (/frontend/*.html) chỉ phục vụ render iframe;
+        # URL chuẩn của người dùng là route sạch (/thi-truong, /co-phieu, ...).
+        # Đánh dấu noindex để Google không index bản sao /frontend/..., nhưng vẫn
+        # cho crawler tải file (cần thiết để render nội dung iframe).
+        if path.startswith("/frontend/") and path.endswith(".html"):
+            response.headers["X-Robots-Tag"] = "noindex, nofollow"
         # Asset tĩnh (JS/CSS/ảnh) — không phải HTML.
         # Nếu URL có tham số version (?v=...) thì nội dung là BẤT BIẾN → cache 1 năm
         # (không cần revalidate) ⇒ chuyển trang sau này không tốn request nào cho asset.
@@ -257,6 +265,37 @@ frontend_path = Path(settings.frontend_dir)
 if frontend_path.exists():
     app.mount("/static", StaticFiles(directory=str(frontend_path / "assets")), name="static")
     app.mount("/frontend", StaticFiles(directory=str(frontend_path), html=True), name="frontend")
+
+
+# Shell index.html dùng chung cho nhiều URL sạch → cache bản gốc, mỗi request chỉ
+# thay title/description/canonical/OG/JSON-LD theo route (xem app/services/seo_service.py).
+_INDEX_SHELL_CACHE: dict[str, object] = {"mtime": 0.0, "html": ""}
+
+
+def _read_index_shell() -> str:
+    index_file = frontend_path / "index.html"
+    if not index_file.exists():
+        raise HTTPException(status_code=404, detail="Index file not found")
+    mtime = index_file.stat().st_mtime
+    if not _INDEX_SHELL_CACHE["html"] or _INDEX_SHELL_CACHE["mtime"] != mtime:
+        _INDEX_SHELL_CACHE["html"] = index_file.read_text(encoding="utf-8")
+        _INDEX_SHELL_CACHE["mtime"] = mtime
+    return str(_INDEX_SHELL_CACHE["html"])
+
+
+def _index_response(path: str) -> Response:
+    meta = seo_service.build_shell_meta(path)
+    headers = {"Cache-Control": "no-store"}
+    if "noindex" in str(meta.get("robots", "")):
+        headers["X-Robots-Tag"] = "noindex, nofollow"
+        prerender_html = ""
+    else:
+        prerender_html = prerender_service.build_prerender_html(path)
+    return Response(
+        content=seo_service.render_shell(_read_index_shell(), meta, prerender_html),
+        media_type="text/html",
+        headers=headers,
+    )
 
 
 @app.on_event("startup")
@@ -423,10 +462,9 @@ def _warm_home_caches() -> None:
 
 @app.get("/")
 def root():
-    index_file = frontend_path / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    return {"message": "VinaFintech API running"}
+    if not (frontend_path / "index.html").exists():
+        return {"message": "VinaFintech API running"}
+    return _index_response("/")
 
 
 @app.get("/api/health")
@@ -543,6 +581,148 @@ INDEX_SHELL_PAGES = {
 }
 
 
+# ============================================================
+# SEO technical: robots.txt + sitemap.xml
+# ============================================================
+_STATIC_SITEMAP_PATHS: tuple[tuple[str, str, float], ...] = (
+    ("/", "daily", 1.0),
+    ("/thi-truong", "daily", 0.9),
+    ("/co-phieu", "daily", 0.9),
+    ("/co-phieu/nganh", "weekly", 0.7),
+    ("/tin-tuc", "daily", 0.9),
+    ("/crypto", "daily", 0.8),
+    ("/gia-vang-bac", "daily", 0.8),
+    ("/ty-gia-ngoai-te", "daily", 0.7),
+    ("/lai-ngan-hang", "daily", 0.7),
+    ("/kham-pha", "weekly", 0.7),
+    ("/vinafai", "weekly", 0.6),
+    ("/tien-ich", "weekly", 0.6),
+    ("/tien-ich/gia-dieu-chinh-co-phieu", "monthly", 0.5),
+    ("/tien-ich/chia-deu-von-dau-tu", "monthly", 0.5),
+    ("/tien-ich/loi-nhuan-tien-gui", "monthly", 0.5),
+    ("/tien-ich/ty-gia-ngoai-te", "monthly", 0.5),
+    ("/CauHoiThuongGap", "monthly", 0.5),
+    ("/HuongDanSuDung", "monthly", 0.5),
+    ("/TrungTamTroGiup", "monthly", 0.5),
+    ("/LienHe", "monthly", 0.4),
+    ("/GopY", "monthly", 0.4),
+    ("/DieuKhoanSuDung", "yearly", 0.3),
+    ("/ChinhSachBaoMat", "yearly", 0.3),
+    ("/MienTruTrachNhiem", "yearly", 0.3),
+    # URL danh mục tin tức
+    ("/chung-khoan", "daily", 0.7),
+    ("/ngan-hang", "daily", 0.7),
+    ("/bat-dong-san", "daily", 0.7),
+    ("/doanh-nghiep", "daily", 0.7),
+    ("/dong-tien-thong-minh", "daily", 0.7),
+    ("/tai-chinh-quoc-te", "daily", 0.7),
+    ("/cong-nghe", "daily", 0.7),
+    ("/tien-ao", "daily", 0.7),
+)
+
+_SITEMAP_CACHE_TTL = 3600
+_sitemap_cache: dict[str, object] = {"ts": 0.0, "xml": ""}
+
+
+def _site_base() -> str:
+    """Domain công khai dùng cho robots/sitemap."""
+    base = (settings.app_url or settings.frontend_url or "https://tunix.vn").strip().rstrip("/")
+    if settings.app_env == "production" and ("localhost" in base or "127.0.0.1" in base):
+        return "https://tunix.vn"
+    return base or "https://tunix.vn"
+
+
+def _seo_slug(text: str) -> str:
+    """Bỏ dấu tiếng Việt + ký tự đặc biệt → slug ASCII (khớp cách frontend dựng URL bài viết)."""
+    value = (text or "").replace("đ", "d").replace("Đ", "D")
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(ch for ch in value if not unicodedata.combining(ch))
+    value = re.sub(r"[^a-z0-9]+", "-", value.lower())
+    return value.strip("-")
+
+
+def _build_sitemap_xml() -> str:
+    base = _site_base()
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+    for path, changefreq, priority in _STATIC_SITEMAP_PATHS:
+        parts.append(
+            f"<url><loc>{xml_escape(base + path)}</loc>"
+            f"<changefreq>{changefreq}</changefreq><priority>{priority:.1f}</priority></url>"
+        )
+
+    # Bài viết đã duyệt/đăng — URL đẹp /{slug}-{id}.html (frontend dựng đúng định dạng này).
+    try:
+        db = SessionLocal()
+        try:
+            rows = (
+                db.query(News.id, News.title, News.published_at, News.created_at)
+                .filter(News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published]))
+                .order_by(News.id.desc())
+                .limit(5000)
+                .all()
+            )
+        finally:
+            db.close()
+        for news_id, title, published_at, created_at in rows:
+            slug = _seo_slug(title)
+            if not slug:
+                continue
+            last = published_at or created_at
+            lastmod = f"<lastmod>{last.date().isoformat()}</lastmod>" if last else ""
+            parts.append(
+                f"<url><loc>{xml_escape(f'{base}/{slug}-{news_id}.html')}</loc>{lastmod}"
+                f"<changefreq>weekly</changefreq><priority>0.6</priority></url>"
+            )
+    except Exception:  # noqa: BLE001 — lỗi DB không được làm sitemap 500
+        logging.getLogger(__name__).warning("sitemap: cannot load published news", exc_info=True)
+
+    parts.append("</urlset>")
+    return "\n".join(parts)
+
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots_txt():
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /QuanTri",
+        "Disallow: /AdminLogin",
+        "Disallow: /admin/",
+        "Disallow: /Login",
+        "Disallow: /register",
+        "Disallow: /forgot-password",
+        "Disallow: /reset-password",
+        "Disallow: /verify-email",
+        "Disallow: /taikhoan",
+        "Disallow: /caidat",
+        "Disallow: /doimatkhau",
+        "Disallow: /quan-ly-tai-san",
+        "Disallow: /tin-hieu",
+        "Disallow: /tintuc",
+        "Disallow: /StockDetail",
+        "",
+        f"Sitemap: {_site_base()}/sitemap.xml",
+        "",
+    ]
+    return PlainTextResponse("\n".join(lines), headers={"Cache-Control": "public, max-age=3600"})
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+def sitemap_xml():
+    now = time.time()
+    if not _sitemap_cache["xml"] or now - float(_sitemap_cache["ts"]) > _SITEMAP_CACHE_TTL:
+        _sitemap_cache["xml"] = _build_sitemap_xml()
+        _sitemap_cache["ts"] = now
+    return Response(
+        content=str(_sitemap_cache["xml"]),
+        media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
 @app.get("/admin/login")
 def admin_login_page():
     """Trang đăng nhập quản trị — cùng phong cách VinaFintech."""
@@ -589,7 +769,7 @@ def _co_phieu_sector_url(symbol: str) -> str:
 def co_phieu_stock(symbol: str):
     """URL đẹp chi tiết cổ phiếu tại trang cổ phiếu: /co-phieu/ACB (giữ shell).
 
-    Canonical hoá: nếu biết ngành của mã → 302 sang
+    Canonical hoá: nếu biết ngành của mã → 301 sang
     /co-phieu/nganh/{sector}/{industry}/{MÃ} để chi tiết cổ phiếu chỉ có MỘT kiểu URL
     (khớp đúng URL mà trang Cổ phiếu dùng khi duyệt theo ngành).
     """
@@ -597,94 +777,71 @@ def co_phieu_stock(symbol: str):
     if symbol.strip().lower() != "nganh":
         target = _co_phieu_sector_url(symbol)
         if target:
-            return RedirectResponse(url=target, status_code=302)
-    index_file = frontend_path / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    raise HTTPException(status_code=404, detail="Index file not found")
+            return RedirectResponse(url=target, status_code=301)
+    return _index_response(f"/co-phieu/{symbol}")
 
 
 @app.get("/co-phieu/nganh/{sub1}/{sub2}/{symbol}")
 def co_phieu_nganh_stock(sub1: str, sub2: str, symbol: str):
     """URL đẹp chi tiết cổ phiếu theo ngành: /co-phieu/nganh/tai-chinh/tai-chinh-ngan-hang/ACB (giữ shell)."""
-    index_file = frontend_path / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    raise HTTPException(status_code=404, detail="Index file not found")
+    return _index_response(f"/co-phieu/nganh/{sub1}/{sub2}/{symbol}")
 
 
 @app.get("/co-phieu/nganh/{sub1}/{sub2}")
 def co_phieu_nganh_sub2(sub1: str, sub2: str):
     """URL đẹp phân cấp ngành cấp 2: /co-phieu/nganh/tai-chinh/tai-chinh-ngan-hang (giữ shell)."""
-    index_file = frontend_path / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    raise HTTPException(status_code=404, detail="Index file not found")
+    return _index_response(f"/co-phieu/nganh/{sub1}/{sub2}")
 
 
 @app.get("/co-phieu/nganh/{sub1}")
 def co_phieu_nganh_sub1(sub1: str):
     """URL đẹp phân cấp ngành cấp 1: /co-phieu/nganh/tai-chinh (giữ shell)."""
-    index_file = frontend_path / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    raise HTTPException(status_code=404, detail="Index file not found")
+    return _index_response(f"/co-phieu/nganh/{sub1}")
 
 
 @app.get("/co-phieu/nganh")
 def co_phieu_nganh():
     """URL đẹp danh sách nhóm ngành: /co-phieu/nganh (giữ shell)."""
-    index_file = frontend_path / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    raise HTTPException(status_code=404, detail="Index file not found")
+    return _index_response("/co-phieu/nganh")
 
 
 @app.get("/cophieu-{symbol}")
 def stock_page(symbol: str):
-    """URL đẹp cho trang chi tiết cổ phiếu: /cophieu-HDB (giữ nguyên URL, không redirect ?symbol=)."""
-    index_file = frontend_path / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    raise HTTPException(status_code=404, detail="Index file not found")
+    """URL cũ /cophieu-HDB → 301 về URL ngành chuẩn nếu đã biết ngành (tránh trùng lặp SEO)."""
+    target = _co_phieu_sector_url(symbol)
+    if target:
+        return RedirectResponse(url=target, status_code=301)
+    return _index_response(f"/cophieu-{symbol}")
 
 
 @app.get("/quan-ly-tai-san/{section}")
 def qlts_section_page(section: str):
     """URL đẹp section Quản lý tài sản: /quan-ly-tai-san/phan-tich-tai-san (giữ shell)."""
-    index_file = frontend_path / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    raise HTTPException(status_code=404, detail="Index file not found")
+    return _index_response(f"/quan-ly-tai-san/{section}")
 
 
 @app.get("/tien-ich/{tool}")
 def tien_ich_tool_page(tool: str):
     """URL đẹp công cụ Tiện ích: /tien-ich/gia-dieu-chinh-co-phieu (giữ shell)."""
-    index_file = frontend_path / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    raise HTTPException(status_code=404, detail="Index file not found")
+    return _index_response(f"/tien-ich/{tool}")
 
 
 @app.get("/crypto/{symbol}")
 def crypto_coin_page(symbol: str):
     """URL đẹp chi tiết coin: /crypto/BTC → giữ shell, nội dung nạp vào iframe (crypto.html?symbol=BTC)."""
-    index_file = frontend_path / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-    raise HTTPException(status_code=404, detail="Index file not found")
+    return _index_response(f"/crypto/{symbol}")
 
 
 @app.get("/{page_name}")
 def frontend_page(page_name: str):
+    # /Index là bản sao của trang chủ → 301 về "/" để chỉ còn một URL chuẩn.
+    if page_name.lower() == "index":
+        return RedirectResponse(url="/", status_code=301)
+
     # URL bài viết dạng đẹp: /{slug}-{id}.html → mở trang chủ với bài trong left-col
     pretty_match = re.fullmatch(r".+-\d+\.html", page_name)
     if pretty_match:
-        index_file = frontend_path / "index.html"
-        if index_file.exists():
-            return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-        raise HTTPException(status_code=404, detail="Index file not found")
+        return _index_response(f"/{page_name}")
 
     file_name = PAGE_MAP.get(page_name)
     if not file_name:
@@ -692,10 +849,7 @@ def frontend_page(page_name: str):
 
     if page_name in INDEX_SHELL_PAGES:
         # Phục vụ index.html trực tiếp để giữ URL đẹp /Trang (không redirect sang ?page=)
-        index_file = frontend_path / "index.html"
-        if index_file.exists():
-            return FileResponse(str(index_file), headers={"Cache-Control": "no-store"})
-        raise HTTPException(status_code=404, detail="Index file not found")
+        return _index_response(f"/{page_name}")
 
     page_file = frontend_path / file_name
     if not page_file.exists():

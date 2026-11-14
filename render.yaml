@@ -41,6 +41,18 @@ services:
         fromDatabase:
           name: Tunix-test1-db
           property: connectionString
-      # Có thể set sau khi biết URL thật của service (để link reset mật khẩu đúng)
+      # Domain thật của website (link reset mật khẩu + redirect sau OAuth Google).
+      # Đổi domain thì sửa Ở ĐÂY và thêm domain mới vào Google Cloud Console
+      # (Authorized JavaScript origins + Authorized redirect URIs).
       - key: FRONTEND_URL
-        value: https://tunix.onrender.com
+        value: https://tunix.vn
+      - key: APP_URL
+        value: https://tunix.vn
+      # OAuth Google — client id/secret nhập tay ở Dashboard (không lưu secret trong git)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      # Phải TRÙNG KHỚP "Authorized redirect URI" của Google Cloud Console
+      - key: GOOGLE_REDIRECT_URI
+        value: https://tunix.vn/api/auth/oauth/google/callback

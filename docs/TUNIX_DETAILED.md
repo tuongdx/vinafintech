@@ -312,7 +312,7 @@ breadth:  { up, down, flat }   (best-effort, tốn kém)
 - **Service**: `VinaFintech` (web, python, free, singapore, `autoDeploy: true`).
   - `buildCommand: pip install -r requirements.txt`
   - `startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT`
-  - Env: `APP_ENV=production`, `SECRET_KEY` (generateValue), `DATABASE_URL` (from DB), `FRONTEND_URL=https://tunix.onrender.com`, `DEEPSEEK_API_KEY` (sync:false — set thủ công).
+  - Env: `APP_ENV=production`, `SECRET_KEY` (generateValue), `DATABASE_URL` (from DB), `FRONTEND_URL=https://tunix.vn`, `GOOGLE_REDIRECT_URI=https://tunix.vn/api/auth/oauth/google/callback`, `DEEPSEEK_API_KEY` (sync:false — set thủ công).
 
 **Luồng deploy**: `git push origin main` → Render autoDeploy. Scripts: `scripts/migrate_to_render.py`, `push_news_to_render.py`, `create_superadmin.py`, `import_markettimes_news.py`, `backfill_news_published_at.py` (bổ sung ngày giờ đăng cho bài cũ — chạy 1 lần sau khi có cột `news.published_at`).
 

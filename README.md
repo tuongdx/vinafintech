@@ -39,6 +39,7 @@ Du an khoi tao backend FastAPI + frontend HTML/CSS/JS cho he thong phan tich chu
 - Features: /api/features + /free-mode
 - Dashboard: /api/dashboard/stats
 - Logs: /api/logs
+- SEO: /robots.txt, /sitemap.xml; nội dung URL sạch được SSR/prerender (app/services/prerender_service.py)
 
 ## 4) Luu y ve du lieu thi truong
 
@@ -55,7 +56,21 @@ Service du lieu nam tai app/services/vnstock_service.py (adapter Simplize).
 - frontend/Login.html: dang nhap JWT
 - frontend/QuanTri.html: dashboard thong ke + danh sach user
 
-## 6) Ke hoach tiep theo de hoan thien production
+## 6) Doi ten thuong hieu trong DB (mot lan)
+
+- TuniX -> VinaFintech, TuniAI -> VinaF AI (chi sua du lieu hien thi: FAQ, ten tac gia bai viet, features, site_name).
+
+```
+python scripts/rename_brand.py --dry-run
+python scripts/rename_brand.py
+
+# (tuy chon) cap nhat ca lich su chat AI
+python scripts/rename_brand.py --include-history
+```
+
+Voi production (PostgreSQL Render), dat `DATABASE_URL` truoc khi chay.
+
+## 7) Ke hoach tiep theo de hoan thien production
 
 - Chuyen cache sang Redis that su (hien tai la in-memory TTL)
 - Dung Alembic de quan ly migration schema

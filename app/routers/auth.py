@@ -461,43 +461,57 @@ def change_password(
 # OAuth Google
 # ---------------------------------------------------------------------------
 @router.get("/google-config")
-def google_config():
+def google_config(request: Request):
     """Trả client_id để frontend dựng nút Google Sign-In (Google Identity Services).
-    Không expose secret — chỉ client_id (public)."""
+    Không expose secret — chỉ client_id (public) và redirect_uri đang dùng thật
+    (hữu ích để đối chiếu với Google Cloud Console khi deploy domain mới)."""
+    configured = oauth_service.is_configured("google")
     return {
         "client_id": settings.google_client_id,
-        "configured": bool(settings.google_client_id),
+        "configured": configured,
+        "redirect_uri": oauth_service.callback_url("google", request) if configured else "",
     }
 
 
 @router.get("/oauth/{provider}/authorize")
-def oauth_authorize(provider: str, next: str | None = Query(default=None), db: Session = Depends(get_db)):
+def oauth_authorize(provider: str, request: Request, next: str | None = Query(default=None), db: Session = Depends(get_db)):
     if provider not in oauth_service._PROVIDERS:
         raise HTTPException(status_code=404, detail="Provider không hợp lệ.")
+    base_url = oauth_service.public_base_url(request)
     if not oauth_service.is_configured(provider):
-        return RedirectResponse(url=f"{settings.frontend_url}/Login?oauth_error=not_configured&provider={provider}")
-    state = oauth_service.store_state(next)
-    return RedirectResponse(url=oauth_service.authorize_url(provider, state))
+        return RedirectResponse(url=f"{base_url}/Login?oauth_error=not_configured&provider={provider}")
+    redirect_uri = oauth_service.callback_url(provider, request)
+    state = oauth_service.store_state(next, redirect_uri)
+    return RedirectResponse(url=oauth_service.authorize_url(provider, state, redirect_uri))
 
 
-def _oauth_callback(db: Session, provider: str, code: str | None, state: str | None, oauth_error: str | None):
-    next_url = oauth_service.consume_state(state)
-    if not next_url:
-        next_url = "/"
+def _oauth_callback(
+    db: Session,
+    provider: str,
+    request: Request,
+    code: str | None,
+    state: str | None,
+    oauth_error: str | None,
+):
+    base_url = oauth_service.public_base_url(request)
+    state_item = oauth_service.consume_state(state) or {}
+    next_url = state_item.get("next") or "/"
+    # Google yêu cầu redirect_uri của bước đổi code TRÙNG với bước authorize.
+    redirect_uri = state_item.get("redirect_uri") or oauth_service.callback_url(provider, request)
 
     if oauth_error:
-        return RedirectResponse(url=f"{settings.frontend_url}/Login?oauth_error={quote(oauth_error)}")
+        return RedirectResponse(url=f"{base_url}/Login?oauth_error={quote(oauth_error)}")
 
     if not code:
-        return RedirectResponse(url=f"{settings.frontend_url}/Login?oauth_error=access_denied")
+        return RedirectResponse(url=f"{base_url}/Login?oauth_error=access_denied")
 
     try:
-        profile = oauth_service.exchange_code(provider, code)
+        profile = oauth_service.exchange_code(provider, code, redirect_uri)
     except Exception:  # noqa: BLE001
-        return RedirectResponse(url=f"{settings.frontend_url}/Login?oauth_error=oauth_failed&provider={provider}")
+        return RedirectResponse(url=f"{base_url}/Login?oauth_error=oauth_failed&provider={provider}")
 
     if not profile.get("provider_user_id"):
-        return RedirectResponse(url=f"{settings.frontend_url}/Login?oauth_error=oauth_failed&provider={provider}")
+        return RedirectResponse(url=f"{base_url}/Login?oauth_error=oauth_failed&provider={provider}")
 
     account = (
         db.query(SocialAccount)
@@ -514,7 +528,7 @@ def _oauth_callback(db: Session, provider: str, code: str | None, state: str | N
         email = profile.get("email")
         if not email:
             # Nhà cung cấp không trả email → yêu cầu bổ sung (không tạo tài khoản lỗi)
-            return RedirectResponse(url=f"{settings.frontend_url}/Login?oauth_error=email_required&provider={provider}")
+            return RedirectResponse(url=f"{base_url}/Login?oauth_error=email_required&provider={provider}")
 
         user = _safe_user_lookup(email, db)
         if user:
@@ -558,7 +572,7 @@ def _oauth_callback(db: Session, provider: str, code: str | None, state: str | N
     q = quote(next_url)
     return RedirectResponse(
         url=(
-            f"{settings.frontend_url}/Login?oauth=success"
+            f"{base_url}/Login?oauth=success"
             f"&access_token={tokens.access_token}&refresh_token={tokens.refresh_token}&next={q}"
         )
     )
@@ -566,9 +580,10 @@ def _oauth_callback(db: Session, provider: str, code: str | None, state: str | N
 
 @router.get("/oauth/google/callback")
 def oauth_google_callback(
+    request: Request,
     code: str | None = Query(default=None),
     state: str | None = Query(default=None),
     error: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    return _oauth_callback(db, "google", code, state, error)
+    return _oauth_callback(db, "google", request, code, state, error)

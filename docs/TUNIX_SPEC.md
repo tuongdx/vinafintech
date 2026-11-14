@@ -225,7 +225,8 @@ Thư mục `frontend/assets/chart/`:
 
 - **Render** (`render.yaml`): web service `VinaFintech` + Postgres `Tunix-test1-db` (region Singapore), `autoDeploy: true` khi push `main`.
 - `buildCommand: pip install -r requirements.txt`, `startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT`.
-- Env: `APP_ENV=production`, `SECRET_KEY` (tự sinh), `DATABASE_URL` (từ DB), `FRONTEND_URL=https://tunix.onrender.com`, `DEEPSEEK_API_KEY` (set thủ công).
+- Env: `APP_ENV=production`, `SECRET_KEY` (tự sinh), `DATABASE_URL` (từ DB), `FRONTEND_URL=https://tunix.vn`, `GOOGLE_CLIENT_ID/SECRET` (set thủ công), `GOOGLE_REDIRECT_URI=https://tunix.vn/api/auth/oauth/google/callback`, `DEEPSEEK_API_KEY` (set thủ công).
+- **OAuth Google khi đổi domain**: khai báo domain thật trong Google Cloud Console → *Authorized JavaScript origins* (`https://tunix.vn`) và *Authorized redirect URIs* (`https://tunix.vn/api/auth/oauth/google/callback`). Nếu `GOOGLE_REDIRECT_URI` còn trỏ domain cũ, Google sẽ redirect popup sang domain không tồn tại ⇒ trình duyệt hiện **"Not Found"**. Backend tự suy ra redirect URI theo host thật của request; gọi `GET /api/auth/google-config` để xem `redirect_uri` đang dùng mà đối chiếu với Console.
 - Scripts: `migrate_to_render.py`, `push_news_to_render.py`, `create_superadmin.py`.
 
 ---
