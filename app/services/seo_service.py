@@ -13,6 +13,8 @@ import re
 import unicodedata
 from pathlib import Path
 
+from app.services import sector_taxonomy
+
 SITE = "https://tunix.vn"
 OG_IMAGE = f"{SITE}/frontend/Logo/VinaFintechCause.png"
 OG_IMAGE_W, OG_IMAGE_H = 1536, 1024
@@ -318,19 +320,7 @@ TOOL_ROUTES: dict[str, tuple[str, str]] = {
     ),
 }
 
-SECTOR_LABELS = {
-    "tai-chinh": "Tài chính",
-    "cong-nghe": "Công nghệ",
-    "bat-dong-san": "Bất động sản",
-    "nguyen-vat-lieu": "Nguyên vật liệu",
-    "hang-hoa-thiet-yeu": "Hàng hóa thiết yếu",
-    "hang-hoa-khong-thiet-yeu": "Hàng hóa không thiết yếu",
-    "nang-luong": "Năng lượng",
-    "cong-nghiep": "Công nghiệp",
-    "cham-soc-suc-khoe": "Chăm sóc sức khỏe",
-    "tien-ich": "Tiện ích",
-    "tai-chinh-ngan-hang": "Tài chính ngân hàng",
-}
+SECTOR_LABELS = sector_taxonomy.SECTOR_LABELS
 
 PRIVATE_ROUTES: dict[str, tuple[str, str]] = {
     "/taikhoan": ("Thông tin tài khoản - VinaFintech", "Quản lý thông tin tài khoản VinaFintech."),

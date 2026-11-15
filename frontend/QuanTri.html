@@ -4066,12 +4066,13 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width:15%;">Mã cổ phiếu</th>
+                                <th style="width:12%;">Mã cổ phiếu</th>
                                 <th>Tên công ty</th>
-                                <th style="width:12%;">Sàn</th>
-                                <th style="width:12%;">Loại</th>
-                                <th style="width:16%;">Ngày thêm</th>
-                                <th style="width:14%;">Thao tác</th>
+                                <th style="width:9%;">Sàn</th>
+                                <th style="width:17%;">Nhóm ngành</th>
+                                <th style="width:10%;">Loại</th>
+                                <th style="width:14%;">Ngày thêm</th>
+                                <th style="width:10%;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="stockTableBody"></tbody>
@@ -4081,7 +4082,8 @@
                     <i class="fas fa-info-circle"></i> Bảng liệt kê <strong>toàn bộ cổ phiếu</strong> hiện có trên các sàn
                     (HOSE, HNX, UPCoM) cùng với các mã mới do hệ thống tự thêm khi quét (cột "Loại" = <em>Tự cập nhật</em>).
                     Khi có cổ phiếu mới IPO, nhấn nút <strong>Quét &amp; thêm cổ phiếu mới</strong> ở trên để các API dữ liệu
-                    (giá, lịch sử, báo cáo…) nhận dạng được mã này.
+                    (giá, lịch sử, báo cáo…) nhận dạng được mã này — hệ thống đồng thời <strong>tự động phân nhóm ngành (ICB)</strong>
+                    cho mã mới nên mã xuất hiện ngay trong cây nhóm ngành và bộ lọc cổ phiếu.
                 </div>
             </div>
 
@@ -6776,7 +6778,7 @@
 
             const hasFilters = !!(fSymbol || fName || fExchange || fType || fDate);
             if (!list.length) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#8a99b1;padding:24px;">` +
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#8a99b1;padding:24px;">` +
                     (hasFilters
                         ? 'Không tìm thấy cổ phiếu phù hợp với bộ lọc hiện tại.'
                         : 'Chưa có mã cổ phiếu nào trong danh sách.') +
@@ -6793,17 +6795,20 @@
                     ? '<span style="display:inline-block;background:#efe9f7;color:#8e44ad;font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;">Tự cập nhật</span>'
                     : '<span style="color:#8a99b1;font-size:12px;">Hệ thống</span>';
                 const created = isCustom ? formatDateTime(item.created_at) : '—';
+                const sectorCell = item.sectorName
+                    ? escapeHtml(item.sectorName) + (item.industryName ? ' <span style="color:#8a99b1;">› ' + escapeHtml(item.industryName) + '</span>' : '')
+                    : '<span style="color:#b0b9c8;font-size:12px;">—</span>';
 
                 // Thao tác: chỉ mã tự cập nhật mới có nút Xóa (chỉ Super Admin)
                 let actionHtml = '<span style="color:#b0b9c8;font-size:12px;">—</span>';
                 if (isCustom && canDeleteStocks()) {
                     actionHtml = `<div class="action-btns"><button class="danger" title="Xóa" onclick="deleteStockSymbol('${symbol}')"><i class="fas fa-trash"></i></button></div>`;
                 }
-
                 return `<tr>
                     <td><strong>${symbol}</strong></td>
                     <td>${name}</td>
                     <td>${exchange}</td>
+                    <td>${sectorCell}</td>
                     <td>${typeHtml}</td>
                     <td>${created}</td>
                     <td>${actionHtml}</td>
@@ -6833,11 +6838,17 @@
                 const data = await authApi('/admin/stocks/scan', 'POST', {});
                 const addedCount = (data && data.added_count) || 0;
                 const scanned = (data && data.scanned) || 0;
+                const classifiedCount = (data && data.classified_count) || 0;
                 if (addedCount > 0) {
                     const added = (data && data.added) || [];
-                    const codes = added.slice(0, 6).map(function(x) { return x.symbol; }).join(', ');
+                    const codes = added.slice(0, 6).map(function(x) {
+                        return x.symbol + (x.sectorName ? ' (' + x.sectorName + ')' : '');
+                    }).join(', ');
                     const more = addedCount > 6 ? ', …' : '';
-                    showToast(`✅ Đã thêm ${addedCount} cổ phiếu mới vào danh sách (${codes}${more}).`, 'success');
+                    const sectorNote = classifiedCount > 0
+                        ? ` Đã tự động phân nhóm ngành cho ${classifiedCount}/${addedCount} mã.`
+                        : '';
+                    showToast(`✅ Đã thêm ${addedCount} cổ phiếu mới vào danh sách (${codes}${more}).${sectorNote}`, 'success');
                 } else {
                     showToast(`✅ Đã quét ${scanned} mã — không có cổ phiếu mới nào cần thêm.`, 'success');
                 }

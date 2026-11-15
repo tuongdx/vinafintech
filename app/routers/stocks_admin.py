@@ -10,7 +10,10 @@ from app.schemas import AdminStockSymbolOut
 from app.services.vnstock_service import (
     _get_combined_stock_universe,
     _load_base_symbol_directory,
+    classify_symbol_sector,
+    invalidate_sector_cache,
     invalidate_symbol_directory_cache,
+    refresh_sector_classification,
 )
 
 router = APIRouter(prefix="/admin/stocks", tags=["admin-stocks"])
@@ -45,6 +48,7 @@ def list_all_stocks(
                 "exchange": str(item.get("exchange", "") or "").upper(),
                 "is_custom": False,
                 "created_at": None,
+                **classify_symbol_sector(symbol),
             }
         )
 
@@ -60,6 +64,7 @@ def list_all_stocks(
                 "exchange": str(row.exchange or "").upper(),
                 "is_custom": True,
                 "created_at": row.created_at,
+                **classify_symbol_sector(symbol),
             }
         )
 
@@ -118,11 +123,18 @@ def scan_and_add_new_symbols(
     db.commit()
     if added:
         invalidate_symbol_directory_cache()
+        # Phân loại nhóm ngành tự động cho các mã vừa thêm (ICB mới nhất + xoá cache
+        # ngành) để mã xuất hiện ngay trong cây nhóm ngành và bộ lọc.
+        refresh_sector_classification()
+        for item in added:
+            item.update(classify_symbol_sector(item["symbol"]))
+    classified = sum(1 for item in added if item.get("sector"))
 
     return {
         "scanned": len(universe),
         "added_count": len(added),
         "already_known": skipped,
+        "classified_count": classified,
         "added": added,
     }
 
@@ -144,4 +156,5 @@ def delete_stock_symbol(
     db.delete(row)
     db.commit()
     invalidate_symbol_directory_cache()
+    invalidate_sector_cache()
     return {"message": f"Đã xóa mã {row.symbol} khỏi danh sách cổ phiếu."}

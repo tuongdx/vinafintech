@@ -16,6 +16,7 @@ from urllib.parse import quote
 
 from sqlalchemy import or_
 
+from app.services import sector_taxonomy
 from app.services.seo_service import _absolute_image, _plain, _seo_slug
 
 SITE = "https://tunix.vn"
@@ -62,19 +63,7 @@ SECTOR_LINKS = [
     ("tien-ao", "Crypto"),
 ]
 
-SECTOR_LABELS = {
-    "tai-chinh": "Tài chính",
-    "cong-nghe": "Công nghệ",
-    "bat-dong-san": "Bất động sản",
-    "nguyen-vat-lieu": "Nguyên vật liệu",
-    "hang-hoa-thiet-yeu": "Hàng hóa thiết yếu",
-    "hang-hoa-khong-thiet-yeu": "Hàng hóa không thiết yếu",
-    "nang-luong": "Năng lượng",
-    "cong-nghiep": "Công nghiệp",
-    "cham-soc-suc-khoe": "Chăm sóc sức khỏe",
-    "tien-ich": "Tiện ích",
-    "tai-chinh-ngan-hang": "Tài chính ngân hàng",
-}
+SECTOR_LABELS = sector_taxonomy.SECTOR_LABELS
 
 TOOL_LINKS = [
     ("gia-dieu-chinh-co-phieu", "Tính giá điều chỉnh cổ phiếu"),

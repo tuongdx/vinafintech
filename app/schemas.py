@@ -490,5 +490,9 @@ class AdminStockSymbolOut(BaseModel):
     symbol: str
     name: str
     exchange: str
+    sector: str = ""
+    sectorName: str = ""
+    industry: str = ""
+    industryName: str = ""
     is_custom: bool = False
     created_at: datetime | None = None

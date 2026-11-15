@@ -17,7 +17,7 @@ from app.core.security import decode_token
 from app.db import SessionLocal
 from app.db_schema import ensure_schema
 from app.models import News, NewsStatusEnum, RoleEnum, User
-from app.services import admin_log, prerender_service, seo_service
+from app.services import admin_log, prerender_service, sector_taxonomy, seo_service
 from app.routers import ai, alerts, asset_events, assets, auth, bank_rates, chart, contact, crypto, crypto_signals, crypto_watchlist, dashboard, exchange, faqs, features, feedback, gold, logs, membership, news, notifications, plans, portfolio, signal_public, signals_admin, stock_signals, stocks, stocks_admin, tickets, tools, users, watchlist
 
 app = FastAPI(title=settings.app_name)
@@ -797,19 +797,32 @@ def co_phieu_stock(symbol: str):
 
 @app.get("/co-phieu/nganh/{sub1}/{sub2}/{symbol}")
 def co_phieu_nganh_stock(sub1: str, sub2: str, symbol: str):
-    """URL đẹp chi tiết cổ phiếu theo ngành: /co-phieu/nganh/tai-chinh/tai-chinh-ngan-hang/ACB (giữ shell)."""
+    """URL đẹp chi tiết cổ phiếu theo ngành: /co-phieu/nganh/tai-chinh/ngan-hang/ACB (giữ shell)."""
+    legacy = sector_taxonomy.legacy_redirect_path(sub1, sub2, symbol)
+    if legacy:
+        return RedirectResponse(url=legacy, status_code=301)
     return _index_response(f"/co-phieu/nganh/{sub1}/{sub2}/{symbol}")
 
 
 @app.get("/co-phieu/nganh/{sub1}/{sub2}")
 def co_phieu_nganh_sub2(sub1: str, sub2: str):
-    """URL đẹp phân cấp ngành cấp 2: /co-phieu/nganh/tai-chinh/tai-chinh-ngan-hang (giữ shell)."""
+    """URL đẹp phân cấp ngành cấp 2: /co-phieu/nganh/tai-chinh/ngan-hang (giữ shell)."""
+    legacy = sector_taxonomy.legacy_redirect_path(sub1, sub2)
+    if legacy:
+        return RedirectResponse(url=legacy, status_code=301)
     return _index_response(f"/co-phieu/nganh/{sub1}/{sub2}")
 
 
 @app.get("/co-phieu/nganh/{sub1}")
 def co_phieu_nganh_sub1(sub1: str):
     """URL đẹp phân cấp ngành cấp 1: /co-phieu/nganh/tai-chinh (giữ shell)."""
+    legacy = sector_taxonomy.legacy_redirect_path(sub1)
+    if legacy:
+        return RedirectResponse(url=legacy, status_code=301)
+    # Slug ngành cấp 2 bị dùng như cấp 1 → 301 về URL chuẩn /{nhóm}/{ngành}.
+    canonical = sector_taxonomy.canonical_level1_path(sub1)
+    if canonical:
+        return RedirectResponse(url=canonical, status_code=301)
     return _index_response(f"/co-phieu/nganh/{sub1}")
 
 

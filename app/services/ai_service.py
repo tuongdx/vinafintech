@@ -305,7 +305,7 @@ def _realtime_board() -> dict[str, Any]:
     "filter_stocks",
     "Lọc/tìm cổ phiếu theo tiêu chí (AI Screener). Tham số: industry (slug ngành), basic (rat-tot|tot|trung-binh|chua-dat), valuation (du-bien-an-toan|chua-du-bien-an-toan), risk (thap|trung-binh|can-chu-y).",
     {"type": "object", "properties": {
-        "industry": {"type": "string", "description": "Ngành (slug tiếng Việt, VD: tai-chinh, cong-nghe, bat-dong-san, tien-ich)"},
+        "industry": {"type": "string", "description": "Nhóm ngành/ngành theo chuẩn ICB (slug tiếng Việt, VD: tai-chinh, ngan-hang, cong-nghe-thong-tin, bat-dong-san, tien-ich)"},
         "basic": {"type": "string", "enum": ["rat-tot", "tot", "trung-binh", "chua-dat"]},
         "valuation": {"type": "string", "enum": ["du-bien-an-toan", "chua-du-bien-an-toan"]},
         "risk": {"type": "string", "enum": ["thap", "trung-binh", "can-chu-y"]},
@@ -409,14 +409,15 @@ def _num(v: Any) -> float:
 
 
 def _screener_sector_map() -> dict[str, str]:
-    """Bản đồ mã → tên ngành (economicSectorName) từ dữ liệu screener đã cache."""
+    """Bản đồ mã → tên nhóm ngành (ICB; fallback Simplize/khai báo thủ công)."""
     try:
         out: dict[str, str] = {}
         for row in vns._get_screener_dataset():
             sym = str(row.get("ticker") or "").upper().strip()
             if not sym:
                 continue
-            sec = str(row.get("economicSectorName") or "").strip()
+            _sector, sector_name, _industry, _industry_name = vns._override_sector_fields(sym, row)
+            sec = str(sector_name or "").strip()
             if sec:
                 out[sym] = sec
         # Ưu tiên ngành khai báo thủ công (mã IPO mới chưa có trong screener).

@@ -16,6 +16,7 @@ from urllib.parse import quote, urlencode
 import httpx
 
 from app.core.config import settings
+from app.services import sector_taxonomy
 
 
 _SIMPLIZE_BASE_URL = "https://api2.simplize.vn"
@@ -1625,15 +1626,16 @@ def _get_combined_stock_universe() -> list[dict[str, str]]:
 def _screener_matches_industry(row: dict[str, Any], industry: str | None) -> bool:
     if not industry:
         return True
-    industry = str(industry).strip().lower()
-    # Ngành khai báo thủ công (mã IPO mới / mã bị nguồn phân loại sai) được ưu tiên.
-    override = _SECTOR_OVERRIDES.get(str(row.get("ticker") or "").upper()) or {}
-    if industry == "ngan-hang":
-        # Ngân hàng = ngành con "tài chính ngân hàng" trong nhóm Tài chính.
-        slug = str(override.get("industry") or row.get("industrySlug") or "").lower()
-        return slug == "tai-chinh-ngan-hang"
-    sector = str(override.get("sector") or row.get("economicSectorSlug") or "").lower()
-    return sector == industry
+    key = str(industry).strip().lower()
+    # Alias cho bộ lọc cũ (ngành cấp 2 của taxonomy Simplize) — tránh 404 khi frontend
+    # hoặc link đã bookmark còn dùng slug cũ.
+    if key == "tai-chinh-ngan-hang":
+        key = "ngan-hang"
+    sector, _sector_name, industry_slug, _industry_name = _override_sector_fields(
+        str(row.get("ticker") or ""), row
+    )
+    # Khớp được cả nhóm ngành (cấp 1) và ngành (cấp 2).
+    return key in (sector, industry_slug)
 
 
 def _screener_quality_score(row: dict[str, Any]) -> float:
@@ -1686,14 +1688,15 @@ def _screener_matches_risk(row: dict[str, Any], risk: str | None) -> bool:
 
 def _build_screener_stock_row(row: dict[str, Any]) -> dict[str, Any]:
     symbol = str(row.get("ticker") or "").upper()
+    sector, sector_name, industry, industry_name = _override_sector_fields(symbol, row)
     return {
         "symbol": symbol,
         "name": str(row.get("companyNameVi") or symbol),
         "exchange": str(row.get("stockExchange") or ""),
-        "industry": row.get("industrySlug", ""),
-        "industryName": row.get("industryName", ""),
-        "sector": row.get("economicSectorSlug", ""),
-        "sectorName": row.get("economicSectorName", ""),
+        "industry": industry,
+        "industryName": industry_name,
+        "sector": sector,
+        "sectorName": sector_name,
         "overallRiskLevel": row.get("overallRiskLevel", ""),
         "valuationPoint": _to_float(row.get("valuationPoint")),
         "qualityScore": _screener_quality_score(row),
@@ -1708,56 +1711,160 @@ def _build_screener_stock_row(row: dict[str, Any]) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# PHÂN NGÀNH ICB (10 nhóm / 19 ngành) — nguồn VCI, cùng chuẩn thư viện vnstock
+# ---------------------------------------------------------------------------
+# VCI trả `icbCode2` cho từng mã trong danh sách niêm yết; taxonomy + slug nằm ở
+# `app/services/sector_taxonomy.py`. Map mã → mã ICB đổi rất chậm nên cache 7 ngày
+# (RAM + file), lỗi mạng thì dùng bản cũ — KHÔNG được làm hỏng danh sách ngành.
+_ICB_MAP_CACHE_PATH = Path(__file__).resolve().parents[2] / ".cache" / "icb_map.json"
+_ICB_MAP_TTL_SECONDS = 7 * 24 * 3600
+_icb_map_cache: dict[str, str] = {}
+_icb_map_expires_at: float = 0.0
+_icb_map_lock = threading.Lock()
+
+
+def _fetch_icb_map() -> dict[str, str]:
+    """Tải map SYMBOL → icbCode2 từ VCI `price/symbols/getAll`."""
+    response = httpx.get(
+        f"{_VCI_TRADING_URL}/price/symbols/getAll",
+        headers=_VCI_TRADING_HEADERS,
+        timeout=_VCI_TRADING_TIMEOUT,
+    )
+    response.raise_for_status()
+    rows = response.json()
+    result: dict[str, str] = {}
+    for row in rows if isinstance(rows, list) else []:
+        if not isinstance(row, dict) or str(row.get("type") or "").upper() != "STOCK":
+            continue
+        symbol = str(row.get("symbol") or "").strip().upper()
+        code = str(row.get("icbCode2") or "").strip()
+        if symbol and code:
+            result[symbol] = code
+    return result
+
+
+def _icb_map() -> dict[str, str]:
+    global _icb_map_cache, _icb_map_expires_at
+    now = time.time()
+    if _icb_map_cache and now < _icb_map_expires_at:
+        return _icb_map_cache
+    with _icb_map_lock:
+        now = time.time()
+        if _icb_map_cache and now < _icb_map_expires_at:
+            return _icb_map_cache
+        try:
+            fresh = _fetch_icb_map()
+        except Exception:  # noqa: BLE001 — mạng lỗi thì dùng bản đã cache
+            fresh = {}
+        if fresh:
+            _icb_map_cache = fresh
+            _icb_map_expires_at = now + _ICB_MAP_TTL_SECONDS
+            try:
+                _ensure_cache_dir()
+                _ICB_MAP_CACHE_PATH.write_text(json.dumps(fresh, ensure_ascii=False), encoding="utf-8")
+            except Exception:  # noqa: BLE001 — ghi cache lỗi không ảnh hưởng dữ liệu trả về
+                pass
+            return _icb_map_cache
+        if not _icb_map_cache:
+            try:
+                data = json.loads(_ICB_MAP_CACHE_PATH.read_text(encoding="utf-8"))
+                if isinstance(data, dict) and data:
+                    _icb_map_cache = {str(k): str(v) for k, v in data.items()}
+            except Exception:  # noqa: BLE001 — chưa có file cache là bình thường ở lần chạy đầu
+                pass
+        # Thử lại sau 1 giờ nếu không lấy được bản mới (tránh gọi mạng liên tục).
+        _icb_map_expires_at = now + 3600
+        return _icb_map_cache
+
+
+def icb_sector_fields(symbol: str) -> tuple[str, str, str, str] | None:
+    """(sector, sectorName, industry, industryName) theo ICB, None nếu VCI chưa có mã."""
+    code = _icb_map().get(str(symbol or "").strip().upper())
+    if not code:
+        return None
+    item = sector_taxonomy.ICB_LEVEL2.get(code)
+    if not item:
+        return None
+    industry, industry_name, sector = item
+    return (
+        sector,
+        sector_taxonomy.ICB_LEVEL1.get(sector, sector),
+        industry,
+        industry_name,
+    )
+
+
+def refresh_icb_map() -> int:
+    """Tải lại map mã → icbCode2 NGAY (bỏ cache RAM). Trả về số mã lấy được."""
+    global _icb_map_cache, _icb_map_expires_at
+    with _icb_map_lock:
+        _icb_map_cache = {}
+        _icb_map_expires_at = 0.0
+    return len(_icb_map())
+
+
+def invalidate_sector_cache() -> None:
+    """Xoá cache danh sách/ngành để thay đổi danh sách mã hiện ra ngay."""
+    for key in ("stock-lists", "symbol-sector-index", "market-map", "rank-screener-stocks"):
+        cache.delete(key)
+    cache.delete_prefix("search:")
+
+
+def refresh_sector_classification() -> dict[str, Any]:
+    """Phân loại lại nhóm ngành sau khi danh sách mã thay đổi (quét/thêm mã mới).
+
+    - Tải lại map ICB để mã vừa niêm yết có `icbCode2` ngay (không phải chờ TTL 7 ngày).
+    - Xoá cache danh sách/ngành để mã mới xuất hiện ngay trong cây nhóm ngành.
+    """
+    icb_symbols = refresh_icb_map()
+    invalidate_sector_cache()
+    return {"icb_symbols": icb_symbols}
+
+
+# ---------------------------------------------------------------------------
 # GÁN NGÀNH THỦ CÔNG CHO MÃ IPO MỚI (chưa được screener Simplize index)
 # ---------------------------------------------------------------------------
-# Mọi nhóm ngành trong app (trang "Cổ phiếu" › Nhóm ngành, "Phân bổ theo ngành" ở
-# Quản lý tài sản, so sánh cùng ngành, AI Screener...) đều suy từ dữ liệu screener
-# Simplize: economicSectorSlug/economicSectorName (nhóm ngành) và
-# industrySlug/industryName (ngành con). Cổ phiếu mới IPO thường CHƯA có trong
-# screener (nguồn index trễ) nên tạm thời không thuộc nhóm ngành nào.
+# Phân ngành chính lấy từ ICB (VCI) — xem `icb_sector_fields`. Dữ liệu Simplize chỉ
+# còn là fallback cho mã VCI chưa có `icbCode2`. Khai báo ở _SECTOR_OVERRIDES để gán
+# ngành NGAY cho mã mới IPO hoặc sửa mã bị nguồn phân loại sai (ưu tiên cao nhất).
 #
-# Khai báo ở _SECTOR_OVERRIDES để gán ngành NGAY cho các mã đó — không phải chờ
-# nguồn cập nhật, không cần sửa DB. Giá trị khai báo được ƯU TIÊN hơn dữ liệu
-# nguồn, nên cũng dùng được để sửa mã bị nguồn phân loại sai.
-#
-# Slug chuẩn của screener (economicSectorSlug):
-#   cong-nghiep | nguyen-vat-lieu | hang-hoa-khong-thiet-yeu | hang-hoa-thiet-yeu
-#   bat-dong-san | tien-ich | tai-chinh | nang-luong | cham-soc-suc-khoe | cong-nghe
-# industrySlug hay dùng: chung-khoan-va-ngan-hang-dau-tu, tai-chinh-ngan-hang, ...
+# Slug dùng đúng taxonomy ICB: nhóm cấp 1 + ngành cấp 2 trong
+# `app/services/sector_taxonomy.py` (vd: tai-chinh / ngan-hang, cong-nghe /
+# cong-nghe-thong-tin, hang-tieu-dung / thuc-pham-va-do-uong).
 #
 # Thêm 1 mã mới = thêm 1 dòng (mã viết HOA):
 #   "XYZ": {
 #       "sector": "tai-chinh", "sectorName": "Tài chính",
-#       "industry": "chung-khoan-va-ngan-hang-dau-tu",
-#       "industryName": "Chứng khoán và Ngân hàng đầu tư",
+#       "industry": "dich-vu-tai-chinh",
+#       "industryName": "Dịch vụ tài chính",
 #   },
 _SECTOR_OVERRIDES: dict[str, dict[str, str]] = {
-    # --- Tài chính › Chứng khoán và Ngân hàng đầu tư ---
+    # --- Tài chính › Dịch vụ tài chính ---
     "KAI": {
         "sector": "tai-chinh",
         "sectorName": "Tài chính",
-        "industry": "chung-khoan-va-ngan-hang-dau-tu",
-        "industryName": "Chứng khoán và Ngân hàng đầu tư",
+        "industry": "dich-vu-tai-chinh",
+        "industryName": "Dịch vụ tài chính",
     },
     "LPS": {
         "sector": "tai-chinh",
         "sectorName": "Tài chính",
-        "industry": "chung-khoan-va-ngan-hang-dau-tu",
-        "industryName": "Chứng khoán và Ngân hàng đầu tư",
+        "industry": "dich-vu-tai-chinh",
+        "industryName": "Dịch vụ tài chính",
     },
-    # --- Tài chính › Tài chính ngân hàng ---
+    # --- Tài chính › Ngân hàng ---
     "PCB": {
         "sector": "tai-chinh",
         "sectorName": "Tài chính",
-        "industry": "tai-chinh-ngan-hang",
-        "industryName": "Tài chính ngân hàng",
+        "industry": "ngan-hang",
+        "industryName": "Ngân hàng",
     },
-    # --- Công nghiệp › Dịch vụ công nghiệp và Thương mại ---
+    # --- Công nghiệp › Hàng và Dịch vụ công nghiệp ---
     "V68": {
         "sector": "cong-nghiep",
         "sectorName": "Công nghiệp",
-        "industry": "dich-vu-cong-nghiep-va-thuong-mai",
-        "industryName": "Dịch vụ công nghiệp và Thương mại",
+        "industry": "hang-va-dich-vu-cong-nghiep",
+        "industryName": "Hàng và Dịch vụ công nghiệp",
     },
 }
 
@@ -1772,36 +1879,77 @@ def get_sector_override(symbol: str) -> dict[str, str]:
     return dict(_SECTOR_OVERRIDES.get(str(symbol or "").strip().upper(), {}))
 
 
-def _override_only_symbols(dataset: list[dict[str, Any]]) -> list[str]:
-    """Các mã có khai báo ngành thủ công nhưng CHƯA xuất hiện trong screener."""
+def _pseudo_sector_symbols(dataset: list[dict[str, Any]]) -> list[str]:
+    """Mã CHƯA có trong screener nhưng vẫn phải xuất hiện trong nhóm ngành:
+    mã khai báo ngành thủ công + mã quản trị viên thêm khi bấm "Quét & thêm cổ phiếu mới".
+    Ngành của các mã này lấy từ ICB (VCI) nên mã mới IPO vẫn được phân loại tự động.
+    """
     present = {str(row.get("ticker") or "").upper() for row in dataset if isinstance(row, dict)}
-    return [sym for sym in sorted(_SECTOR_OVERRIDES) if sym not in present]
+    symbols: list[str] = [sym for sym in _SECTOR_OVERRIDES if sym not in present]
+    for item in _load_custom_symbols():
+        symbol = str(item.get("symbol") or "").strip().upper()
+        if symbol and symbol not in present and symbol not in symbols:
+            symbols.append(symbol)
+    return symbols
 
 
 def _override_sector_fields(symbol: str, row: dict[str, Any]) -> tuple[str, str, str, str]:
-    """(sector, sectorName, industry, industryName) sau khi áp override lên 1 row."""
+    """(sector, sectorName, industry, industryName) cho 1 mã.
+
+    Thứ tự ưu tiên: khai báo thủ công → phân ngành ICB (VCI) → dữ liệu Simplize
+    (chỉ còn dùng cho mã VCI chưa có `icbCode2`).
+    """
     override = _SECTOR_OVERRIDES.get(str(symbol or "").upper()) or {}
+    if override:
+        return (
+            str(override.get("sector") or "").lower(),
+            str(override.get("sectorName") or "Khác"),
+            str(override.get("industry") or "").lower(),
+            str(override.get("industryName") or ""),
+        )
+    icb = icb_sector_fields(symbol)
+    if icb:
+        return icb
     return (
-        str(override.get("sector") or row.get("economicSectorSlug") or "").lower(),
-        str(override.get("sectorName") or row.get("economicSectorName") or "Khác"),
-        str(override.get("industry") or row.get("industrySlug") or "").lower(),
-        str(override.get("industryName") or row.get("industryName") or ""),
+        str(row.get("economicSectorSlug") or "").lower(),
+        str(row.get("economicSectorName") or "Khác"),
+        str(row.get("industrySlug") or "").lower(),
+        str(row.get("industryName") or ""),
     )
 
 
-def _override_pseudo_row(symbol: str) -> dict[str, Any]:
-    """Row screener tối thiểu (mã/tên/sàn/ngành khai báo thủ công) cho mã chưa có
-    trong dữ liệu nguồn — giúp mã xuất hiện đúng nhóm ngành / bộ lọc."""
+def classify_symbol_sector(symbol: str) -> dict[str, str]:
+    """Phân loại nhóm ngành cho 1 mã: khai báo thủ công → ICB (VCI) → {}.
+
+    Dùng cho luồng "Quét & thêm cổ phiếu mới": mã vừa thêm được gán ngành ngay mà
+    không cần chờ dữ liệu screener.
+    """
+    sector, sector_name, industry, industry_name = _override_sector_fields(
+        str(symbol or "").strip().upper(), {}
+    )
+    if not sector:
+        return {}
+    return {
+        "sector": sector,
+        "sectorName": sector_name,
+        "industry": industry,
+        "industryName": industry_name,
+    }
+
+
+def _pseudo_row(symbol: str) -> dict[str, Any]:
+    """Row screener tối thiểu (mã/tên/sàn/ngành) cho mã chưa có trong screener — giúp
+    mã mới vẫn xuất hiện đúng nhóm ngành / bộ lọc. Ngành: khai báo thủ công → ICB."""
     meta = _lookup_symbol_metadata(symbol)
-    override = _SECTOR_OVERRIDES.get(symbol) or {}
+    sector, sector_name, industry, industry_name = _override_sector_fields(symbol, {})
     return {
         "ticker": symbol,
         "companyNameVi": str(meta.get("name") or symbol),
         "stockExchange": str(meta.get("exchange") or ""),
-        "economicSectorSlug": str(override.get("sector") or ""),
-        "economicSectorName": str(override.get("sectorName") or ""),
-        "industrySlug": str(override.get("industry") or ""),
-        "industryName": str(override.get("industryName") or ""),
+        "economicSectorSlug": sector,
+        "economicSectorName": sector_name,
+        "industrySlug": industry,
+        "industryName": industry_name,
     }
 
 
@@ -1811,6 +1959,20 @@ def _override_live_quote(symbol: str) -> dict[str, Any]:
         return _last_quote(symbol) or {}
     except Exception:  # noqa: BLE001
         return {}
+
+
+def _warm_live_quotes(symbols: list[str]) -> None:
+    """Nạp trước giá realtime cho NHIỀU mã bằng 1-2 request thay vì mỗi mã một request.
+
+    Danh sách mã mới thêm có thể lên tới hàng trăm mã — gọi từng mã sẽ rất chậm.
+    `get_live_quotes` dùng chung cache `last-quote:{MÃ}` với `_last_quote`.
+    """
+    if not symbols:
+        return
+    try:
+        get_live_quotes(symbols)
+    except Exception:  # noqa: BLE001 — thiếu giá thì các mã hiển thị 0 như trước
+        pass
 
 
 def _lookup_symbol_metadata(symbol: str) -> dict[str, str]:
@@ -2561,11 +2723,25 @@ def _symbol_sector_index() -> dict[str, dict[str, str]]:
         return cached
     index: dict[str, dict[str, str]] = {}
     try:
-        for row in _get_screener_dataset():
+        dataset = _get_screener_dataset()
+        for row in dataset:
             symbol = str(row.get("ticker") or "").strip().upper()
             if not symbol or symbol in index:
                 continue
             sector, sector_name, industry, industry_name = _override_sector_fields(symbol, row)
+            if not (sector and industry):
+                continue
+            index[symbol] = {
+                "sector": sector,
+                "sectorName": sector_name,
+                "industry": industry,
+                "industryName": industry_name,
+            }
+        # Mã mới thêm/chưa vào screener vẫn phải có URL ngành (ngành lấy từ ICB).
+        for symbol in _pseudo_sector_symbols(dataset):
+            if symbol in index:
+                continue
+            sector, sector_name, industry, industry_name = _override_sector_fields(symbol, {})
             if not (sector and industry):
                 continue
             index[symbol] = {
@@ -4899,9 +5075,10 @@ def filter_stocks(
     """
     dataset = _get_screener_dataset()
     known_symbols = {item["symbol"] for item in _load_symbol_directory()}
-    # Mã IPO mới có khai báo ngành thủ công nhưng chưa vào screener → thêm row tối thiểu.
-    override_only = [sym for sym in _override_only_symbols(dataset) if sym in known_symbols]
-    rows = list(dataset) + [_override_pseudo_row(sym) for sym in override_only]
+    # Mã chưa có trong screener (khai báo thủ công / vừa quét thêm) → thêm row tối thiểu
+    # để vẫn lọc được theo nhóm ngành (ngành lấy từ ICB).
+    pseudo_only = [sym for sym in _pseudo_sector_symbols(dataset) if sym in known_symbols]
+    rows = list(dataset) + [_pseudo_row(sym) for sym in pseudo_only]
     result: list[dict[str, Any]] = []
 
     for row in rows:
@@ -4918,8 +5095,8 @@ def filter_stocks(
             continue
 
         built = _build_screener_stock_row(row)
-        if symbol in override_only:
-            built["source"] = "sector-override"
+        if symbol in pseudo_only:
+            built["source"] = "sector-override" if symbol in _SECTOR_OVERRIDES else "new-symbol"
         result.append(built)
 
     result.sort(key=lambda item: item["symbol"])
@@ -5008,18 +5185,21 @@ def get_stock_lists() -> dict[str, Any]:
             sectors_map[sector] = {"slug": sector, "name": sector_name, "stocks": []}
         sectors_map[sector]["stocks"].append(symbol)
 
-    # Mã IPO mới khai báo ngành thủ công nhưng CHƯA có trong screener → bổ sung vào danh sách.
-    for symbol in _override_only_symbols(dataset):
+    # Mã chưa có trong screener (ngành khai báo thủ công / vừa quét thêm) → bổ sung vào
+    # danh sách, ngành lấy theo ICB nên mã mới IPO được phân loại tự động.
+    pseudo_symbols = _pseudo_sector_symbols(dataset)
+    _warm_live_quotes(pseudo_symbols)
+    for symbol in pseudo_symbols:
         if symbol not in known_symbols:
             continue
         meta = _lookup_symbol_metadata(symbol)
         exchange = _EXCHANGE_CANONICAL.get(str(meta.get("exchange") or "").upper(), "")
         if exchange not in ("HOSE", "HNX", "UPCOM"):
             continue
+        sector, sector_name, _industry, _industry_name = _override_sector_fields(symbol, {})
+        if not sector:
+            continue
         last = _override_live_quote(symbol)
-        override = _SECTOR_OVERRIDES.get(symbol) or {}
-        sector = str(override.get("sector") or "").lower()
-        sector_name = str(override.get("sectorName") or "Khác")
         item = {
             "symbol": symbol,
             "name": str(last.get("name") or meta.get("name") or symbol),
@@ -5027,10 +5207,12 @@ def get_stock_lists() -> dict[str, Any]:
             "price": round(_to_float(last.get("price")), 2),
             "percent_change": round(_to_float(last.get("pctChange")), 2),
             "sector": sector,
-            "sectorName": sector_name,
+            "sectorName": sector_name or "Khác",
             "market_cap": 0.0,
-            "sector_override": True,
+            "new_symbol": True,
         }
+        if symbol in _SECTOR_OVERRIDES:
+            item["sector_override"] = True
         stocks.append(item)
         if sector not in sectors_map:
             sectors_map[sector] = {"slug": sector, "name": sector_name, "stocks": []}
@@ -5433,51 +5615,57 @@ def get_stock_screener_page() -> dict[str, Any]:
             item["sector_override"] = True
         stocks.append(item)
 
-    # Mã IPO mới khai báo ngành thủ công nhưng CHƯA có trong screener → bổ sung item
+    # Mã chưa có trong screener (khai báo ngành thủ công / vừa quét thêm) → bổ sung item
     # tối thiểu (tên/sàn/ngành + giá realtime nếu có) để mã xuất hiện đúng nhóm ngành.
+    # Ngành lấy theo ICB nên mã mới IPO được phân loại tự động.
     # LƯU Ý: tên/sàn lấy từ symbol directory → nên chạy "Quét & thêm cổ phiếu mới" trước.
-    for symbol in _override_only_symbols(dataset):
-        override = _SECTOR_OVERRIDES.get(symbol) or {}
+    pseudo_symbols = _pseudo_sector_symbols(dataset)
+    _warm_live_quotes(pseudo_symbols)
+    for symbol in pseudo_symbols:
         meta = _lookup_symbol_metadata(symbol)
+        exchange = _EXCHANGE_CANONICAL.get(str(meta.get("exchange") or "").upper(), "")
+        sector, sector_name, industry, industry_name = _override_sector_fields(symbol, {})
+        if exchange not in ("HOSE", "HNX", "UPCOM") or not sector:
+            continue
         last = _override_live_quote(symbol)
-        stocks.append(
-            {
-                "symbol": symbol,
-                "name": str(last.get("name") or meta.get("name") or symbol),
-                "exchange": _EXCHANGE_CANONICAL.get(str(meta.get("exchange") or "").upper(), ""),
-                "sector": str(override.get("sector") or "").lower(),
-                "sectorName": str(override.get("sectorName") or ""),
-                "industry": str(override.get("industry") or "").lower(),
-                "industryName": str(override.get("industryName") or ""),
-                "price": round(_to_float(last.get("price")), 2),
-                "percent_change": round(_to_float(last.get("pctChange")), 2),
-                "change_7d": 0,
-                "change_1y": 0,
-                "roe": 0.0,
-                "market_cap": 0.0,
-                "pe_ratio": 0.0,
-                "pb_ratio": 0.0,
-                "ev_ebitda": 0.0,
-                "dividend_yield": 0.0,
-                "revenue_growth": 0.0,
-                "net_profit_growth": 0.0,
-                "eps_growth": 0.0,
-                "volume": 0,
-                "volume_ratio": 0,
-                "risk": "",
-                "points": {
-                    "growth": 0.0,
-                    "performance": 0.0,
-                    "financial_health": 0.0,
-                    "dividend": 0.0,
-                    "valuation": 0.0,
-                    "quality": 0.0,
-                },
-                "score": 0,
-                "sector_override": True,
-                "source": "sector-override",
-            }
-        )
+        item = {
+            "symbol": symbol,
+            "name": str(last.get("name") or meta.get("name") or symbol),
+            "exchange": exchange,
+            "sector": sector,
+            "sectorName": sector_name,
+            "industry": industry,
+            "industryName": industry_name,
+            "price": round(_to_float(last.get("price")), 2),
+            "percent_change": round(_to_float(last.get("pctChange")), 2),
+            "change_7d": 0,
+            "change_1y": 0,
+            "roe": 0.0,
+            "market_cap": 0.0,
+            "pe_ratio": 0.0,
+            "pb_ratio": 0.0,
+            "ev_ebitda": 0.0,
+            "dividend_yield": 0.0,
+            "revenue_growth": 0.0,
+            "net_profit_growth": 0.0,
+            "eps_growth": 0.0,
+            "volume": 0,
+            "volume_ratio": 0,
+            "risk": "",
+            "points": {
+                "growth": 0.0,
+                "performance": 0.0,
+                "financial_health": 0.0,
+                "dividend": 0.0,
+                "valuation": 0.0,
+                "quality": 0.0,
+            },
+            "score": 0,
+        }
+        if symbol in _SECTOR_OVERRIDES:
+            item["sector_override"] = True
+        item["source"] = "sector-override" if symbol in _SECTOR_OVERRIDES else "new-symbol"
+        stocks.append(item)
 
     stocks.sort(key=lambda s: s["score"], reverse=True)
 
@@ -5553,13 +5741,13 @@ def get_top_stocks_by_sector(sector: str, limit: int = 5) -> list[dict[str, Any]
         price = _to_float(row.get("priceCloseIntraDay")) or _to_float(row.get("priceClose"))
         volume = int(_to_float(row.get("volume")))
         summary = summary_map.get(symbol) or {}
-        matches_sector = (
-            industry_key == "tai-chinh-ngan-hang"
-            if sector_slug == "ngan-hang"
-            else industry_key == "chung-khoan-va-ngan-hang-dau-tu"
-            if sector_slug == "chung-khoan"
-            else sector_key == sector_slug
-        )
+        # Khớp được cả nhóm ngành (cấp 1) và ngành (cấp 2) của taxonomy ICB; giữ alias
+        # cho slug cũ còn xuất hiện trong link/bài viết đã lưu.
+        wanted = {
+            "tai-chinh-ngan-hang": "ngan-hang",
+            "chung-khoan": "dich-vu-tai-chinh",
+        }.get(sector_slug, sector_slug)
+        matches_sector = wanted in (sector_key, industry_key)
         if not matches_sector or market_cap <= 0:
             continue
 
@@ -5568,7 +5756,7 @@ def get_top_stocks_by_sector(sector: str, limit: int = 5) -> list[dict[str, Any]
             "name": str(row.get("companyNameVi") or symbol),
             "exchange": exchange,
             "sector": sector_slug,
-            "sectorName": "Ngân hàng" if sector_slug == "ngan-hang" else sector_name,
+            "sectorName": sector_taxonomy.SECTOR_LABELS.get(sector_slug, sector_name),
             "industry": industry_key,
             "industryName": industry_name,
             "price": round(price, 2),
