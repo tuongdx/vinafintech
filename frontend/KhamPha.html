@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="/static/membership-gate.js?v=20261115a"></script>
+    <script src="/static/stock-links.js?v=20261115a"></script>
     <link rel="icon" type="image/png" sizes="16x16" href="/frontend/Logo/favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
@@ -100,6 +101,7 @@
         /* ===== Featured ===== */
         .kp-featured { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .kp-card {
+            display: block; text-decoration: none; color: inherit;
             background: #fff; border: 1px solid #e9edf2; border-radius: 14px; padding: 14px;
             cursor: pointer; transition: all 0.2s ease;
         }
@@ -159,6 +161,7 @@
         .kp-strat .st-desc { font-size: 12px; color: #8a99b1; margin-top: 3px; }
         .kp-strat .st-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
         .kp-strat .st-chip {
+            display: inline-block; text-decoration: none;
             font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
             background: rgba(0,128,128,0.08); color: #008080; cursor: pointer; border: 1px solid rgba(0,128,128,0.18);
             transition: all 0.2s;
@@ -195,8 +198,6 @@
         .kp-map-modes { display: flex; gap: 6px; margin-bottom: 10px; align-items: center; }
         .kp-map-modes button { border: 1px solid #e5eaf0; background: #fff; color: #4a5a72; font-weight: 700; font-size: 12.5px; padding: 7px 14px; border-radius: 20px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
         .kp-map-modes button.active { background: #008080; border-color: #008080; color: #fff; }
-        .kp-map-modes .km-reset { margin-left: auto; color: #8a99b1; font-size: 12px; }
-        .kp-map-modes .km-reset:hover { color: #008080; border-color: #008080; }
         .kp-map-tip {
             display: none; position: fixed; z-index: 9999; width: 244px; background: #fff; border: 1px solid #e9edf2; border-radius: 12px;
             padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.16); font-size: 12px; color: #12203a;
@@ -239,6 +240,8 @@
         .kp-table tbody tr:hover { background: #f6faf9; }
         .kp-table .rk-rank { font-size: 11.5px; font-weight: 800; color: #b9c4d3; width: 34px; }
         .kp-table .rk-sym { font-weight: 800; }
+        .kp-table .rk-sym a { color: inherit; text-decoration: none; }
+        .kp-table .rk-sym a:hover { color: #008080; text-decoration: underline; }
         .kp-table .rk-name { color: #8a99b1; font-size: 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .kp-table .rk-val { font-weight: 700; }
         .kp-table .pos { color: #008080; }
@@ -391,7 +394,6 @@
             <div class="kp-map-modes" id="kpMapModes">
                 <button data-mode="explore" class="active">Khám phá cơ hội</button>
                 <button data-mode="panorama">Toàn cảnh thị trường</button>
-                <button class="km-reset" id="kpMapReset"><i class="fas fa-compress"></i> Thu nhỏ</button>
             </div>
             <div class="kp-map-wrap">
                 <div class="kp-map" id="kpMap"></div>
@@ -434,7 +436,15 @@
             function fmt(v, d) { const n = Number(v); if (!isFinite(n) || n === 0) return '--'; return n.toLocaleString('vi-VN', { maximumFractionDigits: d == null ? 2 : d }); }
             function pct(v) { const n = Number(v) || 0; if (!n) return '0%'; return (n >= 0 ? '+' : '') + n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%'; }
             function cls(v) { return Number(v) >= 0 ? 'pos' : 'neg'; }
-            function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*'); }
+            function openStock(sym) {
+                if (!sym) return;
+                if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
+                else window.location.href = stockHref(sym);
+            }
+            // URL CHUẨN cấp ngành (helper dùng chung /static/stock-links.js); chưa biết ngành → /co-phieu/{MÃ}.
+            function stockHref(sym) {
+                return window.vftStockHref ? window.vftStockHref(sym) : ('/co-phieu/' + encodeURIComponent(sym));
+            }
             function scoreColor(s) { return s >= 70 ? '#008080' : s >= 50 ? '#f5a623' : '#d0314e'; }
 
             function scoreRing(score, size) {
@@ -506,7 +516,7 @@
             }
             function featuredCardHtml(f) {
                 if (Array.isArray(f.reasons)) {
-                    return '<div class="kp-card opp" data-symbol="' + esc(f.symbol) + '">' +
+                    return '<a class="kp-card opp" href="' + esc(stockHref(f.symbol)) + '" data-symbol="' + esc(f.symbol) + '">' +
                         '<div class="fc-top">' +
                             '<div style="min-width:0"><div class="fc-sym">' + esc(f.symbol) + '</div><div class="fc-name">' + esc(f.name) + '</div></div>' +
                             '<div class="fc-score" title="' + esc(OPP_TOOLTIP) + '"><span class="fc-score-num">' + (Number(f.score) || 0) + '</span><span class="fc-score-lb">/100</span><i class="fas fa-circle-info" style="font-size:10px;color:#8a99b1;"></i></div>' +
@@ -516,20 +526,25 @@
                         fcMeta(f) +
                         fcReasons(f) +
                         (f.trend_status ? '<div class="fc-trend"><i class="fas fa-arrow-trend-up"></i> ' + esc(f.trend_status) + (f.sector_name ? ' · ' + esc(f.sector_name) : '') + '</div>' : '') +
-                    '</div>';
+                    '</a>';
                 }
                 // fallback định dạng cũ (khi engine lỗi)
-                return '<div class="kp-card" data-symbol="' + esc(f.symbol) + '">' +
+                return '<a class="kp-card" href="' + esc(stockHref(f.symbol)) + '" data-symbol="' + esc(f.symbol) + '">' +
                     '<div class="fc-top"><div><div class="fc-sym">' + esc(f.symbol) + '</div><div class="fc-name">' + esc(f.name) + '</div></div>' + scoreRing(f.score) + '</div>' +
                     '<div class="fc-price">' + fmt(f.price, 0) + '</div>' +
                     '<div class="fc-pct ' + cls(f.percent_change) + '">' + pct(f.percent_change) + '</div>' +
                     (f.highlight ? '<div class="fc-note">' + esc(f.highlight) + '</div>' : '') +
-                '</div>';
+                '</a>';
             }
             function bindCards(scope) {
                 if (!scope) return;
                 scope.querySelectorAll('.kp-card').forEach(function(c) {
-                    c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); });
+                    c.addEventListener('click', function(e) {
+                        // Thẻ là hyperlink (href thật) → chặn điều hướng iframe, nhường Ctrl/Cmd/Shift mở tab mới.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openStock(c.getAttribute('data-symbol'));
+                    });
                 });
             }
             // Số mã HIỂN THỊ của block "Cơ hội nổi bật hôm nay" theo TỔNG số mã engine trả về:
@@ -588,7 +603,7 @@
                 }
                 strategiesEl.innerHTML = list.map(function(st) {
                     const chips = (st.stocks || []).map(function(s) {
-                        return '<span class="st-chip" data-symbol="' + esc(s.symbol) + '">' + esc(s.symbol) + '</span>';
+                        return '<a class="st-chip" href="' + esc(stockHref(s.symbol)) + '" data-symbol="' + esc(s.symbol) + '">' + esc(s.symbol) + '</a>';
                     }).join('');
                     const chipsBody = '<div class="st-chips">' + (chips || '<span style="font-size:11px;color:#8a99b1;">—</span>') + '</div>';
                     const locked = !stratOpen(st.key);
@@ -602,7 +617,12 @@
                     const card = ch.closest('.kp-strat');
                     const fk = card ? STRATEGY_FEATURE[card.getAttribute('data-key')] : null;
                     if (card && gate && !gate.featureOpen(fk || card.getAttribute('data-key'))) return; // nhóm đang khoá: không mở chi tiết
-                    ch.addEventListener('click', function() { openStock(ch.getAttribute('data-symbol')); });
+                    ch.addEventListener('click', function(e) {
+                        // Chip mã là hyperlink (href thật) → nhường Ctrl/Cmd/Shift cho trình duyệt.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openStock(ch.getAttribute('data-symbol'));
+                    });
                 });
                 // Khóa kiểu MỜ vùng mã cổ phiếu của nhóm đang bị khoá
                 if (gate) {
@@ -626,7 +646,6 @@
             let mapData = null;
             let mapFilters = { sector: '', exchange: '', group: '', liquidity: '', count: 150 };
             let mapMode = 'explore';
-            let mapZoom = { k: 1, tx: 0, ty: 0 };
 
             function kmColor(sc) { return sc >= 70 ? '#008080' : sc >= 50 ? '#f5a623' : '#d0314e'; }
             function kmCap(cap) {
@@ -720,17 +739,9 @@
                     b.addEventListener('click', function() {
                         mapMode = b.getAttribute('data-mode');
                         modes.querySelectorAll('button[data-mode]').forEach(function(x) { x.classList.toggle('active', x === b); });
-                        resetMapZoom();
                         drawMap();
                     });
                 });
-                document.getElementById('kpMapReset').addEventListener('click', resetMapZoom);
-            }
-
-            function resetMapZoom() { mapZoom = { k: 1, tx: 0, ty: 0 }; applyMapZoom(); }
-            function applyMapZoom() {
-                const vp = mapEl.querySelector('#kmViewport');
-                if (vp) vp.setAttribute('transform', 'translate(' + mapZoom.tx + ',' + mapZoom.ty + ') scale(' + mapZoom.k + ')');
             }
 
             function renderMap(data) {
@@ -798,20 +809,20 @@
                     const r = Math.max(rad(s.market_cap), 2.5);
                     const col = kmColor(s.tuni_score);
                     const q = s.quadrant || kmQuadrant(s);
-                    inner += '<g class="km-bubble" data-symbol="' + esc(s.symbol) + '" data-q="' + q + '" style="cursor:pointer;">' +
+                    inner += '<a href="' + esc(stockHref(s.symbol)) + '" data-symbol="' + esc(s.symbol) + '">' +
+                        '<g class="km-bubble" data-symbol="' + esc(s.symbol) + '" data-q="' + q + '" style="cursor:pointer;">' +
                         '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + col + '" fill-opacity="0.88" stroke="#fff" stroke-width="1"/>' +
                         (r >= 7 ? '<text x="' + x + '" y="' + (y + 3.5) + '" text-anchor="middle" font-size="' + (r >= 12 ? 11 : 9.5) + '" font-weight="800" fill="#fff">' + esc(s.symbol) + '</text>' : '') +
-                    '</g>';
+                        '</g></a>';
                 });
 
-                mapEl.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif"><g id="kmViewport">' + inner + '</g></svg>';
+                mapEl.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">' + inner + '</svg>';
                 document.getElementById('kpMapLegend').innerHTML =
                     '<span class="lg"><span class="dot" style="background:#008080;"></span> VinaFintech Score ≥ 70</span>' +
                     '<span class="lg"><span class="dot" style="background:#f5a623;"></span> 50–69</span>' +
                     '<span class="lg"><span class="dot" style="background:#d0314e;"></span> &lt; 50</span>' +
                     '<span class="lg"><span class="bub" style="width:16px;height:16px;"></span> Vốn hoá</span>';
                 bindMapEvents();
-                applyMapZoom();
                 setTimeout(notifyParentHeight, 30);
             }
 
@@ -823,41 +834,20 @@
                     b.addEventListener('mouseenter', function() { clearTimeout(hideTimer); showMapTip(b.getAttribute('data-symbol'), b.getAttribute('data-q')); });
                     b.addEventListener('mousemove', moveMapTip);
                     b.addEventListener('mouseleave', function() { hideTimer = setTimeout(hideMapTip, 200); });
-                    b.addEventListener('click', function(e) { e.stopPropagation(); openStock(b.getAttribute('data-symbol')); });
+                    b.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        // Bubble nằm trong <a href> → chặn điều hướng iframe, nhường Ctrl/Cmd/Shift mở tab mới.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openStock(b.getAttribute('data-symbol'));
+                    });
                 });
                 const tip = document.getElementById('kpMapTip');
                 if (tip) {
                     tip.addEventListener('mouseenter', function() { clearTimeout(hideTimer); });
                     tip.addEventListener('mouseleave', hideMapTip);
                 }
-                svg.addEventListener('wheel', function(e) {
-                    e.preventDefault();
-                    const rect = svg.getBoundingClientRect();
-                    const mx = (e.clientX - rect.left) / rect.width * KM_W;
-                    const my = (e.clientY - rect.top) / rect.height * KM_H;
-                    const nk = Math.max(1, Math.min(8, mapZoom.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
-                    const kk = nk / mapZoom.k;
-                    mapZoom.tx = mx - kk * (mx - mapZoom.tx);
-                    mapZoom.ty = my - kk * (my - mapZoom.ty);
-                    mapZoom.k = nk;
-                    applyMapZoom();
-                }, { passive: false });
-                let drag = null;
-                svg.addEventListener('mousedown', function(e) {
-                    if (e.target.closest('.km-bubble')) return;
-                    drag = { x: e.clientX, y: e.clientY };
-                    svg.style.cursor = 'grabbing';
-                });
-                window.addEventListener('mousemove', function(e) {
-                    if (!drag) return;
-                    const rect = svg.getBoundingClientRect();
-                    mapZoom.tx += (e.clientX - drag.x) / rect.width * KM_W;
-                    mapZoom.ty += (e.clientY - drag.y) / rect.height * KM_H;
-                    drag = { x: e.clientX, y: e.clientY };
-                    applyMapZoom();
-                });
-                window.addEventListener('mouseup', function() { drag = null; svg.style.cursor = 'grab'; });
-                svg.style.cursor = 'grab';
+                // Bản đồ là ảnh tĩnh: không zoom, không kéo/di chuyển (lăn chuột vẫn cuộn trang bình thường).
             }
 
             function ensureMapTip() {
@@ -931,7 +921,7 @@
                         if (prev && prev.price !== cur.price) priceCls = cur.price >= prev.price ? 'cell-up' : 'cell-down';
                         return '<tr data-symbol="' + esc(r.symbol) + '">' +
                             '<td class="rk-rank">' + (i + 1) + '</td>' +
-                            '<td class="rk-sym">' + esc(r.symbol) + '<span data-div="' + esc(r.symbol) + '"></span></td>' +
+                            '<td class="rk-sym"><a href="' + esc(stockHref(r.symbol)) + '" data-symbol="' + esc(r.symbol) + '">' + esc(r.symbol) + '</a><span data-div="' + esc(r.symbol) + '"></span></td>' +
                             '<td class="rk-name" title="' + esc(r.name) + '">' + esc(r.name) + '</td>' +
                             '<td' + (priceCls ? ' class="' + priceCls + '"' : '') + '>' + fmt(r.price, 0) + '</td>' +
                             '<td class="' + cls(r.percent_change) + '">' + pct(r.percent_change) + '</td>' +
@@ -944,7 +934,12 @@
                 rankEl.innerHTML = locked ? '<div class="rk-zone">' + tableHtml + '</div>' : tableHtml;
                 if (!locked) {
                     rankEl.querySelectorAll('tr[data-symbol]').forEach(function(tr) {
-                        tr.addEventListener('click', function() { openStock(tr.getAttribute('data-symbol')); });
+                        tr.addEventListener('click', function(e) {
+                            // Ô mã là hyperlink (href thật) → nhường Ctrl/Cmd/Shift cho trình duyệt mở tab mới.
+                            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                            e.preventDefault();
+                            openStock(tr.getAttribute('data-symbol'));
+                        });
                     });
                 } else if (gate) {
                     const zone = rankEl.querySelector('.rk-zone');
@@ -1070,7 +1065,7 @@
                     refreshRankings();
                     renderPrompts(d.ai_prompts || []);
                 } catch (e) {
-                    featuredEl.innerHTML = '<div class="kp-empty">Không tải được dữ liệu. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
+                    featuredEl.innerHTML = '<div class="kp-empty">Không tải được dữ liệu. <a href="' + location.pathname + location.search + '">Thử lại</a></div>';
                 }
                 notifyParentHeight();
             }

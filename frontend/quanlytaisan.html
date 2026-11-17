@@ -171,7 +171,9 @@
         .pf-field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .pf-field input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
         .pf-price-hint { font-size: 12px; color: #6b7a8f; margin-top: 10px; min-height: 18px; }
-        .pf-price-hint a { color: #008080; font-weight: 600; text-decoration: none; cursor: pointer; }
+        .pf-price-hint a,
+        .pf-price-hint .pf-link-btn { color: #008080; font-weight: 600; text-decoration: none; cursor: pointer; }
+        .pf-price-hint .pf-link-btn { background: none; border: 0; padding: 0; font-size: inherit; font-family: inherit; }
         .pf-submit { display: flex; align-items: flex-end; gap: 6px; }
         .pf-submit .btn { width: 100%; }
         .pf-submit .btn + .btn { flex: 0 0 auto; width: auto; }
@@ -196,6 +198,10 @@
         tbody tr { cursor: pointer; }
         .td-sym { font-weight: 700; }
         .td-sym .name { display: block; font-size: 11.5px; font-weight: 500; color: #8a99b1; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* Mã cổ phiếu là liên kết thật (hover hiện URL ở thanh trạng thái trình duyệt) */
+        .td-sym .pf-symlink { color: inherit; text-decoration: none; }
+        .td-sym .pf-symlink:hover { color: #008080; text-decoration: underline; }
+        body.dark-mode .td-sym .pf-symlink:hover { color: #4dd8c4; }
         .pos { color: #0f7b3a; }
         .neg { color: #d0314e; }
         .td-actions { display: flex; gap: 6px; }
@@ -306,7 +312,7 @@
         .pf-ac-type { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 8px; border-radius: 6px; }
         .pf-ac-sym { font-weight: 800; font-size: 12.5px; color: #12203a; }
         /* Mã cổ phiếu bấm được → mở trang chi tiết cổ phiếu */
-        .ca-sym-link { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; font-size: 12.5px; color: #008080; background: rgba(0,128,128,0.10); border: 1px solid rgba(0,128,128,0.28); border-radius: 8px; padding: 2px 8px; cursor: pointer; transition: all 0.15s; }
+        .ca-sym-link { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; font-size: 12.5px; color: #008080; background: rgba(0,128,128,0.10); border: 1px solid rgba(0,128,128,0.28); border-radius: 8px; padding: 2px 8px; cursor: pointer; text-decoration: none; transition: all 0.15s; }
         .ca-sym-link i { font-size: 9.5px; opacity: 0.8; }
         .ca-sym-link:hover { background: rgba(0,128,128,0.18); border-color: #008080; color: #006e6e; }
         .ca-sym-link:hover i { opacity: 1; transform: translateX(1px); }
@@ -407,7 +413,7 @@
         .pf-ev-group { margin-bottom: 16px; }
         .pf-ev-group:last-child { margin-bottom: 0; }
         .pf-ev-sym { font-weight: 800; font-size: 14px; color: #008080; margin-bottom: 8px; }
-        .pf-ev-item { display: flex; gap: 11px; text-decoration: none; background: #f8fafc; border: 1px solid #e9edf2; border-radius: 11px; padding: 11px 13px; margin-bottom: 8px; transition: all 0.15s; }
+        .pf-ev-item { display: flex; gap: 11px; text-decoration: none; color: inherit; background: #f8fafc; border: 1px solid #e9edf2; border-radius: 11px; padding: 11px 13px; margin-bottom: 8px; transition: all 0.15s; }
         .pf-ev-item:hover { border-color: #008080; }
         .pf-ev-item .pf-ev-ico { flex: 0 0 auto; font-size: 16px; padding-top: 2px; width: 24px; text-align: center; }
         .pf-ev-item .pf-ev-body { flex: 1; min-width: 0; }
@@ -726,7 +732,7 @@
             function openStock(sym) {
                 if (!sym) return;
                 if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
-                else window.location.href = '/co-phieu/' + encodeURIComponent(sym);
+                else window.location.href = stockHref(sym);
             }
             // Mở trang Crypto (nhúng trong shell) và xem sẵn chi tiết coin.
             // LƯU Ý: fallback KHÔNG dùng `/crypto?symbol=` — `routeFromUrl()` của shell hiểu
@@ -1143,7 +1149,7 @@
                             const adj = (h.adjustment || {});
                             const pend = pendText(h);
                             return '<tr data-symbol="' + esc(h.symbol) + '">' +
-                                '<td><div class="td-sym">' + esc(h.symbol) + '<span data-div="' + esc(h.symbol) + '"></span><span class="name">' + esc(h.name) + '</span>' +
+                                '<td><div class="td-sym"><a class="pf-symlink" href="' + esc(stockHref(h.symbol)) + '" data-symbol="' + esc(h.symbol) + '">' + esc(h.symbol) + '</a><span data-div="' + esc(h.symbol) + '"></span><span class="name">' + esc(h.name) + '</span>' +
                                     (pend ? '<span class="pf-pend" title="Cổ tức đã chốt quyền, chưa tới ngày chia — sẽ cộng vào số lượng/giá vốn đúng ngày chia"><i class="fas fa-hourglass-half"></i> Chờ nhận: ' + esc(pend) + '</span>' : '') +
                                 '</div></td>' +
                                 '<td>' + fmtMoney(h.avg_price) + '</td>' +
@@ -2312,7 +2318,7 @@
                 const ic = isOpp ? { c: '#00a08a', i: 'fa-lightbulb' } : { c: '#d0314e', i: 'fa-triangle-exclamation' };
                 const sev = CRYPTO_SEV_META[String(it.severity || '').toUpperCase()] || CRYPTO_SEV_META.MEDIUM;
                 const str = Number(it.strength) || 0, conf = Number(it.confidence) || 0;
-                const head = symChip(it.symbol) +
+                const head = symChip(it.symbol, cryptoHref(it.symbol)) +
                     (cryptoInPosition(it.symbol) ? '<span class="ca-tag ca-pos">Vị thế</span>' : '') +
                     '<span class="pf-ac-imp" style="color:' + sev.color + '">' + esc(sev.label) + '</span>' +
                     '<span class="ca-str">Độ mạnh <b>' + str + '</b>/100 · Tin cậy <b>' + conf + '</b></span>';
@@ -2341,7 +2347,7 @@
                 const str = Number(it.strength) || 0;
                 return '<div class="pf-alert-card ca-card" style="border-left-color:#4a7fc4">' +
                     '<div class="pf-ac-main">' +
-                        '<div class="pf-ac-top">' + symChip(it.symbol) +
+                        '<div class="pf-ac-top">' + symChip(it.symbol, cryptoHref(it.symbol)) +
                             (cryptoInPosition(it.symbol) ? '<span class="ca-tag ca-pos">Vị thế</span>' : '') +
                             '<span class="ca-str">Độ mạnh xu hướng <b>' + str + '</b>/100</span></div>' +
                         '<div class="pf-ac-title">' + esc(it.title) + '</div>' +
@@ -2499,9 +2505,17 @@
                 return !!(stockSignalsData && (stockSignalsData.in_position || []).indexOf(sym) >= 0);
             }
             // Mã bấm được → mở trang chi tiết tương ứng (cổ phiếu / crypto); dùng chung cho CƠ HỘI / CẢNH BÁO / XU HƯỚNG.
-            function symChip(sym) {
+            // Là <a href> thật để hover hiện URL; click được chặn để điều hướng trong shell.
+            function symChip(sym, href) {
                 const s = esc(sym);
-                return '<span class="ca-sym-link" role="link" tabindex="0" data-sym="' + s + '" title="Xem chi tiết ' + s + '">' + s + '<i class="fas fa-chevron-right"></i></span>';
+                const url = href || stockHref(sym);
+                // data-symbol chỉ gắn cho chip CỔ PHIẾU → được nâng lên URL cấp ngành khi bản đồ ngành về.
+                return '<a class="ca-sym-link" href="' + esc(url) + '"' + (href ? '' : ' data-symbol="' + s + '"') +
+                    ' data-sym="' + s + '" title="Xem chi tiết ' + s + '">' + s + '<i class="fas fa-chevron-right"></i></a>';
+            }
+            // URL chi tiết coin: /crypto/{MÃ}
+            function cryptoHref(sym) {
+                return '/crypto/' + encodeURIComponent(String(sym || '').trim().toUpperCase());
             }
             // Uỷ quyền sự kiện ở container: bền với việc render lại HTML và cả khi Hội viên bọc lớp
             // khóa mờ (.tg-blur-body có pointer-events:none → click vào chip sẽ không phát sinh sự kiện).
@@ -2513,6 +2527,8 @@
                 list.addEventListener('click', function(e) {
                     const el = hit(e);
                     if (!el) return;
+                    // Giữ hành vi mặc định khi mở tab mới bằng Ctrl/Cmd/Shift/Alt hoặc chuột giữa.
+                    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1) return;
                     e.preventDefault();
                     go(el.getAttribute('data-sym'));
                 });
@@ -2708,7 +2724,7 @@
             }
             function wlItemHtml(sym, showRemove) {
                 return '<tr data-symbol="' + esc(sym) + '">' +
-                    '<td><div class="td-sym">' + esc(sym) + '<span data-div="' + esc(sym) + '"></span><span class="name wl-name"></span></div></td>' +
+                    '<td><div class="td-sym"><a class="pf-symlink" href="' + esc(stockHref(sym)) + '" data-symbol="' + esc(sym) + '">' + esc(sym) + '</a><span data-div="' + esc(sym) + '"></span><span class="name wl-name"></span></div></td>' +
                     '<td class="wl-price" style="font-weight:800;">--</td>' +
                     '<td class="wl-prev">--</td>' +
                     '<td class="wl-chg" style="font-weight:700;">--</td>' +
@@ -2778,6 +2794,9 @@
                 document.querySelectorAll('#wlList tr[data-symbol]').forEach(function(el) {
                     el.addEventListener('click', function(e) {
                         if (e.target.closest('.wl-rm')) return;
+                        // Mã là <a href> thật → nhường Ctrl/Cmd/Shift/Alt và chuột giữa cho trình duyệt.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1) return;
+                        e.preventDefault();
                         openStock(el.getAttribute('data-symbol'));
                     });
                 });
@@ -3063,7 +3082,7 @@
                         const dash = '<span style="color:#b6c2d2;">-</span>';
                         const pend = isHolding ? pendText(h) : '';
                         html += '<tr data-symbol="' + esc(row.sym) + '">' +
-                            '<td><div class="td-sym">' + esc(row.sym) + '<span data-div="' + esc(row.sym) + '"></span>' + (name ? '<span class="name">' + esc(name) + '</span>' : '') +
+                            '<td><div class="td-sym"><a class="pf-symlink" href="' + esc(stockHref(row.sym)) + '" data-symbol="' + esc(row.sym) + '">' + esc(row.sym) + '</a><span data-div="' + esc(row.sym) + '"></span>' + (name ? '<span class="name">' + esc(name) + '</span>' : '') +
                                 (pend ? '<span class="pf-pend" title="Cổ tức đã chốt quyền, chưa tới ngày chia — sẽ cộng vào số lượng/giá vốn đúng ngày chia"><i class="fas fa-hourglass-half"></i> Chờ nhận: ' + esc(pend) + '</span>' : '') +
                             '</div></td>' +
                             '<td>' + (isHolding ? fmtMoney(h.avg_price) : dash) + '</td>' +
@@ -3080,7 +3099,11 @@
                     });
                     tbody.innerHTML = html;
                     tbody.querySelectorAll('tr[data-symbol]').forEach(function(tr) {
-                        tr.addEventListener('click', function() { openStock(tr.getAttribute('data-symbol')); });
+                        tr.addEventListener('click', function(e) {
+                            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1) return;
+                            e.preventDefault();
+                            openStock(tr.getAttribute('data-symbol'));
+                        });
                     });
                     notifyParentHeight();
                 }).catch(function() { tbody.innerHTML = '<tr><td colspan="11" class="pf-empty">Không tải được.</td></tr>'; notifyParentHeight(); });
@@ -3427,19 +3450,39 @@
                                 '<div class="pf-ev-title">' + esc(e.title) + '</div>' +
                                 (e.description ? '<div class="pf-ev-desc">' + esc(e.description) + '</div>' : '') +
                             '</div>';
+                        const newsSlug = e.news_slug || (e.metadata && e.metadata.slug) || '';
+                        const newsUrl = newsSlug
+                            ? '/' + newsSlug + '-' + e.news_id + '.html'
+                            : '/tintuc?id=' + encodeURIComponent(e.news_id);
                         html += e.news_id
-                            ? '<a class="pf-ev-item" href="#" data-news="' + e.news_id + '">' + inner + '</a>'
-                            : '<div class="pf-ev-item">' + inner + '</div>';
+                            ? '<a class="pf-ev-item" href="' + esc(newsUrl) + '" data-news="' + esc(e.news_id) + '" data-slug="' + esc(newsSlug) + '">' + inner + '</a>'
+                            : (e.symbol
+                                // Không có bài viết → link tới trang mã CP (URL chuẩn cấp ngành) để hover thấy URL đích.
+                                ? '<a class="pf-ev-item" href="' + esc(stockHref(e.symbol)) + '" data-symbol="' + esc(e.symbol) + '">' + inner + '</a>'
+                                : '<div class="pf-ev-item">' + inner + '</div>');
                     });
                     html += '</div>';
                 });
                 el.innerHTML = html;
                 el.querySelectorAll('[data-news]').forEach(function(a) {
                     a.addEventListener('click', function(e) {
+                        // Giữ href thật để hover hiện URL; Ctrl/Cmd/Shift + click → trình duyệt mở tab mới.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
                         e.preventDefault();
+                        const id = a.getAttribute('data-news');
+                        const slug = a.getAttribute('data-slug') || '';
                         if (window.parent && window.parent !== window) {
-                            window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: a.getAttribute('data-news'), slug: '' }, '*');
+                            window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: id, slug: slug }, '*');
+                        } else {
+                            window.location.href = a.getAttribute('href');
                         }
+                    });
+                });
+                el.querySelectorAll('.pf-ev-item[data-symbol]').forEach(function(a) {
+                    a.addEventListener('click', function(e) {
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openStock(a.getAttribute('data-symbol'));
                     });
                 });
                 notifyParentHeight();
@@ -3640,7 +3683,7 @@
                         if (!q || q.valid === false) { hint.innerHTML = 'Không tìm thấy mã ' + esc(symbol); return; }
                         const price = Number(q.price) || 0;
                         const useLabel = tradeMode === 'sell' ? 'Dùng giá này làm giá bán' : 'Dùng giá này làm giá mua';
-                        hint.innerHTML = 'Giá hiện tại: <strong>' + fmtMoney(price) + ' đ</strong> · <a id="pfUsePrice">' + useLabel + '</a>';
+                        hint.innerHTML = 'Giá hiện tại: <strong>' + fmtMoney(price) + ' đ</strong> · <button type="button" class="pf-link-btn" id="pfUsePrice">' + useLabel + '</button>';
                         const a = document.getElementById('pfUsePrice');
                         if (a) a.addEventListener('click', function() { const avg = document.getElementById('pfAvg'); if (avg) { avg.value = price; fmtMoneyInput(avg); toast('Đã điền giá hiện tại'); } });
                     })
@@ -3736,7 +3779,12 @@
                     });
                 });
                 document.querySelectorAll('tbody tr[data-symbol]').forEach(function(tr) {
-                    tr.addEventListener('click', function() { openStock(tr.getAttribute('data-symbol')); });
+                    tr.addEventListener('click', function(e) {
+                        // Mã trong ô là <a href> thật → nhường Ctrl/Cmd/Shift/Alt và chuột giữa.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1) return;
+                        e.preventDefault();
+                        openStock(tr.getAttribute('data-symbol'));
+                    });
                 });
             }
 
@@ -3747,11 +3795,36 @@
                     .then(function(d) {
                         if (!d) return false;
                         (d.stocks || []).forEach(function(s) {
-                            screenerMap[s.symbol] = { sectorName: s.sectorName, volume_ratio: s.volume_ratio, risk: s.risk };
+                            screenerMap[s.symbol] = { sectorName: s.sectorName, sector: s.sector, industry: s.industry, volume_ratio: s.volume_ratio, risk: s.risk };
                         });
+                        setStockUrls(d.stocks);
                         return true;
                     })
                     .catch(function() { return false; });
+            }
+            // URL CHUẨN của 1 mã: /co-phieu/nganh/{sector}/{industry}/{MÃ} (bản đồ ngành lấy từ screener).
+            const STOCK_URLS = {};
+            function stockHref(sym) {
+                const key = String(sym || '').trim().toUpperCase();
+                return STOCK_URLS[key] || ('/co-phieu/' + encodeURIComponent(key));
+            }
+            function setStockUrls(stocks) {
+                (stocks || []).forEach(function(s) {
+                    const sym = String((s && s.symbol) || '').trim().toUpperCase();
+                    const sec = String((s && s.sector) || '').trim();
+                    const ind = String((s && s.industry) || '').trim();
+                    if (sym && sec && ind) {
+                        STOCK_URLS[sym] = '/co-phieu/nganh/' + encodeURIComponent(sec) + '/' + encodeURIComponent(ind) + '/' + encodeURIComponent(sym);
+                    }
+                });
+                upgradeStockLinks();
+            }
+            // Screener về sau khi sự kiện đã vẽ → nâng href các link mã đang có trong DOM.
+            function upgradeStockLinks() {
+                document.querySelectorAll('a[data-symbol]').forEach(function(a) {
+                    const sym = String(a.getAttribute('data-symbol') || '').trim().toUpperCase();
+                    if (STOCK_URLS[sym]) a.setAttribute('href', STOCK_URLS[sym]);
+                });
             }
 
             // ---------- Load ----------
@@ -3844,7 +3917,7 @@
                             });
                         });
                     })
-                    .catch(function(e) { if (e && e.message) { body.innerHTML = '<div class="pf-loading">Không tải được danh mục. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>'; notifyParentHeight(); } });
+                    .catch(function(e) { if (e && e.message) { body.innerHTML = '<div class="pf-loading">Không tải được danh mục. <a href="' + esc(location.pathname + location.search) + '">Thử lại</a></div>'; notifyParentHeight(); } });
             }
             function loadDemo() {
                 const demoSyms = ['ACB', 'VCI', 'FPT', 'HPG', 'MBB'];

@@ -3,7 +3,7 @@
  *
  *  RIGHT SIDEBAR  : thông tin cổ phiếu + Tổng quan + Chỉ báo (đồng bộ 2 chiều với chart)
  *                   + Hỗ trợ / Kháng cự (đồng bộ với AnalysisEngine của chart).
- *  BOTTOM DASHBOARD: Giả định tích sản + Dòng tiền 10 phiên + VinaFintech AI Phân tích.
+ *  BOTTOM DASHBOARD: Giả định tích sản + Dòng tiền 10 phiên + VinaF AI phân tích.
  *
  * KHÔNG tạo chart / indicator / analysis mới — tái sử dụng engine hiện tại
  * (IndicatorEngine, AnalysisEngine, IndicatorPanel) và API VinaFintech hiện có.
@@ -16,7 +16,7 @@
 import { detectSR } from '../analysis/analysis.js';
 import { computeConfluence } from '../analysis/confluence.js';
 import { INDICATOR_DEFS } from '../indicators/indicatorConfig.js';
-import { AccumulationPanel, isIndexSymbol } from './accumulationPanel.js?v=20261006a';
+import { AccumulationPanel, isIndexSymbol } from './accumulationPanel.js?v=20261115b';
 
 const LAYOUT_KEY = 'vinafintech.fsLayout.v1';
 
@@ -32,11 +32,20 @@ function esc(s) {
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Bỏ ảnh markdown khỏi text AI: panel fullscreen chỉ hiển thị chữ — ảnh chart
+// (`![Biểu đồ X 3 tháng](/api/stocks/X/chart-svg?period=3m)`) không render được ở đây
+// nên sẽ hiện ra thành chuỗi thô. Trang chat VinaF AI vẫn hiển thị ảnh bình thường.
+const MD_IMAGE_RE = /!\[[^\]]*\]\([^)\s]*(?:\s+"[^"]*")?\)/g;
+
+function stripAiImages(s) {
+    return String(s == null ? '' : s).replace(MD_IMAGE_RE, '');
+}
+
 // Làm sạch text AI trước khi đưa vào HTML: giải mã entity (&quot; → ", &amp; → &, &lt; → < ...)
 // và chuyển/bỏ thẻ HTML lỡ xuất ra (<strong>, <br>, ...) để không hiện lộn xộn,
 // rồi escape an toàn và render **in đậm** → <strong>.
 function aiTextToHtml(s) {
-    let t = String(s == null ? '' : s)
+    let t = stripAiImages(s)
         .replace(/&amp;/g, '&')
         .replace(/&quot;/g, '"').replace(/&#34;/g, '"')
         .replace(/&#39;/g, "'").replace(/&apos;/g, "'")
@@ -1105,8 +1114,15 @@ export class FullscreenWorkspace {
             return;
         }
         if (ai.status === 'ok') {
-            const body = ai.reply
-                ? ai.reply.split('\n').map((l) => '<div class="fsb-ai-line">' + aiTextToHtml(l) + '</div>').join('')
+            // Bỏ hẳn dòng chỉ chứa ảnh markdown (panel không render ảnh) — giữ nguyên các
+            // dòng trống khác để khoảng cách đoạn văn như trước.
+            const lines = String(ai.reply || '').split('\n').map((raw) => {
+                const stripped = stripAiImages(raw);
+                if (raw.trim() !== '' && stripped.trim() === '') return null;
+                return stripped;
+            }).filter((l) => l !== null);
+            const body = lines.some((l) => l.trim() !== '')
+                ? lines.map((l) => '<div class="fsb-ai-line">' + aiTextToHtml(l) + '</div>').join('')
                 : '<div class="fss-muted">--</div>';
             this._setAiHtml('<div class="fsb-ai-body">' + body + '</div>' + this._aiFooter());
             return;

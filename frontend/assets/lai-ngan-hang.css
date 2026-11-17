@@ -242,7 +242,7 @@ body.dark-mode .lnh-bank-logo { box-shadow: 0 0 0 1px rgba(255,255,255,0.18); }
 .lnh-nnav:hover { background: #008080; color: #fff; border-color: #008080; }
 .lnh-nnav:disabled { opacity: 0 !important; visibility: hidden !important; cursor: default; }
 @media (hover: none) { .lnh-nnav:not(:disabled) { opacity: 1; visibility: visible; } }
-.lnh-nitem { display: flex; flex-direction: column; background: #fff; border: 1px solid #e9edf2; border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.2s; }
+.lnh-nitem { display: flex; flex-direction: column; background: #fff; border: 1px solid #e9edf2; border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.2s; text-decoration: none; color: inherit; }
 .lnh-nitem:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,128,128,0.14); border-color: rgba(0,128,128,0.4); }
 .lnh-nthumb { height: 128px; background: linear-gradient(135deg, #0b2f3a, #008080); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px; }
 .lnh-nthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }

@@ -4998,7 +4998,8 @@ def get_peer_comparison(symbol: str, limit: int = 10) -> dict[str, Any]:
 
     Dữ liệu lấy từ screener dataset (đã cache): marketCapVnd (Vốn hoá),
     peRatio + profitMarginLtm để suy ra Lợi nhuận = Vốn hoá / P/E và
-    Doanh thu = Lợi nhuận / biên lợi nhuận (xấp xỉ tham khảo).
+    Doanh thu = Lợi nhuận / biên lợi nhuận (xấp xỉ tham khảo). Nhóm "cùng ngành"
+    theo taxonomy ICB (xem `_override_sector_fields`).
     """
     symbol_upper = symbol.upper().strip()
     empty = {"symbol": symbol_upper, "industry": "", "industry_name": "", "peers": []}
@@ -5019,8 +5020,14 @@ def get_peer_comparison(symbol: str, limit: int = 10) -> dict[str, Any]:
     if current_row is None and not override:
         return empty
 
-    industry_slug = str(override.get("industry") or (current_row or {}).get("industrySlug") or "").lower()
-    industry_name = str(override.get("industryName") or (current_row or {}).get("industryName") or "")
+    # Ngành của mã hiện tại PHẢI lấy qua `_override_sector_fields` (khai báo thủ công → ICB
+    # → Simplize) cho khớp slug dùng khi lọc ở vòng lặp bên dưới; lấy thẳng
+    # `industrySlug` của Simplize sẽ lệch taxonomy (vd FPT: "phan-mem-va-dich-vu-cntt"
+    # vs ICB "cong-nghe-thong-tin") ⇒ không mã nào khớp ⇒ block trống.
+    _sector, _sector_name, industry_slug, industry_name = _override_sector_fields(
+        symbol_upper, current_row or {}
+    )
+    industry_slug = str(industry_slug or "").lower()
     if not industry_slug:
         return empty
 

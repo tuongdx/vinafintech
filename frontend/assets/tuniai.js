@@ -981,6 +981,20 @@
             function nativeFsActive() {
                 return !!(document.fullscreenElement || document.webkitFullscreenElement);
             }
+            // Shell (index.html) fullscreen KHUNG chứa iframe này (#frameHost) — document của iframe
+            // KHÔNG nhận fullscreenchange nên phải tự kiểm tra. Dùng cho luồng "Phân tích chi tiết"
+            // từ dashboard biểu đồ (mở trang này NGAY trong màn hình fullscreen).
+            function parentFsActive() {
+                if (!window.parent || window.parent === window) return false;
+                let pe = null;
+                try {
+                    const pd = window.parent.document;
+                    pe = pd.fullscreenElement || pd.webkitFullscreenElement;
+                } catch (e) { return false; }
+                if (!pe) return false;
+                if (pe === window.frameElement) return true;
+                try { return !!(pe.contains && window.frameElement && pe.contains(window.frameElement)); } catch (e) { return false; }
+            }
             function applyFsState(on) {
                 document.documentElement.classList.toggle('ta-fs', on);
                 document.body.classList.toggle('ta-fs', on);
@@ -992,9 +1006,19 @@
             }
             // Sự kiện trình duyệt (bấm Esc / thoát native) → đồng bộ theo trạng thái thật.
             function updateFsUi() {
-                applyFsState(nativeFsActive());
+                applyFsState(nativeFsActive() || parentFsActive());
             }
             function toggleFullscreen() {
+                // Fullscreen do SHELL bật (khung chứa iframe) → nhờ shell thoát, y như nút Esc.
+                if (parentFsActive()) {
+                    try { window.parent.postMessage({ type: 'vinafintech-exit-fullscreen' }, '*'); } catch (e) { /* ignore */ }
+                    try {
+                        const pd = window.parent.document;
+                        const exit = pd.exitFullscreen || pd.webkitExitFullscreen;
+                        if (exit && (pd.fullscreenElement || pd.webkitFullscreenElement)) exit.call(pd);
+                    } catch (e) { /* ignore */ }
+                    return;
+                }
                 // Đang fullscreen trình duyệt → thoát.
                 if (nativeFsActive()) {
                     if (document.exitFullscreen) document.exitFullscreen();
@@ -1024,6 +1048,15 @@
             if (fsBtn) fsBtn.addEventListener('click', toggleFullscreen);
             document.addEventListener('fullscreenchange', updateFsUi);
             document.addEventListener('webkitfullscreenchange', updateFsUi);
+            // Shell bật/tắt fullscreen khung chứa iframe → KHÔNG có sự kiện trong document này,
+            // nên nghe trực tiếp document của shell (cùng origin) để bật/tắt layout toàn màn hình.
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.document.addEventListener('fullscreenchange', updateFsUi);
+                    window.parent.document.addEventListener('webkitfullscreenchange', updateFsUi);
+                }
+            } catch (e) { /* khác origin → bỏ qua */ }
+            updateFsUi();   // mở từ dashboard fullscreen của biểu đồ → vào thẳng layout toàn màn hình
 
             // ===== Xuất PDF cuộc trò chuyện đang xem =====
             const pdfBtn = document.getElementById('taPdfBtn');

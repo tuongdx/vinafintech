@@ -32,6 +32,26 @@
         return dir === 'asc' ? 'fa-sort-up' : (dir === 'desc' ? 'fa-sort-down' : 'fa-sort');
     }
 
+    // ----- Liên kết mã cổ phiếu: URL CHUẨN cấp ngành (helper /static/stock-links.js) -----
+    function stockHref(sym) {
+        return window.vftStockHref ? window.vftStockHref(sym) : ('/co-phieu/' + encodeURIComponent(sym));
+    }
+    function openStock(sym) {
+        if (!sym) return;
+        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
+        else window.location.href = stockHref(sym);
+    }
+    // Ô mã trong các bảng là hyperlink → chặn load shell lồng trong iframe; nhường
+    // Ctrl/Cmd/Shift cho trình duyệt mở tab mới. Dùng CAPTURE để chạy trước onclick của <tr>.
+    document.addEventListener('click', function (e) {
+        var a = e.target && e.target.closest ? e.target.closest('a.sig-symlink') : null;
+        if (!a) return;
+        e.stopPropagation();                                             // không mở modal chi tiết tín hiệu
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;     // mở tab mới theo href
+        e.preventDefault();
+        openStock(a.getAttribute('data-symbol'));
+    }, true);
+
     function updateSortIndicators() {
         var btns = document.querySelectorAll('#sigPanelRec .sig-table thead .sig-sort');
         for (var i = 0; i < btns.length; i++) {
@@ -507,7 +527,7 @@
         var sym = String(p.symbol || '').toUpperCase();
         var price = p.current_price ? '<b>' + vnd(p.current_price) + '</b>' : '<span class="muted-dash">—</span>';
         return '<tr>' +
-            '<td><b>' + esc(sym) + '</b><span data-div="' + esc(sym) + '"></span></td>' +
+            '<td><a class="sig-symlink" href="' + esc(stockHref(sym)) + '" data-symbol="' + esc(sym) + '">' + esc(sym) + '</a><span data-div="' + esc(sym) + '"></span></td>' +
             '<td>' + esc(STRATEGY_LABEL[p.strategy] || p.strategy || '—') + '</td>' +
             '<td><b>' + vnd(p.entry_price) + '</b></td>' +
             '<td class="sig-price" data-sym="' + esc(sym) + '" data-price="' + (p.current_price || '') + '">' + price + '</td>' +
@@ -551,7 +571,7 @@
         var label = (res === 'WIN' || res === 'LOSS' || res === 'FLAT') ? res : (res || '—');
         var cls = res === 'WIN' ? 'active' : (res === 'LOSS' ? 'rejected' : 'draft');
         return '<tr>' +
-            '<td><b>' + esc(sym) + '</b><span data-div="' + esc(sym) + '"></span></td>' +
+            '<td><a class="sig-symlink" href="' + esc(stockHref(sym)) + '" data-symbol="' + esc(sym) + '">' + esc(sym) + '</a><span data-div="' + esc(sym) + '"></span></td>' +
             '<td>' + esc(STRATEGY_LABEL[p.strategy] || p.strategy || '—') + '</td>' +
             '<td><b>' + vnd(p.entry_price) + '</b></td>' +
             '<td><b>' + vnd(p.exit_price) + '</b></td>' +
@@ -645,7 +665,7 @@
         var sym = String(r.symbol || '').toUpperCase();
         var pos = posOf(sym);
         return '<tr onclick="sigOpenDetail(' + r.id + ')" title="Xem chi tiết &amp; lý do hình thành tín hiệu">' +
-            '<td><b>' + esc(r.symbol) + '</b><span data-div="' + esc(r.symbol) + '"></span>' +
+            '<td><a class="sig-symlink" href="' + esc(stockHref(r.symbol)) + '" data-symbol="' + esc(r.symbol) + '">' + esc(r.symbol) + '</a><span data-div="' + esc(r.symbol) + '"></span>' +
                 '<div><span class="sig-badge st-mini ' + (STATE_BADGE[r.state] || 'draft') + '">' + esc(STATE_LABEL[r.state] || r.state || '—') + '</span></div></td>' +
             '<td>' + esc(STRATEGY_LABEL[r.strategy] || r.strategy || '—') + '</td>' +
             '<td>' + num(r.score, 1) + '</td>' +

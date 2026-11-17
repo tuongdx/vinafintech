@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/frontend/Logo/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/frontend/Logo/favicon-48x48.png" />
     <link rel="apple-touch-icon" href="/frontend/Logo/apple-touch-icon.png" />
-    <title>VinaFintech - Phân tích cổ phiếu &amp; dữ liệu thị trường</title>
+    <title>VinaFintech - Công nghệ phân tích đầu tư tài sản số</title>
     <!-- SEO-META-START -->
     <meta name="description" content="VinaFintech cung cấp dữ liệu thị trường chứng khoán, phân tích cổ phiếu, tin tức tài chính và công cụ đầu tư thông minh cho nhà đầu tư Việt Nam." />
     <meta name="robots" content="index,follow,max-image-preview:large" />
@@ -16,7 +16,7 @@
     <meta property="og:locale" content="vi_VN" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="VinaFintech" />
-    <meta property="og:title" content="VinaFintech - Phân tích cổ phiếu &amp; dữ liệu thị trường" />
+    <meta property="og:title" content="VinaFintech - Công nghệ phân tích đầu tư tài sản số" />
     <meta property="og:description" content="VinaFintech cung cấp dữ liệu thị trường chứng khoán, phân tích cổ phiếu, tin tức tài chính và công cụ đầu tư thông minh cho nhà đầu tư Việt Nam." />
     <meta property="og:url" content="https://tunix.vn/" />
     <meta property="og:image" content="https://tunix.vn/frontend/Logo/VinaFintechCause.png" />
@@ -24,10 +24,10 @@
     <meta property="og:image:height" content="1024" />
     <meta property="og:image:alt" content="VinaFintech - Nền tảng phân tích đầu tư" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="VinaFintech - Phân tích cổ phiếu &amp; dữ liệu thị trường" />
+    <meta name="twitter:title" content="VinaFintech - Công nghệ phân tích đầu tư tài sản số" />
     <meta name="twitter:description" content="VinaFintech cung cấp dữ liệu thị trường chứng khoán, phân tích cổ phiếu, tin tức tài chính và công cụ đầu tư thông minh cho nhà đầu tư Việt Nam." />
     <meta name="twitter:image" content="https://tunix.vn/frontend/Logo/VinaFintechCause.png" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://tunix.vn/#organization","name":"VinaFintech","url":"https://tunix.vn/","logo":"https://tunix.vn/frontend/Logo/VinaFintech-Logo.png"},{"@type":"WebSite","@id":"https://tunix.vn/#website","url":"https://tunix.vn/","name":"VinaFintech","alternateName":"VinaFintech","publisher":{"@id":"https://tunix.vn/#organization"},"inLanguage":"vi-VN","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://tunix.vn/tin-tuc?q={search_term_string}"},"query-input":"required name=search_term_string"}},{"@type":"WebPage","@id":"https://tunix.vn/#webpage","url":"https://tunix.vn/","name":"VinaFintech - Phân tích cổ phiếu & dữ liệu thị trường","description":"VinaFintech cung cấp dữ liệu thị trường chứng khoán, phân tích cổ phiếu, tin tức tài chính và công cụ đầu tư thông minh cho nhà đầu tư Việt Nam.","inLanguage":"vi-VN","isPartOf":{"@id":"https://tunix.vn/#website"}}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://tunix.vn/#organization","name":"VinaFintech","url":"https://tunix.vn/","logo":"https://tunix.vn/frontend/Logo/VinaFintech-Logo.png"},{"@type":"WebSite","@id":"https://tunix.vn/#website","url":"https://tunix.vn/","name":"VinaFintech","alternateName":"VinaFintech","publisher":{"@id":"https://tunix.vn/#organization"},"inLanguage":"vi-VN","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://tunix.vn/tin-tuc?q={search_term_string}"},"query-input":"required name=search_term_string"}},{"@type":"WebPage","@id":"https://tunix.vn/#webpage","url":"https://tunix.vn/","name":"VinaFintech - Công nghệ phân tích đầu tư tài sản số","description":"VinaFintech cung cấp dữ liệu thị trường chứng khoán, phân tích cổ phiếu, tin tức tài chính và công cụ đầu tư thông minh cho nhà đầu tư Việt Nam.","inLanguage":"vi-VN","isPartOf":{"@id":"https://tunix.vn/#website"}}]}</script>
     <!-- SEO-META-END -->
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B528QFKRN9"></script>
@@ -356,7 +356,8 @@
             color: #8b949e;
         }
 
-        body.dark-mode .footer-app-links a {
+        body.dark-mode .footer-app-links a,
+        body.dark-mode .footer-app-links .footer-app-link {
             background: #21262d;
             color: #e6edf3;
         }
@@ -2325,7 +2326,8 @@
             margin-top: 8px;
         }
 
-        .footer-app-links a {
+        .footer-app-links a,
+        .footer-app-links .footer-app-link {
             background: #f0f2f6;
             padding: 6px 12px;
             border-radius: 8px;
@@ -3100,8 +3102,8 @@
                     <div style="margin-top: 16px; opacity: 0.45; filter: grayscale(1); pointer-events: none;" aria-disabled="true"><!-- APP CHƯA RA MẮT - BỎ opacity/filter/pointer-events ĐỂ KÍCH HOẠT -->
                         <span style="font-size: 12px; color: #6b7a8f; display: block; margin-bottom: 8px;">Tải ứng dụng (sắp ra mắt)</span>
                         <div class="footer-app-links">
-                            <a href="#"><i class="fab fa-apple"></i> App Store</a>
-                            <a href="#"><i class="fab fa-google-play"></i> Google Play</a>
+                            <span class="footer-app-link"><i class="fab fa-apple"></i> App Store</span>
+                            <span class="footer-app-link"><i class="fab fa-google-play"></i> Google Play</span>
                         </div>
                     </div>
                 </div>
@@ -3410,7 +3412,7 @@
 
         // Version cache-bust cho nội dung nhúng — URL ỔN ĐỊNH để trình duyệt/HTTP cache tái sử dụng
         // (load nhanh). Khi deploy bản HTML mới → bump hằng số này để toàn bộ làm mới.
-        const CACHE_VERSION = '20261115a';
+        const CACHE_VERSION = '20261117j';
         // Slug URL đẹp cho các section Quản lý tài sản
         window.__QLTS_SLUGS = {
             overview: 'phan-tich-tai-san',
@@ -3684,6 +3686,15 @@
             loadContent('/frontend/tin-tuc.html');
             window.history.replaceState({}, '', '/tin-tuc');
             setHeaderContext(true);
+            // Iframe tin tức đã nằm trong cache → loadContent() chỉ activate lại (không tải lại), nên
+            // chuyên mục/tìm kiếm đang chọn BÊN TRONG iframe vẫn còn ⇒ phải báo iframe tự quay về "Tất cả"
+            // (nếu không: URL đổi thành /tin-tuc mà màn hình không đổi).
+            const frame = document.getElementById('contentEmbedFrame');
+            if (frame && frame.src && frame.src.indexOf('tin-tuc') !== -1 && frame.src.indexOf('cat=') === -1) {
+                try {
+                    frame.contentWindow.postMessage({ type: 'vinafintech-select-cat', cat: '' }, '*');
+                } catch (e) { /* iframe chưa sẵn sàng */ }
+            }
         }
         function openThiTruongPage() {
             // Mở trang "Thị trường" (dashboard) trong shell — URL đẹp /thi-truong.
@@ -3845,6 +3856,7 @@
             if (typeof updateRightColumnForStock === 'function') updateRightColumnForStock(normalized);
         }
         window.openCoPhieuStock = openCoPhieuStock;
+        window.resolveStockPrettyUrl = resolveStockPrettyUrl;
         function openKhamPhaPage() {
             // Mở trang "Khám phá" (discovery) trong shell — URL đẹp /kham-pha.
             if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
@@ -4704,9 +4716,13 @@
         }
 
         // Hiện nội dung SSR/prerender (bài viết, trang tĩnh) — không cần chờ iframe/fetch.
-        function showPrerender() {
+        // expectPath: chỉ dùng khối prerender khi nó ứng với ĐÚNG trang cần hiện (data-path do server
+        // gắn lúc render shell). Back/Forward tới một bài viết khác với trang shell được tải sẽ trả
+        // false để nơi gọi nạp iframe đúng bài — nếu không màn hình hiện nội dung của trang cũ.
+        function showPrerender(expectPath) {
             const prerender = document.getElementById('seoPrerender');
             if (!prerender) return false;
+            if (expectPath && prerender.dataset.path && prerender.dataset.path !== expectPath) return false;
             frameHostEl().style.display = 'none';
             staticHostEl().style.display = 'none';
             frameCache.forEach(function (e) {
@@ -5464,6 +5480,21 @@
         window.addEventListener('message', function(event) {
             const data = event.data;
             if (!data) return;
+            if (data.type === 'vinafintech-ai-open') {
+                // "Phân tích chi tiết →" từ dashboard fullscreen của biểu đồ (chart/Home/KhamPha):
+                // chuyển sang trang VinaF AI và gửi sẵn câu hỏi. XỬ LÝ TRƯỚC kiểm tra "frame ẩn" vì
+                // lúc thoát fullscreen shell có thể đã chuyển về trang trước (frame biểu đồ bị ẩn)
+                // trong khi message vẫn đang tới — chặn ở đây thì bấm nút sẽ "không có gì thay đổi".
+                const prompt = String(data.prompt || '').trim();
+                const sym = String(data.symbol || '').trim().toUpperCase();
+                const p = prompt || (sym ? ('Phân tích cổ phiếu ' + sym + ' (xu hướng, hỗ trợ/kháng cự, chỉ báo RSI/MACD).') : '');
+                if (p) { try { sessionStorage.setItem('vinafintech_ai_prompt', p); } catch (e) {} }
+                // Điều hướng do người dùng chủ động ⇒ bỏ trạng thái "quay lại trang trước sau khi
+                // thoát fullscreen" để nó không ghi đè lên trang VinaF AI vừa mở.
+                fsReturnState = null;
+                openTuniAiPage();
+                return;
+            }
             // iframe đang ẩn/prewarm không được điều khiển shell (chỉ frame đang xem mới có quyền).
             if (isFromHiddenFrame(event.source)) return;
             if (data.type === 'vinafintech-go-back') {
@@ -5499,15 +5530,6 @@
             }
             if (data.type === 'vinafintech-open-tintuc' && data.id) {
                 openTintuc(data.id, data.slug);
-                return;
-            }
-            if (data.type === 'vinafintech-ai-open') {
-                // Từ chart/Home/KhamPha: chuyển sang trang VinaF AI và gửi sẵn câu hỏi (không còn khung chat nổi).
-                const prompt = String(data.prompt || '').trim();
-                const sym = String(data.symbol || '').trim().toUpperCase();
-                const p = prompt || (sym ? ('Phân tích cổ phiếu ' + sym + ' (xu hướng, hỗ trợ/kháng cự, chỉ báo RSI/MACD).') : '');
-                if (p) { try { sessionStorage.setItem('vinafintech_ai_prompt', p); } catch (e) {} }
-                openTuniAiPage();
                 return;
             }
             if (data.type === 'vinafintech-open-stock' && data.symbol) {
@@ -5656,9 +5678,16 @@
         if (initialSymbol) {
             openStockDetailInIndex(initialSymbol, initialParams.get('fs') === '1');
         } else if (cryptoSymMatch) {
-            // Deep-link /crypto/{MÃ}: đang ở sẵn trang Crypto → chỉ đổi view (nhanh, không nạp lại);
-            // còn lại → mở trang Crypto kèm ?symbol={MÃ}.
-            if (!syncCryptoView(cryptoSymMatch[1])) openCryptoPage(cryptoSymMatch[1]);
+            // Deep-link /crypto/{MÃ} (kể cả khi Back/Forward quay về đây): phải NẠP hoặc HIỆN LẠI
+            // iframe Crypto trước rồi mới đặt view chi tiết coin (loadContent làm cả hai việc đó).
+            // Trước đây chỉ gọi syncCryptoView() — nếu iframe Crypto đang ẨN trong cache (vừa mở 1 bài
+            // viết tin tức từ trang chi tiết coin) thì chỉ có postMessage vào iframe ẩn ⇒ URL đổi nhưng
+            // màn hình vẫn là trang cũ, phải F5 mới thấy.
+            if (typeof window.clearHeaderSearch === 'function') window.clearHeaderSearch();
+            if (typeof window.setHeaderCat === 'function') window.setHeaderCat('');
+            loadContent('/frontend/crypto.html?symbol=' + encodeURIComponent(cryptoSymMatch[1].toUpperCase()));
+            lastRoutedPath = window.location.pathname;
+            setHeaderContext(false);
         } else if (coPhieuIndStockMatch) {
             // Chi tiết cổ phiếu theo bối cảnh ngành: /co-phieu/nganh/{l1}/{l2}/{SYM}
             // → nạp CoPhieu với ind + stock (nhúng toàn bộ nội dung chi tiết trong trang)
@@ -5674,8 +5703,9 @@
             setHeaderContext(false);
         } else if (prettyMatch) {
             // URL bài viết dạng /{slug}-{id}.html: ưu tiên nội dung SSR có sẵn trong HTML
-            // (tốt cho crawler + LCP). Nếu không có prerender thì mới nạp iframe như cũ.
-            if (showPrerender()) {
+            // (tốt cho crawler + LCP). Nếu không có prerender (hoặc prerender của TRANG KHÁC —
+            // trường hợp Back/Forward tới bài viết khi shell được tải ở trang khác) → nạp iframe.
+            if (showPrerender(window.location.pathname)) {
                 setHeaderContext(true);
             } else {
                 loadContent('/tintuc?id=' + prettyMatch[1]);
@@ -6026,7 +6056,7 @@
                     if (text) text.textContent = 'Với VinaF AI bạn có thể hỏi về cổ phiếu, mã chứng khoán, thị trường, so sánh mã, lấy dữ liệu realtime, tin tức, BCTC từ VinaFintech và có thể phân tích thông minh như broker nhiều kinh nghiệm trong thị trường.';
                     if (btn) {
                         btn.textContent = 'Trải nghiệm VinaF AI ngay';
-                        btn.href = '#';
+                        btn.href = '/vinafai';
                         btn.onclick = function(e) {
                             e.preventDefault();
                             openTuniAiPage();
@@ -6108,7 +6138,11 @@
 
                 let items = '';
                 items += '<div class="ud-item" data-act="profile"><i class="fas fa-user"></i> ' + (user.full_name || user.email) + '</div>';
-                items += '<div class="ud-item" data-act="member"><i class="fas fa-crown"></i> Hội viên</div>';
+                // TẠM ẨN tính năng hội viên: bật lại bằng cách đổi cờ dưới đây thành true.
+                const MEMBERSHIP_MENU_ENABLED = false;
+                if (MEMBERSHIP_MENU_ENABLED) {
+                    items += '<div class="ud-item" data-act="member"><i class="fas fa-crown"></i> Hội viên</div>';
+                }
                 if (ADMIN_ROLES.includes(user.role)) {
                     setAdminCookie();
                     items += '<div class="ud-item" data-act="admin"><i class="fas fa-shield-halved"></i> Quản trị</div>';
@@ -6298,6 +6332,19 @@
                 return allItems.filter(function(it) { return it.type === activeType; });
             }
 
+            // URL đích thật của thông báo — để thanh trạng thái trình duyệt hiển thị đúng link khi hover.
+            function notifHref(it) {
+                const link = String(it.link || '');
+                const newsMatch = link.match(/\/news\/(\d+)/);
+                if (newsMatch) return '/tintuc?id=' + encodeURIComponent(newsMatch[1]);
+                const copMatch = link.match(/^\/cophieu-([A-Za-z0-9.]+)$/);
+                if (copMatch) return '/co-phieu/' + encodeURIComponent(String(it.symbol || copMatch[1]).toUpperCase());
+                if (link) return link;
+                if (it.type === 'stock' && it.symbol) return '/co-phieu/' + encodeURIComponent(it.symbol);
+                if (it.type === 'news' && it.id) return '/tintuc?id=' + encodeURIComponent(it.id);
+                return '/';
+            }
+
             function render() {
                 const items = activeItems();
                 let html = '<div class="notif-head">🔔 Thông báo' +
@@ -6316,7 +6363,7 @@
                         const readCls = it.is_read ? ' read' : '';
                         const typeLabel = TYPE_LABEL[it.type] || it.type;
                         html += '<a class="notif-item' + readCls + '" data-id="' + it.id + '" data-type="' + it.type +
-                            '" data-link="' + esc(it.link || '') + '" data-symbol="' + esc(it.symbol || '') + '" href="javascript:void(0)">' +
+                            '" data-link="' + esc(it.link || '') + '" data-symbol="' + esc(it.symbol || '') + '" href="' + esc(notifHref(it)) + '">' +
                             (it.symbol ? '<span class="ni-symbol">' + esc(it.symbol) + '</span>' : '') +
                             '<span class="ni-type ' + it.type + '">' + typeLabel + '</span>' +
                             '<div class="ni-title">' + esc(it.title) + '</div>' +
@@ -6326,6 +6373,15 @@
                     });
                 }
                 dropdown.innerHTML = html;
+
+                // Thông báo mã CP: nâng href lên URL chuẩn cấp ngành /co-phieu/nganh/{sector}/{industry}/{MÃ}.
+                if (typeof window.resolveStockPrettyUrl === 'function') {
+                    dropdown.querySelectorAll('.notif-item[data-symbol]').forEach(function(el) {
+                        const sym = String(el.getAttribute('data-symbol') || '').trim().toUpperCase();
+                        if (!sym || (el.getAttribute('href') || '').indexOf('/co-phieu/') !== 0) return;
+                        window.resolveStockPrettyUrl(sym).then(function(u) { if (u) el.setAttribute('href', u); });
+                    });
+                }
 
                 // Tab chuyển loại
                 dropdown.querySelectorAll('.notif-tab').forEach(function(tab) {
@@ -6358,7 +6414,9 @@
 
                 // Click 1 thông báo → đánh dấu đã đọc + điều hướng
                 dropdown.querySelectorAll('.notif-item').forEach(function(el) {
-                    el.addEventListener('click', function() {
+                    el.addEventListener('click', function(ev) {
+                        // Điều hướng do SPA xử lý (giữ nguyên href thật để hover hiện URL đích).
+                        ev.preventDefault();
                         const id = el.getAttribute('data-id');
                         const ntype = el.getAttribute('data-type');
                         const link = el.getAttribute('data-link');

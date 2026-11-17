@@ -440,12 +440,13 @@
         var thumb = n.image_url
             ? '<img src="' + esc(n.image_url) + '" alt="" loading="lazy">'
             : '<i class="fas fa-newspaper"></i>';
-        return '<div class="lnh-nitem" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+        var href = n.slug ? ('/' + n.slug + '-' + n.id + '.html') : ('/tintuc?id=' + encodeURIComponent(n.id));
+        return '<a class="lnh-nitem" href="' + esc(href) + '" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
             '<div class="lnh-nthumb">' + thumb + '</div>' +
             '<div class="lnh-nbody">' +
                 '<div class="lnh-ntitle">' + esc(n.title) + '</div>' +
                 '<div class="lnh-ndate"><i class="far fa-clock"></i> ' + esc(fmtNewsDate(n.published_at || n.created_at)) + '</div>' +
-            '</div></div>';
+            '</div></a>';
     }
     function updateNewsNav() {
         var prev = $('lnhNewsPrev'), next = $('lnhNewsNext');
@@ -460,7 +461,10 @@
         var start = newsPage * NEWS_PER_PAGE;
         el.innerHTML = newsItems.slice(start, start + NEWS_PER_PAGE).map(newsItemHtml).join('');
         el.querySelectorAll('.lnh-nitem').forEach(function (it) {
-            it.addEventListener('click', function () {
+            it.addEventListener('click', function (e) {
+                // Giữ href thật để hover hiện URL bài viết; Ctrl/Cmd/Shift + click → trình duyệt mở tab mới.
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                e.preventDefault();
                 openNewsArticle(it.getAttribute('data-id'), it.getAttribute('data-slug'));
             });
         });

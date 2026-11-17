@@ -177,10 +177,11 @@ def _news_events(db: Session, sym: str, limit: int = 3) -> list[dict]:
     events: list[dict] = []
     for n in matched:
         published = news_time.from_row(n)
+        slug = _slug(n.title)   # trùng _slugify() của routers/news.py ⇒ đúng URL bài viết /{slug}-{id}.html
         events.append(_mk(sym, "IMPORTANT_NEWS", n.title, n.summary or n.title,
                           published.isoformat() if published else "",
-                          {"source": "news", "category": n.category or "tin-tuc", "slug": _slug(n.title)},
-                          news_id=n.id))
+                          {"source": "news", "category": n.category or "tin-tuc", "slug": slug},
+                          news_id=n.id, news_slug=slug))
     return events
 
 

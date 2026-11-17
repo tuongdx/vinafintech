@@ -81,7 +81,7 @@
     <h1 class="seo-h1" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">Đổi mật khẩu</h1>
     <div class="app-wrapper">
         <main class="pass-card">
-            <a class="back-link" href="javascript:void(0)" id="backBtn"><i class="fas fa-arrow-left"></i> Về thông tin tài khoản</a>
+            <a class="back-link" href="/taikhoan" id="backBtn"><i class="fas fa-arrow-left"></i> Về thông tin tài khoản</a>
             <div class="pass-title">🔑 Đổi mật khẩu</div>
             <div class="pass-sub">Nhập mật khẩu hiện tại và mật khẩu mới</div>
             <div id="passBody">
@@ -151,7 +151,8 @@
                 notifyParentHeight();
             }
 
-            document.getElementById('backBtn').addEventListener('click', function() {
+            document.getElementById('backBtn').addEventListener('click', function(e) {
+                e.preventDefault();
                 if (window.parent && window.parent !== window && window.parent.loadContent) {
                     window.parent.loadContent('/taikhoan');
                     window.parent.history.replaceState({}, '', '/taikhoan');

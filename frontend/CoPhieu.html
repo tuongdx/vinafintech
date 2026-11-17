@@ -124,6 +124,8 @@
         .cp-table-wrap tbody tr { cursor: pointer; transition: background 0.15s; }
         .cp-table-wrap tbody tr:hover { background: #f6faf9; }
         .td-sym { font-weight: 700; }
+        .td-sym .td-symlink { color: inherit; text-decoration: none; }
+        .td-sym .td-symlink:hover { color: #008080; text-decoration: underline; }
         .td-sym .td-name { display: block; font-size: 11px; font-weight: 500; color: #8a99b1; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pos { color: #0f7b3a; } .neg { color: #d0314e; }
         .td-score { display: flex; align-items: center; gap: 8px; }
@@ -166,6 +168,7 @@
         .cp-tabs button.active { background: #008080; color: #fff; }
         .cp-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
         .cp-card {
+            display: block; text-decoration: none; color: inherit;
             background: #fff; border: 1px solid #e9edf2; border-radius: 13px; padding: 12px; cursor: pointer;
             box-shadow: 0 1px 3px rgba(15,23,42,0.05); transition: box-shadow 0.2s, transform 0.2s;
         }
@@ -458,7 +461,7 @@
                     const isLast = i === parts.length - 1;
                     return isLast
                         ? '<span class="cb-item cb-current">' + esc(p.label) + '</span>'
-                        : '<a class="cb-item" href="#" data-nav="' + esc(p.path.join('/')) + '">' + esc(p.label) + '</a>';
+                        : '<a class="cb-item" href="/co-phieu/' + esc(p.path.join('/')) + '" data-nav="' + esc(p.path.join('/')) + '">' + esc(p.label) + '</a>';
                 }).join('<span class="cb-sep">›</span>') + '</nav>';
             }
             // Mốc thời gian dữ liệu (phiên realtime) hiển thị động theo giờ VN.
@@ -504,7 +507,7 @@
                 const tree = buildIndustryTree();
                 const cards = tree.map(function(sec) {
                     const subNames = sec.children.slice(0, 5).map(function(c) { return esc(c.name); }).join(' • ');
-                    return '<a class="cp-ind-card" href="#" data-nav="nganh/' + esc(sec.slug) + '">' +
+                    return '<a class="cp-ind-card" href="/co-phieu/nganh/' + esc(sec.slug) + '" data-nav="nganh/' + esc(sec.slug) + '">' +
                         '<div class="cic-name">' + esc(sec.name) + '</div>' +
                         '<div class="cic-sub">' + subNames + '</div>' +
                         '<div class="cic-count">' + sec.count + ' cổ phiếu</div>' +
@@ -521,7 +524,7 @@
                 const sec = findSector(l1);
                 if (!sec) { screenerEl.innerHTML = '<div class="cp-empty">Không tìm thấy ngành.</div>'; return; }
                 const cards = sec.children.map(function(c) {
-                    return '<a class="cp-ind-card" href="#" data-nav="nganh/' + esc(sec.slug) + '/' + esc(c.slug) + '">' +
+                    return '<a class="cp-ind-card" href="/co-phieu/nganh/' + esc(sec.slug) + '/' + esc(c.slug) + '" data-nav="nganh/' + esc(sec.slug) + '/' + esc(c.slug) + '">' +
                         '<div class="cic-name">' + esc(c.name) + '</div>' +
                         '<div class="cic-sub">' + esc(sec.name) + '</div>' +
                         '<div class="cic-count">' + c.count + ' cổ phiếu</div>' +
@@ -608,7 +611,7 @@
                 ];
                 const body = rows.length ? rows.map(function(s) {
                     return '<tr data-symbol="' + esc(s.symbol) + '">' +
-                        '<td><div class="td-sym">' + esc(s.symbol) + '<span data-div="' + esc(s.symbol) + '"></span><span class="td-name">' + esc(s.name) + '</span></div></td>' +
+                        '<td><div class="td-sym"><a class="td-symlink" href="' + esc(stockUrl(s.symbol)) + '">' + esc(s.symbol) + '</a><span data-div="' + esc(s.symbol) + '"></span><span class="td-name">' + esc(s.name) + '</span></div></td>' +
                         '<td>' + fmt(s.price, 0) + '</td>' +
                         '<td class="' + cls(s.percent_change) + '">' + pct(s.percent_change) + '</td>' +
                         '<td>' + fmtGtgd(s.volume * s.price) + '</td>' +
@@ -660,7 +663,7 @@
                 const isRoot = currentPath.length === 0; // Trang gốc "Cổ phiếu" (toàn thị trường)
                 const hd = currentTitleDesc();
                 const action = isRoot
-                    ? '<a class="cp-ind-btn" href="#" data-nav="nganh"><i class="fas fa-layer-group"></i> Nhóm ngành</a>'
+                    ? '<a class="cp-ind-btn" href="/co-phieu/nganh" data-nav="nganh"><i class="fas fa-layer-group"></i> Nhóm ngành</a>'
                     : '';
                 const asof = isRoot ? cpAsOfHtml() : '';
                 // Trang gốc: chỉ hiện block xanh (ẩn đường dẫn). Trang bên trong: chỉ hiện đường dẫn (ẩn block xanh).
@@ -702,7 +705,12 @@
                         });
                     });
                     tableCard.querySelectorAll('tbody tr[data-symbol]').forEach(function(tr) {
-                        tr.addEventListener('click', function() { openStock(tr.getAttribute('data-symbol')); });
+                        tr.addEventListener('click', function(e) {
+                            // Ô mã là hyperlink (href thật) → giữ Ctrl/Cmd/Shift cho trình duyệt mở tab mới.
+                            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                            e.preventDefault();
+                            openStock(tr.getAttribute('data-symbol'));
+                        });
                     });
                 }
             }
@@ -748,14 +756,14 @@
                         }).join('') + '</div></div>';
                 const cardsHtml =
                     '<div class="cp-cards" id="cpCards">' + list.map(function(s) {
-                        return '<div class="cp-card" data-symbol="' + esc(s.symbol) + '">' +
+                        return '<a class="cp-card" href="' + esc(stockUrl(s.symbol)) + '" data-symbol="' + esc(s.symbol) + '">' +
                             '<div class="cc-top"><span class="cc-sym">' + esc(s.symbol) + '</span><span class="cc-score" title="' + esc(SCORE_TIP) + '">Score ' + s.score + '</span></div>' +
                             '<div class="cc-name">' + esc(s.name) + '</div>' +
                             '<div class="cc-price">' + fmt(s.price, 0) + '</div>' +
                             '<div class="cc-pct ' + cls(s.percent_change) + '">' + pct(s.percent_change) + '</div>' +
                             '<div class="cc-spark" id="spark-' + esc(s.symbol) + '"><span style="color:#8a99b1;font-size:11px;">Đang tải…</span></div>' +
                             '<div class="cc-meta"><span>P/E ' + (s.pe_ratio > 0 ? fmt(s.pe_ratio, 1) : '--') + '</span><span>' + fmtCap(s.market_cap) + '</span></div>' +
-                        '</div>';
+                        '</a>';
                     }).join('') + '</div>';
 
                 // Tiêu đề + tab luôn HIỂN THỊ; chỉ làm mờ PHẦN NỘI DUNG (các thẻ cổ phiếu) khi block đang KHOÁ hội viên.
@@ -775,7 +783,12 @@
                     });
                 });
                 notableEl.querySelectorAll('.cp-card').forEach(function(c) {
-                    c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); });
+                    c.addEventListener('click', function(e) {
+                        // Thẻ cổ phiếu là hyperlink → chặn điều hướng iframe, nhường Ctrl/Cmd/Shift mở tab mới.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openStock(c.getAttribute('data-symbol'));
+                    });
                 });
                 loadSparklines(activeTab);
             }
@@ -817,7 +830,7 @@
                     }
                     render();
                 } catch (e) {
-                    screenerEl.innerHTML = '<div class="cp-empty">Không tải được dữ liệu cổ phiếu. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
+                    screenerEl.innerHTML = '<div class="cp-empty">Không tải được dữ liệu cổ phiếu. <a href="' + esc(location.pathname + location.search) + '">Thử lại</a></div>';
                 }
                 notifyParentHeight();
             }

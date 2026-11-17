@@ -33,9 +33,34 @@ import { FullscreenManager } from './core/fullscreen.js';
 import { SettingsPanel } from './ui/settingsPanel.js';
 import { LastPriceLine } from './core/lastPriceLine.js';
 // `?v=` BẮT BUỘC: /static/* không version bị HTTP cache 1 giờ. Bump khi sửa positionLine.js.
-import { PositionLine } from './core/positionLine.js?v=20260927d';
+// ⚠️ Tag cũ `20260927d` bị GIỮ NGUYÊN sau khi rebrand đổi token localStorage
+// (`tunix_access_token` → `vinafintech_access_token`) ⇒ trình duyệt vẫn chạy bản cache
+// immutable 1 năm đọc token CŨ ⇒ không đọc được token ⇒ "vạch vị thế" KHÔNG hiện.
+import { PositionLine } from './core/positionLine.js?v=20261115f';
 import { HistoryLoader } from './core/historyLoader.js';
-import { FullscreenWorkspace } from './ui/fullscreenWorkspace.js?v=20261027b';
+import { FullscreenWorkspace } from './ui/fullscreenWorkspace.js?v=20261115c';
+
+// Thoát toàn màn hình ở MỌI tầng — trang chi tiết có thể bị nhúng 1–2 tầng iframe
+// (shell → CoPhieu.html → StockDetail) hoặc đứng riêng:
+//   • iframe này tự bật fullscreen  → exitFullscreen trên document này;
+//   • shell bật fullscreen khung chứa (#frameHost) → exitFullscreen trên document của tổ tiên
+//     (cùng origin nên gọi được) + gửi message để shell tự thoát như nhấn Esc.
+function exitFullscreenEverywhere() {
+    const exitDoc = (d) => {
+        if (!d) return;
+        if (!(d.fullscreenElement || d.webkitFullscreenElement)) return;
+        const exit = d.exitFullscreen || d.webkitExitFullscreen;
+        if (exit) { try { exit.call(d); } catch (e) { /* ignore */ } }
+    };
+    exitDoc(document);
+    let w = window;
+    for (let i = 0; i < 5; i++) {
+        if (!w.parent || w.parent === w) break;
+        w = w.parent;
+        try { exitDoc(w.document); } catch (e) { break; } // khác origin → dừng
+        try { w.postMessage({ type: 'vinafintech-exit-fullscreen' }, '*'); } catch (e) { /* ignore */ }
+    }
+}
 
 export function createStockDetailChart(options) {
     const container = options.container;
@@ -924,14 +949,34 @@ export function createStockDetailChart(options) {
                     else load(symbol);
                 },
                 onOpenAi: (symbol) => {
-                    // Thoát fullscreen để người dùng dùng được chat VinaF AI (panel chat nằm ở parent,
-                    // sẽ bị khuất sau iframe fullscreen). Exit fullscreen rồi mới mở chat.
-                    if (fsManager && fsManager.isFullscreen()) {
-                        try { fsManager.toggle(); } catch (e) { /* ignore */ }
+                    // "Phân tích chi tiết →" → THOÁT toàn màn hình rồi mở trang VinaF AI phân tích
+                    // đúng mã cổ phiếu đang xem.
+                    const sym = String(symbol || '').trim().toUpperCase();
+                    // (1) Nhờ shell mở trang VinaF AI TRƯỚC khi thoát fullscreen: shell sẽ bỏ trạng thái
+                    // "quay lại trang trước" nên không có màn hình trung gian bị nháy.
+                    // ⚠️ Gửi tới window.top (shell), KHÔNG chỉ window.parent: trang chi tiết thường nằm
+                    // trong CoPhieu.html (parent) → gửi cho parent thì không ai xử lý ⇒ bấm nút không
+                    // có gì thay đổi.
+                    const topWin = (window.top && window.top !== window) ? window.top : null;
+                    if (topWin) {
+                        try { topWin.postMessage({ type: 'vinafintech-ai-open', symbol: sym }, '*'); } catch (e) { /* ignore */ }
+                        try {
+                            if (window.parent && window.parent !== window && window.parent !== window.top) {
+                                window.parent.postMessage({ type: 'vinafintech-ai-open', symbol: sym }, '*');
+                            }
+                        } catch (e) { /* ignore */ }
                     }
-                    if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'vinafintech-ai-open', symbol: symbol || '' }, '*');
-                    }
+                    // (2) Thoát toàn màn hình ở mọi tầng (iframe tự bật hoặc shell bật khung chứa).
+                    exitFullscreenEverywhere();
+                    if (topWin) return;
+                    // Mở thẳng trang chi tiết (không nhúng) → điều hướng sang trang VinaF AI.
+                    try {
+                        sessionStorage.setItem(
+                            'vinafintech_ai_prompt',
+                            'Phân tích cổ phiếu ' + sym + ' (xu hướng, hỗ trợ/kháng cự, chỉ báo RSI/MACD).'
+                        );
+                    } catch (e) { /* ignore */ }
+                    window.location.href = '/vinafai';
                 },
             });
             workspace.create();

@@ -463,16 +463,32 @@
         .market-highlight-title { font-size: 15px; font-weight: 800; color: #1a1f36; }
         .market-highlight-note { color: #8a99b1; font-size: 11px; }
         .market-highlight-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
             border: 0;
             background: transparent;
             color: #008080;
             font: inherit;
             font-size: 11px;
             font-weight: 700;
+            text-decoration: none;
             cursor: pointer;
             white-space: nowrap;
         }
         .market-highlight-link:hover { text-decoration: underline; }
+        /* Các khối được nâng thành liên kết thật: giữ nguyên giao diện, không gạch chân */
+        .news-card,
+        .news-cell,
+        .news-row,
+        .mh-opportunity,
+        .mh-chip,
+        .mh-map-cell,
+        .mh-asset-row {
+            color: inherit;
+            text-decoration: none;
+        }
+        .mh-asset-row:hover .mh-asset-name { color: #008080; }
         .mh-opportunities {
             display: grid;
             grid-template-columns: minmax(0, 1fr);
@@ -689,6 +705,21 @@
         }
         .digest-featured .news-cell.small {
             grid-column: 2;
+        }
+        /* Ô thứ 5 của khối nổi bật (cao 2 dòng): khi không có "Cơ hội nổi bật" thì hiển thị
+           2 tin xếp dọc, mỗi tin cao bằng các ô tin nhỏ phía trên. */
+        .digest-featured .news-cell-slot {
+            grid-column: 2;
+            grid-row: span 2;
+            display: grid;
+            grid-auto-rows: 1fr;
+            gap: 14px;
+            min-width: 0;
+        }
+        /* Tin nằm trong ô này tự xếp theo hàng của khối bao, không theo lưới 3 cột bên ngoài. */
+        .digest-featured .news-cell-slot > .news-cell.small {
+            grid-column: auto;
+            grid-row: auto;
         }
         .digest-featured .news-cell-opportunity {
             grid-row: span 2;
@@ -1079,6 +1110,7 @@
     </style>
 
     <link rel="stylesheet" href="/static/theme-instant.css?v=20261115a" />
+    <script src="/static/stock-links.js?v=20261115a"></script>
 </head>
 <body>
     <!-- SEO-H1 -->
@@ -1247,18 +1279,22 @@
                     : '--';
             }
 
-            function assetRow(name, value, detail, detailClass) {
-                return '<div class="mh-asset-row"><span class="mh-asset-name">' + esc(name) +
+            function assetRow(name, value, detail, detailClass, href) {
+                var inner = '<span class="mh-asset-name">' + esc(name) +
                     '</span><span class="mh-asset-value">' + esc(value) +
                     (detail ? '<small class="mh-asset-detail' + (detailClass ? ' ' + detailClass : '') + '">' + esc(detail) + '</small>' : '') +
-                    '</span></div>';
+                    '</span>';
+                return href
+                    ? '<a class="mh-asset-row" href="' + esc(href) + '">' + inner + '</a>'
+                    : '<div class="mh-asset-row">' + inner + '</div>';
             }
 
             function renderBankRates(container, data) {
                 var rows = Array.isArray(data) ? data.slice(0, 3) : [];
                 container.innerHTML = rows.length
                     ? '<div class="mh-asset-list">' + rows.map(function (row) {
-                        return assetRow(row.bank_name || row.bank_code || 'Ngân hàng', assetNumber(row.interest_rate, 2) + '%/năm');
+                        return assetRow(row.bank_name || row.bank_code || 'Ngân hàng',
+                            assetNumber(row.interest_rate, 2) + '%/năm', '', '', '/lai-ngan-hang');
                     }).join('') + '</div>'
                     : '<div class="mh-empty">Chưa có dữ liệu lãi suất kỳ hạn 12 tháng.</div>';
             }
@@ -1271,7 +1307,7 @@
                     var change = gold.change_24h_pct;
                     var detailClass = change == null ? '' : Number(change) < 0 ? 'neg' : Number(change) > 0 ? 'pos' : '';
                     var detail = change == null ? 'USD/ounce' : marketPct(change) + ' · 24 giờ';
-                    rows.push(assetRow('Vàng thế giới (XAU)', assetNumber(gold.price, 2) + ' USD/oz', detail, detailClass));
+                    rows.push(assetRow('Vàng thế giới (XAU)', assetNumber(gold.price, 2) + ' USD/oz', detail, detailClass, '/gia-vang-bac'));
                 } else {
                     rows.push('<div class="mh-empty">Chưa có dữ liệu giá vàng thế giới.</div>');
                 }
@@ -1281,8 +1317,8 @@
                     ? sjc.products.filter(function (item) { return item && Number.isFinite(Number(item.buy)) && Number.isFinite(Number(item.sell)); })[0]
                     : null;
                 if (product) {
-                    rows.push(assetRow('SJC mua vào', assetNumber(product.buy, 0) + ' đ/lượng'));
-                    rows.push(assetRow('SJC bán ra', assetNumber(product.sell, 0) + ' đ/lượng'));
+                    rows.push(assetRow('SJC mua vào', assetNumber(product.buy, 0) + ' đ/lượng', '', '', '/gia-vang-bac'));
+                    rows.push(assetRow('SJC bán ra', assetNumber(product.sell, 0) + ' đ/lượng', '', '', '/gia-vang-bac'));
                 } else {
                     rows.push('<div class="mh-empty">Chưa có dữ liệu giá vàng trong nước (SJC).</div>');
                 }
@@ -1299,28 +1335,45 @@
                         var change = Number(item.change_pct);
                         var detailClass = Number.isFinite(change) ? change < 0 ? 'neg' : change > 0 ? 'pos' : '' : '';
                         var detail = Number.isFinite(change) ? marketPct(change) + ' · 24 giờ' : 'USDT';
-                        return assetRow(item.symbol, assetNumber(item.price, 4) + ' USDT', detail, detailClass);
+                        return assetRow(item.symbol, assetNumber(item.price, 4) + ' USDT', detail, detailClass,
+                            '/crypto/' + encodeURIComponent(String(item.symbol).toUpperCase()));
                     }).join('') + '</div>'
                     : '<div class="mh-empty">Chưa có dữ liệu BTC, ETH, SOL, XRP.</div>';
             }
 
+            // Liên kết mã cổ phiếu dùng URL CHUẨN cấp ngành (helper /static/stock-links.js).
+            function stockHref(symbol) {
+                var code = String(symbol || '').trim().toUpperCase();
+                return window.vftStockHref ? window.vftStockHref(code) : ('/co-phieu/' + encodeURIComponent(code));
+            }
+
+            function upgradeStockLinks(root) {
+                if (window.vftUpgradeStockLinks) window.vftUpgradeStockLinks(root || document);
+            }
+
+            // Giữ nguyên hành vi mặc định của trình duyệt khi mở tab mới / tải lại
+            function isModifiedClick(event) {
+                return !!(event && (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button === 1));
+            }
+
             function marketStockButton(symbol, label, extraClass) {
                 if (!symbol) return '';
-                return '<button type="button" class="mh-chip' + (extraClass ? ' ' + extraClass : '') + '" data-symbol="' + esc(symbol) +
-                    '" title="' + esc(label || symbol) + '">' + esc(label || symbol) + '</button>';
+                return '<a class="mh-chip' + (extraClass ? ' ' + extraClass : '') + '" href="' + esc(stockHref(symbol)) +
+                    '" data-symbol="' + esc(symbol) +
+                    '" title="' + esc(label || symbol) + '">' + esc(label || symbol) + '</a>';
             }
 
             function bindMarketStockButtons(container) {
-                container.querySelectorAll('button[data-symbol]').forEach(function (button) {
-                    button.addEventListener('click', function () {
-                        openMarketStock(button.getAttribute('data-symbol'));
-                    });
-                });
+                upgradeStockLinks(container);
             }
 
             function openMarketStock(symbol) {
-                if (!symbol || !window.parent || window.parent === window) return;
-                window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: symbol }, '*');
+                if (!symbol) return;
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: symbol }, '*');
+                } else {
+                    window.location.href = stockHref(symbol);
+                }
             }
 
             function radarSymbols(items, changeBySymbol) {
@@ -1351,9 +1404,10 @@
                     var status = cell.status;
                     var color = status === 'up' || status === 'ceiling' ? 'mh-map-up'
                         : status === 'down' || status === 'floor' ? 'mh-map-down' : 'mh-map-flat';
-                    return '<button type="button" class="mh-map-cell ' + color + '" data-symbol="' + esc(cell.symbol) +
+                    return '<a class="mh-map-cell ' + color + '" href="' + esc(stockHref(cell.symbol)) +
+                        '" data-symbol="' + esc(cell.symbol) +
                         '" title="' + esc(cell.name || cell.symbol) + ' · ' + marketPct(cell.percent_change) + '">' +
-                        '<span>' + esc(cell.symbol) + '</span><small>' + esc(marketPct(cell.percent_change)) + '</small></button>';
+                        '<span>' + esc(cell.symbol) + '</span><small>' + esc(marketPct(cell.percent_change)) + '</small></a>';
                 }).filter(function (html) { return html.indexOf('data-symbol=""') === -1; }).join('');
                 container.innerHTML = mapHtml || '<div class="mh-empty">Chưa có dữ liệu bản đồ thị trường.</div>';
                 bindMarketStockButtons(container);
@@ -1490,7 +1544,7 @@
                     var ma50Text = hasNumber(item.ma50)
                         ? (Number.isFinite(price) && price >= ma50 ? 'trên' : 'dưới') + ' ' + assetNumber(ma50, 2)
                         : '--';
-                    return '<div class="mh-opportunity" role="button" tabindex="0" data-symbol="' + esc(symbol) + '">' +
+                    return '<a class="mh-opportunity" href="' + esc(stockHref(symbol)) + '" data-symbol="' + esc(symbol) + '">' +
                         '<div><div class="mh-opportunity-symbol">' + esc(symbol) + '</div>' +
                         '<div class="mh-opportunity-name">' + esc(item.name || symbol) + '</div></div>' +
                         '<span class="mh-opportunity-change ' + changeClass + '">' + marketPct(item.percent_change) + '</span>' +
@@ -1508,24 +1562,18 @@
                 if (!cards.length) return false;
                 marketOpportunitiesEl.innerHTML =
                     '<div class="market-highlight-head"><div class="market-highlight-title">🔥 Cơ hội nổi bật hôm nay</div>' +
-                    '<button type="button" class="market-highlight-link" data-market-page="/kham-pha">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                    '<a class="market-highlight-link" href="/kham-pha" data-market-page="/kham-pha">Xem chi tiết <i class="fas fa-arrow-right"></i></a></div>' +
                     '<div class="mh-opportunities">' + cards.join('') + '</div>';
-                marketOpportunitiesEl.querySelectorAll('.mh-opportunity').forEach(function (card) {
-                    function open() { openMarketStock(card.getAttribute('data-symbol')); }
-                    card.addEventListener('click', open);
-                    card.addEventListener('keydown', function (event) {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            open();
-                        }
-                    });
-                });
+                upgradeStockLinks(marketOpportunitiesEl);
                 return true;
             }
 
             function openMarketPage(url) {
+                if (!url) url = '/thi-truong';
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'vinafintech-open-page', url: url || '/thi-truong' }, '*');
+                    window.parent.postMessage({ type: 'vinafintech-open-page', url: url }, '*');
+                } else {
+                    window.location.href = url;
                 }
             }
 
@@ -1552,10 +1600,6 @@
                     }
                     marketHighlightHasOpportunities = renderMarketOpportunities(opportunities.items);
                     marketOpportunitiesEl.hidden = true;
-                    var opportunitiesLink = marketOpportunitiesEl.querySelector('[data-market-page]');
-                    if (opportunitiesLink) opportunitiesLink.addEventListener('click', function () {
-                        openMarketPage(opportunitiesLink.getAttribute('data-market-page'));
-                    });
                     marketHighlightLoaded = true;
                     mountMarketOpportunityInDigest();
                 } catch (error) {
@@ -1581,6 +1625,10 @@
                 var slot = document.getElementById('digestOpportunitySlot');
                 if (!slot || !marketHighlightLoaded) return;
                 if (!marketHighlightHasOpportunities) {
+                    // Chưa có cổ phiếu nào → giữ nguyên TIN TỨC đang chiếm ô này
+                    // (không hiển thị block "Cơ hội nổi bật"). Ô còn là placeholder
+                    // (không đủ tin dự phòng) thì bỏ đi cho khỏi trống.
+                    if (!slot.querySelector('.digest-opportunity-loading')) return;
                     slot.remove();
                     return;
                 }
@@ -1664,28 +1712,16 @@
                 var catIc = categoryIcon(n.category);
                 var time = formatTime(newsStamp(n));
                 var url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
-                return '<article class="news-card" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+                return '<a class="news-card" href="' + esc(url) + '" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                     '<div class="thumb">' + img +
                         '<span class="cat-badge"><i class="fas ' + catIc + '"></i>' + esc(cat) + '</span>' +
                     '</div>' +
                     '<div class="body">' +
-                        '<a class="title" href="' + url + '">' + esc(n.title) + '</a>' +
+                        '<span class="title">' + esc(n.title) + '</span>' +
                         (n.summary ? '<div class="summary">' + esc(n.summary) + '</div>' : '') +
                         (time ? '<div class="meta"><span><i class="far fa-clock"></i>' + esc(time) + '</span></div>' : '') +
                     '</div>' +
-                '</article>';
-            }
-
-            function bindCard(card) {
-                card.addEventListener('click', function (e) {
-                    var id = card.getAttribute('data-id');
-                    var slug = card.getAttribute('data-slug');
-                    if (!id) return;
-                    if (e && e.preventDefault) e.preventDefault();
-                    if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(id), slug: slug }, '*');
-                    }
-                });
+                '</a>';
             }
 
             function showLoadMore(show) {
@@ -1710,14 +1746,9 @@
                     rest.className = 'news-grid-section news-grid-rest';
                     gridEl.appendChild(rest);
                 }
-                var before = rest.querySelectorAll('.news-card').length;
                 rest.insertAdjacentHTML('beforeend', list.map(function (item) {
                     return cardHtml(item, false);
                 }).join(''));
-                var cards = rest.querySelectorAll('.news-card');
-                for (var i = before; i < cards.length; i++) {
-                    bindCard(cards[i]);
-                }
                 nextOffset += list.length;
                 if (list.length < limit) hasMore = false;
                 showLoadMore(hasMore);
@@ -2506,7 +2537,6 @@
                             : firstRow.length;
                         return cardHtml(item, index + eagerOffset < 4);
                     }).join('') + '</div>';
-                gridEl.querySelectorAll('.news-card').forEach(bindCard);
                 if (showIndex) loadNewsIndexCard();
                 if (showInternationalIndices) loadInternationalIndicesCard();
                 if (showSecuritiesStocks) loadSectorStocksCard('newsSecuritiesStocksCard', 'chung-khoan', 'chứng khoán');
@@ -2650,15 +2680,15 @@
                 var catIc = categoryIcon(n.category);
                 var time = formatTime(newsStamp(n));
                 var url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
-                return '<div class="news-cell ' + size + '" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+                return '<a class="news-cell ' + size + '" href="' + esc(url) + '" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                     img +
                     '<div class="news-cell-shade"></div>' +
                     '<span class="news-cell-cat"><i class="fas ' + catIc + '"></i>' + esc(cat) + '</span>' +
                     '<div class="news-cell-body">' +
-                        '<a class="news-cell-title" href="' + url + '">' + esc(n.title) + '</a>' +
+                        '<span class="news-cell-title">' + esc(n.title) + '</span>' +
                         (time ? '<div class="news-cell-meta"><i class="far fa-clock"></i>' + esc(time) + '</div>' : '') +
                     '</div>' +
-                '</div>';
+                '</a>';
             }
 
             // Dòng list (dùng trong khối danh sách 2 cột)
@@ -2669,16 +2699,16 @@
                 var cat = categoryLabel(n.category);
                 var time = formatTime(newsStamp(n));
                 var url = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
-                return '<div class="news-row" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+                return '<a class="news-row" href="' + esc(url) + '" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                     '<div class="nr-img">' + img + '</div>' +
                     '<div class="nr-body">' +
-                        '<a class="nr-title" href="' + url + '">' + esc(n.title) + '</a>' +
+                        '<span class="nr-title">' + esc(n.title) + '</span>' +
                         '<div class="nr-meta">' +
                             '<span class="nr-cat">' + esc(cat) + '</span>' +
                             (time ? '<span><i class="far fa-clock"></i>' + esc(time) + '</span>' : '') +
                         '</div>' +
                     '</div>' +
-                '</div>';
+                '</a>';
             }
 
             // Mỗi menu lấy tối đa 5 bài mới nhất → bản tin tổng hợp 4 khối
@@ -2711,17 +2741,23 @@
                         return;
                     }
 
-                    // Layout: 4 bài + cơ hội nổi bật → 8 bài dạng thẻ → 22 bài danh sách
+                    // Layout: 4 bài + ô "Cơ hội nổi bật" (dự phòng bằng 2 tin) → 8 bài dạng thẻ → 22 bài danh sách
                     var featured = items.slice(0, 4);
-                    var halfItems = items.slice(4, 12);
-                    var mediumItems = items.slice(12, 34);
+                    // Ô thứ 5 của khối nổi bật cao 2 dòng: mặc định là 2 TIN TỨC (hiển thị khi API
+                    // không trả về cổ phiếu nào); có cơ hội thì block "Cơ hội nổi bật" thay thế ô này.
+                    var slotItems = items.slice(4, 6);
+                    var halfItems = items.slice(6, 14);
+                    var mediumItems = items.slice(14, 36);
 
                     var html = '';
                     if (featured.length) {
                         html += '<div class="digest-featured">' + featured.map(function (n, i) {
                             return digestCellHtml(n, i === 0 ? 'big' : 'small');
-                        }).join('') + '<div class="news-cell small" id="digestOpportunitySlot">' +
-                            '<div class="digest-opportunity-loading">Đang tải cơ hội...</div></div></div>';
+                        }).join('') + (slotItems.length
+                            ? '<div class="news-cell-slot" id="digestOpportunitySlot">' +
+                                slotItems.map(function (n) { return digestCellHtml(n, 'small'); }).join('') + '</div>'
+                            : '<div class="news-cell small" id="digestOpportunitySlot">' +
+                                '<div class="digest-opportunity-loading">Đang tải cơ hội...</div></div>') + '</div>';
                     }
                     if (halfItems.length) {
                         html += '<div class="digest-half">' + halfItems.map(function (n) {
@@ -2732,42 +2768,25 @@
                         '<div class="digest-medium">' + mediumItems.map(digestRowHtml).join('') + '</div>' +
                         '<div class="digest-market-sidebar">' +
                         '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">Bản đồ thị trường</div>' +
-                        '<button type="button" class="market-highlight-link" data-market-page="/thi-truong?focus=market-map">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<a class="market-highlight-link" href="/thi-truong?focus=market-map" data-market-page="/thi-truong?focus=market-map">Xem chi tiết <i class="fas fa-arrow-right"></i></a></div>' +
                         '<div class="mh-map" id="digestMarketMap"></div></section>' +
                         '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">VinaFintech Market Radar</div>' +
-                        '<button type="button" class="market-highlight-link" data-market-page="/thi-truong?focus=market-radar">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<a class="market-highlight-link" href="/thi-truong?focus=market-radar" data-market-page="/thi-truong?focus=market-radar">Xem chi tiết <i class="fas fa-arrow-right"></i></a></div>' +
                         '<div class="mh-radar" id="digestMarketRadar"></div></section>' +
                         '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">Lãi suất ngân hàng</div>' +
-                        '<button type="button" class="market-highlight-link" data-market-page="/lai-ngan-hang">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<a class="market-highlight-link" href="/lai-ngan-hang" data-market-page="/lai-ngan-hang">Xem chi tiết <i class="fas fa-arrow-right"></i></a></div>' +
                         '<div id="digestBankRates"></div></section>' +
                         '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">Giá vàng</div>' +
-                        '<button type="button" class="market-highlight-link" data-market-page="/gia-vang-bac">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<a class="market-highlight-link" href="/gia-vang-bac" data-market-page="/gia-vang-bac">Xem chi tiết <i class="fas fa-arrow-right"></i></a></div>' +
                         '<div id="digestWorldGold"></div></section>' +
                         '<section class="market-highlight"><div class="market-highlight-head"><div class="market-highlight-title">Crypto</div>' +
-                        '<button type="button" class="market-highlight-link" data-market-page="/crypto">Xem chi tiết <i class="fas fa-arrow-right"></i></button></div>' +
+                        '<a class="market-highlight-link" href="/crypto" data-market-page="/crypto">Xem chi tiết <i class="fas fa-arrow-right"></i></a></div>' +
                         '<div id="digestCryptoPrices"></div></section>' +
                         '</div>';
 
                     gridEl.innerHTML = html;
                     mountMarketOpportunityInDigest();
-                    gridEl.querySelectorAll('[data-market-page]').forEach(function (link) {
-                        if (marketOpportunitiesEl.contains(link)) return;
-                        link.addEventListener('click', function () {
-                            openMarketPage(link.getAttribute('data-market-page'));
-                        });
-                    });
                     loadDigestMarketWidgets();
-                    gridEl.querySelectorAll('.news-cell:not(.news-cell-opportunity), .news-row').forEach(function (el) {
-                        el.addEventListener('click', function (e) {
-                            var id = el.getAttribute('data-id');
-                            var slug = el.getAttribute('data-slug');
-                            if (!id) return;
-                            if (e && e.preventDefault) e.preventDefault();
-                            if (window.parent && window.parent !== window) {
-                                window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(id), slug: slug }, '*');
-                            }
-                        });
-                    });
                     hasMore = false;
                     nextOffset = items.length;
                     showLoadMore(false);
@@ -2953,6 +2972,40 @@
             } catch (e) {}
 
             // Nút "Xem thêm" — người dùng chủ động bấm để tải thêm, không tự động tải khi cuộn.
+
+            // ---------------- Liên kết thật (<a href>) ----------------
+            // Mọi liên kết đều có href thật để thanh trạng thái trình duyệt hiển thị URL khi hover.
+            // Chỉ chặn điều hướng mặc định để shell cha xử lý (tránh nạp shell lồng trong iframe);
+            // giữ nguyên hành vi của trình duyệt khi người dùng giữ Ctrl/Cmd/Shift hoặc bấm chuột giữa.
+            function openNews(id, slug, fallbackHref) {
+                if (!id) return;
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(id), slug: slug || '' }, '*');
+                } else {
+                    window.location.href = fallbackHref;
+                }
+            }
+
+            document.addEventListener('click', function (event) {
+                if (event.defaultPrevented || isModifiedClick(event)) return;
+                var node = event.target;
+                var link = node && node.closest ? node.closest('a[href]') : null;
+                if (!link) return;
+                var href = link.getAttribute('href') || '';
+                if (!href || href.charAt(0) === '#') return;
+                event.preventDefault();
+                if (link.hasAttribute('data-market-page')) {
+                    openMarketPage(link.getAttribute('data-market-page'));
+                } else if (link.hasAttribute('data-symbol')) {
+                    openMarketStock(link.getAttribute('data-symbol'));
+                } else if (link.hasAttribute('data-id')) {
+                    openNews(link.getAttribute('data-id'), link.getAttribute('data-slug'), href);
+                } else if (href.charAt(0) === '/' && href.indexOf('//') !== 0) {
+                    openMarketPage(href);
+                } else {
+                    window.open(href, '_blank', 'noopener');
+                }
+            });
 
             // ---------------- Khởi tạo ----------------
             var params = new URLSearchParams(window.location.search);

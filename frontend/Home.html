@@ -111,7 +111,7 @@
 
         /* ===== Đáng chú ý (6 cards, 3x2) ===== */
         .ov-hot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        .ov-stock { border: 1px solid #e9edf2; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s; background: #fff; }
+        .ov-stock { display: block; text-decoration: none; color: inherit; border: 1px solid #e9edf2; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s; background: #fff; }
         .ov-stock:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,128,128,0.14); border-color: rgba(0,128,128,0.4); }
         .ov-stock .os-top { display: flex; align-items: flex-start; justify-content: space-between; }
         .ov-stock .os-sym { font-weight: 800; font-size: 15px; }
@@ -156,7 +156,7 @@
         .ov-radar-card .rc-ico { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; }
         .ov-radar-card .rc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
         /* Chip trong Market Radar: MÀU giống chip block "Cơ hội mới" (.oo-chip) — teal nhạt. */
-        .ov-radar-card .rc-chip { font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 20px; background: rgba(0,128,128,0.08); border: 1px solid rgba(0,128,128,0.18); color: #008080; cursor: pointer; transition: all 0.15s; }
+        .ov-radar-card .rc-chip { font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 20px; background: rgba(0,128,128,0.08); border: 1px solid rgba(0,128,128,0.18); color: #008080; cursor: pointer; transition: all 0.15s; text-decoration: none; }
         .ov-radar-card .rc-chip:hover { border-color: #008080; background: rgba(0,128,128,0.14); color: #008080; }
         /* Chip MÃ CỔ PHIẾU (không phải chip ngành .sec): khi DI CHUỘT hiện ĐỔ BÓNG cho chính chip đó. */
         .ov-radar-card .rc-chip:not(.sec):hover { box-shadow: 0 3px 9px rgba(0,128,128,0.25); }
@@ -189,7 +189,7 @@
 
         /* ===== News (card grid) ===== */
         .ov-news { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        .ov-news-item { border: 1px solid #e9edf2; border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.2s; background: #fff; display: flex; flex-direction: column; }
+        .ov-news-item { border: 1px solid #e9edf2; border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.2s; background: #fff; display: flex; flex-direction: column; text-decoration: none; color: inherit; }
         .ov-news-item:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,128,128,0.14); border-color: rgba(0,128,128,0.4); }
         .ov-news-item .ni-img { width: 100%; height: 128px; object-fit: cover; display: block; background: #eef1f5; }
         .ov-news-item .ni-imgph { width: 100%; height: 128px; display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff; background: linear-gradient(135deg, #0b2f3a, #008080); }
@@ -220,7 +220,7 @@
         .ov-opp .oo-desc { font-size: 12px; color: #8a99b1; margin-top: 3px; }
         .ov-opp .oo-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
         /* Chip mã cổ phiếu là phần DUY NHẤT bấm được trong thẻ ⇒ con trỏ pointer đặt ở chip. */
-        .ov-opp .oo-chip { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(0,128,128,0.08); color: #008080; border: 1px solid rgba(0,128,128,0.18); cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s, background 0.15s; }
+        .ov-opp .oo-chip { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(0,128,128,0.08); color: #008080; border: 1px solid rgba(0,128,128,0.18); cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s, background 0.15s; text-decoration: none; }
         /* Khi DI CHUỘT vào chip mã: hiện ĐỔ BÓNG cho chính chip đó (thẻ cha vẫn đứng im). */
         .ov-opp .oo-chip:hover { border-color: #008080; background: rgba(0,128,128,0.14); box-shadow: 0 3px 9px rgba(0,128,128,0.25); }
         .ov-opp .oo-note { font-size: 11.5px; color: #6b7a8f; margin-top: 9px; line-height: 1.4; }
@@ -422,8 +422,41 @@
             function fmtNum(v, d) { const n = Number(v) || 0; return n.toLocaleString('vi-VN', { minimumFractionDigits: d == null ? 2 : d, maximumFractionDigits: d == null ? 2 : d }); }
             function pct(v) { const n = Number(v) || 0; if (!n) return '0%'; return (n >= 0 ? '+' : '') + n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%'; }
             function cls(v) { return Number(v) >= 0 ? 'pos' : 'neg'; }
-            function openStock(sym) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*'); }
-            function openNews(id, slug) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: id, slug: slug }, '*'); }
+            function openStock(sym) {
+                if (!sym) return;
+                if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
+                else window.location.href = stockHref(sym);
+            }
+            // URL CHUẨN của 1 mã: /co-phieu/nganh/{sector}/{industry}/{MÃ} (bản đồ ngành lấy từ
+            // /api/stocks/stock-screener). Chưa biết ngành → tạm dùng /co-phieu/{MÃ}.
+            const STOCK_URLS = {};
+            function stockHref(sym) {
+                const key = String(sym || '').trim().toUpperCase();
+                return STOCK_URLS[key] || ('/co-phieu/' + encodeURIComponent(key));
+            }
+            function setStockUrls(stocks) {
+                (stocks || []).forEach(function(s) {
+                    const sym = String((s && s.symbol) || '').trim().toUpperCase();
+                    const sec = String((s && s.sector) || '').trim();
+                    const ind = String((s && s.industry) || '').trim();
+                    if (sym && sec && ind) {
+                        STOCK_URLS[sym] = '/co-phieu/nganh/' + encodeURIComponent(sec) + '/' + encodeURIComponent(ind) + '/' + encodeURIComponent(sym);
+                    }
+                });
+                upgradeStockLinks();
+            }
+            // Screener về sau khi card đã vẽ → nâng href các link mã đang có trong DOM.
+            function upgradeStockLinks() {
+                document.querySelectorAll('a[data-symbol]').forEach(function(a) {
+                    const sym = String(a.getAttribute('data-symbol') || '').trim().toUpperCase();
+                    if (STOCK_URLS[sym]) a.setAttribute('href', STOCK_URLS[sym]);
+                });
+            }
+            function openNews(id, slug) {
+                if (!id) return;
+                if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: id, slug: slug }, '*');
+                else window.location.href = slug ? ('/' + slug + '-' + id + '.html') : ('/tintuc?id=' + encodeURIComponent(id));
+            }
             function sendAi(p) { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-ai-open', prompt: p }, '*'); }
             // Điều hướng trang nội bộ: nhúng trong shell → báo parent (đi qua menu chính), ngoài shell → đổi URL.
             function openPage(url) {
@@ -436,6 +469,10 @@
             // Chặn link nội bộ (VD: /quan-ly-tai-san) khi Home được nhúng trong shell → báo parent điều
             // hướng qua menu chính (tránh load shell lồng nhau bên trong iframe).
             document.addEventListener('click', function(e) {
+                // Thẻ tin / thẻ cổ phiếu đã có handler riêng (đã preventDefault) → không điều hướng lần 2.
+                if (e.defaultPrevented) return;
+                // Ctrl/Cmd/Shift + click → để trình duyệt mở tab mới như link thường.
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
                 const a = e.target.closest('a[href]');
                 if (!a) return;
                 const href = (a.getAttribute('href') || '').trim();
@@ -496,14 +533,21 @@
                 const el = document.getElementById('ovHot');
                 if (!list || !list.length) { el.innerHTML = '<div class="ov-empty">Chưa có dữ liệu.</div>'; return; }
                 el.innerHTML = list.map(function(s) {
-                    return '<div class="ov-stock" data-symbol="' + esc(s.symbol) + '">' +
+                    return '<a class="ov-stock" href="' + esc(stockHref(s.symbol)) + '" data-symbol="' + esc(s.symbol) + '">' +
                         '<div class="os-top"><div><div class="os-sym">' + esc(s.symbol) + '</div><div class="os-name">' + esc(s.name) + '</div></div>' + scoreRing(s.score) + '</div>' +
                         '<div class="os-price">' + fmt(s.price, 0) + '</div>' +
                         '<div class="os-pct ' + cls(s.percent_change) + '">' + pct(s.percent_change) + '</div>' +
                         '<div class="os-spark" id="spark-' + esc(s.symbol) + '"><span style="color:#8a99b1;font-size:11px;">Đang tải…</span></div>' +
-                    '</div>';
+                    '</a>';
                 }).join('');
-                el.querySelectorAll('.ov-stock').forEach(function(c) { c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); }); });
+                el.querySelectorAll('.ov-stock').forEach(function(c) {
+                    c.addEventListener('click', function(e) {
+                        // Giữ href thật để hover hiện URL; Ctrl/Cmd/Shift + click → trình duyệt mở tab mới.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openStock(c.getAttribute('data-symbol'));
+                    });
+                });
                 list.forEach(function(s) { loadSpark('spark-' + s.symbol, s.symbol, Number(s.percent_change) >= 0); });
             }
 
@@ -538,7 +582,7 @@
                     if (s.volume_ratio > 0) chips.push('<span class="om-chip ' + (s.volume_ratio >= 1.5 ? 'hot' : s.volume_ratio >= 1.2 ? 'up' : '') + '"><i class="fas fa-chart-line"></i> V ' + s.volume_ratio.toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'x TB20</span>');
                     if (s.rsi != null) chips.push('<span class="om-chip up"><i class="fas fa-tachometer-alt"></i> RSI ' + fmt(s.rsi, 0) + '</span>');
                     const reasons = (Array.isArray(s.reasons) && s.reasons.length ? s.reasons : []).slice(0, 3);
-                    return '<div class="ov-stock opp" data-symbol="' + esc(s.symbol) + '">' +
+                    return '<a class="ov-stock opp" href="' + esc(stockHref(s.symbol)) + '" data-symbol="' + esc(s.symbol) + '">' +
                         '<div class="os-top"><div><div class="os-sym">' + esc(s.symbol) + '</div><div class="os-name">' + esc(s.name) + '</div></div>' +
                         '<div class="os-score" title="' + esc(OM_TOOLTIP) + '"><span class="os-score-num">' + (Number(s.score) || 0) + '</span><span class="os-score-lb">/100</span></div></div>' +
                         '<div class="os-price">' + fmt(s.price, 0) + '</div>' +
@@ -546,9 +590,16 @@
                         '<div class="os-meta">' + chips.join('') + '</div>' +
                         (reasons.length ? '<ul class="os-reasons">' + reasons.map(function(r) { return '<li><i class="fas fa-check"></i><span>' + esc(r) + '</span></li>'; }).join('') + '</ul>' : '') +
                         (s.trend_status ? '<div class="os-trend"><i class="fas fa-arrow-trend-up"></i> ' + esc(s.trend_status) + (s.sector_name ? ' · ' + esc(s.sector_name) : '') + '</div>' : '') +
-                    '</div>';
+                    '</a>';
                 }).join('');
-                el.querySelectorAll('.ov-stock').forEach(function(c) { c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); }); });
+                el.querySelectorAll('.ov-stock').forEach(function(c) {
+                    c.addEventListener('click', function(e) {
+                        // Giữ href thật để hover hiện URL; Ctrl/Cmd/Shift + click → trình duyệt mở tab mới.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openStock(c.getAttribute('data-symbol'));
+                    });
+                });
                 refreshNewsCount();
             }
 
@@ -569,14 +620,14 @@
                 const fbuy = (radar.foreign_buy || []).slice(0, 2);
 
                 const syms = function(arr) { return (arr || []).map(function(x) { return typeof x === 'string' ? x : x.symbol; }).filter(Boolean); };
-                const chip = function(arr) { return (arr || []).map(function(x) { return '<span class="rc-chip" data-symbol="' + esc(x) + '">' + esc(x) + '</span>'; }).join(''); };
+                const chip = function(arr) { return (arr || []).map(function(x) { return '<a class="rc-chip" href="' + esc(stockHref(x)) + '" data-symbol="' + esc(x) + '">' + esc(x) + '</a>'; }).join(''); };
                 // Chip NGÀNH: có `slug` → BẤM ĐƯỢC (mở /co-phieu/nganh/{slug}); không có → chip tĩnh như trước.
                 const secChip = function(arr) {
                     return (arr || []).map(function(s) {
                         const name = esc((s && s.name) || '');
                         const slug = String((s && s.slug) || '').trim();
                         return slug
-                            ? '<span class="rc-chip sec link" data-sector="' + esc(slug) + '" title="Xem cổ phiếu ngành ' + name + '">' + name + '</span>'
+                            ? '<a class="rc-chip sec link" href="/co-phieu/nganh/' + encodeURIComponent(slug) + '" data-sector="' + esc(slug) + '" title="Xem cổ phiếu ngành ' + name + '">' + name + '</a>'
                             : '<span class="rc-chip sec">' + name + '</span>';
                     }).join('');
                 };
@@ -605,10 +656,20 @@
                     card('Tín hiệu rủi ro', chip(syms(risk)),
                         firstNote(risk, riskSig.length ? '' : 'Top mã giảm mạnh hôm nay')) +
                     radarExtrasHtml();
-                el.querySelectorAll('.rc-chip[data-symbol]').forEach(function(c) { c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); }); });
+                el.querySelectorAll('.rc-chip[data-symbol]').forEach(function(c) {
+                    c.addEventListener('click', function(e) {
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openStock(c.getAttribute('data-symbol'));
+                    });
+                });
                 // Chip ngành (Ngành tăng mạnh / Ngành suy yếu) → mở trang Cổ phiếu của ngành đó.
                 el.querySelectorAll('.rc-chip.sec.link[data-sector]').forEach(function(c) {
-                    c.addEventListener('click', function() { openSector(c.getAttribute('data-sector')); });
+                    c.addEventListener('click', function(e) {
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openSector(c.getAttribute('data-sector'));
+                    });
                 });
                 loadRadarExtras();
             }
@@ -727,11 +788,12 @@
                         const cls = p >= 0 ? 'pos' : 'neg';
                         return '<span class="ni-tag ' + cls + '" data-symbol="' + esc(t) + '">' + t + ' <span class="pct">' + (p >= 0 ? '+' : '') + p.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%</span></span>';
                     }).join('');
-                    return '<div class="ov-news-item" data-id="' + n.id + '" data-slug="' + esc(n.slug) + '">' +
+                    const href = n.slug ? '/' + n.slug + '-' + n.id + '.html' : '/tintuc?id=' + n.id;
+                    return '<a class="ov-news-item" href="' + esc(href) + '" data-id="' + n.id + '" data-slug="' + esc(n.slug) + '">' +
                         img +
                         '<div class="ni-body"><div class="ni-title">' + esc(n.title) + '</div>' +
                         '<div class="ni-tags">' + tags + '</div></div>' +
-                    '</div>';
+                    '</a>';
                 }).join('');
                 el.querySelectorAll('.ni-img').forEach(function(im) {
                     im.addEventListener('error', function() {
@@ -742,10 +804,17 @@
                     });
                 });
                 el.querySelectorAll('.ov-news-item').forEach(function(it) {
-                    it.addEventListener('click', function() { openNews(it.getAttribute('data-id'), it.getAttribute('data-slug')); });
+                    it.addEventListener('click', function(e) {
+                        // Giữ href thật để hover hiện URL bài viết; nhường Ctrl/Cmd/Shift + click cho
+                        // trình duyệt (mở tab mới), còn lại để shell mở bài trong left-col.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openNews(it.getAttribute('data-id'), it.getAttribute('data-slug'));
+                    });
                 });
                 el.querySelectorAll('.ni-tag[data-symbol]').forEach(function(c) {
                     c.addEventListener('click', function(e) {
+                        e.preventDefault();
                         e.stopPropagation();
                         openStock(c.getAttribute('data-symbol'));
                     });
@@ -780,7 +849,7 @@
                 const avg = function(arr, key) { return avgOf(arr, function(s) { return num(s[key]); }); };
                 const signed = function(v, d) { return (v >= 0 ? '+' : '−') + fmt(Math.abs(v), d) + '%'; };
                 const card = function(title, desc, st, note) {
-                    const chips = stocksOf(st).slice(0, 3).map(function(x) { return '<span class="oo-chip" data-symbol="' + esc(x.symbol) + '">' + esc(x.symbol) + '</span>'; }).join('');
+                    const chips = stocksOf(st).slice(0, 3).map(function(x) { return '<a class="oo-chip" href="' + esc(stockHref(x.symbol)) + '" data-symbol="' + esc(x.symbol) + '">' + esc(x.symbol) + '</a>'; }).join('');
                     return '<div class="ov-opp">' +
                         '<div class="oo-title">' + title + '</div><div class="oo-desc">' + desc + '</div>' +
                         '<div class="oo-chips">' + chips + '</div>' + (note ? '<div class="oo-note">' + note + '</div>' : '') + '</div>';
@@ -801,7 +870,13 @@
                     card('Tăng trưởng cao', 'Lợi nhuận tăng trưởng mạnh', growth, noteGrowth) +
                     card('Định giá hấp dẫn', 'P/E, P/B thấp so với nền tảng', value, noteValue) +
                     card('Tài chính lành mạnh', 'Sức khỏe tài chính cao, cổ tức đều', cash, noteCash);
-                el.querySelectorAll('.oo-chip[data-symbol]').forEach(function(c) { c.addEventListener('click', function() { openStock(c.getAttribute('data-symbol')); }); });
+                el.querySelectorAll('.oo-chip[data-symbol]').forEach(function(c) {
+                    c.addEventListener('click', function(e) {
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        openStock(c.getAttribute('data-symbol'));
+                    });
+                });
             }
 
             // ---------- AI Market View ----------
@@ -1231,6 +1306,7 @@
                     const symMap = {};
                     notableStocks.forEach(function(s) { symMap[s.symbol] = s; });
                     setNewsSyms(symMap);
+                    setStockUrls(notableStocks);
                 });
 
                 // 3) Cơ hội nổi bật hôm nay (engine backend); fallback rổ cũ nếu lỗi
@@ -1246,7 +1322,7 @@
                         const fallback = notableStocks.length ? pickNotable(notableStocks) : [];
                         oppHasStocks = fallback.length > 0;
                         if (fallback.length) renderHot(fallback);
-                        else document.getElementById('ovHot').innerHTML = '<div class="ov-empty">Không tải được dữ liệu. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
+                        else document.getElementById('ovHot').innerHTML = '<div class="ov-empty">Không tải được dữ liệu. <a href="' + location.pathname + location.search + '">Thử lại</a></div>';
                         refreshNewsCount();
                     });
                 };

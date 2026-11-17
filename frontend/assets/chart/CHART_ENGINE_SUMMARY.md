@@ -61,6 +61,8 @@ frontend/assets/chart/
     ├── analysisPanel.js       # Dropdown "Phân tích" (S/R·VP·Hội tụ·Thị trường)
     ├── comparisonPanel.js     # Dropdown "So sánh" (thêm mã, chip, mode %/Giá)
     ├── marketBreadth.js       # Độ rộng thị trường (VNINDEX breadth)
+    ├── fullscreenWorkspace.js # Toàn màn hình: sidebar (thông tin/ngành/chỉ báo/S-R) + bottom dashboard
+    ├── accumulationPanel.js   # Panel "Giả định tích sản" (dùng lại dữ liệu block ở trang chi tiết)
     └── settingsPanel.js       # PH23: popover Cài đặt (6 tuỳ chọn)
 ```
 
@@ -151,6 +153,9 @@ settingsPanel, lastPriceLine`.
 - Crosshair vẽ **đường dọc xuyên mọi pane** nhưng **đường ngang chỉ pane hover** → PH20 dùng SVG bổ sung.
 - `param.paneIndex` có trong `subscribeCrosshairMove` (v5).
 - Fullscreen trong iframe cần thẻ iframe có `allow="fullscreen"`.
+- **Version asset:** sửa file trong `/static/chart/**` thì PHẢI bump `CHART_ASSET_VER` (StockDetail.html)
+  và `?v=` ở câu `import` tương ứng — asset có `?v=` được cache `immutable` 1 năm nên trình duyệt sẽ
+  giữ bản cũ vô thời hạn (đã gặp: panel fullscreen còn nhãn cũ + không có dữ liệu sau khi đổi brand).
 
 ---
 

@@ -11,8 +11,46 @@
  * nên tính sai: cộng cả đợt quyền mua/ESOP và đếm trùng đợt cổ tức).
  *
  * File này CHỈ lo phần HIỂN THỊ trong panel (chart SVG nhỏ + summary 3 dòng).
+ *
+ * Dữ liệu KHÔNG tự fetch nếu block "Giả định tích sản" của trang chi tiết đang/đã nạp:
+ * trang chi tiết công bố `window.VinaFintechAccumTask = { symbol, promise }` (request đang
+ * chạy) và `window.VinaFintechAccumData = { symbol, history, dividends }` (kết quả) +
+ * phát sự kiện `vinafintech-accum-data` (xem `loadAccumulation`). Panel dùng lại đúng
+ * dữ liệu đó (mở fullscreen là có số ngay, không phát sinh request thứ 2); chỉ khi chưa
+ * có (mở thẳng ?fs=1 hoặc block lỗi) mới tự fetch.
  */
 const ACC = (typeof window !== 'undefined') ? window.VinaFintechAccum : null;
+
+const SHARED_ACCUM_KEY = 'VinaFintechAccumData';
+const SHARED_ACCUM_EVENT = 'vinafintech-accum-data';
+
+// Dữ liệu tích sản do trang chi tiết chia sẻ (null nếu chưa có / khác mã).
+function readSharedAccum(sym) {
+    try {
+        const d = (typeof window !== 'undefined') ? window[SHARED_ACCUM_KEY] : null;
+        if (!d || !Array.isArray(d.history) || !d.history.length) return null;
+        if (String(d.symbol || '').toUpperCase() !== sym) return null;
+        return {
+            history: d.history,
+            dividends: Array.isArray(d.dividends) ? d.dividends : [],
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
+// Request mà block "Giả định tích sản" ở trang chi tiết đang chạy (nếu đúng mã) — để
+// panel chờ kết quả đó thay vì gọi API lần 2. null nếu không có / khác mã.
+function readSharedTask(sym) {
+    try {
+        const t = (typeof window !== 'undefined') ? window.VinaFintechAccumTask : null;
+        if (!t || !t.promise) return null;
+        if (String(t.symbol || '').toUpperCase() !== sym) return null;
+        return t.promise;
+    } catch (e) {
+        return null;
+    }
+}
 
 const LINES = [
     { key: 'capital', label: 'Vốn góp', color: '#94a3b8' },
@@ -72,6 +110,7 @@ export class AccumulationPanel {
         this._data = null;
         this._loading = false;
         this._destroyed = false;
+        this._onShared = null;
     }
 
     create() {
@@ -106,6 +145,19 @@ export class AccumulationPanel {
             summary: this.el.querySelector('#fsaSummary'),
             input: this.el.querySelector('#fsaMonthly'),
         };
+        // Trang chi tiết nạp xong dữ liệu tích sản (có thể SAU khi panel đã mở fullscreen)
+        // → dùng ngay dữ liệu đó thay vì chờ request riêng của panel.
+        this._onShared = (e) => {
+            if (this._destroyed) return;
+            const sym = String((e && e.detail && e.detail.symbol) || '').toUpperCase();
+            if (!sym || sym !== this.symbol) return;
+            const shared = readSharedAccum(sym);
+            if (!shared) return;
+            this._data = shared;
+            this._loading = false;
+            this._render();
+        };
+        window.addEventListener(SHARED_ACCUM_EVENT, this._onShared);
         this._applyIndexState();
         return this;
     }
@@ -154,22 +206,48 @@ export class AccumulationPanel {
     async _load() {
         if (this._loading || this._destroyed) return;
         const sym = this.symbol;
+        // Ưu tiên dữ liệu của block "Giả định tích sản" (trang chi tiết đã nạp sẵn).
+        const shared = readSharedAccum(sym);
+        if (shared) {
+            this._data = shared;
+            this._render();
+            return;
+        }
         this._loading = true;
+        // Đang có request của block "Giả định tích sản" cho đúng mã này → chờ dùng chung.
+        const task = readSharedTask(sym);
+        if (task) {
+            let sharedData = null;
+            try { sharedData = await task; } catch (e) { sharedData = null; }
+            this._loading = false;
+            if (this._destroyed) return;
+            if (this.symbol !== sym) { this._load(); return; }
+            if (sharedData) {
+                this._data = sharedData;
+                this._render();
+                return;
+            }
+            this._loading = true; // block lỗi/không có dữ liệu → panel tự nạp
+        }
+        let data = { history: [], dividends: [] };
         try {
             const [history, dividends] = await Promise.all([
                 fetch('/api/stocks/' + encodeURIComponent(sym) + '/history?period=5y', { cache: 'no-store' }).then((r) => r.json()),
                 fetch('/api/stocks/' + encodeURIComponent(sym) + '/dividends', { cache: 'no-store' }).then((r) => r.json()),
             ]);
-            if (this._destroyed || this.symbol !== sym) return;
-            this._data = {
+            data = {
                 history: Array.isArray(history) ? history : [],
                 dividends: Array.isArray(dividends) ? dividends : [],
             };
         } catch (e) {
-            if (this._destroyed) return;
-            this._data = { history: [], dividends: [] };
+            data = { history: [], dividends: [] };
         }
+        // Luôn hạ cờ TRƯỚC khi thoát: nếu mã đã đổi trong lúc chờ mà `_loading` còn true
+        // thì lần nạp sau bị chặn ⇒ panel kẹt "Đang cập nhật…" vĩnh viễn.
         this._loading = false;
+        if (this._destroyed) return;
+        if (this.symbol !== sym) { this._load(); return; }
+        this._data = data;
         this._render();
     }
 
@@ -279,5 +357,9 @@ export class AccumulationPanel {
 
     destroy() {
         this._destroyed = true;
+        if (this._onShared) {
+            try { window.removeEventListener(SHARED_ACCUM_EVENT, this._onShared); } catch (e) { /* ignore */ }
+            this._onShared = null;
+        }
     }
 }

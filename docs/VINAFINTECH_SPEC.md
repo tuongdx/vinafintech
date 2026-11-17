@@ -135,7 +135,7 @@ Các bảng chính trong `app/models.py`:
 | `ai` | `/ai/status`, `/ai/chat` (SSE) |
 | `auth` | đăng nhập/đăng ký/refresh/oauth/reset mật khẩu |
 | `users` | hồ sơ, đổi mật khẩu, xoá tài khoản |
-| `news` / `tickets` / `contact` / `feedback` / `faqs` / `plans` / `features` | nội dung & hỗ trợ |
+| `news` / `tickets` / `contact` / `feedback` / `faqs` / `plans` / `features` | nội dung & hỗ trợ (`/news`, `/news/related`, `/news/{id}`, `/news/{id}/image` = proxy ảnh thumbnail — nhiều báo chặn hotlink khiến trình duyệt chặn ảnh bằng ORB) |
 | `dashboard` / `logs` | admin |
 | `stocks_admin` | quản lý mã cổ phiếu |
 | `notifications` / `watchlist` | thông báo & theo dõi |
@@ -165,9 +165,10 @@ Các bảng chính trong `app/models.py`:
 - `loadContent(page)`:
   - Trang **embedded** (Home.html, StockDetail.html, tin-tuc.html, tintuc.html, caidat.html, taikhoan.html, doimatkhau.html) → dựng `<iframe id="contentEmbedFrame">` (cache-bust `?v=Date.now()`), điều chỉnh chiều cao qua `postMessage` (`vinafintech-embed-height`).
   - Trang khác (TrungTamTroGiup, HuongDanSuDung, CauHoiThuongGap, LienHe, GopY, DieuKhoanSuDung, ChinhSachBaoMat, MienTruTrachNhiem) → `fetch` + `DOMParser` nhúng nội dung.
-- Giao tiếp parent ⇄ iframe qua `postMessage`: `vinafintech-switch-stock`, `vinafintech-open-stock`, `vinafintech-symbol-changed`, `vinafintech-embed-height`, `vinafintech-home-height`, `vinafintech-set-theme`, `vinafintech-open-tintuc`, `vinafintech-open-url`, `vinafintech-cat-changed`, `vinafintech-search-clear`, `vinafintech-user-updated`, `vinafintech-stock-modal`.
+- Giao tiếp parent ⇄ iframe qua `postMessage`: `vinafintech-switch-stock`, `vinafintech-open-stock`, `vinafintech-symbol-changed`, `vinafintech-embed-height`, `vinafintech-home-height`, `vinafintech-set-theme`, `vinafintech-open-tintuc`, `vinafintech-open-url`, `vinafintech-cat-changed`, `vinafintech-search-clear`, `vinafintech-user-updated`, `vinafintech-stock-modal`, `vinafintech-ai-open` (kèm `fs: true` = mở trang VinaF AI NGAY trong màn hình fullscreen đang bật).
 - **Đổi theme tức thì** (`assets/theme-instant.js` + `theme-instant.css`, nhúng ở mọi trang): MutationObserver theo dõi class `dark-mode` trên `<body>`, bật class `theme-switching` trên `<html>` trong đúng lúc chuyển theme để tắt toàn bộ `transition` ⇒ nền/viền/chữ đổi màu ngay và đồng bộ giữa các lớp (không còn fade 0.3s lệch với ô sticky/header bảng). Hiệu ứng hover/animation ngoài lúc chuyển theme giữ nguyên.
-- URL đẹp: `/cophieu-{MÃ}`, `/tin-tuc`, `/{chuyên-mục}`, `/{slug}-{id}.html`.
+- URL đẹp: `/co-phieu/nganh/{sector}/{industry}/{MÃ}` (canonical — `/co-phieu/{MÃ}` và `/cophieu-{MÃ}` 301 về đây), `/co-phieu/nganh/{sector}`, `/co-phieu/nganh/{sector}/{industry}`, `/tin-tuc`, `/{chuyên-mục}`, `/{slug}-{id}.html`, `/crypto/{COIN}`, `/quan-ly-tai-san/{section}`, `/tien-ich/{tool}`.
+- URL chi tiết **không hợp lệ** (mã CP/coin/bài viết/ngành/section/công cụ không tồn tại, hoặc trang lạ) → **404** kèm trang giao diện `frontend/PageNotFound.html` (`noindex`, `X-Robots-Tag: noindex`) thay vì render shell; nếu chưa tải được dữ liệu danh mục thì KHÔNG 404 oan (giữ render shell như cũ).
 
 ---
 
@@ -188,7 +189,7 @@ Các block (tải song song, chart render sớm không chờ quote):
 
 - Hỗ trợ **mã chỉ số** (VNINDEX, VN30, HNX, HNXINDEX, HNX30, UPCOM, UPINDEX, UPCOMM): ẩn các block không có dữ liệu (sổ lệnh, giao dịch gần nhất, so sánh tương quan, kết quả kinh doanh/cân đối kế toán, phân tích lợi nhuận, cơ cấu cổ đông, báo cáo, tích sản).
 - **Fullscreen** (`?fs=1`): parent-driven; thoát fullscreen trả chart về chiều cao bình thường, icon nến fullscreen đúng mã đang xem, thoát từ trang không phải chi tiết thì quay lại trang trước.
-- **Dashboard fullscreen** (`.chart-bottom`): **Giả định tích sản 5 năm** · **Dòng tiền 10 phiên** (cùng nguồn `/stocks/{symbol}/money-flow`: ròng 10 phiên + cột vào/ra, có tooltip từng phiên) · **VinaF AI phân tích**. Panel Dòng tiền thay cho panel Tin tức nổi bật trước đây.
+- **Dashboard fullscreen** (`.chart-bottom`): **Giả định tích sản 5 năm** (dùng CHUNG thuật toán `accumulationCalc.js` và dùng lại đúng dữ liệu của block ở trang chi tiết — `window.VinaFintechAccumTask`/`VinaFintechAccumData`, không gọi API lần 2) · **Dòng tiền 10 phiên** (cùng nguồn `/stocks/{symbol}/money-flow`: ròng 10 phiên + cột vào/ra, có tooltip từng phiên) · **VinaF AI phân tích**. Panel Dòng tiền thay cho panel Tin tức nổi bật trước đây. Nút **Phân tích chi tiết →** thoát toàn màn hình rồi mở trang VinaF AI kèm câu hỏi phân tích đúng mã (message gửi thẳng `window.top` = shell, vì trang chi tiết có thể nằm trong `CoPhieu.html`).
 
 ---
 

@@ -154,9 +154,9 @@
         var c = pctCls(x.change_pct);
         return '<tr data-symbol="' + esc(x.symbol) + '" data-pair="' + esc(x.pair) + '">' +
             '<td class="rank">' + x.rank + '</td>' +
-            '<td class="left"><div class="cr-symcell">' + coinIconHtml(x.symbol) +
+            '<td class="left"><a class="cr-symcell" href="/crypto/' + encodeURIComponent(x.symbol) + '">' + coinIconHtml(x.symbol) +
             '<div class="cr-symtxt"><span class="sym">' + esc(x.name) + '</span>' +
-            '<span class="nm">' + esc(x.symbol) + ' · ' + esc(x.pair) + '</span></div></div></td>' +
+            '<span class="nm">' + esc(x.symbol) + ' · ' + esc(x.pair) + '</span></div></a></td>' +
             '<td class="right num">' + fmtPrice(x.price) + '</td>' +
             '<td class="right num ' + c + '"><span class="cr-badge ' + c + '">' + pctTxt(x.change_pct) + '</span></td>' +
             '<td class="right num">' + fmtPrice(x.high) + '</td>' +
@@ -540,17 +540,38 @@
         return false;
     }
 
+    // Ảnh nhỏ của tin: LUÔN lấy qua proxy `/api/news/{id}/image`.
+    // Nhiều báo (vd blogtienao.com) chặn hotlink ⇒ trình duyệt chặn ảnh bằng ORB
+    // (`net::ERR_BLOCKED_BY_ORB`) ⇒ tin đó mất thumbnail. Proxy server trả ảnh nên mọi tin
+    // đều có ảnh nhỏ; tin không có ảnh/ảnh lỗi vẫn hiện khung icon thay thế (xem bindNewsThumbs).
     function newsItemHtml(n) {
-        var img = n.image_url
-            ? '<img class="crn-thumb" src="' + esc(n.image_url) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
-            : '<span class="crn-thumb crn-thumb-fb"><i class="fas fa-coins"></i></span>';
+        var img = (n.image_url && n.id)
+            ? '<img class="crn-thumb" src="/api/news/' + encodeURIComponent(n.id) + '/image" alt="" loading="lazy">'
+            : fallbackThumbHtml();
         var time = fmtNewsTime(n.published_at || n.created_at);
-        return '<button type="button" class="crn-item" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+        var href = n.slug ? ('/' + n.slug + '-' + n.id + '.html') : ('/tintuc?id=' + encodeURIComponent(n.id));
+        return '<a class="crn-item" href="' + esc(href) + '" data-id="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
             img +
             '<span class="crn-body"><span class="crn-title">' + esc(n.title || '') + '</span>' +
             '<span class="crn-meta">' + (time ? '<span><i class="far fa-clock"></i> ' + esc(time) + '</span>' : '') +
             (n.source ? '<span class="crn-src">' + esc(n.source) + '</span>' : '') + '</span></span>' +
-            '</button>';
+            '</a>';
+    }
+
+    function fallbackThumbHtml() {
+        return '<span class="crn-thumb crn-thumb-fb"><i class="fas fa-coins"></i></span>';
+    }
+
+    // Ảnh lỗi (404/nguồn chết) → thay bằng khung icon để tin nào cũng có "ảnh nhỏ" cùng kích thước.
+    function bindNewsThumbs(root) {
+        Array.prototype.forEach.call(root.querySelectorAll('img.crn-thumb'), function (im) {
+            im.addEventListener('error', function () {
+                var fb = document.createElement('span');
+                fb.className = 'crn-thumb crn-thumb-fb';
+                fb.innerHTML = '<i class="fas fa-coins"></i>';
+                if (im.parentNode) im.parentNode.replaceChild(fb, im);
+            });
+        });
     }
 
     function openNewsArticle(id, slug) {
@@ -571,8 +592,12 @@
         crNews.show = list.length;
         el.innerHTML = list.map(newsItemHtml).join('') +
             (crNews.numHint ? '<div class="crn-hint">' + crNews.numHint + '</div>' : '');
+        bindNewsThumbs(el);
         Array.prototype.forEach.call(el.querySelectorAll('.crn-item'), function (b) {
-            b.addEventListener('click', function () {
+            b.addEventListener('click', function (e) {
+                // Giữ href thật để hover hiện URL bài viết; Ctrl/Cmd/Shift + click → trình duyệt mở tab mới.
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                e.preventDefault();
                 openNewsArticle(b.getAttribute('data-id'), b.getAttribute('data-slug'));
             });
         });
@@ -1360,7 +1385,11 @@
         bindInfiniteScroll();
         $('crBody').addEventListener('click', function (e) {
             var tr = e.target.closest('tr[data-symbol]');
-            if (tr) openDetail(tr.getAttribute('data-symbol'));
+            if (!tr) return;
+            // Ô tên coin là hyperlink (/crypto/{MÃ}) → giữ Ctrl/Cmd/Shift cho trình duyệt mở tab mới.
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            openDetail(tr.getAttribute('data-symbol'));
         });
         // Nút "Xem thêm / Thu gọn" của khối Giới thiệu (nội dung được vẽ lại sau mỗi lần polling)
         var di = $('crDetailInfo');

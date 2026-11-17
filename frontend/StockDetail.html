@@ -2569,6 +2569,8 @@
             height: 100%;
             position: relative;
             cursor: pointer;
+            color: inherit;
+            text-decoration: none;
         }
 
         .peer-col .bar {
@@ -3949,6 +3951,10 @@
 
         /* Meta links (cổ tức / tóm tắt doanh nghiệp) */
         .meta-link {
+            background: none;
+            border: 0;
+            padding: 0;
+            font: inherit;
             color: #008080;
             text-decoration: none;
             cursor: pointer;
@@ -4159,6 +4165,72 @@
             color: #8b949e;
         }
 
+        /* Lớp chờ khi mở trang chi tiết cổ phiếu: KHÔNG hiện dữ liệu mẫu (TCB) trước khi có dữ liệu thật */
+        body.stock-pending .app-container,
+        body.stock-pending .symbol-not-found {
+            display: none;
+        }
+        .stock-loading {
+            display: none;
+            min-height: 380px;
+            padding: 24px;
+            align-items: center;
+            justify-content: center;
+            background: #f7f9fb;
+        }
+        body.stock-pending .stock-loading {
+            display: flex;
+        }
+        .stock-loading-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 24px;
+            text-align: center;
+        }
+        .stock-loading-spinner {
+            width: 34px;
+            height: 34px;
+            border: 3px solid #dbe6e6;
+            border-top-color: #008080;
+            border-radius: 50%;
+            animation: stockLoadingSpin .8s linear infinite;
+        }
+        @keyframes stockLoadingSpin {
+            to { transform: rotate(360deg); }
+        }
+        .stock-loading-title {
+            margin: 4px 0 0;
+            color: #1a1f36;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .stock-loading-title strong {
+            color: #008080;
+        }
+        .stock-loading-sub {
+            margin: 0;
+            color: #8a99b1;
+            font-size: 12px;
+        }
+        body.dark-mode .stock-loading {
+            background: #0d1117;
+        }
+        body.dark-mode .stock-loading-spinner {
+            border-color: #2b3138;
+            border-top-color: #2ea3a3;
+        }
+        body.dark-mode .stock-loading-title {
+            color: #e6edf3;
+        }
+        body.dark-mode .stock-loading-title strong {
+            color: #2ea3a3;
+        }
+        body.dark-mode .stock-loading-sub {
+            color: #8b949e;
+        }
+
         body.dark-mode .info-modal-box {
             background: #161b22;
         }
@@ -4288,12 +4360,25 @@
     </style>
     <link rel="stylesheet" href="/static/typography.css?v=20261115a" />
     <link rel="stylesheet" href="/static/block-tint.css?v=20261115a" />
-    <!-- Biểu đồ nến: Lightweight Charts (TradingView open-source) + dữ liệu OHLCV VinaFintech -->
-    <script src="/static/vendor/lightweight-charts.standalone.production.js?v=5.2.1"></script>
+    <!-- Biểu đồ nến: Lightweight Charts (TradingView open-source) + dữ liệu OHLCV VinaFintech.
+         `defer`: tải song song, KHÔNG chặn parse body → trang chi tiết mở nhanh hơn;
+         module chart (import động) chờ DOMContentLoaded nên vẫn có window.LightweightCharts. -->
+    <script defer src="/static/vendor/lightweight-charts.standalone.production.js?v=5.2.1"></script>
 
     <link rel="stylesheet" href="/static/theme-instant.css?v=20261115a" />
+    <script src="/static/stock-links.js?v=20261115a"></script>
 </head>
-<body>
+<body class="stock-pending">
+    <!-- Lớp chờ: chỉ hiện trang chi tiết khi đã có dữ liệu của ĐÚNG mã cổ phiếu đang mở
+         (trước đây trang tĩnh hiện ngay nội dung mẫu TCB rồi mới thay dần). -->
+    <div class="stock-loading" id="stockLoading" role="status" aria-live="polite">
+        <div class="stock-loading-inner">
+            <div class="stock-loading-spinner"></div>
+            <p class="stock-loading-title">Đang tải thông tin <strong id="stockLoadingSymbol">cổ phiếu</strong></p>
+            <p class="stock-loading-sub">Vui lòng chờ trong giây lát…</p>
+        </div>
+    </div>
+
     <div class="app-container">
 
         <!-- ============================================================ -->
@@ -4324,9 +4409,9 @@
                         </h1>
                         <div class="company-name" id="stockCompanyName">Ngân hàng TMCP Kỹ thương Việt Nam</div>
                         <div id="stockMetaLine" style="font-size:12px;color:#008080;margin-top:4px;">
-                            <a href="javascript:void(0)" id="dividendLink" class="meta-link"><i class="fas fa-history"></i> Xem lịch sử trả cổ tức</a>
+                            <button type="button" id="dividendLink" class="meta-link"><i class="fas fa-history"></i> Xem lịch sử trả cổ tức</button>
                             &nbsp;|&nbsp;
-                            <a href="javascript:void(0)" id="companySummaryLink" class="meta-link"><i class="fas fa-building"></i> Xem tóm tắt doanh nghiệp</a>
+                            <button type="button" id="companySummaryLink" class="meta-link"><i class="fas fa-building"></i> Xem tóm tắt doanh nghiệp</button>
                         </div>
                     </div>
                     <div class="stock-price">
@@ -4720,10 +4805,20 @@
         let vinafintechChartModulePromise = null;
         // Version của khối chart engine — BẮT BUỘC bump khi sửa file trong /static/chart/
         // (module import không có query sẽ bị HTTP cache 1 giờ; thêm ?v= để lần tải sau lấy bản mới).
-        const CHART_ASSET_VER = '20261115a';
+        const CHART_ASSET_VER = '20261115f';
+        // Thư viện LightweightCharts được nạp `defer` (không chặn parse) → đợi nó sẵn sàng
+        // (deferred script chạy trước DOMContentLoaded) rồi mới import module chart.
+        function whenChartLibReady() {
+            if (window.LightweightCharts || document.readyState !== 'loading') return Promise.resolve();
+            return new Promise(function (resolve) {
+                document.addEventListener('DOMContentLoaded', function () { resolve(); }, { once: true });
+            });
+        }
         function getVinaFintechChartModule() {
             if (!vinafintechChartModulePromise) {
-                vinafintechChartModulePromise = import('/static/chart/stockDetailChart.js?v=' + CHART_ASSET_VER);
+                vinafintechChartModulePromise = whenChartLibReady().then(function () {
+                    return import('/static/chart/stockDetailChart.js?v=' + CHART_ASSET_VER);
+                });
             }
             return vinafintechChartModulePromise;
         }
@@ -5515,6 +5610,15 @@
             return formatMarketCap(v);
         }
 
+        // URL CHUẨN cấp ngành (helper dùng chung /static/stock-links.js); chưa biết ngành → /co-phieu/{MÃ}.
+        function stockHref(sym) {
+            const code = String(sym || '').trim().toUpperCase();
+            return window.vftStockHref ? window.vftStockHref(code) : ('/co-phieu/' + encodeURIComponent(code));
+        }
+        function upgradeStockLinks(root) {
+            if (window.vftUpgradeStockLinks) window.vftUpgradeStockLinks(root || document);
+        }
+
         function renderPeerChart() {
             const chart = document.getElementById('peerChart');
             if (!chart) return;
@@ -5532,18 +5636,19 @@
                 const val = Number(p[peerMetric] || 0);
                 const h = Math.max(6, Math.round((val / maxVal) * 100));
                 const isCurrent = p.is_current ? ' current' : '';
-                const name = escapeHtml(p.name || p.symbol);
                 return `
-                    <div class="peer-col${isCurrent}" data-symbol="${escapeHtml(p.symbol)}" title="${escapeHtml(p.symbol)}">
+                    <a class="peer-col${isCurrent}" href="${escapeHtml(stockHref(p.symbol))}" data-symbol="${escapeHtml(p.symbol)}" title="${escapeHtml(p.symbol)}">
                         <div class="tooltip">
                             <div class="tt-name">${escapeHtml(p.symbol)}</div>
                             <div>${metric.label}: <strong>${formatPeerValue(val)}</strong></div>
                         </div>
                         <div class="bar" style="height:${h}%;"></div>
                         <div class="label">${escapeHtml(p.symbol)}</div>
-                    </div>
+                    </a>
                 `;
             }).join('') + `</div>`;
+            // Nâng href lên URL cấp ngành ngay khi bản đồ ngành đã sẵn sàng.
+            upgradeStockLinks(chart);
         }
 
         async function loadPeerComparison(symbol) {
@@ -5595,12 +5700,17 @@
         }
 
         // Click vào cột/mã cổ phiếu trong "So sánh tương quan" → chuyển sang mã cổ phiếu đó.
+        // Mỗi cột là <a href> thật (hover hiện URL); chỉ chặn điều hướng mặc định để đổi mã
+        // ngay trong trang, nhường Ctrl/Cmd/Shift/Alt và chuột giữa cho trình duyệt mở tab mới.
         const peerChartClickEl = document.getElementById('peerChart');
         if (peerChartClickEl && !peerChartClickEl.__peerClickBound) {
             peerChartClickEl.__peerClickBound = true;
             peerChartClickEl.addEventListener('click', function(e) {
+                if (e.defaultPrevented) return;
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1) return;
                 const col = e.target.closest ? e.target.closest('.peer-col') : null;
                 if (!col) return;
+                e.preventDefault();
                 const sym = col.getAttribute('data-symbol') || '';
                 if (sym) goToStock(sym);
             });
@@ -5692,8 +5802,10 @@
                 const el = document.getElementById(id);
                 if (el) el.textContent = finState.symbol ? `· ${finState.symbol}` : '';
             });
-            loadFinancialStatement('income');
-            loadFinancialStatement('balance');
+            return Promise.all([
+                loadFinancialStatement('income'),
+                loadFinancialStatement('balance')
+            ]);
         }
 
         ['income', 'balance'].forEach(kind => {
@@ -6118,14 +6230,15 @@
                 const title = escapeHtml(item.title || '--');
                 const date = escapeHtml(item.date || '');
                 const source = escapeHtml(item.source || '');
-                const href = item.link ? ` href="${escapeHtml(item.link)}" target="_blank" rel="noopener"` : '';
                 const meta = [date, source ? `Nguồn: ${source}` : ''].filter(Boolean);
-                return `
-                    <a class="report-item"${href}>
+                const inner = `
                         <div class="title">${title}</div>
                         <div class="meta">${meta.map(m => `<span>${m}</span>`).join('')}</div>
-                    </a>
                 `;
+                // Không có link nguồn → dùng div để không tạo liên kết thiếu href (link chết).
+                return item.link
+                    ? `<a class="report-item" href="${escapeHtml(item.link)}" target="_blank" rel="noopener">${inner}</a>`
+                    : `<div class="report-item">${inner}</div>`;
             }).join('');
             // Giới hạn 5 báo cáo hiển thị (còn lại cuộn) RỒI mới khớp chiều cao cho nửa phải.
             fitReportScroll();
@@ -6791,6 +6904,7 @@
             if (notFoundSymbol) notFoundSymbol.textContent = symbol || '';
             if (leftCol) leftCol.style.display = 'none';
             if (notFound) notFound.style.display = 'block';
+            hideStockLoading();
             notifyParentHeight();
         }
 
@@ -6844,23 +6958,121 @@
             await loadStockDetail(sym);
         }
 
+        // ===== Trạng thái chờ khi mở trang chi tiết =====
+        // Trang tĩnh có sẵn nội dung mẫu (TCB) nên khi JS chưa chạy, `body.stock-pending` ẩn toàn bộ
+        // nội dung đó. Ngay khi JS chạy: đặt khung về đúng mã rồi MỞ TRANG LUÔN — panel nào có dữ
+        // liệu trước sẽ hiện trước, panel chậm tự hiện sau (mỗi panel có placeholder riêng).
+        const STOCK_LOADING_HEIGHT = 420;   // chiều cao khung trong lúc chờ (trước khi JS chạy)
+
+        function hideStockLoading() {
+            if (document.body.classList.contains('stock-pending')) {
+                document.body.classList.remove('stock-pending');
+                notifyParentHeight();
+            }
+        }
+
+        // Đặt lại phần định danh về đúng mã đang mở để không lộ dữ liệu mẫu của mã khác.
+        function resetStockIdentity(symbol) {
+            // Trang trước có thể đang hiện thông báo "không tìm thấy mã" → hiện lại nội dung.
+            const leftCol = document.querySelector('.app-container .left-col');
+            if (leftCol) leftCol.style.display = '';
+            const notFound = document.getElementById('symbolNotFound');
+            if (notFound) notFound.style.display = 'none';
+            const setText = function (id, text) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            };
+            setText('stockSymbol', symbol);
+            setText('stockExchange', '--');
+            setText('stockCompanyName', 'Đang tải thông tin doanh nghiệp…');
+            setText('stockPrice', '--');
+            const change = document.getElementById('stockChange');
+            if (change) {
+                change.textContent = '';
+                change.style.color = '';
+                change.style.background = '';
+            }
+            const metrics = document.getElementById('stockMetrics');
+            if (metrics) metrics.innerHTML = '';
+            const input = document.getElementById('chartSymbolInput');
+            if (input) input.value = symbol;
+            const divBadge = document.getElementById('stockDivBadge');
+            if (divBadge) divBadge.setAttribute('data-div', symbol);
+            document.title = `${symbol} - VinaFintech`;
+        }
+
+        function applyQuote(quote, symbol, isIndex) {
+            document.title = `${quote.symbol || symbol} - VinaFintech`;
+            const stockSymbol = document.getElementById('stockSymbol');
+            const stockExchange = document.getElementById('stockExchange');
+            const stockCompanyName = document.getElementById('stockCompanyName');
+            const stockPrice = document.getElementById('stockPrice');
+            const stockChange = document.getElementById('stockChange');
+
+            if (stockSymbol) stockSymbol.textContent = quote.symbol || symbol;
+            // Nhãn "Sắp chia cổ tức" cạnh mã (nguồn: /api/stocks/upcoming-dividends qua dividend-badge.js)
+            const stockDivBadge = document.getElementById('stockDivBadge');
+            if (stockDivBadge) {
+                stockDivBadge.setAttribute('data-div', String(quote.symbol || symbol || '').toUpperCase());
+                if (window.VinaFintechDiv && window.VinaFintechDiv.sweep) window.VinaFintechDiv.sweep();
+            }
+            updateFavoriteBtn(quote.symbol || symbol);
+            if (stockExchange) stockExchange.textContent = quote.exchange || '--';
+            if (stockCompanyName) stockCompanyName.textContent = quote.name || quote.symbol || symbol;
+            if (stockPrice) stockPrice.textContent = formatNumber(quote.price || 0, 0);
+
+            if (stockChange) {
+                const positive = Number(quote.change || 0) >= 0;
+                stockChange.style.color = positive ? '#0f7b3a' : '#e74c3c';
+                stockChange.style.background = positive ? '#e3f5ec' : '#fde8e5';
+                stockChange.innerHTML = `<i class="fas fa-arrow-${positive ? 'up' : 'down'}"></i> ${formatSigned(quote.change || 0, 0)} (${formatSigned(quote.percent_change || 0, 2)}%)`;
+            }
+
+            currentQuote = quote;
+            renderMetrics(quote);
+            if (!isIndex) {
+                // Giá trị hiện tại trong bảng cổ đông cần giá -> render lại sau khi có quote.
+                if (shareholderData) {
+                    renderShareholderTable();
+                }
+                // Đã có TÊN CÔNG TY → nạp lại tin liên quan kèm từ khoá thương hiệu
+                // (VD Techcombank/Vinhomes) để bắt thêm các bài gọi mã bằng tên. Mỗi mã 1 lần.
+                const brand = brandKeywordFromName(quote.name);
+                if (brand && brand.toUpperCase() !== symbol && stockNewsBrandLoaded !== symbol) {
+                    stockNewsBrandLoaded = symbol;
+                    loadStockNews(symbol, brand);
+                }
+            }
+            // ?fs=1 → bật toàn màn hình sau khi chart nạp (mặc định VNINDEX).
+            maybeAutoFullscreen();
+            // Dữ liệu trang chi tiết đã xong → báo tiến độ cho lớp chờ của shell.
+            markChartFsDataReady();
+        }
+
         async function loadStockDetail(symbolOverride) {
             const symbol = (symbolOverride || getSymbolFromQuery()).trim().toUpperCase();
             const isIndex = isIndexSymbol(symbol);
-            // Vẽ chart NGAY (chỉ cần symbol) — không chờ quote (quote có thể chậm 1-30s lần đầu).
-            const titleInput = document.getElementById('chartSymbolInput');
-            if (titleInput) titleInput.value = symbol;
+            // Đặt khung về đúng mã rồi MỞ TRANG NGAY (không chờ API): thông tin nào về trước hiện
+            // trước, thông tin chậm hiện sau. Nhờ resetStockIdentity nên không lộ dữ liệu mã khác.
+            resetStockIdentity(symbol);
+            hideStockLoading();
+
+            // Đăng ký request "Giả định tích sản" TRƯỚC khi khởi tạo chart: workspace
+            // fullscreen (panel Giả định tích sản) được tạo bên trong loadVinaFintechChart
+            // và sẽ chờ đúng request này thay vì tự gọi API lần 2.
+            const finishAccumTask = isIndex ? null : beginAccumTask(symbol);
+
+            // Các panel độc lập chạy SONG SONG và tự hiện khi có dữ liệu — KHÔNG chặn việc mở trang.
             loadVinaFintechChart(symbol);
             if (!isIndex) {
-                // Các panel độc lập chạy SONG SONG với quote để hiển thị sớm hơn.
                 loadFinancialStatements(symbol);
                 loadProfitAnalysis(symbol);
                 loadAssetAnalysis(symbol);
                 loadShareholderStructure(symbol);
                 loadReports(symbol, 'financial');
                 scheduleReportsAutoRefresh();   // tự nạp lại block Báo cáo khi qua mốc 12h trưa (giờ VN)
-                loadStockNews(symbol);   // nửa phải khối Báo cáo (chưa có tên công ty → chỉ khớp theo MÃ)
-                loadAccumulation(symbol);
+                loadStockNews(symbol);          // nửa phải khối Báo cáo (chưa có tên công ty → chỉ khớp theo MÃ)
+                loadAccumulation(symbol, finishAccumTask);
                 // Block VinaF AI Analysis: chỉ hiển thị + chỉ gọi API khi đã đăng nhập
                 if (applyTuniAnalysisVisibility()) loadTuniAnalysis(symbol);
                 loadOrderBook(symbol);
@@ -6872,69 +7084,31 @@
                 // bấm 2 nút popup hiển thị tức thì từ cache.
                 preloadInfoPanels(symbol);
             }
-            try {
-                const quote = await api(`/stocks/${encodeURIComponent(symbol)}/quote`);
 
-                // Mã cổ phiếu không tồn tại trên HOSE/HNX/UPCoM → hiển thị thông báo
-                if (quote && quote.valid === false) {
+            // Quote (mã / tên / giá) về sau cùng thì tự điền vào header; các panel khác độc lập.
+            api(`/stocks/${encodeURIComponent(symbol)}/quote`)
+                .then(function (quote) {
+                    if (!quote || quote.valid === false) {
+                        showSymbolNotFound(symbol);
+                        return;
+                    }
+                    try {
+                        applyQuote(quote, symbol, isIndex);
+                    } catch (error) {
+                        console.error('Failed to render stock quote:', error);
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Failed to load stock detail:', error);
+                    // Không tải được dữ liệu (mã không hợp lệ / lỗi mạng) → hiển thị thông báo
+                    // thay vì dữ liệu mẫu cũ
                     showSymbolNotFound(symbol);
-                    return;
-                }
-
-                document.title = `${quote.symbol} - VinaFintech`;
-                const stockSymbol = document.getElementById('stockSymbol');
-                const stockExchange = document.getElementById('stockExchange');
-                const stockCompanyName = document.getElementById('stockCompanyName');
-                const stockPrice = document.getElementById('stockPrice');
-                const stockChange = document.getElementById('stockChange');
-
-                if (stockSymbol) stockSymbol.textContent = quote.symbol || symbol;
-                // Nhãn "Sắp chia cổ tức" cạnh mã (nguồn: /api/stocks/upcoming-dividends qua dividend-badge.js)
-                const stockDivBadge = document.getElementById('stockDivBadge');
-                if (stockDivBadge) {
-                    stockDivBadge.setAttribute('data-div', String(quote.symbol || symbol || '').toUpperCase());
-                    if (window.VinaFintechDiv && window.VinaFintechDiv.sweep) window.VinaFintechDiv.sweep();
-                }
-                updateFavoriteBtn(quote.symbol || symbol);
-                if (stockExchange) stockExchange.textContent = quote.exchange || '--';
-                if (stockCompanyName) stockCompanyName.textContent = quote.name || quote.symbol || symbol;
-                if (stockPrice) stockPrice.textContent = formatNumber(quote.price || 0, 0);
-
-                if (stockChange) {
-                    const positive = Number(quote.change || 0) >= 0;
-                    stockChange.style.color = positive ? '#0f7b3a' : '#e74c3c';
-                    stockChange.style.background = positive ? '#e3f5ec' : '#fde8e5';
-                    stockChange.innerHTML = `<i class="fas fa-arrow-${positive ? 'up' : 'down'}"></i> ${formatSigned(quote.change || 0, 0)} (${formatSigned(quote.percent_change || 0, 2)}%)`;
-                }
-
-                currentQuote = quote;
-                renderMetrics(quote);
-                if (!isIndex) {
-                    // Giá trị hiện tại trong bảng cổ đông cần giá -> render lại sau khi có quote.
-                    if (shareholderData) {
-                        renderShareholderTable();
-                    }
-                    // Đã có TÊN CÔNG TY → nạp lại tin liên quan kèm từ khoá thương hiệu
-                    // (VD Techcombank/Vinhomes) để bắt thêm các bài gọi mã bằng tên. Mỗi mã 1 lần.
-                    const brand = brandKeywordFromName(quote.name);
-                    if (brand && brand.toUpperCase() !== symbol && stockNewsBrandLoaded !== symbol) {
-                        stockNewsBrandLoaded = symbol;
-                        loadStockNews(symbol, brand);
-                    }
-                }
-                // ?fs=1 → bật toàn màn hình sau khi chart nạp (mặc định VNINDEX).
-                maybeAutoFullscreen();
-                // Dữ liệu trang chi tiết đã xong → báo tiến độ cho lớp chờ của shell.
-                markChartFsDataReady();
-                notifyParentHeight();
-            } catch (error) {
-                console.error('Failed to load stock detail:', error);
-                // Không tải được dữ liệu (mã không hợp lệ / lỗi mạng) → hiển thị thông báo thay vì dữ liệu mẫu cũ
-                showSymbolNotFound(symbol);
-            }
+                });
         }
 
         function getContentHeight() {
+            // Đang chờ dữ liệu → báo chiều cao lớp chờ (trang thật đang ẩn) để khung không bị trống.
+            if (document.body.classList.contains('stock-pending')) return STOCK_LOADING_HEIGHT;
             const container = document.querySelector('.app-container');
             if (!container) return 0;
             return Math.ceil(container.getBoundingClientRect().height);
@@ -7445,10 +7619,37 @@
             }
         }
 
-        async function loadAccumulation(symbol) {
+        // Request "Giả định tích sản" dùng chung với panel ở dashboard fullscreen
+        // (xem /static/chart/ui/accumulationPanel.js): công bố promise TRƯỚC khi chart
+        // khởi tạo để panel chờ đúng request này thay vì gọi API lần 2.
+        // Chuyển mã liên tiếp → request cũ được giải phóng (resolve null) để không treo.
+        let accumTaskResolve = null;
+        function beginAccumTask(symbol) {
+            if (accumTaskResolve) {
+                try { accumTaskResolve(null); } catch (e) { /* ignore */ }
+            }
+            let resolveTask = null;
+            const promise = new Promise((resolve) => { resolveTask = resolve; });
+            let done = false;
+            const finish = (value) => {
+                if (done) return;
+                done = true;
+                const r = resolveTask;
+                resolveTask = null;
+                if (accumTaskResolve === finish) accumTaskResolve = null;
+                if (r) r(value);
+            };
+            accumTaskResolve = finish;
+            window.VinaFintechAccumTask = { symbol: String(symbol || '').toUpperCase(), promise };
+            return finish;
+        }
+
+        async function loadAccumulation(symbol, finishTask) {
             const chartEl = document.getElementById('accumChart');
             const symbolEl = document.getElementById('accumSymbol');
+            const sym = String(symbol || '').toUpperCase();
             if (symbolEl) symbolEl.textContent = escapeHtml(symbol);
+            const finish = (typeof finishTask === 'function') ? finishTask : beginAccumTask(sym);
             try {
                 const [history, dividends] = await Promise.all([
                     api(`/stocks/${encodeURIComponent(symbol)}/history?period=5y`),
@@ -7456,9 +7657,21 @@
                 ]);
                 accumHistoryData = history;
                 accumDividendData = dividends;
+                // Chia sẻ ĐÚNG dữ liệu vừa nạp cho panel fullscreen: cùng nguồn, số liệu khớp.
+                const shared = {
+                    symbol: sym,
+                    history: Array.isArray(history) ? history : [],
+                    dividends: Array.isArray(dividends) ? dividends : [],
+                };
+                window.VinaFintechAccumData = shared;
+                finish(shared);
+                try {
+                    window.dispatchEvent(new CustomEvent('vinafintech-accum-data', { detail: { symbol: sym } }));
+                } catch (e) { /* ignore */ }
                 renderAccumulation(history, dividends);
             } catch (error) {
                 console.error('Failed to load accumulation:', error);
+                finish(null);
                 if (chartEl) {
                     chartEl.innerHTML = '<div class="info-empty">Không có dữ liệu tích sản</div>';
                 }
@@ -7508,6 +7721,8 @@
         applyTuniAnalysisVisibility();
         loadStockDetail();
         window.addEventListener('load', () => {
+            // Phòng vệ: nếu có lỗi JS trước khi kịp mở trang thì vẫn không để trang bị ẩn.
+            hideStockLoading();
             notifyParentHeight();
             fitReportScroll();
             syncStockNewsHeight();

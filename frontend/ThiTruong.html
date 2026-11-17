@@ -194,6 +194,8 @@
         .tt-vn30-row { cursor: pointer; }
         .tt-vn30-row:hover td { background: #f0fbf9; }
         .tt-vn30-sym { font-weight: 700; }
+        .tt-vn30-sym .tt-vn30-symlink { color: inherit; text-decoration: none; }
+        .tt-vn30-sym .tt-vn30-symlink:hover { color: #008080; text-decoration: underline; }
         .tt-vn30-name { font-size: 11px; color: #8a99b1; font-weight: 500; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .tt-vn30-price { font-weight: 700; }
         .tt-vn30-spark svg { display: block; width: 84px; height: 30px; }
@@ -204,7 +206,7 @@
         .tt-radar-col { border: 1px solid #eef1f5; border-radius: 12px; padding: 12px; background: #fafbfd; }
         .tt-radar-col h3 { font-size: 12px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
         .tt-radar-col h3 i { color: #008080; }
-        .tt-radar-item { font-size: 12.5px; padding: 5px 4px; border-bottom: 1px dashed #eef1f5; cursor: pointer; border-radius: 6px; }
+        .tt-radar-item { display: block; font-size: 12.5px; padding: 5px 4px; border-bottom: 1px dashed #eef1f5; cursor: pointer; border-radius: 6px; text-decoration: none; color: inherit; }
         .tt-radar-item:hover { background: #f0fbf9; }
         .tt-radar-item:last-child { border-bottom: none; }
         .tt-radar-item .rr-sym { font-weight: 700; }
@@ -214,7 +216,7 @@
         /* ===== AI ===== */
         .tt-ai { flex: 1; border-color: rgba(0,128,128,0.35); background: linear-gradient(180deg, #ffffff, #f2fbfa); }
         .tt-ai-body { font-size: 13.5px; color: #33415e; }
-        .tt-ai-body .ai-sym { font-weight: 700; cursor: pointer; }
+        .tt-ai-body .ai-sym { font-weight: 700; cursor: pointer; text-decoration: none; color: inherit; }
         .tt-ai-body .ai-sym:hover { color: #008080; }
         .tt-ai-body p { margin-bottom: 8px; }
         .tt-ai-body .ai-tag { display: inline-block; background: rgba(0,128,128,0.10); color: #008080; font-weight: 700; border-radius: 6px; padding: 1px 7px; margin-right: 5px; font-size: 12px; }
@@ -222,7 +224,7 @@
         /* ===== Sidebar lists ===== */
         .tt-ev { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f2f4f8; cursor: pointer; }
         .tt-ev:last-child { border-bottom: none; }
-        .tt-n-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f2f4f8; cursor: pointer; }
+        .tt-n-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f2f4f8; cursor: pointer; text-decoration: none; color: inherit; }
         .tt-n-item:last-child { border-bottom: none; }
         .tt-news-img { flex: 0 0 auto; width: 60px; height: 48px; object-fit: cover; border-radius: 8px; background: #eef1f5; }
         .tt-news-ph { flex: 0 0 auto; width: 60px; height: 48px; border-radius: 8px; background: #f1f4f8; color: #8a99b1; display: flex; align-items: center; justify-content: center; font-size: 14px; }
@@ -244,7 +246,7 @@
         .tt-ev-group { margin-bottom: 14px; }
         .tt-ev-group:last-child { margin-bottom: 0; }
         .tt-ev-sym { font-weight: 800; font-size: 13.5px; color: #008080; margin-bottom: 7px; }
-        .tt-ev-item { display: flex; gap: 10px; background: #f8fafc; border: 1px solid #e9edf2; border-radius: 11px; padding: 10px 12px; margin-bottom: 7px; text-decoration: none; cursor: pointer; transition: all 0.15s; }
+        .tt-ev-item { display: flex; gap: 10px; background: #f8fafc; border: 1px solid #e9edf2; border-radius: 11px; padding: 10px 12px; margin-bottom: 7px; text-decoration: none; color: inherit; cursor: pointer; transition: all 0.15s; }
         .tt-ev-item:hover { border-color: #008080; }
         .tt-ev-item:last-child { margin-bottom: 0; }
         .tt-ev-ico { flex: 0 0 auto; font-size: 15px; padding-top: 2px; width: 22px; text-align: center; }
@@ -263,7 +265,7 @@
         .tt-n-tag .pct { font-weight: 800; margin-left: 2px; }
         /* Không giãn: chỗ trống dư trong cột để cho "Tin tức nổi bật" hưởng */
         .tt-impact-card { flex: 0 0 auto; }
-        .tt-impact-row { display: grid; grid-template-columns: 46px 1fr 70px; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid #f2f4f8; cursor: pointer; }
+        .tt-impact-row { display: grid; grid-template-columns: 46px 1fr 70px; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid #f2f4f8; cursor: pointer; text-decoration: none; color: inherit; }
         .tt-impact-row:hover { background: #f0fbf9; border-radius: 6px; }
         .tt-impact-row:last-child { border-bottom: none; }
         .tt-impact-sym { font-weight: 700; font-size: 12.5px; }
@@ -837,7 +839,7 @@
                         const closes = (s.sparkline || []).map(function(pt) { return Number(pt && pt.close); }).filter(function(v) { return isFinite(v); });
                         const spUp = closes.length >= 2 ? (closes[closes.length - 1] >= closes[0]) : up;
                         return '<tr class="tt-vn30-row" data-symbol="' + esc(s.symbol) + '">' +
-                            '<td class="tt-vn30-sym">' + esc(s.symbol) + '<span data-div="' + esc(s.symbol) + '"></span><div class="tt-vn30-name">' + esc(s.name) + '</div></td>' +
+                            '<td class="tt-vn30-sym"><a class="tt-vn30-symlink" href="' + esc(stockHref(s.symbol)) + '" data-symbol="' + esc(s.symbol) + '">' + esc(s.symbol) + '</a><span data-div="' + esc(s.symbol) + '"></span><div class="tt-vn30-name">' + esc(s.name) + '</div></td>' +
                             '<td class="tt-vn30-price">' + fmt(s.price) + '</td>' +
                             '<td class="' + cls(p) + '">' + pct(p) + '</td>' +
                             '<td class="tt-vn30-spark">' + sparkline(closes, 84, 30, spUp) + '</td>' +
@@ -849,11 +851,16 @@
                         '<th>Mã</th><th>Giá</th><th>% HN</th><th>30 ngày</th><th>P/E</th><th>P/B</th>' +
                         '</tr></thead><tbody>' + body + '</tbody></table></div>';
                     wrap.querySelectorAll('.tt-vn30-row').forEach(function(row) {
-                        row.addEventListener('click', function() {
+                        row.addEventListener('click', function(e) {
+                            // Ô mã là hyperlink (href thật) → giữ Ctrl/Cmd/Shift cho trình duyệt mở tab mới.
+                            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                            e.preventDefault();
                             const sym = row.getAttribute('data-symbol');
                             if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                         });
                     });
+                    // Screener (bản đồ ngành) có thể về sau → nâng href ô mã lên URL chuẩn cấp ngành.
+                    upgradeStockLinks();
                 } catch (e) {
                     wrap.innerHTML = '<div class="tt-vn30-empty">Không tải được dữ liệu VN30.</div>';
                 }
@@ -862,7 +869,7 @@
 
             // ---------- Radar ----------
             function radarItem(st, pctv) {
-                return '<div class="tt-radar-item" data-symbol="' + esc(st) + '"><span class="rr-sym">' + esc(st) + '</span><span class="rr-pct ' + cls(pctv) + '">' + pct(pctv) + '</span></div>';
+                return '<a class="tt-radar-item" href="' + esc(stockHref(st)) + '" data-symbol="' + esc(st) + '"><span class="rr-sym">' + esc(st) + '</span><span class="rr-pct ' + cls(pctv) + '">' + pct(pctv) + '</span></a>';
             }
             function radarList(items, symKey, pctKey, empty) {
                 if (!items || !items.length) return '<div class="tt-radar-empty">' + empty + '</div>';
@@ -874,7 +881,7 @@
                 if (!list.length) return '<div class="tt-radar-empty">' + empty + '</div>';
                 return list.map(function(it) {
                     const net = Number(it.net_value) || 0;
-                    return '<div class="tt-radar-item" data-symbol="' + esc(it.symbol) + '"><span class="rr-sym">' + esc(it.symbol) + '</span><span class="rr-pct ' + (net >= 0 ? 'fc-up' : 'fc-down') + '">' + (net >= 0 ? '+' : '-') + fmt(Math.abs(net) / 1e9, 0) + ' tỷ</span></div>';
+                    return '<a class="tt-radar-item" href="' + esc(stockHref(it.symbol)) + '" data-symbol="' + esc(it.symbol) + '"><span class="rr-sym">' + esc(it.symbol) + '</span><span class="rr-pct ' + (net >= 0 ? 'fc-up' : 'fc-down') + '">' + (net >= 0 ? '+' : '-') + fmt(Math.abs(net) / 1e9, 0) + ' tỷ</span></a>';
                 }).join('');
             }
             function renderRadar(r) {
@@ -887,7 +894,7 @@
                             radarList(r.breakout, 'symbol', 'percent_change', 'Không có mã breakout.') + '</div>' +
                         '<div class="tt-radar-col"><h3>Volume bất thường</h3>' +
                             ((r.volume_spike || []).map(function(it) {
-                                return '<div class="tt-radar-item" data-symbol="' + esc(it.symbol) + '"><span class="rr-sym">' + esc(it.symbol) + '</span><span class="rr-pct">' + fmt(it.volume / 1e6, 1) + ' tr</span></div>';
+                                return '<a class="tt-radar-item" href="' + esc(stockHref(it.symbol)) + '" data-symbol="' + esc(it.symbol) + '"><span class="rr-sym">' + esc(it.symbol) + '</span><span class="rr-pct">' + fmt(it.volume / 1e6, 1) + ' tr</span></a>';
                             }).join('') || '<div class="tt-radar-empty">Chưa có dữ liệu.</div>') + '</div>' +
                         '<div class="tt-radar-col"><h3>Nhóm suy yếu</h3>' +
                             radarList(r.weak, 'symbol', 'percent_change', 'Không có mã giảm.') + '</div>' +
@@ -930,9 +937,9 @@
                 parts.push('<p><span class="ai-tag">Dòng tiền</span>Khối ngoại ' + (net >= 0 ? 'mua ròng' : 'bán ròng') + ' <b>' + fmt(Math.abs(net) / 1e9, 0) + ' tỷ</b> đồng; ' +
                     'giá trị giao dịch HOSE đạt ' + fmt(gtg, 0) + ' tỷ' +
                     (liq.volume_ratio ? ' (gấp ' + fmt(liq.volume_ratio, 2) + ' lần trung bình 1 tháng)' : '') + '.</p>');
-                if (hot) parts.push('<p><span class="ai-tag">Điểm sáng</span>Ngành <b>' + esc(hot.name) + '</b> hút tiền nhất (' + pct(hot.avg_pct) + '), dẫn dắt bởi ' + (hot.top_gainer ? '<span class="ai-sym" data-symbol="' + esc(hot.top_gainer) + '">' + esc(hot.top_gainer) + '</span>' : '--') + '.</p>');
-                if (topUp) parts.push('<p><span class="ai-tag">Đà tăng</span>Cổ phiếu breakout mạnh nhất: <span class="ai-sym" data-symbol="' + esc(topUp.symbol) + '">' + esc(topUp.symbol) + '</span> (' + pct(topUp.percent_change) + ').</p>');
-                if (topDown) parts.push('<p><span class="ai-tag">Rủi ro</span>Nhóm suy yếu đáng chú ý: <span class="ai-sym" data-symbol="' + esc(topDown.symbol) + '">' + esc(topDown.symbol) + '</span> (' + pct(topDown.percent_change) + ').</p>');
+                if (hot) parts.push('<p><span class="ai-tag">Điểm sáng</span>Ngành <b>' + esc(hot.name) + '</b> hút tiền nhất (' + pct(hot.avg_pct) + '), dẫn dắt bởi ' + (hot.top_gainer ? '<a class="ai-sym" href="' + esc(stockHref(hot.top_gainer)) + '" data-symbol="' + esc(hot.top_gainer) + '">' + esc(hot.top_gainer) + '</a>' : '--') + '.</p>');
+                if (topUp) parts.push('<p><span class="ai-tag">Đà tăng</span>Cổ phiếu breakout mạnh nhất: <a class="ai-sym" href="' + esc(stockHref(topUp.symbol)) + '" data-symbol="' + esc(topUp.symbol) + '">' + esc(topUp.symbol) + '</a> (' + pct(topUp.percent_change) + ').</p>');
+                if (topDown) parts.push('<p><span class="ai-tag">Rủi ro</span>Nhóm suy yếu đáng chú ý: <a class="ai-sym" href="' + esc(stockHref(topDown.symbol)) + '" data-symbol="' + esc(topDown.symbol) + '">' + esc(topDown.symbol) + '</a> (' + pct(topDown.percent_change) + ').</p>');
                 return '<section class="tt-card tt-ai">' +
                     '<h2><i class="fas fa-robot tt-h2-ico" style="color:#008080;"></i> VinaF AI Market Analysis</h2>' +
                     '<div class="tt-ai-body">' + parts.join('') + '</div></section>';
@@ -1037,6 +1044,8 @@
                     const stocks = (d.stocks || [])
                         .filter(function(s) { return (Number(s.volume) || 0) > 0 && (Number(s.price) || 0) > 0; });
                     if (!stocks.length) { slot.innerHTML = '<div class="tt-radar-empty">Chưa có dữ liệu bản đồ.</div>'; return; }
+                    // Screener có sẵn ngành của từng mã → dựng URL chuẩn /co-phieu/nganh/{sector}/{industry}/{MÃ}.
+                    setStockUrls(stocks);
                     // Gộp theo nhóm ngành — tất cả trong 1 khung (nested treemap)
                     const groups = {};
                     stocks.forEach(function(s) {
@@ -1068,11 +1077,12 @@
                             const tw = Math.max(0.6, rr.w - GAP_T), th = Math.max(0.6, rr.h - GAP_T);
                             const tx = rr.x + (GAP_T / 2), ty = rr.y + (GAP_T / 2);
                             const show = tw >= 30 && th >= 18;
-                            return '<g class="tt-map-tile" data-symbol="' + esc(s.symbol) + '" data-name="' + esc(s.name) + '" data-ex="' + esc(s.exchange) + '" data-price="' + (Number(s.price) || 0) + '" data-chg="' + (Number(s.percent_change) || 0) + '" data-vol="' + (Number(s.volume) || 0) + '" transform="translate(' + tx + ',' + ty + ')">' +
+                            return '<a class="tt-map-link" href="' + esc(stockHref(s.symbol)) + '">' +
+                                '<g class="tt-map-tile" data-symbol="' + esc(s.symbol) + '" data-name="' + esc(s.name) + '" data-ex="' + esc(s.exchange) + '" data-price="' + (Number(s.price) || 0) + '" data-chg="' + (Number(s.percent_change) || 0) + '" data-vol="' + (Number(s.volume) || 0) + '" transform="translate(' + tx + ',' + ty + ')">' +
                                 '<rect width="' + tw + '" height="' + th + '" fill="' + color + '" rx="2"/>' +
                                 (show ? '<text x="' + (tw / 2) + '" y="' + (th / 2 - 1) + '" text-anchor="middle" fill="' + txt + '" font-size="11" font-weight="700">' + esc(s.symbol) + '</text>' : '') +
                                 (show ? '<text x="' + (tw / 2) + '" y="' + (th / 2 + 11) + '" text-anchor="middle" fill="' + txt + '" font-size="9.5" opacity="0.95">' + (p >= 0 ? '+' : '') + p.toFixed(1) + '%</text>' : '') +
-                                '</g>';
+                                '</g></a>';
                         }).join('');
                         return '<g class="tt-map-sector" transform="translate(' + bx + ',' + by + ')">' +
                             '<rect class="sector-bg" width="' + bw + '" height="' + bh + '" rx="7"/>' +
@@ -1124,7 +1134,11 @@
                         });
                     }
                     slot.querySelectorAll('.tt-map-tile').forEach(function(el) {
-                        el.addEventListener('click', function() {
+                        el.addEventListener('click', function(ev) {
+                            // Ô bản đồ nằm trong <a href> (hover thấy URL) → chặn điều hướng iframe,
+                            // nhường Ctrl/Cmd/Shift cho trình duyệt mở tab mới.
+                            if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+                            ev.preventDefault();
                             const sym = el.getAttribute('data-symbol');
                             if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                         });
@@ -1140,6 +1154,31 @@
             // Mã cổ phiếu hợp lệ để trích từ nội dung tin
             let NEWS_SYMS = {};
             function setNewsSyms(symMap) { NEWS_SYMS = symMap || {}; }
+            // URL CHUẨN của 1 mã: /co-phieu/nganh/{sector}/{industry}/{MÃ} (bản đồ ngành lấy từ screener).
+            const STOCK_URLS = {};
+            function stockHref(sym) {
+                const key = String(sym || '').trim().toUpperCase();
+                return STOCK_URLS[key] || ('/co-phieu/' + encodeURIComponent(key));
+            }
+            function setStockUrls(stocks) {
+                (stocks || []).forEach(function(s) {
+                    const sym = String((s && s.symbol) || '').trim().toUpperCase();
+                    const sec = String((s && s.sector) || '').trim();
+                    const ind = String((s && s.industry) || '').trim();
+                    if (sym && sec && ind) {
+                        STOCK_URLS[sym] = '/co-phieu/nganh/' + encodeURIComponent(sec) + '/' + encodeURIComponent(ind) + '/' + encodeURIComponent(sym);
+                    }
+                });
+                upgradeStockLinks();
+            }
+            // Sự kiện render sau khi screener về → nâng href các link mã đang có trong DOM
+            // (bỏ qua sự kiện TIN QUAN TRỌNG vì href của nó là bài viết, không phải trang mã CP).
+            function upgradeStockLinks() {
+                document.querySelectorAll('a[data-symbol]:not([data-news])').forEach(function(a) {
+                    const sym = String(a.getAttribute('data-symbol') || '').trim().toUpperCase();
+                    if (STOCK_URLS[sym]) a.setAttribute('href', STOCK_URLS[sym]);
+                });
+            }
             function extractNewsTickers(n) {
                 const cands = [];
                 const push = function(t) {
@@ -1209,21 +1248,31 @@
                         const m = EVENT_TYPE_META[e.event_type] || { icon: 'fa-bell', color: '#8a99b1', label: e.event_type };
                         const dl = daysLeft(e.event_date);
                         const dayTxt = dl === 0 ? 'hôm nay' : (dl > 0 ? 'còn ' + dl + ' ngày' : '');
-                        html += '<div class="tt-ev-item" data-symbol="' + esc(e.symbol || '') + '"' +
-                                (e.news_id ? ' data-news="' + esc(e.news_id) + '"' : '') + '>' +
-                            '<div class="tt-ev-body">' +
+                        const inner = '<div class="tt-ev-body">' +
                                 '<div class="tt-ev-row"><span class="tt-ev-badge" style="background:' + m.color + '1a;color:' + m.color + '">' + esc(m.label) + '</span>' +
                                 (e.event_date ? '<span class="tt-ev-date">' + fmtDate(e.event_date) + '</span>' : '') +
                                 (dayTxt ? '<span class="tt-ev-days">' + dayTxt + '</span>' : '') + '</div>' +
                                 '<div class="tt-ev-title">' + esc(e.title) + '</div>' +
                                 (e.description ? '<div class="tt-ev-desc">' + esc(e.description) + '</div>' : '') +
-                            '</div></div>';
+                            '</div>';
+                        const attrs = 'class="tt-ev-item" data-symbol="' + esc(e.symbol || '') + '"' +
+                            (e.news_id ? ' data-news="' + esc(e.news_id) + '"' : '');
+                        // URL thật để hover xem link: tin quan trọng → bài viết, còn lại → trang mã CP.
+                        const href = e.news_id
+                            ? '/tintuc?id=' + encodeURIComponent(e.news_id)
+                            : (e.symbol ? stockHref(e.symbol) : '');
+                        html += href
+                            ? '<a ' + attrs + ' href="' + esc(href) + '">' + inner + '</a>'
+                            : '<div ' + attrs + '>' + inner + '</div>';
                     });
                     html += '</div>';
                 });
                 el.innerHTML = '<div class="tt-ev-scroll">' + html + '</div>';
                 el.querySelectorAll('.tt-ev-item').forEach(function(it) {
-                    it.addEventListener('click', function() {
+                    it.addEventListener('click', function(ev) {
+                        // Giữ href thật để hover hiện URL; Ctrl/Cmd/Shift + click → trình duyệt mở tab mới.
+                        if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+                        ev.preventDefault();
                         const nid = it.getAttribute('data-news');
                         if (nid) {
                             if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(nid), slug: '' }, '*');
@@ -1271,19 +1320,20 @@
 
             function renderSide(news, impact) {
                 const ns = (news || []).map(function(n) {
-                    return '<div class="tt-n-item" data-news="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
+                    const href = n.slug ? ('/' + n.slug + '-' + n.id + '.html') : ('/tintuc?id=' + encodeURIComponent(n.id));
+                    return '<a class="tt-n-item" href="' + esc(href) + '" data-news="' + esc(n.id) + '" data-slug="' + esc(n.slug || '') + '">' +
                         newsImg(n) +
                         '<div class="tt-news-body"><div class="ni-title">' + esc(n.title) + '</div>' +
                         '<div class="tt-news-tags">' + newsTags(n) + '</div>' +
-                        '<div class="ni-date">' + fmtDate(n.published_at || n.created_at) + '</div></div></div>';
+                        '<div class="ni-date">' + fmtDate(n.published_at || n.created_at) + '</div></div></a>';
                 }).join('');
                 const maxImp = Math.max.apply(null, (impact || []).map(function(i) { return i.impact; }).concat([1]));
                 const imp = (impact || []).map(function(i) {
                     const w = Math.round(Math.min(100, Math.max(4, i.impact / maxImp * 100)));
-                    return '<div class="tt-impact-row" data-symbol="' + esc(i.symbol) + '">' +
+                    return '<a class="tt-impact-row" href="' + esc(stockHref(i.symbol)) + '" data-symbol="' + esc(i.symbol) + '">' +
                         '<div class="tt-impact-sym">' + esc(i.symbol) + '</div>' +
                         '<div class="tt-impact-bar"><i style="width:' + w + '%;background:' + (i.percent_change >= 0 ? '#008080' : '#d0314e') + ';"></i></div>' +
-                        '<div class="tt-impact-val">' + fmt(i.impact, 0) + ' tỷ</div></div>';
+                        '<div class="tt-impact-val">' + fmt(i.impact, 0) + ' tỷ</div></a>';
                 }).join('');
                 side.innerHTML =
                     '<section class="tt-card"><h2>Lịch sự kiện thị trường</h2>' +
@@ -1344,13 +1394,19 @@
                     });
                 });
                 main.querySelectorAll('.tt-radar-item[data-symbol]').forEach(function(el) {
-                    el.addEventListener('click', function() {
+                    el.addEventListener('click', function(e) {
+                        // Radar item là hyperlink (href thật) → chặn điều hướng iframe,
+                        // nhường Ctrl/Cmd/Shift cho trình duyệt mở tab mới.
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
                         const sym = el.getAttribute('data-symbol');
                         if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                     });
                 });
                 main.querySelectorAll('.ai-sym[data-symbol]').forEach(function(el) {
-                    el.addEventListener('click', function() {
+                    el.addEventListener('click', function(e) {
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
                         const sym = el.getAttribute('data-symbol');
                         if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                     });
@@ -1361,15 +1417,19 @@
                         if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                     });
                 });
-                side.querySelectorAll('[data-symbol]').forEach(function(el) {
+                side.querySelectorAll('[data-symbol]:not(.tt-ev-item)').forEach(function(el) {
                     el.addEventListener('click', function(e) {
+                        // Chip mã nằm TRONG thẻ tin (hyperlink) → chặn điều hướng mặc định của thẻ.
+                        e.preventDefault();
                         e.stopPropagation();
                         const sym = el.getAttribute('data-symbol');
                         if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-stock', symbol: sym }, '*');
                     });
                 });
-                side.querySelectorAll('[data-news]').forEach(function(el) {
-                    el.addEventListener('click', function() {
+                side.querySelectorAll('[data-news]:not(.tt-ev-item)').forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
                         const id = el.getAttribute('data-news');
                         const slug = el.getAttribute('data-slug') || '';
                         if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'vinafintech-open-tintuc', id: Number(id), slug: slug }, '*');
@@ -1410,7 +1470,7 @@
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     dash = await res.json();
                 } catch (e) {
-                    main.innerHTML = '<div class="tt-loading">Không tải được dữ liệu thị trường. <a href="#" onclick="location.reload();return false;">Thử lại</a></div>';
+                    main.innerHTML = '<div class="tt-loading">Không tải được dữ liệu thị trường. <a href="' + location.pathname + location.search + '">Thử lại</a></div>';
                     notifyParentHeight();
                     return;
                 }
@@ -1445,6 +1505,7 @@
                     const symMap = {};
                     (sd && sd.stocks || []).forEach(function(s) { symMap[s.symbol] = s; });
                     setNewsSyms(symMap);
+                    setStockUrls(sd && sd.stocks);
                     renderSide(pops, imp);
                     fitNewsScroll();
                     loadUpcomingEvents();

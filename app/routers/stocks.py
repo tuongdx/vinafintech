@@ -225,6 +225,26 @@ def stock_screener():
     return get_stock_screener_page()
 
 
+@router.get("/symbol-sectors")
+def symbol_sectors():
+    """Bản đồ NHẸ mã → slug ngành: {"FPT": {"sector": "cong-nghe", "industry": "cong-nghe-thong-tin"}, …}.
+
+    Dùng cho client dựng URL chuẩn /co-phieu/nganh/{sector}/{industry}/{MÃ} khi render link
+    cổ phiếu (không cần tải cả payload screener). Lỗi dữ liệu → trả {} (client tự fallback).
+    """
+    try:
+        from app.services.vnstock_service import _symbol_sector_index
+
+        index = _symbol_sector_index()
+    except Exception:  # noqa: BLE001 — lỗi dữ liệu ngành không được làm hỏng API
+        return {}
+    return {
+        sym: {"sector": v.get("sector"), "industry": v.get("industry")}
+        for sym, v in index.items()
+        if v.get("sector") and v.get("industry")
+    }
+
+
 @router.get("/top-by-sector")
 def top_by_sector(sector: str, limit: int = 5):
     """Cổ phiếu vốn hóa lớn nhất theo nhóm ngành."""

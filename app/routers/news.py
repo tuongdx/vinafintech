@@ -1,7 +1,11 @@
 import re
+import time
 import unicodedata
+from urllib.parse import urlparse
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import require_roles
@@ -240,6 +244,81 @@ def related_news(
     # Chỉ giữ bài CÓ LIÊN QUAN và lấy `limit` tin GẦN NHẤT:
     # `related` giữ nguyên thứ tự của `rows` (mới nhất trước) nên không cần sort lại.
     return [_news_out(n) for n in related[:limit]]
+
+
+# ---------------------------------------------------------------------------
+# Public: ảnh đại diện bài viết (proxy) — mọi tin đều hiển thị được ảnh nhỏ
+# ---------------------------------------------------------------------------
+# Nhiều báo (vd blogtienao.com) chặn hotlink: khi ảnh được nhúng từ domain khác, WAF trả
+# HTML thay vì ảnh ⇒ trình duyệt chặn bằng ORB (`net::ERR_BLOCKED_BY_ORB`) ⇒ thumbnail mất.
+# Server tự tải ảnh (kèm Referer của chính báo đó) rồi trả lại cho trình duyệt.
+# CHỈ tải ảnh có URL nằm trong DB (theo `news_id`) ⇒ không phải proxy URL tuỳ ý (chống SSRF).
+_IMG_CACHE: dict[int, tuple[float, bytes, str]] = {}
+_IMG_CACHE_TTL = 6 * 3600
+_IMG_CACHE_MAX = 120          # ~10–20 MB RAM (ảnh tin thường 50–200KB) — đủ cho các tin đang xem
+_IMG_MAX_BYTES = 5 * 1024 * 1024
+_IMG_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+
+
+def _fetch_remote_image(url: str) -> tuple[bytes, str] | None:
+    """Tải 1 ảnh http(s) → (bytes, content_type); None nếu URL/ảnh không hợp lệ."""
+    try:
+        parsed = urlparse(str(url or "").strip())
+    except ValueError:
+        return None
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return None
+    headers = {"User-Agent": _IMG_UA, "Referer": f"{parsed.scheme}://{parsed.netloc}/"}
+    try:
+        resp = httpx.get(
+            parsed.geturl(),
+            headers=headers,
+            timeout=httpx.Timeout(15, connect=8),
+            follow_redirects=True,
+        )
+    except Exception:  # noqa: BLE001 — mạng lỗi/timeout → coi như không có ảnh
+        return None
+    if resp.status_code != 200:
+        return None
+    ctype = (resp.headers.get("content-type") or "").split(";")[0].strip().lower()
+    data = resp.content or b""
+    if not ctype.startswith("image/") or not data or len(data) > _IMG_MAX_BYTES:
+        return None
+    return data, ctype
+
+
+@router.get("/{news_id}/image")
+def news_image(news_id: int, db: Session = Depends(get_db)):
+    """Ảnh thumbnail của bài viết (đi qua server) — 404 nếu bài không có ảnh/ảnh lỗi.
+
+    Frontend dùng URL này cho `<img src>` để thumbnail hiển thị được với MỌI nguồn tin.
+    """
+    cached = _IMG_CACHE.get(news_id)
+    if cached and cached[0] > time.time():
+        return Response(
+            content=cached[1],
+            media_type=cached[2],
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    row = db.query(News.image_url).filter(News.id == news_id).first()
+    fetched = _fetch_remote_image(row[0]) if row and row[0] else None
+    if not fetched:
+        raise HTTPException(status_code=404, detail="Không có ảnh")
+    data, ctype = fetched
+
+    if len(_IMG_CACHE) >= _IMG_CACHE_MAX:  # dọn bớt entry cũ nhất (đơn giản, đủ dùng)
+        for key in sorted(_IMG_CACHE, key=lambda k: _IMG_CACHE[k][0])[: max(1, _IMG_CACHE_MAX // 4)]:
+            _IMG_CACHE.pop(key, None)
+    _IMG_CACHE[news_id] = (time.time() + _IMG_CACHE_TTL, data, ctype)
+    return Response(
+        content=data,
+        media_type=ctype,
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 # ---------------------------------------------------------------------------

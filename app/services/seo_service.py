@@ -145,7 +145,7 @@ def _faq_entities() -> list[dict]:
 # path → (title, description, h1, breadcrumb label)
 ROUTES: dict[str, tuple[str, str, str, str]] = {
     "/": (
-        "VinaFintech - Phân tích cổ phiếu & dữ liệu thị trường",
+        "VinaFintech - Công nghệ phân tích đầu tư tài sản số",
         "VinaFintech cung cấp dữ liệu thị trường chứng khoán, phân tích cổ phiếu, tin tức tài chính và công cụ đầu tư thông minh cho nhà đầu tư Việt Nam.",
         "VinaFintech - Nền tảng phân tích và đầu tư chứng khoán",
         "",

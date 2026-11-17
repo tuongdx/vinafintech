@@ -9,7 +9,7 @@ from xml.sax.saxutils import escape as xml_escape
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
@@ -758,6 +758,149 @@ def favicon_ico():
 _CO_PHIEU_SYMBOL_RE = re.compile(r"^[A-Za-z0-9.]+$")
 
 
+def _page_not_found_response(path: str) -> Response:
+    """Trang 404 CÓ GIAO DIỆN (thay vì JSON) cho URL không tồn tại / mã cổ phiếu sai."""
+    page_file = frontend_path / "PageNotFound.html"
+    try:
+        body = page_file.read_text(encoding="utf-8").replace("{{PATH}}", xml_escape(str(path or "")))
+    except OSError:  # noqa: BLE001 — thiếu file thì trả 404 tối giản, không làm sập route
+        return JSONResponse(status_code=404, content={"detail": "Not Found"})
+    return HTMLResponse(
+        content=body,
+        status_code=404,
+        headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"},
+    )
+
+
+def _co_phieu_symbol_known(symbol: str) -> bool | None:
+    """Mã có trong danh mục cổ phiếu không? None = CHƯA tải được danh mục (tránh 404 oan)."""
+    sym = str(symbol or "").strip().upper()
+    if not sym:
+        return False
+    try:
+        from app.services import vnstock_service as vns
+
+        index = vns._symbol_sector_index()
+        if not index:
+            return None  # chưa tải được danh mục mã → KHÔNG kết luận là không tồn tại
+        if sym in index:
+            return True
+        # Có trong dataset screener nhưng thiếu thông tin ngành → vẫn là mã hợp lệ.
+        for row in vns._get_screener_dataset() or []:
+            if str(row.get("ticker") or "").strip().upper() == sym:
+                return True
+    except Exception:  # noqa: BLE001 — lỗi dữ liệu không được biến trang hợp lệ thành 404
+        return None
+    return False
+
+
+_QLTS_SECTION_SLUGS = frozenset({
+    "phan-tich-tai-san",
+    "danh-muc-dang-nam-giu",
+    "danh-muc-theo-doi",
+    "co-phieu-theo-doi",       # alias cũ cho link cũ
+    "bang-danh-muc",
+    "trung-tam-canh-bao",
+    "su-kien-lien-quan",
+})
+
+_TI_TOOL_SLUGS = frozenset({
+    "gia-dieu-chinh-co-phieu",
+    "loi-nhuan-tien-gui",
+    "ty-gia-ngoai-te",
+    "chia-deu-von-dau-tu",
+})
+
+_CRYPTO_SYMBOL_RE = re.compile(r"^[A-Za-z0-9.]{2,15}$")
+
+
+def _co_phieu_sector_values() -> list[dict[str, str]] | None:
+    """Danh sách {sector, industry} đang có thật trên thị trường (None = chưa tải được)."""
+    try:
+        from app.services import vnstock_service as vns
+
+        index = vns._symbol_sector_index()
+    except Exception:  # noqa: BLE001 — lỗi dữ liệu không được biến trang hợp lệ thành 404
+        return None
+    return list(index.values()) if index else None
+
+
+def _co_phieu_sector_exists(sector: str) -> bool | None:
+    sec = str(sector or "").strip().lower()
+    values = _co_phieu_sector_values()
+    if values is not None and any(str(v.get("sector") or "") == sec for v in values):
+        return True
+    # Nhóm ngành có trong taxonomy ICB nhưng tạm thời chưa có mã nào → vẫn là URL hợp lệ.
+    if sec in sector_taxonomy.ICB_LEVEL1_SLUGS:
+        return True
+    return None if values is None else False
+
+
+def _co_phieu_industry_exists(sector: str, industry: str) -> bool | None:
+    sec = str(sector or "").strip().lower()
+    ind = str(industry or "").strip().lower()
+    values = _co_phieu_sector_values()
+    if values is not None and any(
+        str(v.get("sector") or "") == sec and str(v.get("industry") or "") == ind for v in values
+    ):
+        return True
+    # Ngành có trong taxonomy ICB nhưng tạm thời chưa có mã nào → vẫn là URL hợp lệ.
+    if sector_taxonomy.ICB_LEVEL2_PARENT.get(ind) == sec:
+        return True
+    return None if values is None else False
+
+
+def _co_phieu_industry_parent(industry: str) -> str:
+    """Nhóm ngành cấp 1 chứa ngành cấp 2 này ('' nếu không biết)."""
+    ind = str(industry or "").strip().lower()
+    for v in _co_phieu_sector_values() or []:
+        if str(v.get("industry") or "") == ind and v.get("sector"):
+            return str(v["sector"])
+    return sector_taxonomy.ICB_LEVEL2_PARENT.get(ind, "")
+
+
+def _crypto_symbol_known(symbol: str) -> bool | None:
+    """Coin có cặp giao dịch không? None = chưa tải được danh sách (tránh 404 oan)."""
+    sym = str(symbol or "").strip().upper()
+    if not sym or not _CRYPTO_SYMBOL_RE.match(sym):
+        return False
+    try:
+        from app.services import crypto_service as crypto_svc
+
+        try:
+            tickers = crypto_svc._all_tickers()
+        except Exception:  # noqa: BLE001 — Binance bị chặn vùng → thử Bybit (nguồn dự phòng)
+            tickers = crypto_svc._bybit_tickers()
+        if not tickers:
+            return None
+        quote = str(getattr(crypto_svc, "_QUOTE", "USDT") or "USDT").upper()
+    except Exception:  # noqa: BLE001 — nguồn lỗi không được biến trang hợp lệ thành 404
+        return None
+    if sym.endswith(quote):
+        return sym in tickers
+    return (sym + quote) in tickers
+
+
+def _news_article_exists(article_id: int) -> bool | None:
+    """Bài viết tồn tại (đã duyệt/đăng) không? None = lỗi DB → không kết luận."""
+    try:
+        db = SessionLocal()
+        try:
+            row = (
+                db.query(News.id)
+                .filter(
+                    News.id == article_id,
+                    News.status.in_([NewsStatusEnum.approved, NewsStatusEnum.published]),
+                )
+                .first()
+            )
+        finally:
+            db.close()
+    except Exception:  # noqa: BLE001 — lỗi DB không được biến trang hợp lệ thành 404
+        return None
+    return row is not None
+
+
 def _co_phieu_sector_url(symbol: str) -> str:
     """URL đẹp CẤP NGÀNH của 1 mã: /co-phieu/nganh/{sector}/{industry}/{MÃ}.
 
@@ -786,13 +929,22 @@ def co_phieu_stock(symbol: str):
     Canonical hoá: nếu biết ngành của mã → 301 sang
     /co-phieu/nganh/{sector}/{industry}/{MÃ} để chi tiết cổ phiếu chỉ có MỘT kiểu URL
     (khớp đúng URL mà trang Cổ phiếu dùng khi duyệt theo ngành).
+
+    Mã KHÔNG hợp lệ / KHÔNG tồn tại (vd /co-phieu/mãcổphiếu) → 404 có giao diện,
+    KHÔNG render shell (tránh trang trắng + URL rác bị index).
     """
-    # '/co-phieu/nganh' là URL danh sách nhóm ngành (route này bắt trước do khai báo trước)
-    if symbol.strip().lower() != "nganh":
-        target = _co_phieu_sector_url(symbol)
-        if target:
-            return RedirectResponse(url=target, status_code=301)
-    return _index_response(f"/co-phieu/{symbol}")
+    name = (symbol or "").strip()
+    # '/co-phieu/nganh' là URL danh sách nhóm ngành (bị route này bắt trước do khai báo trước).
+    if name.lower() == "nganh":
+        return _index_response("/co-phieu/nganh")
+    if not _CO_PHIEU_SYMBOL_RE.match(name):
+        return _page_not_found_response(f"/co-phieu/{name}")
+    target = _co_phieu_sector_url(name)
+    if target:
+        return RedirectResponse(url=target, status_code=301)
+    if _co_phieu_symbol_known(name) is False:
+        return _page_not_found_response(f"/co-phieu/{name.upper()}")
+    return _index_response(f"/co-phieu/{name}")
 
 
 @app.get("/co-phieu/nganh/{sub1}/{sub2}/{symbol}")
@@ -801,7 +953,10 @@ def co_phieu_nganh_stock(sub1: str, sub2: str, symbol: str):
     legacy = sector_taxonomy.legacy_redirect_path(sub1, sub2, symbol)
     if legacy:
         return RedirectResponse(url=legacy, status_code=301)
-    return _index_response(f"/co-phieu/nganh/{sub1}/{sub2}/{symbol}")
+    name = (symbol or "").strip()
+    if not _CO_PHIEU_SYMBOL_RE.match(name) or _co_phieu_symbol_known(name) is False:
+        return _page_not_found_response(f"/co-phieu/nganh/{sub1}/{sub2}/{name}")
+    return _index_response(f"/co-phieu/nganh/{sub1}/{sub2}/{name}")
 
 
 @app.get("/co-phieu/nganh/{sub1}/{sub2}")
@@ -810,7 +965,15 @@ def co_phieu_nganh_sub2(sub1: str, sub2: str):
     legacy = sector_taxonomy.legacy_redirect_path(sub1, sub2)
     if legacy:
         return RedirectResponse(url=legacy, status_code=301)
-    return _index_response(f"/co-phieu/nganh/{sub1}/{sub2}")
+    s1 = (sub1 or "").strip().lower()
+    s2 = (sub2 or "").strip().lower()
+    if _co_phieu_industry_exists(s1, s2) is False:
+        # Ngành đúng nhưng nằm ở nhóm khác → 301 về URL chuẩn; còn lại là URL sai → 404.
+        parent = _co_phieu_industry_parent(s2)
+        if parent and parent != s1:
+            return RedirectResponse(url=f"/co-phieu/nganh/{parent}/{s2}", status_code=301)
+        return _page_not_found_response(f"/co-phieu/nganh/{s1}/{s2}")
+    return _index_response(f"/co-phieu/nganh/{s1}/{s2}")
 
 
 @app.get("/co-phieu/nganh/{sub1}")
@@ -823,7 +986,13 @@ def co_phieu_nganh_sub1(sub1: str):
     canonical = sector_taxonomy.canonical_level1_path(sub1)
     if canonical:
         return RedirectResponse(url=canonical, status_code=301)
-    return _index_response(f"/co-phieu/nganh/{sub1}")
+    s1 = (sub1 or "").strip().lower()
+    if _co_phieu_sector_exists(s1) is False:
+        parent = _co_phieu_industry_parent(s1)
+        if parent:
+            return RedirectResponse(url=f"/co-phieu/nganh/{parent}/{s1}", status_code=301)
+        return _page_not_found_response(f"/co-phieu/nganh/{s1}")
+    return _index_response(f"/co-phieu/nganh/{s1}")
 
 
 @app.get("/co-phieu/nganh")
@@ -838,25 +1007,37 @@ def stock_page(symbol: str):
     target = _co_phieu_sector_url(symbol)
     if target:
         return RedirectResponse(url=target, status_code=301)
-    return _index_response(f"/cophieu-{symbol}")
+    name = (symbol or "").strip()
+    if not _CO_PHIEU_SYMBOL_RE.match(name) or _co_phieu_symbol_known(name) is False:
+        return _page_not_found_response(f"/cophieu-{name}")
+    return _index_response(f"/cophieu-{name}")
 
 
 @app.get("/quan-ly-tai-san/{section}")
 def qlts_section_page(section: str):
     """URL đẹp section Quản lý tài sản: /quan-ly-tai-san/phan-tich-tai-san (giữ shell)."""
-    return _index_response(f"/quan-ly-tai-san/{section}")
+    name = (section or "").strip().lower()
+    if name not in _QLTS_SECTION_SLUGS:
+        return _page_not_found_response(f"/quan-ly-tai-san/{name}")
+    return _index_response(f"/quan-ly-tai-san/{name}")
 
 
 @app.get("/tien-ich/{tool}")
 def tien_ich_tool_page(tool: str):
     """URL đẹp công cụ Tiện ích: /tien-ich/gia-dieu-chinh-co-phieu (giữ shell)."""
-    return _index_response(f"/tien-ich/{tool}")
+    name = (tool or "").strip().lower()
+    if name not in _TI_TOOL_SLUGS:
+        return _page_not_found_response(f"/tien-ich/{name}")
+    return _index_response(f"/tien-ich/{name}")
 
 
 @app.get("/crypto/{symbol}")
 def crypto_coin_page(symbol: str):
     """URL đẹp chi tiết coin: /crypto/BTC → giữ shell, nội dung nạp vào iframe (crypto.html?symbol=BTC)."""
-    return _index_response(f"/crypto/{symbol}")
+    name = (symbol or "").strip().upper()
+    if _crypto_symbol_known(name) is False:
+        return _page_not_found_response(f"/crypto/{name}")
+    return _index_response(f"/crypto/{name}")
 
 
 @app.get("/{page_name}")
@@ -866,13 +1047,15 @@ def frontend_page(page_name: str):
         return RedirectResponse(url="/", status_code=301)
 
     # URL bài viết dạng đẹp: /{slug}-{id}.html → mở trang chủ với bài trong left-col
-    pretty_match = re.fullmatch(r".+-\d+\.html", page_name)
+    pretty_match = re.fullmatch(r".+-(\d+)\.html", page_name)
     if pretty_match:
+        if _news_article_exists(int(pretty_match.group(1))) is False:
+            return _page_not_found_response(f"/{page_name}")
         return _index_response(f"/{page_name}")
 
     file_name = PAGE_MAP.get(page_name)
     if not file_name:
-        raise HTTPException(status_code=404, detail="Page not found")
+        return _page_not_found_response(f"/{page_name}")
 
     if page_name in INDEX_SHELL_PAGES:
         # Phục vụ index.html trực tiếp để giữ URL đẹp /Trang (không redirect sang ?page=)
